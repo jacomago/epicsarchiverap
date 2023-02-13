@@ -41,6 +41,7 @@ jobs:
           name: build-reports
           path: build/reports/
       - name: Upload package
+        if: always()
         uses: actions/upload-artifact@v3
         with:
           name: package
