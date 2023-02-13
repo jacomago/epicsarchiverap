@@ -45,5 +45,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: package
-          path: /build/distributions/*.tar.gz
+          path: build/distributions/*.tar.gz
 
