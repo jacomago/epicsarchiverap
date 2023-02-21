@@ -121,12 +121,12 @@ public class PlainPBFileNameUtilityTest {
 		
 		Path[] matchingPaths = PlainPBPathNameUtility.getPathsWithData(new ArchPaths(), rootFolderStr, pvName, TimeUtils.convertFromEpochSeconds(startOfYearEpochSeconds, 0), TimeUtils.convertFromEpochSeconds(endMonth.getMillis()/1000 - 1, 0), extension, partition, CompressionMode.NONE, configService.getPVNameToKeyConverter());
 		logger.info("matching Paths " + Arrays.toString(matchingPaths));
-		assertTrue("File count " + matchingPaths.length, matchingPaths.length == 4);
+		assertTrue("Matching File count " + matchingPaths.length, matchingPaths.length == 4);
 
 		Path[] etlPaths = PlainPBPathNameUtility.getPathsBeforeCurrentPartition(new ArchPaths(), rootFolderStr, pvName, TimeUtils.convertFromEpochSeconds(endMonth.getMillis()/1000, 0), extension,  partition, CompressionMode.NONE, configService.getPVNameToKeyConverter());
 		logger.info("etl Paths " + Arrays.toString(etlPaths));
 
-		assertTrue("File count " + etlPaths.length, etlPaths.length == 3);
+		assertTrue("ETL File count " + etlPaths.length, etlPaths.length == 3);
 		
 		// Ask for the next year here; the last file written out is for Nov so expect 11.pb here
 		File mostRecentFile = PlainPBPathNameUtility.getMostRecentPathBeforeTime(new ArchPaths(), rootFolderStr, pvName, TimeUtils.convertFromEpochSeconds((curr.plusMonths(5).getMillis())/1000, 0), extension, partition, CompressionMode.NONE, configService.getPVNameToKeyConverter()).toFile();

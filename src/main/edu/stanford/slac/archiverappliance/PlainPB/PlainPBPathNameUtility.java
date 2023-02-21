@@ -75,7 +75,17 @@ public class PlainPBPathNameUtility {
 		DateTime pathDataEndTime;
 		long chunkStartEpochSeconds;
 		long chunkEndEpochSeconds;
-		
+
+		@Override
+		public String toString() {
+			return "StartEndTimeFromName{" +
+					"pathDataStartTime=" + pathDataStartTime +
+					", pathDataEndTime=" + pathDataEndTime +
+					", chunkStartEpochSeconds=" + chunkStartEpochSeconds +
+					", chunkEndEpochSeconds=" + chunkEndEpochSeconds +
+					'}';
+		}
+
 		/**
 		 * Determine the chunk start anf end times from the name
 		 * @param pvName Name of the PV. 
@@ -86,9 +96,9 @@ public class PlainPBPathNameUtility {
 		 */
 		StartEndTimeFromName(String pvName, String pathName, String pvFinalNameComponent, PartitionGranularity granularity) throws IOException {
 			String afterpvname = pathName.substring(pvFinalNameComponent.length());
-			// logger.info("After pvName, name of the file is " + afterpvname);
+			logger.info("After pvName, name of the file is " + afterpvname);
 			String justtheTimeComponent = afterpvname.split("\\.")[0];
-			// logger.info("Just the time component is " + justtheTimeComponent);
+			logger.info("Just the time component is " + justtheTimeComponent);
 			String[] timecomponents = justtheTimeComponent.split("_");
 
 			switch(granularity) {
@@ -97,7 +107,7 @@ public class PlainPBPathNameUtility {
 					throw new IOException("We cannot mix and match partitions in a folder. Skipping " + pathName + " when including yearly data for PV " + pvName);
 				}
 				int year = Integer.parseInt(timecomponents[0]);
-				// logger.info("year: " + year + " for " + fileName);
+				logger.info("year: " + year + " for " + pathName);
 				pathDataStartTime = new DateTime(year, 1, 1, 0, 0, 0, DateTimeZone.UTC);
 				pathDataEndTime = pathDataStartTime.plusYears(1).minusSeconds(1);
 				break;
@@ -197,10 +207,10 @@ public class PlainPBPathNameUtility {
 					StartEndTimeFromName pathNameTimes = new StartEndTimeFromName(pvName, name, pvFinalNameComponent, granularity);
 
 					if((pathNameTimes.chunkEndEpochSeconds < reqStartEpochSeconds) || (pathNameTimes.chunkStartEpochSeconds > reqEndEpochSeconds))  {
-						logger.info("File " + name + " did not match the times requested");
+						logger.info("File " + name + " with pathNameTimes " + pathNameTimes + " did not match the times " + reqStartEpochSeconds + " to " + reqEndEpochSeconds + " requested");
 						continue;
 					}
-					logger.info("File " + name + " matched the times requested");
+					logger.info("File " + name + " with pathNameTimes " + pathNameTimes + " matched the times " + reqStartEpochSeconds + " to " + reqEndEpochSeconds + " requested");
 					retVal.add(path);
 				} catch(IOException ex) {
 					logger.warn("Skipping file " + name + " when geting FilesWithData. Exception", ex);
@@ -240,7 +250,7 @@ public class PlainPBPathNameUtility {
 	public static Path[] getPathsBeforeCurrentPartition(ArchPaths archPaths, String rootFolder, final String pvName, final Timestamp currentTime, final String extension, final PartitionGranularity granularity, final CompressionMode compressionMode, PVNameToKeyMapping pv2key) throws IOException {
 		final long reqStartEpochSeconds = 1;
 		final long reqEndEpochSeconds = TimeUtils.getPreviousPartitionLastSecond(TimeUtils.convertToEpochSeconds(currentTime), granularity);
-		if(logger.isDebugEnabled()) logger.info(pvName + ": Looking for files in " + rootFolder + " with data before " + TimeUtils.convertToISO8601String(reqEndEpochSeconds));
+		logger.info(pvName + ": Looking for files in " + rootFolder + " with data before " + TimeUtils.convertToISO8601String(reqEndEpochSeconds));
 		
 		return getPathsWithData(
 				archPaths,
