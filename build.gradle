@@ -447,7 +447,6 @@ test {
                           "org.epics.archiverappliance.SingleForkTests",
                           "org.epics.archiverappliance.SlowTests"
     }
-    failFast = true
 }
 
 tasks.register("allTests", Test) {
