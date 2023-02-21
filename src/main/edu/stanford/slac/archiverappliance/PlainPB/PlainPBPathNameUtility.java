@@ -58,7 +58,7 @@ public class PlainPBPathNameUtility {
 			// Check to see if we have sparsified data
 			Path sparsifiedPathName = getFileName(rootFolder, pvName, epochSeconds, ".pbs", partitionGranularity, false, paths, compressionMode, pv2key);
 			if(Files.exists(sparsifiedPathName)) return sparsifiedPathName;
-			logger.debug("User is ok with sparsified data for PV " + pvName + " however, we do not have a sparsified version of the file " + sparsifiedPathName.toAbsolutePath().toString());
+			logger.info("User is ok with sparsified data for PV " + pvName + " however, we do not have a sparsified version of the file " + sparsifiedPathName.toAbsolutePath().toString());
 			return getPathNameForTime(rootFolder, pvName, epochSeconds, partitionGranularity, paths, CompressionMode.NONE, pv2key);
 		} else {
 			// User does not want reduced data; so we return the raw data.
@@ -317,7 +317,7 @@ public class PlainPBPathNameUtility {
 	 * @throws Exception &emsp;
 	 */
 	public static Path getMostRecentPathBeforeTime(ArchPaths archPaths, String rootFolder, final String pvName, final Timestamp startts, final String extension, final PartitionGranularity granularity, final CompressionMode compressionMode, PVNameToKeyMapping pv2key) throws Exception {
-		if(logger.isDebugEnabled()) logger.info(pvName + ": Looking for most recent file before " + TimeUtils.convertToISO8601String(startts));
+		if(logger.isDebugEnabled()) logger.debug(pvName + ": Looking for most recent file before " + TimeUtils.convertToISO8601String(startts));
 		Path[] paths = getAllPathsForPV(archPaths, rootFolder, pvName, extension, granularity, compressionMode, pv2key);
 		if(paths == null || paths.length == 0) return null;
 		
@@ -339,7 +339,7 @@ public class PlainPBPathNameUtility {
 			}
 		}
 		
-		if(logger.isDebugEnabled()) logger.info(pvName + ": Did not find any file with data before " + TimeUtils.convertToISO8601String(startts));
+		if(logger.isDebugEnabled()) logger.debug(pvName + ": Did not find any file with data before " + TimeUtils.convertToISO8601String(startts));
 		return null;
 	}
 
@@ -360,7 +360,7 @@ public class PlainPBPathNameUtility {
 	 * @throws Exception &emsp;
 	 */
 	public static Path getPreviousPartitionBeforeTime(ArchPaths archPaths, String rootFolder, final String pvName, final Timestamp startts, final String extension, final PartitionGranularity granularity, final CompressionMode compressionMode, PVNameToKeyMapping pv2key) throws Exception {
-		if(logger.isDebugEnabled()) logger.info(pvName + ": Looking for previous partition before " + TimeUtils.convertToISO8601String(startts));
+		if(logger.isDebugEnabled()) logger.debug(pvName + ": Looking for previous partition before " + TimeUtils.convertToISO8601String(startts));
 		Path[] paths = getAllPathsForPV(archPaths, rootFolder, pvName, extension, granularity, compressionMode, pv2key);
 		if(paths == null || paths.length == 0) return null;
 		
@@ -382,7 +382,7 @@ public class PlainPBPathNameUtility {
 			}
 		}
 		
-		if(logger.isDebugEnabled()) logger.info(pvName + ": Did not find any previous partitions before " + TimeUtils.convertToISO8601String(startts));
+		if(logger.isDebugEnabled()) logger.debug(pvName + ": Did not find any previous partitions before " + TimeUtils.convertToISO8601String(startts));
 		return null;
 	}
 
