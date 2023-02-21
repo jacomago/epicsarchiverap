@@ -23,6 +23,7 @@ import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.utils.nio.ArchPaths;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -108,7 +109,8 @@ public class PlainPBFileNameUtilityTest {
 	public void testGetFilesWithDataOnAMonthPartition() throws Exception {
 		// Lets create some files that cater to this partition.
 		long startOfYearEpochSeconds = TimeUtils.getStartOfCurrentYearInSeconds();
-		DateTime curr = new DateTime(startOfYearEpochSeconds*1000);
+		DateTime curr = new DateTime(startOfYearEpochSeconds*1000, DateTimeZone.UTC);
+		logger.info("Current time is " + curr);
 		String pvName = "First:Second:Third:MonthPart_1";
 		PartitionGranularity partition = PartitionGranularity.PARTITION_MONTH;
 		String extension = ".pb";
@@ -118,6 +120,7 @@ public class PlainPBFileNameUtilityTest {
 			curr = curr.plusMonths(1);
 			if(months == 4) endMonth = curr;
 		}
+		logger.info("End month is " + endMonth);
 		
 		Path[] matchingPaths = PlainPBPathNameUtility.getPathsWithData(new ArchPaths(), rootFolderStr, pvName, TimeUtils.convertFromEpochSeconds(startOfYearEpochSeconds, 0), TimeUtils.convertFromEpochSeconds(endMonth.getMillis()/1000 - 1, 0), extension, partition, CompressionMode.NONE, configService.getPVNameToKeyConverter());
 		logger.info("matching Paths " + Arrays.toString(matchingPaths));
@@ -139,7 +142,7 @@ public class PlainPBFileNameUtilityTest {
 	public void testGetFilesWithDataOnAYearlyPartition() throws Exception {
 		// Lets create some files that cater to this partition.
 		long startOfYearEpochSeconds = TimeUtils.getStartOfCurrentYearInSeconds();
-		DateTime curr = new DateTime(startOfYearEpochSeconds*1000);
+		DateTime curr = new DateTime(startOfYearEpochSeconds*1000, DateTimeZone.UTC);
 		String pvName = "First:Second:Third:YearPart_1";
 		PartitionGranularity partition = PartitionGranularity.PARTITION_YEAR;
 		String extension = ".pb";
