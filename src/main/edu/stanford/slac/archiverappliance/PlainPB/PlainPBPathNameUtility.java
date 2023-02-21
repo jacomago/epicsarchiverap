@@ -86,9 +86,9 @@ public class PlainPBPathNameUtility {
 		 */
 		StartEndTimeFromName(String pvName, String pathName, String pvFinalNameComponent, PartitionGranularity granularity) throws IOException {
 			String afterpvname = pathName.substring(pvFinalNameComponent.length());
-			// logger.debug("After pvName, name of the file is " + afterpvname);
+			// logger.info("After pvName, name of the file is " + afterpvname);
 			String justtheTimeComponent = afterpvname.split("\\.")[0];
-			// logger.debug("Just the time component is " + justtheTimeComponent);
+			// logger.info("Just the time component is " + justtheTimeComponent);
 			String[] timecomponents = justtheTimeComponent.split("_");
 
 			switch(granularity) {
@@ -97,7 +97,7 @@ public class PlainPBPathNameUtility {
 					throw new IOException("We cannot mix and match partitions in a folder. Skipping " + pathName + " when including yearly data for PV " + pvName);
 				}
 				int year = Integer.parseInt(timecomponents[0]);
-				// logger.debug("year: " + year + " for " + fileName);
+				// logger.info("year: " + year + " for " + fileName);
 				pathDataStartTime = new DateTime(year, 1, 1, 0, 0, 0, DateTimeZone.UTC);
 				pathDataEndTime = pathDataStartTime.plusYears(1).minusSeconds(1);
 				break;
@@ -197,18 +197,17 @@ public class PlainPBPathNameUtility {
 					StartEndTimeFromName pathNameTimes = new StartEndTimeFromName(pvName, name, pvFinalNameComponent, granularity);
 
 					if((pathNameTimes.chunkEndEpochSeconds < reqStartEpochSeconds) || (pathNameTimes.chunkStartEpochSeconds > reqEndEpochSeconds))  {
-						logger.debug("File " + name + " did not match the times requested");
+						logger.info("File " + name + " did not match the times requested");
 						continue;
 					}
-					logger.debug("File " + name + " matched the times requested");
+					logger.info("File " + name + " matched the times requested");
 					retVal.add(path);
 				} catch(IOException ex) {
 					logger.warn("Skipping file " + name + " when geting FilesWithData. Exception", ex);
-					continue;
 				}
 			}
 		} catch(NoSuchFileException nex) {
-			logger.debug("Most likely the parent folder for this pv does not exist. Returning an empty list");
+			logger.info("Most likely the parent folder for this pv does not exist. Returning an empty list");
 		}
 		
 		Collections.sort(retVal, new Comparator<Path>() {
@@ -241,7 +240,7 @@ public class PlainPBPathNameUtility {
 	public static Path[] getPathsBeforeCurrentPartition(ArchPaths archPaths, String rootFolder, final String pvName, final Timestamp currentTime, final String extension, final PartitionGranularity granularity, final CompressionMode compressionMode, PVNameToKeyMapping pv2key) throws IOException {
 		final long reqStartEpochSeconds = 1;
 		final long reqEndEpochSeconds = TimeUtils.getPreviousPartitionLastSecond(TimeUtils.convertToEpochSeconds(currentTime), granularity);
-		if(logger.isDebugEnabled()) logger.debug(pvName + ": Looking for files in " + rootFolder + " with data before " + TimeUtils.convertToISO8601String(reqEndEpochSeconds));
+		if(logger.isDebugEnabled()) logger.info(pvName + ": Looking for files in " + rootFolder + " with data before " + TimeUtils.convertToISO8601String(reqEndEpochSeconds));
 		
 		return getPathsWithData(
 				archPaths,
@@ -283,7 +282,7 @@ public class PlainPBPathNameUtility {
 				}
 			});
 		} catch(NoSuchFileException nex) {
-			logger.debug("Most likely the parent folder for this pv does not exist. Returning an empty list");
+			logger.info("Most likely the parent folder for this pv does not exist. Returning an empty list");
 		}
 		
 		return retval.toArray(new Path[0]);
@@ -308,7 +307,7 @@ public class PlainPBPathNameUtility {
 	 * @throws Exception &emsp;
 	 */
 	public static Path getMostRecentPathBeforeTime(ArchPaths archPaths, String rootFolder, final String pvName, final Timestamp startts, final String extension, final PartitionGranularity granularity, final CompressionMode compressionMode, PVNameToKeyMapping pv2key) throws Exception {
-		if(logger.isDebugEnabled()) logger.debug(pvName + ": Looking for most recent file before " + TimeUtils.convertToISO8601String(startts));
+		if(logger.isDebugEnabled()) logger.info(pvName + ": Looking for most recent file before " + TimeUtils.convertToISO8601String(startts));
 		Path[] paths = getAllPathsForPV(archPaths, rootFolder, pvName, extension, granularity, compressionMode, pv2key);
 		if(paths == null || paths.length == 0) return null;
 		
@@ -322,7 +321,7 @@ public class PlainPBPathNameUtility {
 				StartEndTimeFromName fileNameTimes = new StartEndTimeFromName(pvName, name, pvFinalNameComponent, granularity);
 
 				if(fileNameTimes.chunkStartEpochSeconds < reqStartEpochSeconds)  {
-					logger.debug("File " + name + " is the latest chunk with data for pv " + pvName);
+					logger.info("File " + name + " is the latest chunk with data for pv " + pvName);
 					return path;
 				}
 			} catch(IOException ex) {
@@ -330,7 +329,7 @@ public class PlainPBPathNameUtility {
 			}
 		}
 		
-		if(logger.isDebugEnabled()) logger.debug(pvName + ": Did not find any file with data before " + TimeUtils.convertToISO8601String(startts));
+		if(logger.isDebugEnabled()) logger.info(pvName + ": Did not find any file with data before " + TimeUtils.convertToISO8601String(startts));
 		return null;
 	}
 
@@ -351,7 +350,7 @@ public class PlainPBPathNameUtility {
 	 * @throws Exception &emsp;
 	 */
 	public static Path getPreviousPartitionBeforeTime(ArchPaths archPaths, String rootFolder, final String pvName, final Timestamp startts, final String extension, final PartitionGranularity granularity, final CompressionMode compressionMode, PVNameToKeyMapping pv2key) throws Exception {
-		if(logger.isDebugEnabled()) logger.debug(pvName + ": Looking for previous partition before " + TimeUtils.convertToISO8601String(startts));
+		if(logger.isDebugEnabled()) logger.info(pvName + ": Looking for previous partition before " + TimeUtils.convertToISO8601String(startts));
 		Path[] paths = getAllPathsForPV(archPaths, rootFolder, pvName, extension, granularity, compressionMode, pv2key);
 		if(paths == null || paths.length == 0) return null;
 		
@@ -365,7 +364,7 @@ public class PlainPBPathNameUtility {
 				StartEndTimeFromName fileNameTimes = new StartEndTimeFromName(pvName, name, pvFinalNameComponent, granularity);
 
 				if(fileNameTimes.chunkEndEpochSeconds < reqStartEpochSeconds)  {
-					logger.debug("File " + name + " is the previous partition chunk with data for pv " + pvName);
+					logger.info("File " + name + " is the previous partition chunk with data for pv " + pvName);
 					return path;
 				}
 			} catch(IOException ex) {
@@ -373,7 +372,7 @@ public class PlainPBPathNameUtility {
 			}
 		}
 		
-		if(logger.isDebugEnabled()) logger.debug(pvName + ": Did not find any previous partitions before " + TimeUtils.convertToISO8601String(startts));
+		if(logger.isDebugEnabled()) logger.info(pvName + ": Did not find any previous partitions before " + TimeUtils.convertToISO8601String(startts));
 		return null;
 	}
 
@@ -384,7 +383,7 @@ public class PlainPBPathNameUtility {
 	 * @param pvName  Name of the PV. 
 	 * @param epochSeconds
 	 * @param extension The file extension.
-	 * @param granularity Partition granularity of the file.
+	 * @param partitionGranularity Partition granularity of the file.
 	 * @return Path A list of all the paths
 	 * @throws IOException &emsp;
 	 */
@@ -464,7 +463,7 @@ public class PlainPBPathNameUtility {
 	 */
 	public static StartEndTimeFromName determineTimesFromFileName(String pvName, String finalNameComponent, PartitionGranularity partitionGranularity, PVNameToKeyMapping pv2key) throws IOException {
 		String pvFinalNameComponent = getFinalNameComponent(pvName, pv2key);
-		logger.debug(pvName + ": Determining start and end times for " + finalNameComponent);
+		logger.info(pvName + ": Determining start and end times for " + finalNameComponent);
 		StartEndTimeFromName fileNameTimes = new StartEndTimeFromName(pvName, finalNameComponent, pvFinalNameComponent, partitionGranularity);
 		return fileNameTimes;
 	}
@@ -488,11 +487,11 @@ public class PlainPBPathNameUtility {
 			Path parentFolder = getParentPath(paths, rootFolder, pvName, granularity, compressionMode, pv2key);
 			String pvFinalNameComponent = getFinalNameComponent(pvName, pv2key);
 			String matchGlob = pvFinalNameComponent + "*" + extension;
-			logger.debug(pvName + ": Looking for " + matchGlob + " in parentFolder " + parentFolder.toString());
+			logger.info(pvName + ": Looking for " + matchGlob + " in parentFolder " + parentFolder.toString());
 
 			return Files.newDirectoryStream(parentFolder, matchGlob);
 		} catch(NotDirectoryException nex) {
-			logger.debug("Possibly empty zip file when looking for data for pv " + pvName, nex);
+			logger.info("Possibly empty zip file when looking for data for pv " + pvName, nex);
 			// Return an empty directory stream in this case.
 			return new DirectoryStream<Path>() {
 				@Override

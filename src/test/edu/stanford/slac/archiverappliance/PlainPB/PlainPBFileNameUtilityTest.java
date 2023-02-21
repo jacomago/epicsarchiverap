@@ -13,8 +13,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ConfigService;
@@ -33,6 +35,7 @@ import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.Compress
  *
  */
 public class PlainPBFileNameUtilityTest {
+	private final static Logger logger = Logger.getLogger(PlainPBFileNameUtilityTest.class);
 	String fileName = ConfigServiceForTests.getDefaultPBTestFolder() + "/" + "PlainPBFileNameUtility/";
 	String rootFolderStr = fileName;
 	private ConfigService configService;
@@ -117,9 +120,12 @@ public class PlainPBFileNameUtilityTest {
 		}
 		
 		Path[] matchingPaths = PlainPBPathNameUtility.getPathsWithData(new ArchPaths(), rootFolderStr, pvName, TimeUtils.convertFromEpochSeconds(startOfYearEpochSeconds, 0), TimeUtils.convertFromEpochSeconds(endMonth.getMillis()/1000 - 1, 0), extension, partition, CompressionMode.NONE, configService.getPVNameToKeyConverter());
+		logger.info("matching Paths " + Arrays.toString(matchingPaths));
 		assertTrue("File count " + matchingPaths.length, matchingPaths.length == 4);
 
 		Path[] etlPaths = PlainPBPathNameUtility.getPathsBeforeCurrentPartition(new ArchPaths(), rootFolderStr, pvName, TimeUtils.convertFromEpochSeconds(endMonth.getMillis()/1000, 0), extension,  partition, CompressionMode.NONE, configService.getPVNameToKeyConverter());
+		logger.info("etl Paths " + Arrays.toString(etlPaths));
+
 		assertTrue("File count " + etlPaths.length, etlPaths.length == 3);
 		
 		// Ask for the next year here; the last file written out is for Nov so expect 11.pb here
