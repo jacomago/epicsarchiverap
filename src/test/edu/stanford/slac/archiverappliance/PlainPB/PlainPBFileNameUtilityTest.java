@@ -114,25 +114,32 @@ public class PlainPBFileNameUtilityTest {
 		String pvName = "First:Second:Third:MonthPart_1";
 		PartitionGranularity partition = PartitionGranularity.PARTITION_MONTH;
 		String extension = ".pb";
-		DateTime endMonth = null;
+		DateTime endMonth = curr.plusMonths(3); // January + 3 months is April
 		for(int months = 1; months <= 11; months++) {
 			mkPath(PlainPBPathNameUtility.getPathNameForTime(rootFolderStr, pvName, curr.getMillis()/1000, partition, new ArchPaths(), CompressionMode.NONE, configService.getPVNameToKeyConverter()));
 			curr = curr.plusMonths(1);
-			if(months == 4) endMonth = curr;
 		}
+		logger.info("Current time after adding months is " + curr);
 		logger.info("End month is " + endMonth);
 		
-		Path[] matchingPaths = PlainPBPathNameUtility.getPathsWithData(new ArchPaths(), rootFolderStr, pvName, TimeUtils.convertFromEpochSeconds(startOfYearEpochSeconds, 0), TimeUtils.convertFromEpochSeconds(endMonth.getMillis()/1000 - 1, 0), extension, partition, CompressionMode.NONE, configService.getPVNameToKeyConverter());
+		Path[] matchingPaths = PlainPBPathNameUtility.getPathsWithData(new ArchPaths(), rootFolderStr, pvName,
+				TimeUtils.convertFromEpochSeconds(startOfYearEpochSeconds, 0), // January
+				TimeUtils.convertFromEpochSeconds(endMonth.getMillis()/1000, 0), // April
+				extension, partition, CompressionMode.NONE, configService.getPVNameToKeyConverter());
 		logger.info("matching Paths " + Arrays.toString(matchingPaths));
 		assertTrue("Matching File count " + matchingPaths.length, matchingPaths.length == 4);
 
-		Path[] etlPaths = PlainPBPathNameUtility.getPathsBeforeCurrentPartition(new ArchPaths(), rootFolderStr, pvName, TimeUtils.convertFromEpochSeconds(endMonth.getMillis()/1000, 0), extension,  partition, CompressionMode.NONE, configService.getPVNameToKeyConverter());
+		Path[] etlPaths = PlainPBPathNameUtility.getPathsBeforeCurrentPartition(new ArchPaths(), rootFolderStr, pvName,
+				TimeUtils.convertFromEpochSeconds(endMonth.getMillis()/1000, 0), // Before April
+				extension,  partition, CompressionMode.NONE, configService.getPVNameToKeyConverter());
 		logger.info("etl Paths " + Arrays.toString(etlPaths));
 
 		assertTrue("ETL File count " + etlPaths.length, etlPaths.length == 3);
 		
 		// Ask for the next year here; the last file written out is for Nov so expect 11.pb here
-		File mostRecentFile = PlainPBPathNameUtility.getMostRecentPathBeforeTime(new ArchPaths(), rootFolderStr, pvName, TimeUtils.convertFromEpochSeconds((curr.plusMonths(5).getMillis())/1000, 0), extension, partition, CompressionMode.NONE, configService.getPVNameToKeyConverter()).toFile();
+		File mostRecentFile = PlainPBPathNameUtility.getMostRecentPathBeforeTime(new ArchPaths(), rootFolderStr, pvName,
+				TimeUtils.convertFromEpochSeconds((curr.plusMonths(5).getMillis())/1000, 0),
+				extension, partition, CompressionMode.NONE, configService.getPVNameToKeyConverter()).toFile();
 		assertTrue("Most recent file is null?", mostRecentFile != null);
 		assertTrue("Unxpected most recent file " + mostRecentFile.getAbsolutePath(), mostRecentFile.getName().endsWith("11.pb"));
 
