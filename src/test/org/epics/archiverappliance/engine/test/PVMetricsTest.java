@@ -12,6 +12,7 @@ import java.io.File;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.LocalEpicsTests;
+import org.epics.archiverappliance.ParallelEpicsIntegrationTests;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
@@ -29,19 +30,20 @@ import junit.framework.TestCase;
  * @author Luofeng Li
  *
  */
-@Category(LocalEpicsTests.class)
+@Category(ParallelEpicsIntegrationTests.class)
 public class PVMetricsTest extends TestCase {
 	private static Logger logger = LogManager.getLogger(PVMetricsTest.class.getName());
 	private SIOCSetup ioc = null;
 	private ConfigServiceForTests testConfigService;
 	private WriterTest writer = new WriterTest();
-	
+
+	private final String pvPrefix = PVMetricsTest.class.getSimpleName();
 
 	@Before
 	public void setUp() throws Exception {
-		ioc = new SIOCSetup();
+		ioc = new SIOCSetup(pvPrefix);
 		ioc.startSIOCWithDefaultDB();
-		testConfigService = new ConfigServiceForTests(new File("./bin"));
+		testConfigService = new ConfigServiceForTests();
 		Thread.sleep(3000);
 	}
 
@@ -60,7 +62,7 @@ public class PVMetricsTest extends TestCase {
  * test of getting pv metrics for one pv in scan mode
  */
 	private void PVMetricsForSingleScanChannel() {
-		String pvName = "test_0";
+		String pvName = pvPrefix + "test_0";
 		try {
 
 			ArchiveEngine.archivePV(pvName, 2, SamplingMethod.SCAN, 5, writer,
@@ -86,7 +88,7 @@ public class PVMetricsTest extends TestCase {
  * test of getting pv metrics of one pv in monitor mode
  */
 	private void PVMetricsForSingleMonitorChannel() {
-		String pvName = "test_1";
+		String pvName = pvPrefix + "test_1";
 		try {
 
 			ArchiveEngine.archivePV(pvName, 2, SamplingMethod.MONITOR, 5,

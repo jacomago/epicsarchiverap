@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.epics.archiverappliance.IntegrationTests;
 import org.epics.archiverappliance.LocalEpicsTests;
+import org.epics.archiverappliance.ParallelEpicsIntegrationTests;
 import org.epics.archiverappliance.mgmt.pva.actions.PvaGetApplianceInfo;
 import org.epics.nt.NTTable;
 import org.epics.nt.NTURI;
@@ -28,7 +29,7 @@ import org.junit.experimental.categories.Category;
  * @author Kunal Shroff
  *
  */
-@Category({IntegrationTests.class, LocalEpicsTests.class})
+@Category(ParallelEpicsIntegrationTests.class)
 public class PvaSuiteTstGetApplianceInfo {
 
 	private static Logger logger = LogManager.getLogger(PvaSuiteTstGetApplianceInfo.class.getName());

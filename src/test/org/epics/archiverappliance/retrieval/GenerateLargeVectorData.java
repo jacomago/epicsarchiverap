@@ -48,7 +48,7 @@ public class GenerateLargeVectorData {
 		String folder = args[1];
 		
 		
-		ConfigService configService = new ConfigServiceForTests(new File("./bin"), 1);
+		ConfigService configService = new ConfigServiceForTests( 1);
 		String pluginURL = "pb://localhost?name=LTS&rootFolder=" + folder + "&partitionGranularity=PARTITION_DAY";
 		StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(pluginURL, configService);
 		

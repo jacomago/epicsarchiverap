@@ -42,7 +42,7 @@ public class SingleEventTimeBasedIteratorTest {
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests();
 		pbplugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=STS&rootFolder=" + rootFolderName + "&partitionGranularity=PARTITION_HOUR", configService);
 	}
 

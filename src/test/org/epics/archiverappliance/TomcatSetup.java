@@ -7,6 +7,8 @@
  *******************************************************************************/
 package org.epics.archiverappliance;
 
+
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -29,7 +31,6 @@ import org.epics.archiverappliance.config.DefaultConfigService;
 import org.epics.archiverappliance.config.persistence.InMemoryPersistence;
 import org.epics.archiverappliance.config.persistence.JDBM2Persistence;
 import org.python.google.common.io.LineReader;
-import org.python.google.common.io.Resources;
 
 /**
  * Setup Tomcat without having to import all the tomcat jars into your project.
@@ -41,18 +42,43 @@ public class TomcatSetup {
 	LinkedList<Process> watchedProcesses = new LinkedList<Process>();
 	LinkedList<File> cleanupFolders = new LinkedList<File>();
 	protected static final int DEFAULT_SERVER_STARTUP_PORT = 16000;
-	
-	
-	private void initialSetup(String testName) throws IOException { 
-		File testFolder = new File("tomcat_" + testName);
+
+	private static boolean defaultIsRunning = false;
+
+	private void initialSetup(String testName) throws IOException {
+		File testFolder = new File("build/tomcats/tomcat_" + testName);
 		if(testFolder.exists()) { 
 			FileUtils.deleteDirectory(testFolder);
 		}
-		assert(testFolder.mkdir());
+		assert(testFolder.mkdirs());
 		cleanupFolders.add(testFolder);
 		
 	}
-	
+
+	private static synchronized boolean defaultIsRunning() {
+		return defaultIsRunning;
+	}
+
+	private static synchronized void setDefaultIsRunning() {
+		defaultIsRunning = true;
+	}
+
+	/**
+	 * Set up an individual tomcat with the webapps loaded.
+	 * We create a work folder appropriate for the test; create the webapps/logs/conf folders and then call catalina.sh run.
+	 * @throws Exception
+	 */
+	public void setUpDefaultWebApp() throws Exception {
+		String DEFAULT_TEST_NAME = "default";
+		if (!defaultIsRunning()) {
+			initialSetup(DEFAULT_TEST_NAME);
+			AppliancesXMLGenerator.ApplianceXMLConfig applianceXMLConfig = new AppliancesXMLGenerator.ApplianceXMLConfig("default", 1);
+			Path xml = applianceXMLConfig.writeAppliancesXML();
+			AppliancesXMLGenerator.AppliancePorts ports = applianceXMLConfig.appliancePortsList().get(0);
+			createAndStartTomcatInstance(DEFAULT_TEST_NAME, ports.identity(), ports.retrievalPort(), ports.serverStartUpPort(), "start", xml);
+			setDefaultIsRunning();
+		}
+	}
 
 	/**
 	 * Set up an individual tomcat with the webapps loaded.
@@ -108,19 +134,17 @@ public class TomcatSetup {
 	public void tearDown() throws Exception {
 		for(Process process : watchedProcesses) {
 			// First try to kill the process cleanly
-			long pid = process.pid();
-			String cmd = "kill -s SIGINT " + pid;
-			logger.info("Sending a signal using " + cmd);
-			Runtime.getRuntime().exec(cmd);
+			process.destroy();
+			logger.info("Sending a signal to " + process.pid());
 			try {
 				Thread.sleep(15 * 1000);
 			} catch (Exception ignored) {
 			}
 			if (process.isAlive()) {
-				logger.warn("Tomcat process did not stop propoerly within time. Forcibly stopping it.");
+				logger.warn("Tomcat process did not stop properly within time. Forcibly stopping it.");
 				process.destroyForcibly();
 				try {
-					Thread.sleep(3 * 60 * 1000);
+					Thread.sleep(60 * 1000);
 				} catch (Exception ignored) {
 				}
 			}
@@ -132,14 +156,16 @@ public class TomcatSetup {
 		}
 	}
 
+	private void createAndStartTomcatInstance(String testName, final String applianceName, int port, int startupPort, Path appliancesXML) throws IOException {
+		createAndStartTomcatInstance(testName, applianceName, port, startupPort, "run", appliancesXML);
+	}
 
-	private void createAndStartTomcatInstance(String testName, final String applianceName,
-											  int port, int startupPort, Path appliancesXML) throws IOException {
-		File workFolder = makeTomcatFolders(testName, applianceName, port, startupPort);
+	private void createAndStartTomcatInstance(String testName, final String applianceName, int port, int startupPort, String tomcatStartCommand, Path appliancesXML) throws IOException {
+			File workFolder = makeTomcatFolders(testName, applianceName, port, startupPort);
 		File logsFolder = new File(workFolder, "logs");
 		assert (logsFolder.exists());
 
-		ProcessBuilder pb = new ProcessBuilder(System.getenv("TOMCAT_HOME") + File.separator + "bin" + File.separator + "catalina.sh", "run");
+		ProcessBuilder pb = new ProcessBuilder(System.getenv("TOMCAT_HOME") + File.separator + "bin" + File.separator + "catalina.sh", tomcatStartCommand);
 		createEnvironment(testName, applianceName, pb.environment(), appliancesXML);
 		pb.directory(logsFolder);
 		pb.redirectErrorStream(true);
@@ -148,34 +174,35 @@ public class TomcatSetup {
 		watchedProcesses.add(p);
 
 		final CountDownLatch latch = new CountDownLatch(1);
-		
-		final LineReader li = new LineReader(new InputStreamReader(p.getInputStream()));
+
+		final BufferedReader li = new BufferedReader(new InputStreamReader(p.getInputStream()));
 		Thread t = new Thread(() -> {
-			try {
-				while(p.isAlive()) {
-					String msg = li.readLine();
-					if(msg != null) {
-						System.out.println(applianceName + "-->" + msg);
-						if(msg.contains("All components in this appliance have started up")) {
-							logger.info(applianceName + " has started up.");
-							latch.countDown();
-						}
-					} else {
-						try {Thread.sleep(500);} catch(Exception ignored) {}
-					}
-				}
-			} catch(Exception ex) {
-				logger.error("Exception starting Tomcat", ex);
-			}
+			catchApplianceLog(applianceName, p, latch, li);
 		});
 		t.start();
-		
+
 		// We wait for some time to make sure the server started up
 		try { latch.await(2, TimeUnit.MINUTES); } catch(InterruptedException ignored) {}
 		logger.info("Done starting " + applianceName + " Releasing latch");
 	}
-	
-	
+
+	private static void catchApplianceLog(String applianceName, Process p, CountDownLatch latch, BufferedReader li) {
+		Logger applianceLogger = LogManager.getLogger("APP" + applianceName);
+		try {
+			String msg;
+			while((msg = li.readLine()) != null && p.isAlive()) {
+				applianceLogger.info(applianceName + " | " + msg);
+				if(msg.contains("All components in this appliance have started up")) {
+					logger.info(applianceName + " has started up.");
+					latch.countDown();
+				}
+			}
+		} catch(Exception ex) {
+			logger.error("Exception starting Tomcat", ex);
+		}
+	}
+
+
 	/**
 	 * @param testName
 	 * @param applianceName
@@ -185,7 +212,7 @@ public class TomcatSetup {
 	 * @throws IOException
 	 */
 	private File makeTomcatFolders(String testName, String applianceName, int port, int startupPort) throws IOException {
-		File testFolder = new File("tomcat_" + testName);
+		File testFolder = new File("build/tomcats/tomcat_" + testName);
 		assert(testFolder.exists());
 		File workFolder = new File(testFolder, applianceName);
 		assert(workFolder.mkdir());
@@ -194,15 +221,16 @@ public class TomcatSetup {
 		assert(webAppsFolder.mkdir());
 		File logsFolder = new File(workFolder, "logs");
 		assert(logsFolder.mkdir());
+
 		FileUtils.copyFile(new File("src/resources/test/log4j2.xml"), new File(logsFolder, "log4j2.xml"));
 		File tempFolder = new File(workFolder, "temp");
-		tempFolder.mkdir();
+		assert(tempFolder.mkdir());
 		
 		logger.debug("Copying the webapps wars to " + webAppsFolder.getAbsolutePath());
-		FileUtils.copyFile(new File("./build/mgmt.war"), new File(webAppsFolder, "mgmt.war"));
-		FileUtils.copyFile(new File("./build/retrieval.war"), new File(webAppsFolder, "retrieval.war"));
-		FileUtils.copyFile(new File("./build/etl.war"), new File(webAppsFolder, "etl.war"));
-		FileUtils.copyFile(new File("./build/engine.war"), new File(webAppsFolder, "engine.war"));
+		FileUtils.copyFile(new File("./build/libs/mgmt.war"), new File(webAppsFolder, "mgmt.war"));
+		FileUtils.copyFile(new File("./build/libs/retrieval.war"), new File(webAppsFolder, "retrieval.war"));
+		FileUtils.copyFile(new File("./build/libs/etl.war"), new File(webAppsFolder, "etl.war"));
+		FileUtils.copyFile(new File("./build/libs/engine.war"), new File(webAppsFolder, "engine.war"));
 		
 		File confOriginal = new File(System.getenv("TOMCAT_HOME"), "conf_original");
 		File confFolder = new File(workFolder, "conf");
@@ -230,10 +258,11 @@ public class TomcatSetup {
 		environment.putAll(System.getenv());
 		environment.remove("CLASSPATH");
 		environment.put("CATALINA_HOME", System.getenv("TOMCAT_HOME"));
-		File workFolder = new File("tomcat_" + testName + File.separator + applianceName);
+		File workFolder = new File("build/tomcats/tomcat_" + testName + File.separator + applianceName);
 		assert (workFolder.exists());
 		environment.put("CATALINA_BASE", workFolder.getAbsolutePath());
 
+		environment.put("LOG4J_CONFIGURATION_FILE", (new File("src/resources/test/log4j2.xml")).getAbsolutePath());
 		environment.put(ConfigService.ARCHAPPL_CONFIGSERVICE_IMPL, ConfigServiceForTests.class.getName());
 		environment.put(DefaultConfigService.SITE_FOR_UNIT_TESTS_NAME, DefaultConfigService.SITE_FOR_UNIT_TESTS_VALUE);
 

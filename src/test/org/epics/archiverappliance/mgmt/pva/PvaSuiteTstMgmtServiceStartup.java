@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.epics.archiverappliance.IntegrationTests;
 import org.epics.archiverappliance.LocalEpicsTests;
+import org.epics.archiverappliance.ParallelEpicsIntegrationTests;
 import org.epics.pvaccess.client.rpc.RPCClient;
 import org.epics.pvaccess.client.rpc.RPCClientFactory;
 import org.junit.Test;
@@ -16,7 +17,7 @@ import org.junit.experimental.categories.Category;
  * @author Kunal Shroff
  *
  */
-@Category({IntegrationTests.class, LocalEpicsTests.class})
+@Category(ParallelEpicsIntegrationTests.class)
 public class PvaSuiteTstMgmtServiceStartup {
 
 	private static RPCClient client;

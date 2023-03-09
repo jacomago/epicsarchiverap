@@ -38,7 +38,7 @@ public class CountEventsForURL {
 			return;
 		}
 		PBOverHTTPStoragePlugin storagePlugin = new PBOverHTTPStoragePlugin();
-		ConfigService configService = new ConfigServiceForTests(new File("./bin"));
+		ConfigService configService = new ConfigServiceForTests();
 		String url = args[0];
 		storagePlugin.initialize("pbraw://localhost?rawURL=" + URLEncoder.encode(url, "UTF-8"), configService);
 		String pvName = args[1];

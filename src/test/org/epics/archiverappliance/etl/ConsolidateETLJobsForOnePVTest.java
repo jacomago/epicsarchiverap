@@ -66,7 +66,7 @@ public class ConsolidateETLJobsForOnePVTest extends TestCase {
         
         @Before
         public void setUp() throws Exception {
-        	configService = new ConfigServiceForTests(new File("./bin"));
+        	configService = new ConfigServiceForTests();
                 if(new File(rootFolderName).exists()) {
                         FileUtils.deleteDirectory(new File(rootFolderName));
                 }

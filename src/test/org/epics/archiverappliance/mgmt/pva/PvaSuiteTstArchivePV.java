@@ -1,6 +1,7 @@
 package org.epics.archiverappliance.mgmt.pva;
 
 import static org.epics.archiverappliance.mgmt.pva.PvaMgmtService.PVA_MGMT_SERVICE;
+import static org.epics.archiverappliance.mgmt.pva.PvaTest.pvPrefix;
 import static org.epics.archiverappliance.mgmt.pva.actions.NTUtil.extractStringArray;
 import static org.junit.Assert.assertArrayEquals;
 
@@ -9,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 
 import org.epics.archiverappliance.IntegrationTests;
 import org.epics.archiverappliance.LocalEpicsTests;
+import org.epics.archiverappliance.ParallelEpicsIntegrationTests;
 import org.epics.archiverappliance.mgmt.pva.actions.PvaArchivePVAction;
 import org.epics.nt.NTTable;
 import org.epics.pvaccess.client.rpc.RPCClient;
@@ -27,7 +29,7 @@ import org.junit.experimental.categories.Category;
  * @author Kunal Shroff
  *
  */
-@Category({IntegrationTests.class, LocalEpicsTests.class})
+@Category(ParallelEpicsIntegrationTests.class)
 public class PvaSuiteTstArchivePV {
 
 	private static Logger logger = LogManager.getLogger(PvaSuiteTstArchivePV.class.getName());
@@ -54,7 +56,7 @@ public class PvaSuiteTstArchivePV {
 									.create();
 		archivePvReqTable.getDescriptor().put(PvaArchivePVAction.NAME);
 		archivePvReqTable.getColumn(PVStringArray.class, "pv")
-							.put(0, 2, new String[] {"UnitTestNoNamingConvention:sine","UnitTestNoNamingConvention:cosine"}, 0);
+							.put(0, 2, new String[] {pvPrefix + "UnitTestNoNamingConvention:sine",pvPrefix + "UnitTestNoNamingConvention:cosine"}, 0);
 		archivePvReqTable.getColumn(PVStringArray.class, "samplingperiod")
 							.put(0, 2, new String[] {"1.0","2.0"}, 0);
 		archivePvReqTable.getColumn(PVStringArray.class, "samplingmethod")
@@ -67,7 +69,7 @@ public class PvaSuiteTstArchivePV {
 			 * { "pvName": "mshankar:arch:sine", "status": "Archive request submitted" }
 			 * { "pvName": "mshankar:arch:cosine", "status": "Archive request submitted" }
 			 */
-			String[] expextedKePvNames = new String[] { "UnitTestNoNamingConvention:sine", "UnitTestNoNamingConvention:cosine" };
+			String[] expextedKePvNames = new String[] { pvPrefix + "UnitTestNoNamingConvention:sine", pvPrefix + "UnitTestNoNamingConvention:cosine" };
 			String[] expectedStatus = new String[] { "Archive request submitted", "Archive request submitted" };
 			logger.info("results" + result.toString());
 			assertArrayEquals(expextedKePvNames,

@@ -76,7 +76,7 @@ public class HoldAndGatherTest {
 	private void testHoldAndGather(PartitionGranularity granularity, int hold, int gather)  throws Exception {
 		PlainPBStoragePlugin etlSrc = new PlainPBStoragePlugin();
 		PBCommonSetup srcSetup = new PBCommonSetup();
-		ConfigServiceForTests configService = new ConfigServiceForTests(new File("./bin"));
+		ConfigServiceForTests configService = new ConfigServiceForTests();
 		srcSetup.setUpRootFolder(etlSrc, "ETLHoldGatherTest_"+granularity, granularity);
 		
 		etlSrc.setHoldETLForPartions(hold);

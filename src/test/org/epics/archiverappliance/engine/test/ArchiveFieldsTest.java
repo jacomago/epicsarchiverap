@@ -13,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.LocalEpicsTests;
+import org.epics.archiverappliance.ParallelEpicsIntegrationTests;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
@@ -34,18 +35,19 @@ import junit.framework.TestCase;
  * @author Luofeng Li
  * 
  */
-@Category(LocalEpicsTests.class)
+@Category(ParallelEpicsIntegrationTests.class)
 public class ArchiveFieldsTest extends TestCase {
 	private static Logger logger = LogManager.getLogger(ArchiveFieldsTest.class.getName());
 	private SIOCSetup ioc = null;
 	private ConfigServiceForTests testConfigService;
 	private WriterTest writer = new WriterTest();
 
+	private final String pvPrefix = ArchiveFieldsTest.class.getSimpleName();
 	@Before
 	public void setUp() throws Exception {
-		ioc = new SIOCSetup();
+		ioc = new SIOCSetup(pvPrefix);
 		ioc.startSIOCWithDefaultDB();
-		testConfigService = new ConfigServiceForTests(new File("./bin"));
+		testConfigService = new ConfigServiceForTests();
 		testConfigService.getEngineContext().setDisconnectCheckTimeoutInMinutesForTestingPurposesOnly(1);
 		Thread.sleep(3000);
 	}
@@ -71,7 +73,7 @@ public class ArchiveFieldsTest extends TestCase {
 	private void OneChannelWithMetaField() {
 
 		try {
-			String pvName = "test_NOADEL";
+			String pvName = pvPrefix + "test_NOADEL";
 			MemBufWriter myWriter = new MemBufWriter(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE);
 			PVTypeInfo typeInfo = new PVTypeInfo(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
 			typeInfo.addArchiveField("HIHI");
@@ -135,7 +137,7 @@ public class ArchiveFieldsTest extends TestCase {
 			SIOCSetup.caput(controlPVName, 1);
 			Thread.sleep(3000);
 			String[] metaFields = { "HIHI", "LOLO" };
-			String pvName = "test_1";
+			String pvName = pvPrefix + "test_1";
 			PVTypeInfo typeInfo = new PVTypeInfo(pvName,ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
 			typeInfo.setSamplingMethod(SamplingMethod.SCAN);
 			typeInfo.setSamplingPeriod(60);

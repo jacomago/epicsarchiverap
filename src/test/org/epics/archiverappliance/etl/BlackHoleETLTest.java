@@ -47,7 +47,7 @@ public class BlackHoleETLTest {
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests();
 	}
 
 	@After
@@ -71,7 +71,7 @@ public class BlackHoleETLTest {
 		PlainPBStoragePlugin etlSrc = new PlainPBStoragePlugin();
 		PBCommonSetup srcSetup = new PBCommonSetup();
 		BlackholeStoragePlugin etlDest = new BlackholeStoragePlugin();
-		ConfigServiceForTests configService = new ConfigServiceForTests(new File("./bin"));
+		ConfigServiceForTests configService = new ConfigServiceForTests();
 
 		srcSetup.setUpRootFolder(etlSrc, "BlackholeETLTestSrc_"+granularity, granularity);
 

@@ -19,6 +19,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.IntegrationTests;
+import org.epics.archiverappliance.ParallelEpicsIntegrationTests;
 import org.epics.archiverappliance.TomcatSetup;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.TimeUtils;
@@ -45,7 +46,7 @@ import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
  * @author mshankar
  *
  */
-@Category(IntegrationTests.class)
+@Category(ParallelEpicsIntegrationTests.class)
 public class DataRetrievalServletTest {
 	
 	private static Logger logger = LogManager.getLogger(DataRetrievalServletTest.class.getName());
@@ -59,14 +60,13 @@ public class DataRetrievalServletTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests();
 		pbSetup.setUpRootFolder(pbplugin);
-		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
+		tomcatSetup.setUpDefaultWebApp();
 	}
 
 	@After
 	public void tearDown() throws Exception {
-		tomcatSetup.tearDown();
 
 		Files.deleteIfExists(PlainPBPathNameUtility.getPathNameForTime(pbplugin, pvName, TimeUtils.getStartOfYearInSeconds(year), new ArchPaths(), configService.getPVNameToKeyConverter()));
 	}
@@ -78,7 +78,7 @@ public class DataRetrievalServletTest {
 	@Test
 	public void testTimesAreSequential() throws Exception {
 		PBOverHTTPStoragePlugin storagePlugin = new PBOverHTTPStoragePlugin();
-		ConfigService configService = new ConfigServiceForTests(new File("./bin"));
+		ConfigService configService = new ConfigServiceForTests();
 		storagePlugin.initialize("pbraw://localhost?rawURL=" + URLEncoder.encode("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw", "UTF-8"), configService);
 		
 		Files.deleteIfExists(PlainPBPathNameUtility.getPathNameForTime(pbplugin, pvName, TimeUtils.getStartOfYearInSeconds(year), new ArchPaths(), configService.getPVNameToKeyConverter()));

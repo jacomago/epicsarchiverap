@@ -32,7 +32,7 @@ public class PVTypeInfoExportImportTest {
 
 	@Test
 	public void testEncodePVTypeInfo() throws Exception {
-		ConfigServiceForTests configService = new ConfigServiceForTests(new File("./src/sitespecific/tests/classpathfiles"));
+		ConfigServiceForTests configService = new ConfigServiceForTests(new File("./src/sitespecific/tests/classpathfiles"), -1);
         String pvName = "UnitTestNoNamingConvention:sine";
         MetaInfo info = new MetaInfo();
         info.addOtherMetaInfo("RTYP", "ai");

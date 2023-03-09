@@ -44,7 +44,7 @@ public class UpdatePVsatRate {
 	private static LinkedBlockingQueue<Runnable> contextTasks = new LinkedBlockingQueue<Runnable>();
 	private static ScheduledThreadPoolExecutor eventGenerator = new ScheduledThreadPoolExecutor(1);
 	private ConcurrentHashMap<String, UpdateValue> connectedChannels = null;
-	private ConfigServiceForTests configService = new ConfigServiceForTests(new File("./bin"));
+	private ConfigServiceForTests configService = new ConfigServiceForTests();
 	
 	public static void main(String[] args) throws Exception {
 		if(args.length < 2) {

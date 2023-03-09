@@ -12,6 +12,7 @@ import java.io.File;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.LocalEpicsTests;
+import org.epics.archiverappliance.ParallelEpicsIntegrationTests;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
@@ -29,18 +30,19 @@ import junit.framework.TestCase;
  * @author Luofeng Li
  *
  */
-@Category(LocalEpicsTests.class)
+@Category(ParallelEpicsIntegrationTests.class)
 public class ChannelDestoryTest extends TestCase {
 	private static Logger logger = LogManager.getLogger(ChannelDestoryTest.class.getName());
 	private SIOCSetup ioc = null;
 	private ConfigServiceForTests testConfigService;
 	private WriterTest writer = new WriterTest();
 
+	private final String pvPrefix = ChannelDestoryTest.class.getSimpleName().substring(0, 10);
 	@Before
 	public void setUp() throws Exception {
-		ioc = new SIOCSetup();
+		ioc = new SIOCSetup(pvPrefix);
 		ioc.startSIOCWithDefaultDB();
-		testConfigService = new ConfigServiceForTests(new File("./bin"));
+		testConfigService = new ConfigServiceForTests();
 		Thread.sleep(3000);
 	}
 
@@ -61,7 +63,7 @@ public class ChannelDestoryTest extends TestCase {
  * test of destroying the channel of the pv in scan mode
  */
 	private void scanChannelDestroy() {
-		String pvName = "test_0";
+		String pvName = pvPrefix + "test_0";
 		try {
 			ArchiveEngine.archivePV(pvName, 2, SamplingMethod.SCAN, 60, writer,
 					testConfigService, ArchDBRTypes.DBR_SCALAR_DOUBLE, null, false, false);
@@ -84,7 +86,7 @@ public class ChannelDestoryTest extends TestCase {
  * the test of destroying the channel of the pv in monitor mode
  */
 	private void monitorChannelDestroy() {
-		String pvName = "test_1";
+		String pvName = pvPrefix + "test_1";
 		try {
 
 			ArchiveEngine.archivePV(pvName, 0.1F, SamplingMethod.MONITOR, 60,

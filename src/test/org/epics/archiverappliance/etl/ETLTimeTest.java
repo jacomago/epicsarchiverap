@@ -63,7 +63,7 @@ public class ETLTimeTest extends TestCase{
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests();
 		if(new File(shortTermFolderName).exists()) {
 			FileUtils.deleteDirectory(new File(shortTermFolderName));
 		}

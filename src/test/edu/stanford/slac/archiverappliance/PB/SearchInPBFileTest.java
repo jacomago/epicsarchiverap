@@ -53,7 +53,7 @@ public class SearchInPBFileTest {
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests();
 		pbSetup.setUpRootFolder(pbplugin);
 		GenerateData.generateSineForPV("Sine1", 0, ArchDBRTypes.DBR_SCALAR_DOUBLE);
 	}

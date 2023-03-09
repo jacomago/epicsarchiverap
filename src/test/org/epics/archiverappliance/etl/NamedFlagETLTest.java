@@ -86,7 +86,7 @@ public class NamedFlagETLTest extends TestCase {
         @Test
         public void testMove() throws Exception {
         	{
-            	ConfigServiceForTests configService = new ConfigServiceForTests(new File("./bin"));
+            	ConfigServiceForTests configService = new ConfigServiceForTests();
         		logger.info("Testing Plain ETL");
 	        	BeforeAndAfterETLCounts etlCounts = generateAndMoveData(configService, "", "");
 	        	assertTrue("Seems like no events were moved by ETL ", (etlCounts.afterCountMTS > 0));
@@ -94,7 +94,7 @@ public class NamedFlagETLTest extends TestCase {
 	        	assertTrue("Did we miss some events when moving data? ", (etlCounts.afterCountMTS == (etlCounts.beforeCountSTS + etlCounts.beforeCountMTS)));
         	}
         	{
-            	ConfigServiceForTests configService = new ConfigServiceForTests(new File("./bin"));
+            	ConfigServiceForTests configService = new ConfigServiceForTests();
         		logger.info("Testing with flag but value of flag is false");
 	        	BeforeAndAfterETLCounts etlCounts = generateAndMoveData(configService, "", "&etlIntoStoreIf=testFlag");
 	        	// By default testFlag is false, so we should lose data in the move.
@@ -103,7 +103,7 @@ public class NamedFlagETLTest extends TestCase {
 	        	assertTrue("We should have lost all the data in this case", (etlCounts.afterCountMTS == 0));
         	}
         	{
-            	ConfigServiceForTests configService = new ConfigServiceForTests(new File("./bin"));
+            	ConfigServiceForTests configService = new ConfigServiceForTests();
         		configService.setNamedFlag("testFlag", true);
         		logger.info("Testing with flag but value of flag is true");
 	        	BeforeAndAfterETLCounts etlCounts = generateAndMoveData(configService, "", "&etlIntoStoreIf=testFlag");
@@ -112,7 +112,7 @@ public class NamedFlagETLTest extends TestCase {
 	        	assertTrue("Did we miss some events when moving data? ", (etlCounts.afterCountMTS == (etlCounts.beforeCountSTS + etlCounts.beforeCountMTS)));
         	}
         	{
-            	ConfigServiceForTests configService = new ConfigServiceForTests(new File("./bin"));
+            	ConfigServiceForTests configService = new ConfigServiceForTests();
         		configService.setNamedFlag("testFlag", true);
         		logger.info("Testing with some other flag but value of flag is true");
 	        	BeforeAndAfterETLCounts etlCounts = generateAndMoveData(configService, "", "&etlIntoStoreIf=testSomeOtherFlag");
@@ -124,7 +124,7 @@ public class NamedFlagETLTest extends TestCase {
         	
         	// Testing etlOutofStoreIf from here
         	{
-            	ConfigServiceForTests configService = new ConfigServiceForTests(new File("./bin"));
+            	ConfigServiceForTests configService = new ConfigServiceForTests();
         		logger.info("Testing with flag but value of flag is false");
 	        	BeforeAndAfterETLCounts etlCounts = generateAndMoveData(configService, "&etlOutofStoreIf=testFlag", "");
 	        	// By default testFlag is false, so no data should move.
@@ -133,7 +133,7 @@ public class NamedFlagETLTest extends TestCase {
 	        	assertTrue("We should not have moved any data in this case", (etlCounts.beforeCountSTS == etlCounts.afterCountSTS));
         	}
         	{
-            	ConfigServiceForTests configService = new ConfigServiceForTests(new File("./bin"));
+            	ConfigServiceForTests configService = new ConfigServiceForTests();
         		configService.setNamedFlag("testFlag", true);
         		logger.info("Testing with flag but value of flag is true");
 	        	BeforeAndAfterETLCounts etlCounts = generateAndMoveData(configService, "&etlOutofStoreIf=testFlag", "");
@@ -142,7 +142,7 @@ public class NamedFlagETLTest extends TestCase {
 	        	assertTrue("Did we miss some events when moving data? ", (etlCounts.afterCountMTS == (etlCounts.beforeCountSTS + etlCounts.beforeCountMTS)));
         	}
         	{
-            	ConfigServiceForTests configService = new ConfigServiceForTests(new File("./bin"));
+            	ConfigServiceForTests configService = new ConfigServiceForTests();
         		configService.setNamedFlag("testFlag", true);
         		logger.info("Testing with some other flag but value of flag is true");
 	        	BeforeAndAfterETLCounts etlCounts = generateAndMoveData(configService, "&etlOutofStoreIf=testSomeOtherFlag", "");

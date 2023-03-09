@@ -48,7 +48,7 @@ public class ZipSingleDayRawFetchTest {
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests();
 		pbplugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=STS&rootFolder=" + rootFolderName + "&partitionGranularity=PARTITION_DAY&compress=ZIP_PER_PV", configService);
 		if(new File(rootFolderName).exists()) {
 			FileUtils.deleteDirectory(new File(rootFolderName));

@@ -69,7 +69,7 @@ public class SimpleETLTest {
         		PBCommonSetup srcSetup = new PBCommonSetup();
         		PlainPBStoragePlugin etlDest = new PlainPBStoragePlugin();
         		PBCommonSetup destSetup = new PBCommonSetup();
-        		ConfigServiceForTests configService = new ConfigServiceForTests(new File("./bin"), 1);
+        		ConfigServiceForTests configService = new ConfigServiceForTests( 1);
 
         		if(granularity.getNextLargerGranularity() == null) continue;
         		srcSetup.setUpRootFolder(etlSrc, "SimpleETLTestSrc_"+granularity, granularity);

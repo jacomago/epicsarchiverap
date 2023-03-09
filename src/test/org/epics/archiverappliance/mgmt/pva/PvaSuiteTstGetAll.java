@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 
 import org.epics.archiverappliance.IntegrationTests;
 import org.epics.archiverappliance.LocalEpicsTests;
+import org.epics.archiverappliance.ParallelEpicsIntegrationTests;
 import org.epics.nt.NTURI;
 import org.epics.pvaccess.client.rpc.RPCClient;
 import org.epics.pvaccess.client.rpc.RPCClientFactory;
@@ -24,7 +25,7 @@ import static org.epics.archiverappliance.mgmt.pva.actions.PvaGetAllPVs.NAME;
  * @author Kunal Shroff
  *
  */
-@Category({IntegrationTests.class, LocalEpicsTests.class})
+@Category(ParallelEpicsIntegrationTests.class)
 public class PvaSuiteTstGetAll {
 
 	private static Logger logger = LogManager.getLogger(PvaSuiteTstGetAll.class.getName());

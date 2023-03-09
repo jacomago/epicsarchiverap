@@ -45,7 +45,7 @@ public class PlainPBFileNameUtilityTest {
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests();
 		File rootFolder = new File(rootFolderStr);
 		if(rootFolder.exists()) {
 			FileUtils.deleteDirectory(rootFolder);

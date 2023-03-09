@@ -18,6 +18,7 @@ import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.EventStreamDesc;
 import org.epics.archiverappliance.IntegrationTests;
+import org.epics.archiverappliance.ParallelEpicsIntegrationTests;
 import org.epics.archiverappliance.TomcatSetup;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
@@ -33,7 +34,7 @@ import org.junit.experimental.categories.Category;
  * @author mshankar
  *
  */
-@Category(IntegrationTests.class)
+@Category(ParallelEpicsIntegrationTests.class)
 public class MultiplePVSimpleRetrievalTest {
 	private static final Logger logger = LogManager.getLogger(MultiplePVSimpleRetrievalTest.class.getName());
 	TomcatSetup tomcatSetup = new TomcatSetup();
@@ -48,12 +49,7 @@ public class MultiplePVSimpleRetrievalTest {
 			pvs[i] = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "Sine" + i;
 			GenerateData.generateSineForPV(pvs[i], i*phasediff, ArchDBRTypes.DBR_SCALAR_DOUBLE);
 		}
-		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
-	}
-
-	@After
-	public void tearDown() throws Exception {
-		tomcatSetup.tearDown();
+		tomcatSetup.setUpDefaultWebApp();
 	}
 
 	static long previousEpochSeconds = 0; 

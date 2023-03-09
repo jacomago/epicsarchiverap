@@ -58,7 +58,7 @@ public class FailoverRetrievalTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests();
 		tomcatSetup.setUpFailoverWithWebApps(this.getClass().getSimpleName());		
 	}
 
@@ -73,7 +73,7 @@ public class FailoverRetrievalTest {
 	private long generateMTSData(String applURL, String applianceName, Timestamp lastMonth, int startingOffset)
 			throws Exception {
 		int genEventCount = 0;
-		StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=LTS&rootFolder=" + "tomcat_"+ this.getClass().getSimpleName() + "/" + applianceName + "/mts" + "&partitionGranularity=PARTITION_DAY", configService);
+		StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=LTS&rootFolder=" + "build/tomcats/tomcat_"+ this.getClass().getSimpleName() + "/" + applianceName + "/mts" + "&partitionGranularity=PARTITION_DAY", configService);
 		try(BasicContext context = new BasicContext()) {
 			for(long s = TimeUtils.getPreviousPartitionLastSecond(TimeUtils.convertToEpochSeconds(lastMonth), PartitionGranularity.PARTITION_MONTH) + 1 + startingOffset; // We generate a months worth of data.
 					s < TimeUtils.getNextPartitionFirstSecond(TimeUtils.convertToEpochSeconds(lastMonth), PartitionGranularity.PARTITION_MONTH); 

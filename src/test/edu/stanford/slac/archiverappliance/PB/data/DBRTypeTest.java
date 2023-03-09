@@ -63,7 +63,7 @@ public class DBRTypeTest {
 	
 	@Test
 	public void testJCAPopulateAndRead() throws Exception {
-		ConfigService configService = new ConfigServiceForTests(new File("./bin"));
+		ConfigService configService = new ConfigServiceForTests();
 		for(ArchDBRTypes dbrType : ArchDBRTypes.values()) {
 			if(!dbrType.isV3Type()) continue;
 			logger.info("Testing JCA conversion for DBR_type: " + dbrType.name());
@@ -96,7 +96,7 @@ public class DBRTypeTest {
 	@Category(SlowTests.class)
 	public void testPopulateAndRead() throws Exception {
 		for(ArchDBRTypes dbrType : ArchDBRTypes.values()) {
-			ConfigService configService = new ConfigServiceForTests(new File("./bin"));
+			ConfigService configService = new ConfigServiceForTests();
 			FileBackedPBEventStream retrievedStrm = null;
 			try {
 				BoundaryConditionsSimulationValueGenerator valuegenerator = new BoundaryConditionsSimulationValueGenerator();
@@ -200,7 +200,7 @@ public class DBRTypeTest {
 	@Category(SlowTests.class)
 	public void testMultipleYearDataForDoubles() throws Exception {
 		ArchDBRTypes dbrType = ArchDBRTypes.DBR_SCALAR_DOUBLE;
-		ConfigService configService = new ConfigServiceForTests(new File("./bin"));
+		ConfigService configService = new ConfigServiceForTests();
 		for(short year = 1990; year < 3000; year+=10) {
 			FileBackedPBEventStream retrievedStrm = null;
 			try {

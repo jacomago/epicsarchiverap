@@ -59,7 +59,7 @@ public class FailoverScoreAPITest {
 	
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests();
 		tomcatSetup.setUpFailoverWithWebApps(this.getClass().getSimpleName());		
 	}
 
@@ -74,7 +74,7 @@ public class FailoverScoreAPITest {
 	private long generateMTSData(String applURL, String applianceName, Timestamp theMonth, boolean morningp)
 			throws Exception {
 		int genEventCount = 0;
-		StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=LTS&rootFolder=" + "tomcat_"+ this.getClass().getSimpleName() + "/" + applianceName + "/mts" + "&partitionGranularity=PARTITION_DAY", configService);
+		StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=LTS&rootFolder=" + "build/tomcats/tomcat_"+ this.getClass().getSimpleName() + "/" + applianceName + "/mts" + "&partitionGranularity=PARTITION_DAY", configService);
 		try(BasicContext context = new BasicContext()) {
 			for(long s = TimeUtils.getPreviousPartitionLastSecond(TimeUtils.convertToEpochSeconds(theMonth), PartitionGranularity.PARTITION_DAY) + 1;
 					s < TimeUtils.convertToEpochSeconds(TimeUtils.now()); 

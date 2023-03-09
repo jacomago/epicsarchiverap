@@ -35,7 +35,7 @@ public class GetETLReadyFiles {
 			System.err.println("Usage: java edu.stanford.slac.archiverappliance.PlainPB.utils.GetETLReadyFiles <PVName> <FolderName> <Granularity>");
 			return;
 		}
-		ConfigService configService = new ConfigServiceForTests(new File("./bin"));
+		ConfigService configService = new ConfigServiceForTests();
 		String pvName = args[0];
 		File folder = new File(args[1]);
 		PartitionGranularity granularity = PartitionGranularity.valueOf(args[2]);

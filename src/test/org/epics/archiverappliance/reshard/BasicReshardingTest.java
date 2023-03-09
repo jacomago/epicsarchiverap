@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
+import org.epics.archiverappliance.IntegrationTests;
 import org.epics.archiverappliance.LocalEpicsTests;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.StoragePlugin;
@@ -63,7 +64,7 @@ import org.openqa.selenium.firefox.FirefoxDriver;
  * @author mshankar
  *
  */
-@Category(LocalEpicsTests.class)
+@Category(IntegrationTests.class)
 public class BasicReshardingTest {
 	private static Logger logger = LogManager.getLogger(BasicReshardingTest.class.getName());
 	private String pvName = "UnitTestNoNamingConvention:sine";
@@ -82,7 +83,7 @@ public class BasicReshardingTest {
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests();
 
 		System.getProperties().put("ARCHAPPL_SHORT_TERM_FOLDER", folderSTS);
 		System.getProperties().put("ARCHAPPL_MEDIUM_TERM_FOLDER", folderMTS);

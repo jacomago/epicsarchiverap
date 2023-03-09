@@ -32,7 +32,7 @@ public class GraphicLimitsMonitor {
 	private JCALibrary jca =null;
 
 	private void initialize() throws CAException, SAXException, IOException, ConfigurationException, ConfigException {
-		ConfigServiceForTests configService = new ConfigServiceForTests(new File("./bin"));
+		ConfigServiceForTests configService = new ConfigServiceForTests();
 		jca = JCALibrary.getInstance();
 		ByteArrayInputStream bis = JCAConfigGen.generateJCAConfig(configService);
 		DefaultConfigurationBuilder configBuilder = new DefaultConfigurationBuilder();

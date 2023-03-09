@@ -52,7 +52,7 @@ public class RenamePVTest {
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests();
 		if(rootFolder.exists()) {
 			FileUtils.deleteDirectory(rootFolder);
 		}

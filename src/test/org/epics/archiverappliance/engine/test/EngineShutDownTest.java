@@ -10,9 +10,11 @@ package org.epics.archiverappliance.engine.test;
 import java.io.File;
 import java.util.Iterator;
 
+import junit.framework.TestCase;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.LocalEpicsTests;
+import org.epics.archiverappliance.ParallelEpicsIntegrationTests;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
@@ -23,75 +25,76 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import junit.framework.TestCase;
+import java.io.File;
+import java.util.Iterator;
+
 /**
  * test of engine shuting down
- * @author Luofeng Li
  *
+ * @author Luofeng Li
  */
-@Category(LocalEpicsTests.class)
+@Category(ParallelEpicsIntegrationTests.class)
 public class EngineShutDownTest extends TestCase {
-	private static Logger logger = LogManager.getLogger(EngineShutDownTest.class.getName());
-	private SIOCSetup ioc = null;
-	private ConfigServiceForTests testConfigService;
-	private WriterTest writer = new WriterTest();
+	private static final Logger logger = LogManager.getLogger(EngineShutDownTest.class.getName());
+    private final String pvPrefix = EngineShutDownTest.class.getSimpleName().substring(0, 10);
+    private SIOCSetup ioc = null;
+    private ConfigServiceForTests testConfigService;
+    private final WriterTest writer = new WriterTest();
 
-	@Before
-	public void setUp() throws Exception {
-		ioc = new SIOCSetup();
-		ioc.startSIOCWithDefaultDB();
-		testConfigService = new ConfigServiceForTests(new File("./bin"));
-		Thread.sleep(3000);
-	}
+    @Before
+    public void setUp() throws Exception {
+        ioc = new SIOCSetup(pvPrefix);
+        ioc.startSIOCWithDefaultDB();
+        testConfigService = new ConfigServiceForTests();
+        Thread.sleep(3000);
+    }
 
-	@After
-	public void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
 
-	
-		ioc.stopSIOC();
 
-	}
+        ioc.stopSIOC();
 
-	@Test
-	public void testAll() {
-		engineShutDown();
-	}
-/**
- * test of engine shutting down
- */
-	private void engineShutDown()
+    }
 
-	{
+    @Test
+    public void testAll() {
+        engineShutDown();
+    }
 
-		try {
-			for (int m = 0; m < 100; m++) {
-				ArchiveEngine.archivePV("test_" + m, 0.1F, SamplingMethod.SCAN,
-						5, writer, testConfigService,
-						ArchDBRTypes.DBR_SCALAR_DOUBLE, null, false, false);
-				Thread.sleep(10);
-			}
-			Thread.sleep(2000);
+    /**
+     * test of engine shutting down
+     */
+    private void engineShutDown() {
 
-			testConfigService.shutdownNow();
-			Thread.sleep(2000);
-			int num = 0;
-			Iterator<String> allpvs = testConfigService
-					.getPVsForThisAppliance().iterator();
-			while (allpvs.hasNext()) {
-				allpvs.next();
-				num++;
-			}
-			
+        try {
+            for (int m = 0; m < 100; m++) {
+                ArchiveEngine.archivePV(pvPrefix + "test_" + m, 0.1F, SamplingMethod.SCAN,
+                        5, writer, testConfigService,
+                        ArchDBRTypes.DBR_SCALAR_DOUBLE, null, false, false);
+                Thread.sleep(10);
+            }
+            Thread.sleep(2000);
 
-			assertTrue(
-					"there should be no pvs after the engine shut down, but there are "
-							+ num + " pvs", num == 0);
+            testConfigService.shutdownNow();
+            Thread.sleep(2000);
+            int num = 0;
+            Iterator<String> allpvs = testConfigService
+                    .getPVsForThisAppliance().iterator();
+            while (allpvs.hasNext()) {
+                allpvs.next();
+                num++;
+            }
 
-		} catch (Exception e) {
-			//
-			logger.error("Exception", e);
-		}
 
-	}
+	        assertEquals("there should be no pvs after the engine shut down, but there are "
+			        + num + " pvs", 0, num);
+
+        } catch (Exception e) {
+            //
+            logger.error("Exception", e);
+        }
+
+    }
 
 }

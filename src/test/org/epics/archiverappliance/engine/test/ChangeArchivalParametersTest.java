@@ -33,17 +33,18 @@ import junit.framework.TestCase;
  *
  */
 @Category(LocalEpicsTests.class)
-public class changeArchivalParametersTest extends TestCase {
-	private static Logger logger = LogManager.getLogger(changeArchivalParametersTest.class.getName());
+public class ChangeArchivalParametersTest extends TestCase {
+	private static Logger logger = LogManager.getLogger(ChangeArchivalParametersTest.class.getName());
 	private SIOCSetup ioc = null;
 	private ConfigServiceForTests testConfigService;
 	private WriterTest writer = new WriterTest();
 
+	private final String pvPrefix = ChangeArchivalParametersTest.class.getSimpleName().substring(0, 10);
 	@Before
 	public void setUp() throws Exception {
-		ioc = new SIOCSetup();
+		ioc = new SIOCSetup(pvPrefix);
 		ioc.startSIOCWithDefaultDB();
-		testConfigService = new ConfigServiceForTests(new File("./bin"));
+		testConfigService = new ConfigServiceForTests();
 		Thread.sleep(3000);
 	}
 
@@ -68,7 +69,7 @@ public class changeArchivalParametersTest extends TestCase {
  */
 	private void changeArchivalParametersFromScanToScan() {
 
-		String pvName = "test_0";
+		String pvName = pvPrefix + "test_0";
 
 		try {
 
@@ -111,7 +112,7 @@ public class changeArchivalParametersTest extends TestCase {
  */
 	private void changeArchivalParametersFromScanToMonitor() {
 
-		String pvName = "test_1";
+		String pvName = pvPrefix + "test_1";
 		try {
 
 			ArchiveEngine.archivePV(pvName, 2, SamplingMethod.SCAN, 60, writer,
@@ -150,7 +151,7 @@ public class changeArchivalParametersTest extends TestCase {
  */
 	private void changeArchivalParametersFromMonitorToScan() {
 
-		String pvName = "test_2";
+		String pvName = pvPrefix + "test_2";
 
 		try {
 
@@ -187,7 +188,7 @@ public class changeArchivalParametersTest extends TestCase {
  */
 	private void changeArchivalParametersFromMonitorToMonitor() {
 
-		String pvName = "test_3";
+		String pvName = pvPrefix + "test_3";
 		try {
 
 			ArchiveEngine.archivePV(pvName, 2, SamplingMethod.MONITOR, 60,

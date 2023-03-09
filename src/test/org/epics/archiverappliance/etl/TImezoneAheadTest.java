@@ -60,7 +60,7 @@ public class TImezoneAheadTest {
 		PBCommonSetup srcSetup = new PBCommonSetup();
 		PlainPBStoragePlugin etlDest = new PlainPBStoragePlugin();
 		PBCommonSetup destSetup = new PBCommonSetup();
-		DefaultConfigService configService = new ConfigServiceForTests(new File("./bin"), 1);
+		DefaultConfigService configService = new ConfigServiceForTests( 1);
 
 		srcSetup.setUpRootFolder(etlSrc, "TimeZoneAheadETLTestSrc_"+srcGranularity, srcGranularity);
 		destSetup.setUpRootFolder(etlDest, "TimeZoneAheadETLTestDest"+srcGranularity, destGranularity);

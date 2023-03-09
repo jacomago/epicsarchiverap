@@ -36,7 +36,7 @@ public class ConvertGnuplotData {
 	 */
 	public static void main(String[] args) throws Exception {
 		PBOverHTTPStoragePlugin storagePlugin = new PBOverHTTPStoragePlugin();
-		ConfigService configService = new ConfigServiceForTests(new File("./bin"));
+		ConfigService configService = new ConfigServiceForTests();
 		storagePlugin.initialize("http://archiver:15646/retrieval/data/getData.raw", configService);
 
 		// Ask for a days worth of data

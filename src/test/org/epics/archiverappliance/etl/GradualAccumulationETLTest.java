@@ -80,7 +80,7 @@ public class GradualAccumulationETLTest {
 		PBCommonSetup srcSetup = new PBCommonSetup();
 		PlainPBStoragePlugin etlDest = new PlainPBStoragePlugin();
 		PBCommonSetup destSetup = new PBCommonSetup();
-		DefaultConfigService configService = new ConfigServiceForTests(new File("./bin"), 1);
+		DefaultConfigService configService = new ConfigServiceForTests( 1);
 		etlDest.setBackupFilesBeforeETL(backUpfiles);
 
 		srcSetup.setUpRootFolder(etlSrc, "GradualAccumulationETLTestSrc_"+granularity, granularity);

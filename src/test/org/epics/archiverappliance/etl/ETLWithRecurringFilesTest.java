@@ -84,7 +84,7 @@ public class ETLWithRecurringFilesTest {
 		PBCommonSetup destSetup = new PBCommonSetup();
 		PlainPBStoragePlugin etlNewDest = new PlainPBStoragePlugin();
 		PBCommonSetup newDestSetup = new PBCommonSetup();
-		ConfigServiceForTests configService = new ConfigServiceForTests(new File("./bin"), 1);
+		ConfigServiceForTests configService = new ConfigServiceForTests( 1);
 		etlDest.setBackupFilesBeforeETL(backUpfiles);
 
 		srcSetup.setUpRootFolder(etlSrc, "RecurringFilesTestSrc"+granularity, granularity);
@@ -146,7 +146,7 @@ public class ETLWithRecurringFilesTest {
 		}
 		
 		if(useNewDest) {
-			ConfigServiceForTests newConfigService = new ConfigServiceForTests(new File("./bin"), 1);
+			ConfigServiceForTests newConfigService = new ConfigServiceForTests( 1);
 			PVTypeInfo typeInfo2 = new PVTypeInfo(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
 			String[] dataStores2 = new String[] { etlSrc.getURLRepresentation(), etlNewDest.getURLRepresentation() }; 
 			typeInfo2.setDataStores(dataStores2);

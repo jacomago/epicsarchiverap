@@ -47,7 +47,7 @@ public class FileBackedPBEventStreamTest {
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests();
 		storagePlugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=FileBackedPBEventStreamTest&rootFolder=" + testFolder.getAbsolutePath() + "&partitionGranularity=PARTITION_YEAR", configService);
 		int phasediffindegrees = 10;
 		SimulationEventStream simstream = new SimulationEventStream(dbrType, new SineGenerator(phasediffindegrees));

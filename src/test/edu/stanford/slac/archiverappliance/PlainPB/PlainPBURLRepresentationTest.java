@@ -21,7 +21,7 @@ public class PlainPBURLRepresentationTest {
 
 		srcSetup.setUpRootFolder(etlSrc, "SimpleETLTestSrc_"+PartitionGranularity.PARTITION_HOUR, PartitionGranularity.PARTITION_HOUR);
 		String urlRep = etlSrc.getURLRepresentation();
-		ConfigService configService = new ConfigServiceForTests(new File("./bin"));
+		ConfigService configService = new ConfigServiceForTests();
 		PlainPBStoragePlugin after = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(urlRep, configService);
 		assertTrue("Source folders are not the same" + after.getRootFolder() + etlSrc.getRootFolder(), after.getRootFolder().equals(etlSrc.getRootFolder()));
 	}

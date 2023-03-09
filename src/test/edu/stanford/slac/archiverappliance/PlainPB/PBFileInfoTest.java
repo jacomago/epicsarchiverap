@@ -40,7 +40,7 @@ public class PBFileInfoTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests();
 		setup.setUpRootFolder(storagePlugin);
 		PBfile = PlainPBPathNameUtility.getPathNameForTime(storagePlugin, pvName, TimeUtils.getStartOfCurrentYearInSeconds(), new ArchPaths(), configService.getPVNameToKeyConverter());
 		GenerateData.generateSineForPV(pvName, 0, ArchDBRTypes.DBR_SCALAR_DOUBLE);

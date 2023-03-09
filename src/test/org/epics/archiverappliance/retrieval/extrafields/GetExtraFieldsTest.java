@@ -46,7 +46,7 @@ public class GetExtraFieldsTest {
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests();
 		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
 	}
 

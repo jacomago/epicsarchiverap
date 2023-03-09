@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 import org.epics.archiverappliance.IntegrationTests;
 import org.epics.archiverappliance.LocalEpicsTests;
+import org.epics.archiverappliance.ParallelEpicsIntegrationTests;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.TomcatSetup;
 import org.junit.AfterClass;
@@ -22,12 +23,13 @@ import org.junit.runners.Suite;
  * @author Kunal Shroff
  *
  */
-@Category({IntegrationTests.class, LocalEpicsTests.class})
+@Category(ParallelEpicsIntegrationTests.class)
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ PvaSuiteTstGetAll.class, PvaSuiteTstMgmtServiceStartup.class, PvaSuiteTstGetApplianceInfo.class, PvaSuiteTstArchivePV.class })
 public class PvaTest {
 
-	private static Logger logger = LogManager.getLogger(PvaTest.class.getName());
+	private static final Logger logger = LogManager.getLogger(PvaTest.class.getName());
+	protected static final String pvPrefix = PvaTest.class.getSimpleName();
 
 	static TomcatSetup tomcatSetup = new TomcatSetup();
 	static SIOCSetup siocSetup = new SIOCSetup();
@@ -37,7 +39,7 @@ public class PvaTest {
 		logger.info("Set up for the PVATestSuite");
 		try {
 			siocSetup.startSIOCWithDefaultDB();
-			tomcatSetup.setUpWebApps(PvaTest.class.getSimpleName());
+			tomcatSetup.setUpDefaultWebApp();
 			logger.info(ZonedDateTime.now(ZoneId.systemDefault()) + " Waiting three mins for the service setup to complete");
 			Thread.sleep(3 * 60 * 1000);
 		} catch (Exception e) {

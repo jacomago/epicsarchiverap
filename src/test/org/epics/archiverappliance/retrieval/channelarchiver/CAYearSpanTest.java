@@ -7,6 +7,8 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval.channelarchiver;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -58,8 +60,8 @@ public class CAYearSpanTest {
 			assertTrue("Could not determine " + "units", (metaInfo.get("units") != null));
 			assertTrue("Could not determine " + "prec", (metaInfo.get("prec") != null));
 
-			assertTrue("Type is " + handler.getValueType().getDBRType(handler.getElementCount()) + " expecting DBR_DOUBLE", handler.getValueType().getDBRType(handler.getElementCount()) == ArchDBRTypes.DBR_SCALAR_DOUBLE);
-			assertTrue("Element Count is " + handler.getElementCount(), handler.getElementCount() == 1);
+			assertSame("Type is " + handler.getValueType().getDBRType(handler.getElementCount()) + " expecting DBR_DOUBLE", handler.getValueType().getDBRType(handler.getElementCount()), ArchDBRTypes.DBR_SCALAR_DOUBLE);
+			assertEquals("Element Count is " + handler.getElementCount(), 1, handler.getElementCount());
 
 			int expectedEventCount = 100;
 			int eventCount = 0;
@@ -69,9 +71,7 @@ public class CAYearSpanTest {
 			Event previousEvent = null;
 			try {
 				for(Event event : handler) {
-					StringBuilder eventStr = new StringBuilder();
-					eventStr.append(TimeUtils.convertToHumanReadableString(event.getEpochSeconds()) + "," + event.getSampleValue().toString());
-					logger.debug(eventStr.toString());
+					logger.debug(TimeUtils.convertToHumanReadableString(event.getEpochSeconds()) + "," + event.getSampleValue().toString());
 					eventCount++;
 					short year = TimeUtils.computeYearForEpochSeconds(event.getEpochSeconds());
 					yearCount[year]++;
@@ -87,9 +87,7 @@ public class CAYearSpanTest {
 			Event firstEventAfterException = null;
 			for(Event event : handler) {
 				if(firstEventAfterException == null) firstEventAfterException = event;
-				StringBuilder eventStr = new StringBuilder();
-				eventStr.append(TimeUtils.convertToHumanReadableString(event.getEpochSeconds()) + "," + event.getSampleValue().toString());
-				logger.debug(eventStr.toString());
+				logger.debug(TimeUtils.convertToHumanReadableString(event.getEpochSeconds()) + "," + event.getSampleValue().toString());
 				short year = TimeUtils.computeYearForEpochSeconds(event.getEpochSeconds());
 				yearCount[year]++;
 				eventCount++;
@@ -100,9 +98,9 @@ public class CAYearSpanTest {
 
 			assertTrue("Expected exception on change in year" + yearOfPreviousEvent + "/" + yearOfFirstEventAfterException, yearOfFirstEventAfterException > yearOfPreviousEvent);
 
-			assertTrue("Expected " + expectedEventCount + " and got " + eventCount, eventCount == expectedEventCount);
-			assertTrue("Expected 66 events in 2010; got " + yearCount[2010], yearCount[2010] == 66);
-			assertTrue("Expected 34 events in 2011; got " + yearCount[2011], yearCount[2011] == 34);
+			assertEquals("Expected " + expectedEventCount + " and got " + eventCount, eventCount, expectedEventCount);
+			assertEquals("Expected 66 events in 2010; got " + yearCount[2010], 66, yearCount[2010]);
+			assertEquals("Expected 34 events in 2011; got " + yearCount[2011], 34, yearCount[2011]);
 		}
 	}
 }

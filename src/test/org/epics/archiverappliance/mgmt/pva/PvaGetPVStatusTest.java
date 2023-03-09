@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 
 import org.epics.archiverappliance.IntegrationTests;
 import org.epics.archiverappliance.LocalEpicsTests;
+import org.epics.archiverappliance.ParallelEpicsIntegrationTests;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.TomcatSetup;
 import org.epics.archiverappliance.mgmt.pva.actions.PvaArchivePVAction;
@@ -33,10 +34,11 @@ import org.junit.experimental.categories.Category;
  * @author Kunal Shroff
  *
  */
-@Category({IntegrationTests.class, LocalEpicsTests.class})
+@Category(ParallelEpicsIntegrationTests.class)
 public class PvaGetPVStatusTest {
 
 	private static Logger logger = LogManager.getLogger(PvaGetPVStatusTest.class.getName());
+	private static final String pvPrefix = PvaGetPVStatusTest.class.getSimpleName().substring(0, 10);
 
 	static TomcatSetup tomcatSetup = new TomcatSetup();
 	static SIOCSetup siocSetup = new SIOCSetup();
@@ -48,7 +50,7 @@ public class PvaGetPVStatusTest {
 		logger.info("Set up for the PvaGetArchivedPVsTest");
 		try {
 			siocSetup.startSIOCWithDefaultDB();
-			tomcatSetup.setUpWebApps(PvaTest.class.getSimpleName());
+			tomcatSetup.setUpDefaultWebApp();
 
 			Thread.sleep(3*60*1000);
 		
@@ -65,7 +67,6 @@ public class PvaGetPVStatusTest {
 		logger.info("Tear Down for the PvaGetArchivedPVsTest");
 		try {
 			client.destroy();
-			tomcatSetup.tearDown();
 			siocSetup.stopSIOC();
 		} catch (Exception e) {
 			logger.log(Level.FATAL, e.getMessage(), e);
@@ -79,12 +80,12 @@ public class PvaGetPVStatusTest {
 		List<String> pvNamesOdd = new ArrayList<String>(500);
 		List<String> expectedStatus = new ArrayList<String>(1000);
 		for (int i = 0; i < 1000; i++) {
-			pvNamesAll.add("test_" + i);
+			pvNamesAll.add(pvPrefix + "test_" + i);
 			if (i % 2 == 0) {
-				pvNamesEven.add("test_" + i);
+				pvNamesEven.add(pvPrefix + "test_" + i);
 				expectedStatus.add("Archived");
 			} else {
-				pvNamesOdd.add("test_" + i);
+				pvNamesOdd.add(pvPrefix + "test_" + i);
 				expectedStatus.add("Not Archived");
 			}
 		}

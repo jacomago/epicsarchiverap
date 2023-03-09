@@ -37,7 +37,7 @@ public class PVCaPut {
      */
     private void initialize() throws CAException, SAXException, IOException, ConfigurationException, ConfigException {
         
-    	ConfigServiceForTests configService = new ConfigServiceForTests(new File("./bin"));
+    	ConfigServiceForTests configService = new ConfigServiceForTests();
                 // Get the JCALibrary instance.
          if(jca==null)
                  jca = JCALibrary.getInstance();

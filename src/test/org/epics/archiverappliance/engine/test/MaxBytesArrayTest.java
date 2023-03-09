@@ -27,7 +27,7 @@ public class MaxBytesArrayTest {
 
 	@Test
 	public void testMaxBytesArray() throws Exception {
-		ConfigService configService = new ConfigServiceForTests(new File("./bin"));
+		ConfigService configService = new ConfigServiceForTests();
 		ByteArrayInputStream bis = JCAConfigGen.generateJCAConfig(configService);
 		JCALibrary jca = JCALibrary.getInstance();
 		DefaultConfigurationBuilder configBuilder = new DefaultConfigurationBuilder();
