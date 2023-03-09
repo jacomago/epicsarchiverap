@@ -8,14 +8,13 @@
 package edu.stanford.slac.archiverappliance.PB;
 
 
-
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
+import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
+import edu.stanford.slac.archiverappliance.PB.data.PBScalarDouble;
+import edu.stanford.slac.archiverappliance.PB.search.FileEventStreamSearch;
+import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
+import edu.stanford.slac.archiverappliance.PlainPB.PBFileInfo;
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.ByteArray;
@@ -32,13 +31,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.PB.data.PBScalarDouble;
-import edu.stanford.slac.archiverappliance.PB.search.FileEventStreamSearch;
-import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
-import edu.stanford.slac.archiverappliance.PlainPB.PBFileInfo;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test searches in PB files.
@@ -53,7 +50,7 @@ public class SearchInPBFileTest {
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests(-1);
 		pbSetup.setUpRootFolder(pbplugin);
 		GenerateData.generateSineForPV("Sine1", 0, ArchDBRTypes.DBR_SCALAR_DOUBLE);
 	}

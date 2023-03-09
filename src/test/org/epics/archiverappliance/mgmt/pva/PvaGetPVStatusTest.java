@@ -1,13 +1,8 @@
 package org.epics.archiverappliance.mgmt.pva;
 
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import org.awaitility.Awaitility;
 import org.epics.archiverappliance.IntegrationTests;
 import org.epics.archiverappliance.LocalEpicsTests;
@@ -36,11 +31,11 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Stream;
 
 import static org.awaitility.pollinterval.FibonacciPollInterval.fibonacci;
 import static org.epics.archiverappliance.mgmt.pva.PvaMgmtService.PVA_MGMT_SERVICE;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * {@link PvaGetArchivedPVs}
@@ -50,7 +45,7 @@ import static org.junit.Assert.*;
 @Category({IntegrationTests.class, LocalEpicsTests.class})
 public class PvaGetPVStatusTest {
 
-	private static final Logger logger = LogManager.getLogger(PvaGetPVStatusTest.class.getName());
+    private static final Logger logger = LogManager.getLogger(PvaGetPVStatusTest.class.getName());
 
     static TomcatSetup tomcatSetup = new TomcatSetup();
     static SIOCSetup siocSetup = new SIOCSetup();
@@ -71,7 +66,7 @@ public class PvaGetPVStatusTest {
             pvaChannel = pvaClient.getChannel(PVA_MGMT_SERVICE);
             pvaChannel.connect().get(5, TimeUnit.SECONDS);
         } catch (Exception e) {
-			logger.log(Level.FATAL, e.getMessage(), e);
+            logger.log(Level.FATAL, e.getMessage(), e);
         }
     }
 
@@ -84,7 +79,7 @@ public class PvaGetPVStatusTest {
             tomcatSetup.tearDown();
             siocSetup.stopSIOC();
         } catch (Exception e) {
-			logger.log(Level.FATAL, e.getMessage(), e);
+            logger.log(Level.FATAL, e.getMessage(), e);
         }
     }
 
@@ -148,9 +143,9 @@ public class PvaGetPVStatusTest {
                 .getColumn("status"));
         var pvs = NTUtil.extractStringArray(PVATable
                 .fromStructure(getCurrentStatus(pvNamesAll, pvaChannel))
-               .getColumn("pv"));
+                .getColumn("pv"));
         var result = new HashMap<String, String>();
-        for (int i = 0; i<pvs.length; i++) {
+        for (int i = 0; i < pvs.length; i++) {
             result.put(pvs[i], statuses[i]);
         }
         return result;

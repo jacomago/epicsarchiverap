@@ -1,13 +1,6 @@
 package org.epics.archiverappliance.mgmt;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URLEncoder;
-import java.sql.Timestamp;
-import java.util.HashMap;
-
+import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -42,7 +35,13 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
-import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
+import java.io.File;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.sql.Timestamp;
+import java.util.HashMap;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test rename PV with data at the backend.
@@ -76,7 +75,7 @@ public class RenamePVBPLTest {
 			FileUtils.deleteDirectory(ltsFolderForNewPVName);
 		}
 
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests(-1);
 		storageplugin = StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=LTS&rootFolder=${ARCHAPPL_LONG_TERM_FOLDER}&partitionGranularity=PARTITION_YEAR", configService);
 		siocSetup.startSIOCWithDefaultDB();
 		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());

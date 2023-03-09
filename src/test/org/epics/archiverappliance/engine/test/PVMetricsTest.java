@@ -7,8 +7,6 @@
  *******************************************************************************/
 package org.epics.archiverappliance.engine.test;
 
-import java.io.File;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.LocalEpicsTests;
@@ -19,29 +17,29 @@ import org.epics.archiverappliance.engine.ArchiveEngine;
 import org.epics.archiverappliance.engine.pv.PVMetrics;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import junit.framework.TestCase;
 /**
  * test of getting pv metrics
  * @author Luofeng Li
  *
  */
 @Category(LocalEpicsTests.class)
-public class PVMetricsTest extends TestCase {
-	private static Logger logger = LogManager.getLogger(PVMetricsTest.class.getName());
+public class PVMetricsTest {
+	private static final Logger logger = LogManager.getLogger(PVMetricsTest.class.getName());
 	private SIOCSetup ioc = null;
 	private ConfigServiceForTests testConfigService;
-	private WriterTest writer = new WriterTest();
-	
+	private final TestWriter writer = new TestWriter();
+
+	private final String pvPrefix = PVMetricsTest.class.getSimpleName();
 
 	@Before
 	public void setUp() throws Exception {
-		ioc = new SIOCSetup();
+		ioc = new SIOCSetup(pvPrefix);
 		ioc.startSIOCWithDefaultDB();
-		testConfigService = new ConfigServiceForTests(new File("./bin"));
+        testConfigService = new ConfigServiceForTests(-1);
 		Thread.sleep(3000);
 	}
 
@@ -51,30 +49,24 @@ public class PVMetricsTest extends TestCase {
 		ioc.stopSIOC();
 	}
 
-	@Test
-	public void testAll() {
-		PVMetricsForSingleScanChannel();
-		PVMetricsForSingleMonitorChannel();
-	}
 /**
  * test of getting pv metrics for one pv in scan mode
  */
-	private void PVMetricsForSingleScanChannel() {
-		String pvName = "test_0";
+
+@Test
+public void PVMetricsForSingleScanChannel() {
+		String pvName = pvPrefix + "test_0";
 		try {
 
-			ArchiveEngine.archivePV(pvName, 2, SamplingMethod.SCAN, 5, writer,
+			ArchiveEngine.archivePV(pvName, 2, SamplingMethod.SCAN, writer,
 					testConfigService, ArchDBRTypes.DBR_SCALAR_DOUBLE, null, false, false);
 			Thread.sleep(2000);
 			PVMetrics tempPVMetrics = ArchiveEngine.getMetricsforPV(pvName,
 					testConfigService);
 			// System.out.println(tempPVMetrics.getDetailedStatus());
-			assertTrue("PVMetrics for " + pvName + " should not be null",
-					tempPVMetrics != null);
-			assertTrue(pvName + " should not be connected",
-					tempPVMetrics.isConnected());
-			assertTrue(pvName + " should  be in scan mode",
-					!tempPVMetrics.isMonitor());
+			Assert.assertNotNull("PVMetrics for " + pvName + " should not be null", tempPVMetrics);
+			Assert.assertTrue(pvName + " should not be connected", tempPVMetrics.isConnected());
+			Assert.assertFalse(pvName + " should  be in scan mode", tempPVMetrics.isMonitor());
 
 		} catch (Exception e) {
 			//
@@ -85,23 +77,22 @@ public class PVMetricsTest extends TestCase {
 /**
  * test of getting pv metrics of one pv in monitor mode
  */
-	private void PVMetricsForSingleMonitorChannel() {
-		String pvName = "test_1";
+
+@Test
+public void PVMetricsForSingleMonitorChannel() {
+		String pvName = pvPrefix + "test_1";
 		try {
 
-			ArchiveEngine.archivePV(pvName, 2, SamplingMethod.MONITOR, 5,
+			ArchiveEngine.archivePV(pvName, 2, SamplingMethod.MONITOR,
 					writer, testConfigService, ArchDBRTypes.DBR_SCALAR_DOUBLE,
 					null, false, false);
 			Thread.sleep(2000);
 			PVMetrics tempPVMetrics = ArchiveEngine.getMetricsforPV(pvName,
 					testConfigService);
 			// System.out.println(tempPVMetrics.getDetailedStatus());
-			assertTrue("PVMetrics for " + pvName + " should not be null",
-					tempPVMetrics != null);
-			assertTrue(pvName + " should not be connected",
-					tempPVMetrics.isConnected());
-			assertTrue(pvName + " should  be in monitor mode",
-					tempPVMetrics.isMonitor());
+			Assert.assertNotNull("PVMetrics for " + pvName + " should not be null", tempPVMetrics);
+			Assert.assertTrue(pvName + " should not be connected", tempPVMetrics.isConnected());
+			Assert.assertTrue(pvName + " should  be in monitor mode", tempPVMetrics.isMonitor());
 
 		} catch (Exception e) {
 			//

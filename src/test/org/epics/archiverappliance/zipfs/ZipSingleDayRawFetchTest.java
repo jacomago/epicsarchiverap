@@ -1,14 +1,8 @@
 package org.epics.archiverappliance.zipfs;
 
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.nio.file.Path;
-import java.sql.Timestamp;
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.Callable;
-
+import edu.stanford.slac.archiverappliance.PlainPB.FileBackedPBEventStream;
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,9 +23,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import edu.stanford.slac.archiverappliance.PlainPB.FileBackedPBEventStream;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import java.io.File;
+import java.nio.file.Path;
+import java.sql.Timestamp;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.Callable;
+
+import static org.junit.Assert.fail;
 
 /**
  * Test performance and some functionality of fetching a single days worth of data from a ZIP_PER_PV
@@ -48,7 +47,7 @@ public class ZipSingleDayRawFetchTest {
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests(-1);
 		pbplugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=STS&rootFolder=" + rootFolderName + "&partitionGranularity=PARTITION_DAY&compress=ZIP_PER_PV", configService);
 		if(new File(rootFolderName).exists()) {
 			FileUtils.deleteDirectory(new File(rootFolderName));

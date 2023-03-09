@@ -7,12 +7,8 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.IOException;
-import java.sql.Timestamp;
-
+import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -35,8 +31,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import java.io.IOException;
+import java.sql.Timestamp;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Complex test for testing ETL as it is supposed to happen in production.
@@ -54,7 +52,7 @@ public class GradualAccumulationETLTest {
 	public void tearDown() throws Exception {
 	}
 
-	
+
 	/**
 	 * In a running appserver, the sequence is expected to be as follows
 	 * <ol>
@@ -74,13 +72,13 @@ public class GradualAccumulationETLTest {
 			testGradualAccumulation(granularity, false);
 		}
 	}
-	
+
 	private void testGradualAccumulation(PartitionGranularity granularity, boolean backUpfiles) throws Exception {
 		PlainPBStoragePlugin etlSrc = new PlainPBStoragePlugin();
 		PBCommonSetup srcSetup = new PBCommonSetup();
 		PlainPBStoragePlugin etlDest = new PlainPBStoragePlugin();
 		PBCommonSetup destSetup = new PBCommonSetup();
-		DefaultConfigService configService = new ConfigServiceForTests(new File("./bin"), 1);
+		DefaultConfigService configService = new ConfigServiceForTests(1);
 		etlDest.setBackupFilesBeforeETL(backUpfiles);
 
 		srcSetup.setUpRootFolder(etlSrc, "GradualAccumulationETLTestSrc_"+granularity, granularity);
@@ -90,7 +88,7 @@ public class GradualAccumulationETLTest {
 
 		short year = TimeUtils.getCurrentYear();
 		long startOfYearInEpochSeconds = TimeUtils.getStartOfCurrentYearInSeconds();
-		long curEpochSeconds = startOfYearInEpochSeconds; 
+		long curEpochSeconds = startOfYearInEpochSeconds;
 		int secondsintoyear = 0;
 		int incrementSeconds = 450;
 		int eventsgenerated = 0;
@@ -98,7 +96,7 @@ public class GradualAccumulationETLTest {
 		String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "ETL_testGradual" + etlSrc.getPartitionGranularity();
 
 		PVTypeInfo typeInfo = new PVTypeInfo(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
-		String[] dataStores = new String[] { etlSrc.getURLRepresentation(), etlDest.getURLRepresentation() }; 
+		String[] dataStores = new String[]{etlSrc.getURLRepresentation(), etlDest.getURLRepresentation()};
 		typeInfo.setDataStores(dataStores);
 		configService.updateTypeInfoForPV(pvName, typeInfo);
 		configService.registerPVToAppliance(pvName, configService.getMyApplianceInfo());
@@ -121,28 +119,28 @@ public class GradualAccumulationETLTest {
 			logger.debug("Done performing ETL");
 			checkDataValidity(pvName, etlSrc, etlDest, startOfYearInEpochSeconds, incrementSeconds, eventsgenerated, granularity.toString() + "/" + Boolean.toString(backUpfiles));
 		}
-		
+
 
 		srcSetup.deleteTestFolder();
 		destSetup.deleteTestFolder();
 		configService.shutdownNow();
 	}
-	
+
 	private void checkDataValidity(String pvName, PlainPBStoragePlugin etlSrc, PlainPBStoragePlugin etlDest, long startOfYearInEpochSeconds, int incrementSeconds, int eventsgenerated, String testDesc) throws IOException {
 		Timestamp startOfRequest = TimeUtils.minusDays(TimeUtils.now(), 2*366);
 		Timestamp endOfRequest = TimeUtils.plusDays(TimeUtils.now(), 2*366);
 
-		logger.debug(testDesc + "Asking for data between" 
-				+ TimeUtils.convertToHumanReadableString(startOfRequest) 
-				+ " and " 
+		logger.debug(testDesc + "Asking for data between"
+				+ TimeUtils.convertToHumanReadableString(startOfRequest)
+				+ " and "
 				+ TimeUtils.convertToHumanReadableString(endOfRequest)
-				);
+		);
 
 		long expectedEpochSeconds = startOfYearInEpochSeconds;
 		int afterCount = 0;
-		
+
 		try (BasicContext context = new BasicContext(); EventStream afterDest = new CurrentThreadWorkerEventStream(pvName, etlDest.getDataForPV(context, pvName, startOfRequest, endOfRequest))) {
-			if(afterDest != null) { 
+			if (afterDest != null) {
 				for(Event e : afterDest) {
 					assertTrue(testDesc + "Expected seconds " + TimeUtils.convertToHumanReadableString(expectedEpochSeconds) + " is not the same as actual seconds " + TimeUtils.convertToHumanReadableString(e.getEpochSeconds()), (expectedEpochSeconds == e.getEpochSeconds()));
 					expectedEpochSeconds += incrementSeconds;
@@ -151,18 +149,18 @@ public class GradualAccumulationETLTest {
 				assertTrue(testDesc + "Seems like no events were moved by ETL " + afterCount, (afterCount != 0));
 			}
 		}
-		
-		
+
+
 		try (BasicContext context = new BasicContext(); EventStream afterSrc = new CurrentThreadWorkerEventStream(pvName, etlSrc.getDataForPV(context, pvName, startOfRequest, endOfRequest))) {
 			if(afterSrc != null) {
-				for(Event e : afterSrc) { 
+				for (Event e : afterSrc) {
 					assertTrue(testDesc + "Expected seconds " + TimeUtils.convertToHumanReadableString(expectedEpochSeconds) + " is not the same as actual seconds " + TimeUtils.convertToHumanReadableString(e.getEpochSeconds()), (expectedEpochSeconds == e.getEpochSeconds()));
 					expectedEpochSeconds += incrementSeconds;
 					afterCount++;
 				}
 			}
 		}
-		
+
 		assertTrue(testDesc + "Expected total events " + eventsgenerated + " is not the same as actual events " + afterCount, (eventsgenerated == afterCount));
 	}
 }

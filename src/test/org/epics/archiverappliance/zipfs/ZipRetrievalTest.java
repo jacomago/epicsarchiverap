@@ -1,16 +1,7 @@
 package org.epics.archiverappliance.zipfs;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.sql.Timestamp;
-import java.text.DecimalFormat;
-
+import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,8 +22,16 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.sql.Timestamp;
+import java.text.DecimalFormat;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test basic functionality when using zipfs.  
@@ -48,7 +47,7 @@ public class ZipRetrievalTest {
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests(-1);
 		if(testFolder.exists()) { 
 			FileUtils.deleteDirectory(testFolder);
 		}

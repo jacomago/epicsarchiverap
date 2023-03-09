@@ -1,11 +1,10 @@
 package org.epics.archiverappliance.mgmt.pva;
 
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import org.epics.archiverappliance.IntegrationTests;
 import org.epics.archiverappliance.LocalEpicsTests;
+import org.epics.archiverappliance.mgmt.pva.actions.PvaGetAllPVs;
 import org.epics.pva.client.PVAChannel;
 import org.epics.pva.client.PVAClient;
 import org.epics.pva.data.PVAStructure;
@@ -15,9 +14,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.concurrent.TimeUnit;
+
 import static org.epics.archiverappliance.mgmt.pva.PvaMgmtService.PVA_MGMT_SERVICE;
-import org.epics.archiverappliance.mgmt.pva.actions.PvaGetAllPVs;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Test the pvAccess mgmt service's ability to start archiving a pv

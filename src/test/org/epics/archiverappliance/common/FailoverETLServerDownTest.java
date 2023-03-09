@@ -7,17 +7,6 @@
  *******************************************************************************/
 package org.epics.archiverappliance.common;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URLEncoder;
-import java.sql.Timestamp;
-import java.util.List;
-import java.util.concurrent.Callable;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -41,6 +30,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URLEncoder;
+import java.sql.Timestamp;
+import java.util.List;
+import java.util.concurrent.Callable;
+
+import static org.junit.Assert.assertTrue;
+
 /**
  * Test basic failover - test the ETL side of things when the other server is down...
  * @author mshankar
@@ -56,12 +56,12 @@ public class FailoverETLServerDownTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests(-1);
 	}
 
 	private int generateData(String applianceName, Timestamp lastMonth, int startingOffset) throws IOException {
 		int genEventCount = 0;
-		StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=MTS&rootFolder=" + "tomcat_"+ this.getClass().getSimpleName() + "/" + applianceName + "/mts" + "&partitionGranularity=PARTITION_DAY", configService);
+		StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=MTS&rootFolder=" + "tomcat_" + this.getClass().getSimpleName() + "/" + applianceName + "/mts" + "&partitionGranularity=PARTITION_DAY", configService);
 		try(BasicContext context = new BasicContext()) {
 			for(long s = TimeUtils.getPreviousPartitionLastSecond(TimeUtils.convertToEpochSeconds(lastMonth), PartitionGranularity.PARTITION_MONTH) + 1 + startingOffset; // We generate a months worth of data.
 					s < TimeUtils.getNextPartitionFirstSecond(TimeUtils.convertToEpochSeconds(lastMonth), PartitionGranularity.PARTITION_MONTH); 
@@ -130,9 +130,9 @@ public class FailoverETLServerDownTest {
 		// Register the PV with both appliances and generate data.
 		Timestamp lastMonth = TimeUtils.minusDays(TimeUtils.now(), 31);		
 
-		System.getProperties().put("ARCHAPPL_SHORT_TERM_FOLDER",  "tomcat_"+ this.getClass().getSimpleName() + "/" + "dest_appliance" + "/sts"); 
-		System.getProperties().put("ARCHAPPL_MEDIUM_TERM_FOLDER", "tomcat_"+ this.getClass().getSimpleName() + "/" + "dest_appliance" + "/mts"); 
-		System.getProperties().put("ARCHAPPL_LONG_TERM_FOLDER",   "tomcat_"+ this.getClass().getSimpleName() + "/" + "dest_appliance" + "/lts"); 
+		System.getProperties().put("ARCHAPPL_SHORT_TERM_FOLDER",  "libs/"+ this.getClass().getSimpleName() + "/" + "dest_appliance" + "/sts"); 
+		System.getProperties().put("ARCHAPPL_MEDIUM_TERM_FOLDER", "build/tomcats/tomcat_"+ this.getClass().getSimpleName() + "/" + "dest_appliance" + "/mts"); 
+		System.getProperties().put("ARCHAPPL_LONG_TERM_FOLDER",   "build/tomcats/tomcat_"+ this.getClass().getSimpleName() + "/" + "dest_appliance" + "/lts"); 
 		long dCount = generateData("dest_appliance", lastMonth, 1);
 
 		tCount = dCount;
@@ -144,9 +144,9 @@ public class FailoverETLServerDownTest {
     	
     	
     	logger.info("Checking merged data after running ETL");
-		long lCount = testMergedRetrieval("pb://localhost?name=LTS&rootFolder=" + "tomcat_"+ this.getClass().getSimpleName() + "/" + "dest_appliance" + "/lts" + "&partitionGranularity=PARTITION_YEAR", TimeUtils.minusDays(TimeUtils.now(), 365*2), TimeUtils.plusDays(TimeUtils.now(), 365*2));		
+		long lCount = testMergedRetrieval("pb://localhost?name=LTS&rootFolder=" + "build/tomcats/tomcat_"+ this.getClass().getSimpleName() + "/" + "dest_appliance" + "/lts" + "&partitionGranularity=PARTITION_YEAR", TimeUtils.minusDays(TimeUtils.now(), 365*2), TimeUtils.plusDays(TimeUtils.now(), 365*2));		
 		assertTrue("We expected LTS to have failed " + lCount, lCount == 0);
-		long mCount = testMergedRetrieval("pb://localhost?name=MTS&rootFolder=" + "tomcat_"+ this.getClass().getSimpleName() + "/" + "dest_appliance" + "/mts" + "&partitionGranularity=PARTITION_DAY", TimeUtils.minusDays(TimeUtils.now(), 365*2), TimeUtils.plusDays(TimeUtils.now(), 365*2));		
+		long mCount = testMergedRetrieval("pb://localhost?name=MTS&rootFolder=" + "build/tomcats/tomcat_"+ this.getClass().getSimpleName() + "/" + "dest_appliance" + "/mts" + "&partitionGranularity=PARTITION_DAY", TimeUtils.minusDays(TimeUtils.now(), 365*2), TimeUtils.plusDays(TimeUtils.now(), 365*2));		
 		assertTrue("We expected MTS to have the same amount of data " + tCount + " instead we got " + mCount, mCount == tCount);
 
 	}	

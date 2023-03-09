@@ -8,18 +8,17 @@
 package edu.stanford.slac.archiverappliance.PB.data;
 
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
-
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import java.io.File;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Some common setup for testing PB files
@@ -32,11 +31,11 @@ public class PBCommonSetup {
 	private String testSpecificFolder;
 	ConfigServiceForTests configService;
 
-	
+
 	public void setUpRootFolder() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"), 1);
+		configService = new ConfigServiceForTests(1);
 		String rootFolder = System.getProperty("edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.rootFolder");
-		 
+
 		if(rootFolder != null)  {
 			logger.info("Setting PB root folder to " + rootFolder);
 			configService.setPBRootFolder(rootFolder);
@@ -51,11 +50,11 @@ public class PBCommonSetup {
 		pbplugin.setRootFolder(tempFolderForTests.getAbsolutePath());
 		pbplugin.setName(tempFolderForTests.getAbsolutePath());
 	}
-	
+
 	public void setUpRootFolder(PlainPBStoragePlugin pbplugin, String testSpecificFolder) throws Exception {
 		setUpRootFolder();
 		this.testSpecificFolder = testSpecificFolder;
-		
+
 		tempFolderForTests = new File(configService.getPBRootFolder() + File.separator + this.testSpecificFolder);
 		if(tempFolderForTests.exists()) {
 			FileUtils.deleteDirectory(tempFolderForTests);
@@ -64,15 +63,15 @@ public class PBCommonSetup {
 
 		pbplugin.initialize("pb://localhost?name=UnitTest&rootFolder="+tempFolderForTests+"&partitionGranularity=PARTITION_YEAR", configService);
 
-		
+
 		pbplugin.setRootFolder(tempFolderForTests.getAbsolutePath());
 		pbplugin.setName(tempFolderForTests.getAbsolutePath());
 	}
-	
+
 	public void setUpRootFolder(PlainPBStoragePlugin pbplugin, String testSpecificFolder, PartitionGranularity partitionGranularity) throws Exception {
 		setUpRootFolder();
 		this.testSpecificFolder = testSpecificFolder;
-		
+
 		tempFolderForTests = new File(configService.getPBRootFolder() + File.separator + this.testSpecificFolder);
 		if(tempFolderForTests.exists()) {
 			FileUtils.deleteDirectory(tempFolderForTests);
@@ -81,7 +80,7 @@ public class PBCommonSetup {
 
 		pbplugin.initialize("pb://localhost?name=UnitTest&rootFolder="+tempFolderForTests+"&partitionGranularity="+partitionGranularity.toString(), configService);
 
-		
+
 		pbplugin.setRootFolder(tempFolderForTests.getAbsolutePath());
 		pbplugin.setPartitionGranularity(partitionGranularity);
 		pbplugin.setName(partitionGranularity.toString());
@@ -96,7 +95,7 @@ public class PBCommonSetup {
 			FileUtils.deleteDirectory(tempFolderForTests);
 		}
 	}
-	
+
 	public File getRootFolder() {
 		return tempFolderForTests;
 	}
@@ -104,7 +103,7 @@ public class PBCommonSetup {
 	public File getTempFolderForTests() {
 		return tempFolderForTests;
 	}
-	
+
 	public Set<String> listTestFolderContents() {
 		HashSet<String> ret = new HashSet<String>();
 		for(File f : FileUtils.listFiles(tempFolderForTests, new String[] { "*" }, true)) {

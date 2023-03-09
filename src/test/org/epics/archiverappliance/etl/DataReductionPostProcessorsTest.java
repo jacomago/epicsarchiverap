@@ -7,17 +7,7 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import java.io.File;
-import java.io.IOException;
-import java.sql.Timestamp;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.Callable;
-
-import junit.framework.TestCase;
-
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,9 +35,17 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import static org.junit.Assert.*;
 
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import java.io.File;
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.Callable;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Variation of DataReductionDailyETLTest; except we test multiple post processors
@@ -87,7 +85,8 @@ public class DataReductionPostProcessorsTest {
 	}
 
 	private String reduceDataUsing;
-    @Parameterized.Parameters
+
+	@Parameterized.Parameters
 	public static Collection<Object[]> postProcessors() {
 		return Arrays.asList( new Object[][] {
 				// No fill versions
@@ -110,9 +109,9 @@ public class DataReductionPostProcessorsTest {
 				{"median_3600"},
 				{"firstFill_3600"},
 				{"lastFill_3600"}
-				});
+		});
 	}
-	
+
 	public DataReductionPostProcessorsTest(String reduceDataUsing) {
 		this.reduceDataUsing = reduceDataUsing;
 	}
@@ -129,23 +128,23 @@ public class DataReductionPostProcessorsTest {
 		logger.info("Testing for " + this.reduceDataUsing);
 		cleanDataFolders();
 
-		ConfigServiceForTests configService = new ConfigServiceForTests(new File("./bin"), 1);
+		ConfigServiceForTests configService = new ConfigServiceForTests(1);
 		// Set up the raw and reduced PV's
 		PlainPBStoragePlugin etlSTS = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=STS&rootFolder=" + shortTermFolderName + "/&partitionGranularity=PARTITION_HOUR", configService);
 		PlainPBStoragePlugin etlMTS = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=MTS&rootFolder=" + mediumTermFolderName + "/&partitionGranularity=PARTITION_DAY", configService);
 		PlainPBStoragePlugin etlLTSRaw = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=LTS&rootFolder=" + longTermFolderName + "/&partitionGranularity=PARTITION_YEAR", configService);
 		PlainPBStoragePlugin etlLTSReduced = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=LTS&rootFolder=" + longTermFolderName + "/&partitionGranularity=PARTITION_YEAR&reducedata=" + reduceDataUsing, configService);
-		{ 
+		{
 			PVTypeInfo typeInfo = new PVTypeInfo(rawPVName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
-			String[] dataStores = new String[] { etlSTS.getURLRepresentation(), etlMTS.getURLRepresentation(), etlLTSRaw.getURLRepresentation() }; 
+			String[] dataStores = new String[]{etlSTS.getURLRepresentation(), etlMTS.getURLRepresentation(), etlLTSRaw.getURLRepresentation()};
 			typeInfo.setDataStores(dataStores);
 			typeInfo.setPaused(true);
 			configService.updateTypeInfoForPV(rawPVName, typeInfo);
 			configService.registerPVToAppliance(rawPVName, configService.getMyApplianceInfo());
 		}
-		{ 
+		{
 			PVTypeInfo typeInfo = new PVTypeInfo(reducedPVName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
-			String[] dataStores = new String[] { etlSTS.getURLRepresentation(), etlMTS.getURLRepresentation(), etlLTSReduced.getURLRepresentation() }; 
+			String[] dataStores = new String[]{etlSTS.getURLRepresentation(), etlMTS.getURLRepresentation(), etlLTSReduced.getURLRepresentation()};
 			typeInfo.setDataStores(dataStores);
 			typeInfo.setPaused(true);
 			configService.updateTypeInfoForPV(reducedPVName, typeInfo);
@@ -158,11 +157,11 @@ public class DataReductionPostProcessorsTest {
 
 		logger.info("Testing data reduction for postprocessor " + reduceDataUsing);
 
-		for(int day = 0; day < 40; day++) { 
+		for (int day = 0; day < 40; day++) {
 			// Generate data into the STS on a daily basis
 			ArrayListEventStream genDataRaw = new ArrayListEventStream(86400, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, rawPVName, currentYear));
 			ArrayListEventStream genDataReduced = new ArrayListEventStream(86400, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, reducedPVName, currentYear));
-			for(int second = 0; second < 86400; second++) { 
+			for (int second = 0; second < 86400; second++) {
 				YearSecondTimestamp ysts = new YearSecondTimestamp(currentYear, day*86400 + second, 0);
 				Timestamp ts = TimeUtils.convertFromYearSecondTimestamp(ysts);
 				genDataRaw.add(new POJOEvent(ArchDBRTypes.DBR_SCALAR_DOUBLE, ts, new ScalarValue<Double>(second*1.0),0, 0));
@@ -172,7 +171,7 @@ public class DataReductionPostProcessorsTest {
 			try(BasicContext context = new BasicContext()) {
 				etlSTS.appendData(context, rawPVName, genDataRaw);
 				etlSTS.appendData(context, reducedPVName, genDataReduced);
-			}        	
+			}
 			logger.debug("For postprocessor " + reduceDataUsing +  " done generating data into the STS for day " + day);
 
 			// Run ETL at the end of the day
@@ -187,49 +186,49 @@ public class DataReductionPostProcessorsTest {
 			int rawWithPPCount = 0;
 			int reducedCount = 0;
 
-			try (BasicContext context = new BasicContext()) { 
+			try (BasicContext context = new BasicContext()) {
 				Timestamp startTime = TimeUtils.minusDays(TimeUtils.now(), 10*366);
 				Timestamp endTime = TimeUtils.plusDays(TimeUtils.now(), 10*366);
 				LinkedList<Timestamp> rawTimestamps = new LinkedList<Timestamp>();
 				LinkedList<Timestamp> reducedTimestamps = new LinkedList<Timestamp>();
 				if(postProcessor instanceof PostProcessorWithConsolidatedEventStream) {
 					List<Callable<EventStream>> callables = etlLTSRaw.getDataForPV(context, rawPVName, startTime, endTime, postProcessor);
-					for(Callable<EventStream> callable : callables) { 
+					for (Callable<EventStream> callable : callables) {
 						callable.call();
 					}
-					for(Event e : ((PostProcessorWithConsolidatedEventStream) postProcessor).getConsolidatedEventStream()) { 
+					for (Event e : ((PostProcessorWithConsolidatedEventStream) postProcessor).getConsolidatedEventStream()) {
 						rawTimestamps.add(e.getEventTimeStamp());
-						rawWithPPCount++; 
+						rawWithPPCount++;
 					}
-				} else { 
+				} else {
 					try(EventStream rawWithPP = new CurrentThreadWorkerEventStream(rawPVName, etlLTSRaw.getDataForPV(context, rawPVName, startTime, endTime, postProcessor))) {
 						for(Event e : rawWithPP) {
 							rawTimestamps.add(e.getEventTimeStamp());
-							rawWithPPCount++; 
+							rawWithPPCount++;
 						}
 					}
 				}
 				try(EventStream reduced = new CurrentThreadWorkerEventStream(reducedPVName, etlLTSReduced.getDataForPV(context, reducedPVName, startTime, endTime))) {
 					for(Event e : reduced) {
 						reducedTimestamps.add(e.getEventTimeStamp());
-						reducedCount++; 
-					} 
+						reducedCount++;
+					}
 				}
-				
+
 				logger.debug("For postprocessor " + reduceDataUsing +  " for day " + day + " we have " + rawWithPPCount + " raw with postprocessor events and " + reducedCount + " reduced events");
-				if(rawTimestamps.size() != reducedTimestamps.size()) { 
-					while(!rawTimestamps.isEmpty() || !reducedTimestamps.isEmpty()) { 
+				if (rawTimestamps.size() != reducedTimestamps.size()) {
+					while (!rawTimestamps.isEmpty() || !reducedTimestamps.isEmpty()) {
 						if(!rawTimestamps.isEmpty()) logger.info("Raw/PP " + TimeUtils.convertToHumanReadableString(rawTimestamps.pop()));
 						if(!reducedTimestamps.isEmpty()) logger.info("Reduced" + TimeUtils.convertToHumanReadableString(reducedTimestamps.pop()));
 					}
 				}
 				assertTrue("For postprocessor " + reduceDataUsing +  " for day " + day + " we have " + rawWithPPCount + " rawWithPP events and " + reducedCount + " reduced events", rawWithPPCount == reducedCount);
 			}
-			if(day > 2) { 
+			if (day > 2) {
 				assertTrue("For postprocessor " + reduceDataUsing +  " for day " + day + ", seems like no events were moved by ETL into LTS for " + rawPVName + " Count = " + rawWithPPCount, (rawWithPPCount != 0));
 				assertTrue("For postprocessor " + reduceDataUsing +  " for day " + day + ", seems like no events were moved by ETL into LTS for " + reducedPVName + " Count = " + reducedCount, (reducedCount != 0));
 			}
-		}        	
+		}
 
 		configService.shutdownNow();
 	}

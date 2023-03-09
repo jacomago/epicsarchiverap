@@ -1,18 +1,8 @@
 package org.epics.archiverappliance.mgmt.pva;
 
-import static org.epics.archiverappliance.mgmt.pva.PvaMgmtService.PVA_MGMT_SERVICE;
-import static org.epics.archiverappliance.mgmt.pva.actions.NTUtil.extractStringArray;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.fail;
-
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import org.epics.archiverappliance.IntegrationTests;
 import org.epics.archiverappliance.LocalEpicsTests;
 import org.epics.archiverappliance.mgmt.pva.actions.PvaArchivePVAction;
@@ -26,6 +16,16 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import static org.epics.archiverappliance.mgmt.pva.PvaMgmtService.PVA_MGMT_SERVICE;
+import static org.epics.archiverappliance.mgmt.pva.PvaTest.pvPrefix;
+import static org.epics.archiverappliance.mgmt.pva.actions.NTUtil.extractStringArray;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.fail;
 
 /**
  * 
@@ -63,7 +63,7 @@ public class PvaSuiteTstArchivePV {
 		PVATable archivePvReqTable = PVATable.PVATableBuilder.aPVATable()
 				.name(PvaArchivePVAction.NAME)
 				.descriptor(PvaArchivePVAction.NAME)
-				.addColumn(new PVAStringArray("pv", "UnitTestNoNamingConvention:sine","UnitTestNoNamingConvention:cosine"))
+				.addColumn(new PVAStringArray("pv", pvPrefix + "UnitTestNoNamingConvention:sine",pvPrefix + "UnitTestNoNamingConvention:cosine"))
 				.addColumn(new PVAStringArray("samplingperiod", "1.0","2.0"))
 				.addColumn(new PVAStringArray("samplingmethod", "SCAN","MONITOR"))
 				.build();
@@ -75,7 +75,7 @@ public class PvaSuiteTstArchivePV {
 			  { "pvName": "mshankar:arch:sine", "status": "Archive request submitted" }
 			  { "pvName": "mshankar:arch:cosine", "status": "Archive request submitted" }
 			 */
-			String[] expextedKePvNames = new String[] { "UnitTestNoNamingConvention:sine", "UnitTestNoNamingConvention:cosine" };
+			String[] expextedKePvNames = new String[] { pvPrefix + "UnitTestNoNamingConvention:sine", pvPrefix + "UnitTestNoNamingConvention:cosine" };
 			String[] expectedStatus = new String[] { "Archive request submitted", "Archive request submitted" };
 			logger.info("results" + result.toString());
 			assertArrayEquals(expextedKePvNames,

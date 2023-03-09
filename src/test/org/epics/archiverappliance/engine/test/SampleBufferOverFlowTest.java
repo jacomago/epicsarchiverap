@@ -7,8 +7,6 @@
  *******************************************************************************/
 package org.epics.archiverappliance.engine.test;
 
-import java.io.File;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.LocalEpicsTests;
@@ -18,11 +16,10 @@ import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.engine.ArchiveEngine;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import junit.framework.TestCase;
 
 /**
  * test of sample buffer over flow
@@ -30,17 +27,18 @@ import junit.framework.TestCase;
  *
  */
 @Category(LocalEpicsTests.class)
-public class SampleBufferOverFlowTest extends TestCase {
-	private static Logger logger = LogManager.getLogger(SampleBufferOverFlowTest.class.getName());
+public class SampleBufferOverFlowTest {
+	private static final Logger logger = LogManager.getLogger(SampleBufferOverFlowTest.class.getName());
 	private SIOCSetup ioc = null;
 	private ConfigServiceForTests testConfigService;
-	private WriterTest writer = new WriterTest();
+	private final TestWriter writer = new TestWriter();
 
+	private final String pvPrefix = SampleBufferOverFlowTest.class.getSimpleName().substring(0, 10);
 	@Before
 	public void setUp() throws Exception {
-		ioc = new SIOCSetup();
+		ioc = new SIOCSetup(pvPrefix);
 		ioc.startSIOCWithDefaultDB();
-		testConfigService = new ConfigServiceForTests(new File("./bin"));
+        testConfigService = new ConfigServiceForTests(-1);
 		Thread.sleep(3000);
 	}
 
@@ -50,15 +48,12 @@ public class SampleBufferOverFlowTest extends TestCase {
 		ioc.stopSIOC();
 	}
 
-	@Test
-	public void testAll() {
-		sampleBufferOverflow();
-	}
 
-	private void sampleBufferOverflow() {
-		String pvName = "test_1000";
+	@Test
+	public void sampleBufferOverflow() {
+		String pvName = pvPrefix + "test_1000";
 		try {
-			ArchiveEngine.archivePV(pvName, 5F, SamplingMethod.MONITOR, 10,
+			ArchiveEngine.archivePV(pvName, 5F, SamplingMethod.MONITOR,
 					writer, testConfigService, ArchDBRTypes.DBR_SCALAR_DOUBLE,
 					null, false, false);
 
@@ -66,14 +61,12 @@ public class SampleBufferOverFlowTest extends TestCase {
 
 			long num = ArchiveEngine.getMetricsforPV(pvName, testConfigService)
 					.getSampleBufferFullLostEventCount();
-			assertTrue(
-					"the number of data lost because of sample buffer overflow of "
-							+ pvName
-							+ "is 0,and maybe "
-							+ "the pv of "
-							+ pvName
-							+ " changes too slow and for this test,it should changes every 1 second",
-					num > 0);
+			Assert.assertTrue("the number of data lost because of sample buffer overflow of "
+					+ pvName
+					+ "is 0,and maybe "
+					+ "the pv of "
+					+ pvName
+					+ " changes too slow and for this test,it should changes every 1 second", num > 0);
 
 		} catch (Exception e) {
 			//

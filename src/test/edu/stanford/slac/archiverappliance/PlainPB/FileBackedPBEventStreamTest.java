@@ -1,14 +1,5 @@
 package edu.stanford.slac.archiverappliance.PlainPB;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.sql.Timestamp;
-import java.util.GregorianCalendar;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,6 +20,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.sql.Timestamp;
+import java.util.GregorianCalendar;
+
+import static org.junit.Assert.assertTrue;
+
 /**
  * Some simple tests for the FileBackedPBEventStream
  * We generate a years worth of data and then create FileBackedPBEventStream's using various constructors and make sure we get the expected amount of data. 
@@ -47,7 +47,7 @@ public class FileBackedPBEventStreamTest {
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests(-1);
 		storagePlugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=FileBackedPBEventStreamTest&rootFolder=" + testFolder.getAbsolutePath() + "&partitionGranularity=PARTITION_YEAR", configService);
 		int phasediffindegrees = 10;
 		SimulationEventStream simstream = new SimulationEventStream(dbrType, new SineGenerator(phasediffindegrees));

@@ -8,13 +8,10 @@
 package edu.stanford.slac.archiverappliance.PB.data;
 
 
-
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.nio.file.Path;
-
+import edu.stanford.slac.archiverappliance.PlainPB.FileBackedPBEventStream;
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import gov.aps.jca.dbr.DBR;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.ByteArray;
@@ -36,10 +33,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import edu.stanford.slac.archiverappliance.PlainPB.FileBackedPBEventStream;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
-import gov.aps.jca.dbr.DBR;
+import java.nio.file.Path;
+
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Generates a file using appendData for one years worth of a DBT type and then runs a validation check afterwards.
@@ -63,7 +60,7 @@ public class DBRTypeTest {
 	
 	@Test
 	public void testJCAPopulateAndRead() throws Exception {
-		ConfigService configService = new ConfigServiceForTests(new File("./bin"));
+		ConfigService configService = new ConfigServiceForTests(-1);
 		for(ArchDBRTypes dbrType : ArchDBRTypes.values()) {
 			if(!dbrType.isV3Type()) continue;
 			logger.info("Testing JCA conversion for DBR_type: " + dbrType.name());
@@ -96,7 +93,7 @@ public class DBRTypeTest {
 	@Category(SlowTests.class)
 	public void testPopulateAndRead() throws Exception {
 		for(ArchDBRTypes dbrType : ArchDBRTypes.values()) {
-			ConfigService configService = new ConfigServiceForTests(new File("./bin"));
+			ConfigService configService = new ConfigServiceForTests(-1);
 			FileBackedPBEventStream retrievedStrm = null;
 			try {
 				BoundaryConditionsSimulationValueGenerator valuegenerator = new BoundaryConditionsSimulationValueGenerator();
@@ -200,7 +197,7 @@ public class DBRTypeTest {
 	@Category(SlowTests.class)
 	public void testMultipleYearDataForDoubles() throws Exception {
 		ArchDBRTypes dbrType = ArchDBRTypes.DBR_SCALAR_DOUBLE;
-		ConfigService configService = new ConfigServiceForTests(new File("./bin"));
+		ConfigService configService = new ConfigServiceForTests(-1);
 		for(short year = 1990; year < 3000; year+=10) {
 			FileBackedPBEventStream retrievedStrm = null;
 			try {

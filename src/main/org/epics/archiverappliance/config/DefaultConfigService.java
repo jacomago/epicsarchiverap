@@ -7,6 +7,66 @@
  *******************************************************************************/
 package org.epics.archiverappliance.config;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
+import com.google.common.eventbus.AsyncEventBus;
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
+import com.hazelcast.core.Message;
+import com.hazelcast.core.MessageListener;
+import com.hazelcast.map.listener.EntryAddedListener;
+import com.hazelcast.map.listener.EntryRemovedListener;
+import com.hazelcast.map.listener.EntryUpdatedListener;
+import edu.stanford.slac.archiverappliance.PB.data.PBTypeSystem;
+import org.apache.commons.validator.routines.InetAddressValidator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.StoragePlugin;
+import org.epics.archiverappliance.common.ProcessMetrics;
+import org.epics.archiverappliance.common.TimeUtils;
+import org.epics.archiverappliance.config.PVTypeInfoEvent.ChangeType;
+import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
+import org.epics.archiverappliance.config.exception.ConfigException;
+import org.epics.archiverappliance.config.persistence.MySQLPersistence;
+import org.epics.archiverappliance.config.pubsub.PubSubEvent;
+import org.epics.archiverappliance.engine.ArchiveEngine;
+import org.epics.archiverappliance.engine.pv.EngineContext;
+import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
+import org.epics.archiverappliance.mgmt.MgmtPostStartup;
+import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
+import org.epics.archiverappliance.mgmt.NonMgmtPostStartup;
+import org.epics.archiverappliance.mgmt.bpl.cahdlers.NamesHandler;
+import org.epics.archiverappliance.mgmt.policy.ExecutePolicy;
+import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
+import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
+import org.epics.archiverappliance.retrieval.RetrievalState;
+import org.epics.archiverappliance.retrieval.channelarchiver.XMLRPCClient;
+import org.epics.archiverappliance.utils.ui.GetUrlContent;
+import org.epics.archiverappliance.utils.ui.JSONDecoder;
+import org.epics.archiverappliance.utils.ui.URIUtils;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.xml.sax.SAXException;
+
+import javax.servlet.ServletContext;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -44,69 +104,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import javax.servlet.ServletContext;
-
-import org.apache.commons.validator.routines.InetAddressValidator;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.StoragePlugin;
-import org.epics.archiverappliance.common.ProcessMetrics;
-import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.PVTypeInfoEvent.ChangeType;
-import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
-import org.epics.archiverappliance.config.exception.ConfigException;
-import org.epics.archiverappliance.config.persistence.MySQLPersistence;
-import org.epics.archiverappliance.config.pubsub.PubSubEvent;
-import org.epics.archiverappliance.engine.ArchiveEngine;
-import org.epics.archiverappliance.engine.pv.EngineContext;
-import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
-import org.epics.archiverappliance.mgmt.MgmtPostStartup;
-import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
-import org.epics.archiverappliance.mgmt.NonMgmtPostStartup;
-import org.epics.archiverappliance.mgmt.bpl.cahdlers.NamesHandler;
-import org.epics.archiverappliance.mgmt.policy.ExecutePolicy;
-import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
-import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
-import org.epics.archiverappliance.retrieval.RetrievalState;
-import org.epics.archiverappliance.retrieval.channelarchiver.XMLRPCClient;
-import org.epics.archiverappliance.utils.ui.GetUrlContent;
-import org.epics.archiverappliance.utils.ui.JSONDecoder;
-import org.epics.archiverappliance.utils.ui.URIUtils;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.xml.sax.SAXException;
-
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
-import com.google.common.eventbus.AsyncEventBus;
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.Cluster;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
-import com.hazelcast.core.Message;
-import com.hazelcast.core.MessageListener;
-import com.hazelcast.map.listener.EntryAddedListener;
-import com.hazelcast.map.listener.EntryRemovedListener;
-import com.hazelcast.map.listener.EntryUpdatedListener;
-
-import edu.stanford.slac.archiverappliance.PB.data.PBTypeSystem;
 
 
 
@@ -321,6 +318,7 @@ public class DefaultConfigService implements ConfigService {
 			this.retrievalState = new RetrievalState(this);
 			break;
 		case "/etl":
+			logger.info("init etlPV Default");
 			this.etlPVLookup = new PBThreeTierETLPVLookup(this);
 			warFile = WAR_FILE.ETL;
 			break;
@@ -926,7 +924,7 @@ public class DefaultConfigService implements ConfigService {
 				Timestamp lastKnownTimestamp = typeInfo.determineLastKnownEventFromStores(this);
 				if(logger.isDebugEnabled()) logger.debug("Last known timestamp from ETL stores is for pv " + pvName + " is "+ TimeUtils.convertToHumanReadableString(lastKnownTimestamp));
 
-				ArchiveEngine.archivePV(pvName, samplingPeriod, samplingMethod, secondsToBuffer, firstDest, this, dbrType,lastKnownTimestamp, typeInfo.getControllingPV(), typeInfo.getArchiveFields(), typeInfo.getHostName(), typeInfo.isUsePVAccess(), typeInfo.isUseDBEProperties()); 
+				ArchiveEngine.archivePV(pvName, samplingPeriod, samplingMethod, firstDest, this, dbrType, lastKnownTimestamp, typeInfo.getControllingPV(), typeInfo.getArchiveFields(), typeInfo.getHostName(), typeInfo.isUsePVAccess(), typeInfo.isUseDBEProperties());
 				currentPVCount++;
 				if(currentPVCount % pausePerGroupPVCount == 0) {
 					logger.debug("Sleeping for " + pausePerGroupPauseTimeInSeconds + " to prevent CA search storms");
@@ -1193,7 +1191,7 @@ public class DefaultConfigService implements ConfigService {
 	
 	@Override
 	public void updateTypeInfoForPV(String pvName, PVTypeInfo typeInfo) {
-		logger.debug("Updating typeinfo for " + pvName);
+		logger.info("Updating typeinfo for " + pvName);
 		if(!typeInfo.keyAlreadyGenerated()) { 
 			// This call should also typically set the chunk key in the type info.
 			this.pvName2KeyConverter.convertPVNameToKey(pvName);
@@ -1218,7 +1216,7 @@ public class DefaultConfigService implements ConfigService {
 		}
 	}
 
-	private class PVApplianceCombo implements Comparable<PVApplianceCombo> {
+	private static class PVApplianceCombo implements Comparable<PVApplianceCombo> {
 		String applianceIdentity;
 		String pvName;
 		public PVApplianceCombo(String applianceIdentity, String pvName) {

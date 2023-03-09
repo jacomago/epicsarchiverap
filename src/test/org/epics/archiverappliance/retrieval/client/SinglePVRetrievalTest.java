@@ -37,7 +37,7 @@ import org.junit.experimental.categories.Category;
 public class SinglePVRetrievalTest {
 	private static final Logger logger = LogManager.getLogger(SinglePVRetrievalTest.class.getName());
 	TomcatSetup tomcatSetup = new TomcatSetup();
-	
+
 	@Before
 	public void setUp() throws Exception {
 		GenerateData.generateSineForPV(ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "Sine1", 0, ArchDBRTypes.DBR_SCALAR_DOUBLE);
@@ -83,7 +83,7 @@ public class SinglePVRetrievalTest {
 					eventCount++;
 				}
 			}
-			
+
 			assertTrue("Event count is not what we expect. We got " + eventCount + " and we expected " + expectedCount + " for year " + year, eventCount == expectedCount);
 		} finally {
 			if(stream != null) try { stream.close(); stream = null; } catch(Throwable t) { }

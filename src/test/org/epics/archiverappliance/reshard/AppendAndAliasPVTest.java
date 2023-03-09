@@ -1,21 +1,11 @@
 package org.epics.archiverappliance.reshard;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URLEncoder;
-import java.sql.Timestamp;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
-import org.epics.archiverappliance.LocalEpicsTests;
+import org.epics.archiverappliance.IntegrationTests;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.TomcatSetup;
@@ -40,6 +30,16 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URLEncoder;
+import java.sql.Timestamp;
+
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * Simple test to test appending data from an older PV to a newer one.
  * <ul>
@@ -56,7 +56,7 @@ import org.junit.experimental.categories.Category;
  * @author mshankar
  *
  */
-@Category(LocalEpicsTests.class)
+@Category(IntegrationTests.class)
 public class AppendAndAliasPVTest {
 	private static Logger logger = LogManager.getLogger(AppendAndAliasPVTest.class.getName());
 	private ConfigServiceForTests configService;
@@ -68,7 +68,7 @@ public class AppendAndAliasPVTest {
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests(-1);
 
 		System.getProperties().put("ARCHAPPL_SHORT_TERM_FOLDER", folderSTS);
 		System.getProperties().put("ARCHAPPL_MEDIUM_TERM_FOLDER", folderMTS);

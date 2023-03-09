@@ -7,18 +7,6 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl.common;
 
-import java.io.IOException;
-import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -31,6 +19,18 @@ import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.etl.ETLDest;
 import org.epics.archiverappliance.etl.ETLSource;
 import org.epics.archiverappliance.etl.StorageMetrics;
+
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Holds runtime state for ETL.
@@ -75,13 +75,7 @@ public final class PBThreeTierETLPVLookup {
 	
 	public PBThreeTierETLPVLookup(ConfigService configService) {
 		this.configService = configService;
-		configServiceSyncThread = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-			@Override
-			public Thread newThread(Runnable r) {
-				Thread ret = new Thread(r, "Config service sync thread");
-				return ret;
-			}
-		});
+		configServiceSyncThread = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, "Config service sync thread"));
 		
 		configService.addShutdownHook(new ETLShutdownThread(this));
 	}

@@ -7,8 +7,6 @@
  *******************************************************************************/
 package org.epics.archiverappliance.engine.test;
 
-import java.io.File;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.LocalEpicsTests;
@@ -23,56 +21,51 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import junit.framework.TestCase;
 /**
- * test of year changing.
- * When year changes, we should create a new ArrayListEventStream
- * @author Luofeng Li
+ * test of year changing. When year changes, we should create a new ArrayListEventStream
  *
+ * @author Luofeng Li
  */
 @Category(LocalEpicsTests.class)
-public class YearListenerTest  extends TestCase{
-	private static Logger logger = LogManager.getLogger(YearListenerTest.class.getName());
-	private SIOCSetup ioc = null;
-	private DefaultConfigService testConfigService;
-	private WriterTest writer = new WriterTest();
+public class YearListenerTest {
+    private static final Logger logger = LogManager.getLogger(YearListenerTest.class.getName());
+    private final String pvPrefix = YearListenerTest.class.getSimpleName();
+    private SIOCSetup ioc = null;
+    private DefaultConfigService testConfigService;
+    private final TestWriter writer = new TestWriter();
 
-	@Before
-	public void setUp() throws Exception {
-		ioc = new SIOCSetup();
-		ioc.startSIOCWithDefaultDB();
-		testConfigService = new ConfigServiceForTests(new File("./bin"));
-		Thread.sleep(3000);
-	}
+    @Before
+    public void setUp() throws Exception {
+        ioc = new SIOCSetup(pvPrefix);
+        ioc.startSIOCWithDefaultDB();
+        testConfigService = new ConfigServiceForTests(-1);
+        Thread.sleep(3000);
+    }
 
-	@After
-	public void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
 
-		testConfigService.shutdownNow();
-		ioc.stopSIOC();
+        testConfigService.shutdownNow();
+        ioc.stopSIOC();
 
-	}
+    }
 
-	@Test
-	public void testAll() {
-		singlePvYearChangeListener();
-	}
-	private void singlePvYearChangeListener()
-	{
-		//change your time of your computer to 2011-12-31 23:58:00
-		try {
-			
-				ArchiveEngine.archivePV("test_0", 2,
-						 SamplingMethod.SCAN,
-						 10,  writer,
-						 testConfigService,
-						 ArchDBRTypes.DBR_SCALAR_DOUBLE,
-						 null, false, false);
-		}catch (Exception e) {
-			// 
-			logger.error("Exception", e);
-		}
-	}
-	
+    @Test
+    public void singlePvYearChangeListener() {
+        //change your time of your computer to 2011-12-31 23:58:00
+        try {
+
+            ArchiveEngine.archivePV(pvPrefix + "test_0", 2,
+                    SamplingMethod.SCAN,
+                    writer,
+                    testConfigService,
+                    ArchDBRTypes.DBR_SCALAR_DOUBLE,
+                    null, false, false);
+        } catch (Exception e) {
+            //
+            logger.error("Exception", e);
+        }
+    }
+
 
 }

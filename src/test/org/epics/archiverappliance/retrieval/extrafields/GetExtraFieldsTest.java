@@ -1,11 +1,7 @@
 package org.epics.archiverappliance.retrieval.extrafields;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.sql.Timestamp;
-import java.util.HashMap;
-
+import edu.stanford.slac.archiverappliance.PB.data.PBScalarDouble;
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -28,8 +24,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBScalarDouble;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import java.io.File;
+import java.sql.Timestamp;
+import java.util.HashMap;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Generate data for a year with some extra fields sprinkled and test retrieval to make sure we can get at these extra fields..
@@ -46,7 +45,7 @@ public class GetExtraFieldsTest {
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests(-1);
 		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
 	}
 

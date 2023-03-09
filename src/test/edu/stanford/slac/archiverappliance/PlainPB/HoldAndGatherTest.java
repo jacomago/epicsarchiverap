@@ -7,12 +7,7 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PlainPB;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-
+import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.SlowTests;
@@ -35,7 +30,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
+import java.io.IOException;
+import java.util.List;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test the ETL hold and gather logic
@@ -76,7 +74,7 @@ public class HoldAndGatherTest {
 	private void testHoldAndGather(PartitionGranularity granularity, int hold, int gather)  throws Exception {
 		PlainPBStoragePlugin etlSrc = new PlainPBStoragePlugin();
 		PBCommonSetup srcSetup = new PBCommonSetup();
-		ConfigServiceForTests configService = new ConfigServiceForTests(new File("./bin"));
+		ConfigServiceForTests configService = new ConfigServiceForTests(-1);
 		srcSetup.setUpRootFolder(etlSrc, "ETLHoldGatherTest_"+granularity, granularity);
 		
 		etlSrc.setHoldETLForPartions(hold);

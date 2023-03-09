@@ -7,12 +7,7 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PlainPB;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.util.List;
-import java.util.concurrent.Callable;
-
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,7 +30,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
+import java.io.File;
+import java.util.List;
+import java.util.concurrent.Callable;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test rename PV for the PlainPBStoragePlugin...
@@ -52,7 +51,7 @@ public class RenamePVTest {
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests(-1);
 		if(rootFolder.exists()) {
 			FileUtils.deleteDirectory(rootFolder);
 		}

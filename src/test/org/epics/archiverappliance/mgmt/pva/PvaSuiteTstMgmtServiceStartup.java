@@ -1,8 +1,5 @@
 package org.epics.archiverappliance.mgmt.pva;
 
-import static org.epics.archiverappliance.mgmt.pva.PvaMgmtService.PVA_MGMT_SERVICE;
-import static org.junit.Assert.assertTrue;
-
 import org.epics.archiverappliance.IntegrationTests;
 import org.epics.archiverappliance.LocalEpicsTests;
 import org.epics.pva.client.PVAChannel;
@@ -11,6 +8,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.concurrent.TimeUnit;
+
+import static org.epics.archiverappliance.mgmt.pva.PvaMgmtService.PVA_MGMT_SERVICE;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Check if the pva management rpc service has started and is accessible.

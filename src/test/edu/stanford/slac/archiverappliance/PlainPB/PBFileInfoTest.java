@@ -7,12 +7,7 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PlainPB;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
+import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigService;
@@ -23,7 +18,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test the PBFileInfo.
@@ -40,7 +38,7 @@ public class PBFileInfoTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+        configService = new ConfigServiceForTests(-1);
 		setup.setUpRootFolder(storagePlugin);
 		PBfile = PlainPBPathNameUtility.getPathNameForTime(storagePlugin, pvName, TimeUtils.getStartOfCurrentYearInSeconds(), new ArchPaths(), configService.getPVNameToKeyConverter());
 		GenerateData.generateSineForPV(pvName, 0, ArchDBRTypes.DBR_SCALAR_DOUBLE);

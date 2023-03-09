@@ -1,12 +1,5 @@
 package org.epics.archiverappliance.engine.V4;
 
-import static org.epics.archiverappliance.engine.V4.PVAccessUtil.waitForStatusChange;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.IntegrationTests;
@@ -21,12 +14,19 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
+import static org.epics.archiverappliance.engine.V4.PVAccessUtil.waitForStatusChange;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Checks pausing and resuming a pv keeps it using the pvaccess protocol.
  */
-@Category({LocalEpicsTests.class , IntegrationTests.class})
+@Category({LocalEpicsTests.class, IntegrationTests.class})
 public class PauseResumeV4Test {
-    
+
 
     private static final Logger logger = LogManager.getLogger(SampleV4PVAClientTest.class.getName());
     private SIOCSetup ioc;

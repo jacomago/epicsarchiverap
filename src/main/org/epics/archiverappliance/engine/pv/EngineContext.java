@@ -10,21 +10,11 @@
 
 package org.epics.archiverappliance.engine.pv;
 
-import java.io.IOException;
-import java.sql.Timestamp;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-
+import com.cosylab.epics.caj.CAJChannel;
+import com.cosylab.epics.caj.CAJContext;
+import com.google.common.eventbus.Subscribe;
+import gov.aps.jca.Channel;
+import gov.aps.jca.Context;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
@@ -51,12 +41,20 @@ import org.epics.pva.client.PVAClient;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
-import com.cosylab.epics.caj.CAJChannel;
-import com.cosylab.epics.caj.CAJContext;
-import com.google.common.eventbus.Subscribe;
-
-import gov.aps.jca.Channel;
-import gov.aps.jca.Context;
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 /***
  * the context for the Archiver Engine
  * @author Luofeng Li
@@ -676,7 +674,7 @@ public class EngineContext {
 		String[] archiveFields = typeInfo.getArchiveFields();
 		
 		logger.info("Archiving PV " + pvName + "using " + samplingMethod.toString() + " with a sampling period of "+ samplingPeriod + "(s)");
-		ArchiveEngine.archivePV(pvName, samplingPeriod, samplingMethod, secondsToBuffer, firstDest, configService, dbrType, lastKnownTimeStamp, controllingPV, archiveFields, typeInfo.getHostName(), typeInfo.isUsePVAccess(), typeInfo.isUseDBEProperties()); 
+		ArchiveEngine.archivePV(pvName, samplingPeriod, samplingMethod, firstDest, configService, dbrType, lastKnownTimeStamp, controllingPV, archiveFields, typeInfo.getHostName(), typeInfo.isUsePVAccess(), typeInfo.isUseDBEProperties());
 	}
 	
 	

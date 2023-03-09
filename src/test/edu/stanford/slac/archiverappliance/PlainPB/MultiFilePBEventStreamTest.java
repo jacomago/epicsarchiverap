@@ -8,11 +8,6 @@
 package edu.stanford.slac.archiverappliance.PlainPB;
 
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.sql.Timestamp;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,6 +29,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.io.File;
+import java.sql.Timestamp;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test EventStreams that span multiple PB files.
@@ -63,7 +63,7 @@ public class MultiFilePBEventStreamTest {
 	public void testMultiFileEventStream() throws Exception {
 		// We generate a years worth of data into a PlainPBStoragePlugin with different granularity. 
 		// We then retrieve data and make sure that we get what we expect
-		ConfigService configService = new ConfigServiceForTests(new File("./bin"));
+		ConfigService configService = new ConfigServiceForTests(-1);
 		
 		for(PartitionGranularity granularity : PartitionGranularity.values()) {
 			logger.debug("Generating sample data for granularity " + granularity);

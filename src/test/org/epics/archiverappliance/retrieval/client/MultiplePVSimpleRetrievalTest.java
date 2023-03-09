@@ -8,10 +8,6 @@
 package org.epics.archiverappliance.retrieval.client;
 
 
-import static org.junit.Assert.assertTrue;
-
-import java.sql.Timestamp;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -28,6 +24,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.sql.Timestamp;
+
+import static org.junit.Assert.assertTrue;
+
 /**
  * Test retrieval for multiple PVs
  * @author mshankar
@@ -37,9 +37,9 @@ import org.junit.experimental.categories.Category;
 public class MultiplePVSimpleRetrievalTest {
 	private static final Logger logger = LogManager.getLogger(MultiplePVSimpleRetrievalTest.class.getName());
 	TomcatSetup tomcatSetup = new TomcatSetup();
+	static long previousEpochSeconds = 0;
 	private static int TOTAL_NUMBER_OF_PVS = 10;
 	private static String[] pvs = new String[TOTAL_NUMBER_OF_PVS];
-
 
 	@Before
 	public void setUp() throws Exception {
@@ -56,7 +56,6 @@ public class MultiplePVSimpleRetrievalTest {
 		tomcatSetup.tearDown();
 	}
 
-	static long previousEpochSeconds = 0; 
 	@Test
 	public void testGetDataForMultiplePVs() {
 		RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
@@ -82,7 +81,11 @@ public class MultiplePVSimpleRetrievalTest {
 				}
 			}
 		} finally {
-			if(stream != null) try { stream.close(); stream = null; } catch(Throwable t) { }
+			if (stream != null) try {
+				stream.close();
+				stream = null;
+			} catch (Throwable t) {
+			}
 		}
-	}	
+	}
 }

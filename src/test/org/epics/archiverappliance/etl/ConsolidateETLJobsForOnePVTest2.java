@@ -7,12 +7,8 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import java.io.File;
-import java.io.IOException;
-import java.sql.Timestamp;
-
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import junit.framework.TestCase;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,7 +30,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import java.io.File;
+import java.io.IOException;
+import java.sql.Timestamp;
 /**
  *  test for consolidate all pb files from short term storage to medium term storage
  * @author Luofeng Li
@@ -57,7 +55,7 @@ public class ConsolidateETLJobsForOnePVTest2 extends TestCase{
         
         @Before
         public void setUp() throws Exception {
-        	configService = new ConfigServiceForTests(new File("./bin"));
+            configService = new ConfigServiceForTests(-1);
                 if(new File(rootFolderName).exists()) {
                         FileUtils.deleteDirectory(new File(rootFolderName));
                 }

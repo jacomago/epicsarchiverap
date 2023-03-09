@@ -1,17 +1,10 @@
 package org.epics.archiverappliance.mgmt;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.StringWriter;
-import java.net.URLEncoder;
-import java.util.Arrays;
-import java.util.List;
-
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.IntegrationTests;
 import org.epics.archiverappliance.LocalEpicsTests;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.TomcatSetup;
@@ -31,12 +24,20 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
+import java.io.File;
+import java.io.StringWriter;
+import java.net.URLEncoder;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.Assert.assertTrue;
+
 /**
  * Modify the metafields across the cluster. We archive and then send the modifyMetaFields to the other appliance.
  * @author mshankar
  *
  */
-@Category(LocalEpicsTests.class)
+@Category({LocalEpicsTests.class, IntegrationTests.class})
 public class ModifyMetaFieldsTest {
 	private static Logger logger = LogManager.getLogger(ModifyMetaFieldsTest.class.getName());
 	File persistenceFolder = new File(ConfigServiceForTests.getDefaultPBTestFolder() + File.separator + "ModifyMetaFieldsTest");

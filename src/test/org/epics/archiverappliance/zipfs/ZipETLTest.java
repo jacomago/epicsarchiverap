@@ -1,10 +1,6 @@
 package org.epics.archiverappliance.zipfs;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.sql.Timestamp;
-
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,7 +26,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import java.io.File;
+import java.sql.Timestamp;
+
+import static org.junit.Assert.assertTrue;
 
 @Category(SlowTests.class)
 public class ZipETLTest {
@@ -40,7 +39,7 @@ public class ZipETLTest {
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests(-1);
 		if(testFolder.exists()) { 
 			FileUtils.deleteDirectory(testFolder);
 		}

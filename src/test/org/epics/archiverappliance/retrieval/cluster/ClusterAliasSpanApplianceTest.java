@@ -1,18 +1,12 @@
 package org.epics.archiverappliance.retrieval.cluster;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URLEncoder;
-import java.sql.Timestamp;
-
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
+import org.epics.archiverappliance.IntegrationTests;
 import org.epics.archiverappliance.LocalEpicsTests;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.TomcatSetup;
@@ -34,13 +28,20 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.sql.Timestamp;
+
+import static org.junit.Assert.assertTrue;
+
 /**
  * Test data retrieval with aliasing and clustering.
  * We archive a PV with an the real name and then add the alias into the other appliance and then test retrieval
  * @author mshankar
  *
  */
-@Category(LocalEpicsTests.class)
+@Category({LocalEpicsTests.class, IntegrationTests.class})
 public class ClusterAliasSpanApplianceTest {
 	private static Logger logger = LogManager.getLogger(ClusterAliasSpanApplianceTest.class.getName());
 	File persistenceFolder = new File(ConfigServiceForTests.getDefaultPBTestFolder() + File.separator + "ClusterAliasSpanApplianceTest");

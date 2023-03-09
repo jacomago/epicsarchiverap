@@ -1,10 +1,5 @@
 package org.epics.archiverappliance.engine.V4;
 
-import static org.junit.Assert.assertFalse;
-
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
 import org.epics.archiverappliance.LocalEpicsTests;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.pva.client.PVAChannel;
@@ -18,17 +13,23 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertNotSame;
+
 /**
  * Integration test of the pvAccess library
  */
-@Category(LocalEpicsTests.class )
+@Category(LocalEpicsTests.class)
 public class SampleV4PVAClientTest {
+    private static final String pvPrefix = SampleV4PVAClientTest.class.getSimpleName();
 
     private SIOCSetup ioc;
 
     @Before
     public void setUp() throws Exception {
-        ioc = new SIOCSetup();
+        ioc = new SIOCSetup(pvPrefix);
         ioc.startSIOCWithDefaultDB();
 
     }
@@ -41,10 +42,10 @@ public class SampleV4PVAClientTest {
     @Test
     public void testGet() throws Exception {
         PVAClient client = new PVAClient();
-        PVAChannel channel = client.getChannel("UnitTestNoNamingConvention:sine:calc");
+        PVAChannel channel = client.getChannel(pvPrefix + "UnitTestNoNamingConvention:sine:calc");
         channel.connect().get(5, TimeUnit.SECONDS);
         PVAStructure value = channel.read("").get(5, TimeUnit.SECONDS);
-        assertFalse(new PVADouble("value", Double.NaN) == value.get("value"));
+        assertNotSame(new PVADouble("value", Double.NaN), value.get("value"));
         channel.close();
         client.close();
     }

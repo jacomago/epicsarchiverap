@@ -7,13 +7,7 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.List;
-
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.PartitionGranularity;
@@ -30,7 +24,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import java.io.File;
+import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.List;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test the ETL source funtionality of PlainPBStoragePlugin
@@ -45,7 +44,7 @@ public class ETLSourceGetStreamsTest {
 	@Before
 	public void setUp() throws Exception {
 		testFolder.mkdirs();
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests(-1);
 		pbplugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=STS&rootFolder=" + testFolder + "/src&partitionGranularity=PARTITION_HOUR", configService);
 	}
 

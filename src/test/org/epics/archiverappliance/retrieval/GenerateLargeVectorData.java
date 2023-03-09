@@ -7,11 +7,6 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval;
 
-import java.io.File;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
@@ -25,6 +20,10 @@ import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.data.VectorValue;
 import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
+
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author mshankar
@@ -43,20 +42,20 @@ public class GenerateLargeVectorData {
 			System.err.println("Usage: java org.epics.archiverappliance.retrieval.GenerateLargeVectorData <pvName> <folder>");
 			return;
 		}
-		
+
 		String pvName = args[0];
 		String folder = args[1];
-		
-		
-		ConfigService configService = new ConfigServiceForTests(new File("./bin"), 1);
+
+
+		ConfigService configService = new ConfigServiceForTests(1);
 		String pluginURL = "pb://localhost?name=LTS&rootFolder=" + folder + "&partitionGranularity=PARTITION_DAY";
 		StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(pluginURL, configService);
-		
+
 		Timestamp end = TimeUtils.minusDays(TimeUtils.now(), 1);
 		Timestamp start = TimeUtils.minusDays(end, 30);
 		long startEpochSeconds = TimeUtils.convertToEpochSeconds(start);
 		long endEpochSeconds = TimeUtils.convertToEpochSeconds(end);
-		
+
 		logger.info("Generating data for pv " + pvName + " using plugin " + plugin.getDescription() + " between " + TimeUtils.convertToHumanReadableString(start) + " and " + TimeUtils.convertToHumanReadableString(end));
 
 		long currentSeconds = startEpochSeconds;
@@ -67,7 +66,7 @@ public class GenerateLargeVectorData {
 				logger.info("Generating data for " + TimeUtils.convertToHumanReadableString(currentSeconds));
 				YearSecondTimestamp yts = TimeUtils.convertToYearSecondTimestamp(currentSeconds);
 				List<Double> vals = new ArrayList<Double>(80000);
-				for(int k = 0; k < 80000; k++) { 
+				for (int k = 0; k < 80000; k++) {
 					vals.add(Double.valueOf(k));
 				}
 				instream.add(new SimulationEvent(yts.getSecondsintoyear(), yts.getYear(), ArchDBRTypes.DBR_WAVEFORM_DOUBLE, new VectorValue<Double>(vals)));

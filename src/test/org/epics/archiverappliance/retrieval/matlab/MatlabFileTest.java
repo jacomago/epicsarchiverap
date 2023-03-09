@@ -1,11 +1,14 @@
 package org.epics.archiverappliance.retrieval.matlab;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.util.LinkedList;
-import java.util.Map;
-
+import com.jmatio.io.MatFileReader;
+import com.jmatio.io.MatFileWriter;
+import com.jmatio.types.MLArray;
+import com.jmatio.types.MLChar;
+import com.jmatio.types.MLDouble;
+import com.jmatio.types.MLStructure;
+import com.jmatio.types.MLUInt64;
+import com.jmatio.types.MLUInt8;
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,16 +29,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.jmatio.io.MatFileReader;
-import com.jmatio.io.MatFileWriter;
-import com.jmatio.types.MLArray;
-import com.jmatio.types.MLChar;
-import com.jmatio.types.MLDouble;
-import com.jmatio.types.MLStructure;
-import com.jmatio.types.MLUInt64;
-import com.jmatio.types.MLUInt8;
+import java.io.File;
+import java.util.LinkedList;
+import java.util.Map;
 
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test generation of Matlab files from event streams
@@ -51,7 +49,7 @@ public class MatlabFileTest {
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests(-1);
 		storageplugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=STS&rootFolder=" + rootFolderName + "/&partitionGranularity=PARTITION_YEAR", configService);
 		if(new File(rootFolderName).exists()) {
 			FileUtils.deleteDirectory(new File(rootFolderName));

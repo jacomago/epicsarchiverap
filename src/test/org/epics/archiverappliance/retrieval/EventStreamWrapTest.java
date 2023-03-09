@@ -52,7 +52,7 @@ public class EventStreamWrapTest {
 
 	@Before
 	public void setUp() throws Exception {
-		ConfigServiceForTests configService = new ConfigServiceForTests(new File("./bin"));
+		ConfigServiceForTests configService = new ConfigServiceForTests(-1);
 		if(new File(shortTermFolderName).exists()) {
 			FileUtils.deleteDirectory(new File(shortTermFolderName));
 		}
@@ -81,14 +81,9 @@ public class EventStreamWrapTest {
 		}
 	}
 
+
 	@Test
-	public void testWrappers()  {
-		testSimpleWrapper();
-		testMultiThreadWrapper();
-	}
-	
-	
-	private void testSimpleWrapper()  {
+	public void testSimpleWrapper() {
 		Timestamp end = TimeUtils.now();
 		Timestamp start = TimeUtils.minusDays(end, 365);
 		Mean mean_86400 = (Mean) PostProcessors.findPostProcessor("mean_86400");
@@ -136,7 +131,8 @@ public class EventStreamWrapTest {
 	/**
 	 * We wrap a thread around each source event stream. Since the source data is generated using month partitions, we should get about 12 source event streams..
 	 */
-	private void testMultiThreadWrapper() {
+	@Test
+	public void testMultiThreadWrapper() {
 		Timestamp end = TimeUtils.now();
 		Timestamp start = TimeUtils.minusDays(end, 365);
 		Mean mean_86400 = (Mean) PostProcessors.findPostProcessor("mean_86400");

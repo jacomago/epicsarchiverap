@@ -7,18 +7,8 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import java.io.File;
-import java.io.IOException;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.zip.ZipEntry;
-
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import junit.framework.TestCase;
-
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.FileUtils;
@@ -42,7 +32,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import java.io.File;
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.zip.ZipEntry;
 /**
  * test for consolidate all pb files from short term storage and medium term storage to long term storage
  * @author Luofeng Li
@@ -66,7 +64,7 @@ public class ConsolidateETLJobsForOnePVTest extends TestCase {
         
         @Before
         public void setUp() throws Exception {
-        	configService = new ConfigServiceForTests(new File("./bin"));
+            configService = new ConfigServiceForTests(-1);
                 if(new File(rootFolderName).exists()) {
                         FileUtils.deleteDirectory(new File(rootFolderName));
                 }

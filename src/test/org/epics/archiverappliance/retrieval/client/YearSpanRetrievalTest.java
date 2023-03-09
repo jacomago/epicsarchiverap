@@ -8,14 +8,9 @@
 package org.epics.archiverappliance.retrieval.client;
 
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.sql.Timestamp;
-import java.util.HashMap;
-
+import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -37,9 +32,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.sql.Timestamp;
+import java.util.HashMap;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test retrieval across year spans.
@@ -56,7 +54,7 @@ public class YearSpanRetrievalTest {
 
 	@Before
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
+		configService = new ConfigServiceForTests(-1);
 		pbSetup.setUpRootFolder(pbplugin);
 		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
 		generateDataForYears(ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "yspan", (short) 2010, (short) 2013);

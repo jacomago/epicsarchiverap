@@ -7,14 +7,11 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import java.io.File;
-import java.nio.file.Path;
-import java.sql.Timestamp;
-import java.util.LinkedList;
-import java.util.List;
-
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
+import edu.stanford.slac.archiverappliance.PlainPB.utils.ValidatePBFile;
 import junit.framework.TestCase;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,10 +35,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
-import edu.stanford.slac.archiverappliance.PlainPB.utils.ValidatePBFile;
+import java.io.File;
+import java.nio.file.Path;
+import java.sql.Timestamp;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Test data reduction as part of ETL.
@@ -57,7 +55,7 @@ public class DataReductionTest extends TestCase {
 
         @Before
         public void setUp() throws Exception {
-    		configService = new ConfigServiceForTests(new File("./bin"));
+	        configService = new ConfigServiceForTests(-1);
     		if(new File(shortTermFolderName).exists()) {
     			FileUtils.deleteDirectory(new File(shortTermFolderName));
     		}

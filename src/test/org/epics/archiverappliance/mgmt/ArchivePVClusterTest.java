@@ -1,13 +1,10 @@
 package org.epics.archiverappliance.mgmt;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.IntegrationTests;
 import org.epics.archiverappliance.LocalEpicsTests;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.TomcatSetup;
@@ -25,12 +22,16 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
+import java.io.File;
+
+import static org.junit.Assert.assertTrue;
+
 /**
  * Test archiving using a simple cluster of tomcat servers.
  * @author mshankar
  *
  */
-@Category(LocalEpicsTests.class)
+@Category({LocalEpicsTests.class, IntegrationTests.class})
 public class ArchivePVClusterTest {
 	private static Logger logger = LogManager.getLogger(ArchivePVClusterTest.class.getName());
 	File persistenceFolder = new File(ConfigServiceForTests.getDefaultPBTestFolder() + File.separator + "InactiveClusterMemberArchivePVTest");

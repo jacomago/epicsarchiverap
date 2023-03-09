@@ -7,12 +7,7 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PB.utils;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
-import java.sql.Timestamp;
-
+import edu.stanford.slac.archiverappliance.PBOverHTTP.PBOverHTTPStoragePlugin;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.BasicContext;
@@ -22,7 +17,11 @@ import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.retrieval.postprocessors.DefaultRawPostProcessor;
 import org.epics.archiverappliance.retrieval.workers.CurrentThreadWorkerEventStream;
 
-import edu.stanford.slac.archiverappliance.PBOverHTTP.PBOverHTTPStoragePlugin;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
+import java.sql.Timestamp;
 
 /**
  * @author mshankar
@@ -36,7 +35,7 @@ public class ConvertGnuplotData {
 	 */
 	public static void main(String[] args) throws Exception {
 		PBOverHTTPStoragePlugin storagePlugin = new PBOverHTTPStoragePlugin();
-		ConfigService configService = new ConfigServiceForTests(new File("./bin"));
+        ConfigService configService = new ConfigServiceForTests(-1);
 		storagePlugin.initialize("http://archiver:15646/retrieval/data/getData.raw", configService);
 
 		// Ask for a days worth of data

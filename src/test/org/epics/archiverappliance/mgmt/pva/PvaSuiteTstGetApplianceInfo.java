@@ -1,8 +1,7 @@
 package org.epics.archiverappliance.mgmt.pva;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-
+import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.IntegrationTests;
 import org.epics.archiverappliance.LocalEpicsTests;
 import org.epics.archiverappliance.mgmt.pva.actions.NTUtil;

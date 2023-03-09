@@ -7,8 +7,6 @@
  *******************************************************************************/
 package org.epics.archiverappliance.engine.test;
 
-import java.io.File;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.LocalEpicsTests;
@@ -19,92 +17,99 @@ import org.epics.archiverappliance.engine.ArchiveEngine;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import junit.framework.TestCase;
 /**
  * test of destroying channels
  * @author Luofeng Li
  *
  */
 @Category(LocalEpicsTests.class)
-public class ChannelDestoryTest extends TestCase {
-	private static Logger logger = LogManager.getLogger(ChannelDestoryTest.class.getName());
-	private SIOCSetup ioc = null;
-	private ConfigServiceForTests testConfigService;
-	private WriterTest writer = new WriterTest();
+public class ChannelDestoryTest {
+    private static final Logger logger = LogManager.getLogger(ChannelDestoryTest.class.getName());
+    private final TestWriter writer = new TestWriter();
+    private final String pvPrefix = ChannelDestoryTest.class.getSimpleName().substring(0, 10);
+    private SIOCSetup ioc = null;
+    private ConfigServiceForTests testConfigService;
 
-	@Before
-	public void setUp() throws Exception {
-		ioc = new SIOCSetup();
-		ioc.startSIOCWithDefaultDB();
-		testConfigService = new ConfigServiceForTests(new File("./bin"));
-		Thread.sleep(3000);
-	}
+    @Before
+    public void setUp() throws Exception {
+        ioc = new SIOCSetup(pvPrefix);
+        ioc.startSIOCWithDefaultDB();
+        testConfigService = new ConfigServiceForTests(-1);
+        Thread.sleep(3000);
+    }
 
-	@After
-	public void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
 
-		testConfigService.shutdownNow();
-		ioc.stopSIOC();
 
-	}
+        testConfigService.shutdownNow();
+        ioc.stopSIOC();
+    }
 
-	@Test
-	public void testAll() {
-	    scanChannelDestroy();
-		monitorChannelDestroy();
-	}
-/**
- * test of destroying the channel of the pv in scan mode
- */
-	private void scanChannelDestroy() {
-		String pvName = "test_0";
-		try {
-			ArchiveEngine.archivePV(pvName, 2, SamplingMethod.SCAN, 60, writer,
-					testConfigService, ArchDBRTypes.DBR_SCALAR_DOUBLE, null, false, false);
-			Thread.sleep(2000);
+    /**
+     * test of destroying the channel of the pv in scan mode
+     */
+    @Test
+    public void scanChannelDestroy() {
+        String pvName = pvPrefix + "test_0";
+        try {
+            ArchiveEngine.archivePV(
+                    pvName,
+                    2,
+                    SamplingMethod.SCAN,
+                    writer,
+                    testConfigService,
+                    ArchDBRTypes.DBR_SCALAR_DOUBLE,
+                    null,
+                    false,
+                    false);
+            Thread.sleep(2000);
 
-			ArchiveEngine.destoryPv(pvName, testConfigService);
-			Thread.sleep(2000);
-			ArchiveChannel archiveChannel = testConfigService
-					.getEngineContext().getChannelList().get(pvName);
-			assertTrue("the channel for " + pvName
-					+ " should be destroyed but it is not",
-					archiveChannel == null);
+            ArchiveEngine.destoryPv(pvName, testConfigService);
+            Thread.sleep(2000);
+            ArchiveChannel archiveChannel =
+                    testConfigService.getEngineContext().getChannelList().get(pvName);
+            Assert.assertNull("the channel for " + pvName + " should be destroyed but it is not", archiveChannel);
 
-		} catch (Exception e) {
-			//
-			logger.error("Exception", e);
-		}
-	}
-/**
- * the test of destroying the channel of the pv in monitor mode
- */
-	private void monitorChannelDestroy() {
-		String pvName = "test_1";
-		try {
+        } catch (Exception e) {
+            //
+            logger.error("Exception", e);
+        }
+    }
 
-			ArchiveEngine.archivePV(pvName, 0.1F, SamplingMethod.MONITOR, 60,
-					writer, testConfigService, ArchDBRTypes.DBR_SCALAR_DOUBLE,
-					null, false, false);
-			Thread.sleep(2000);
+    /**
+     * the test of destroying the channel of the pv in monitor mode
+     */
+    @Test
+    public void monitorChannelDestroy() {
+        String pvName = pvPrefix + "test_1";
+        try {
 
-			ArchiveEngine.destoryPv(pvName, testConfigService);
-			Thread.sleep(2000);
-			ArchiveChannel archiveChannel = testConfigService
-					.getEngineContext().getChannelList().get(pvName);
-			assertTrue("the channel for " + pvName
-					+ " should be destroyed but it is not",
-					archiveChannel == null);
+            ArchiveEngine.archivePV(
+                    pvName,
+                    0.1F,
+                    SamplingMethod.MONITOR,
+                    writer,
+                    testConfigService,
+                    ArchDBRTypes.DBR_SCALAR_DOUBLE,
+                    null,
+                    false,
+                    false);
+            Thread.sleep(2000);
 
-		} catch (Exception e) {
-			//
-			logger.error("Exception", e);
-		}
+            ArchiveEngine.destoryPv(pvName, testConfigService);
+            Thread.sleep(2000);
+            ArchiveChannel archiveChannel =
+                    testConfigService.getEngineContext().getChannelList().get(pvName);
+            Assert.assertNull("the channel for " + pvName + " should be destroyed but it is not", archiveChannel);
 
-	}
-
+        } catch (Exception e) {
+            //
+            logger.error("Exception", e);
+        }
+    }
 }

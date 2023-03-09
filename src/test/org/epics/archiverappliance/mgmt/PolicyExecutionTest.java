@@ -8,7 +8,6 @@ import org.epics.archiverappliance.mgmt.policy.ExecutePolicy;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
 import org.junit.Test;
 
-import java.io.File;
 import java.util.HashMap;
 
 import static org.junit.Assert.assertNotNull;
@@ -19,7 +18,7 @@ public class PolicyExecutionTest {
 
     @Test
     public void testSimplePolicyExecution() throws Exception {
-        DefaultConfigService configService = new ConfigServiceForTests(new File("./src/sitespecific/tests/classpathfiles"));
+        DefaultConfigService configService = new ConfigServiceForTests(-1);
         HashMap<String, Object> pvInfo = new HashMap<String, Object>();
         pvInfo.put("eventRate", 1.0f);
         pvInfo.put("storageRate", 1.0f);
@@ -33,7 +32,7 @@ public class PolicyExecutionTest {
 
     @Test
     public void testForLeaks() throws Exception {
-        DefaultConfigService configService = new ConfigServiceForTests(new File("./src/sitespecific/tests/classpathfiles"));
+        DefaultConfigService configService = new ConfigServiceForTests(-1);
         for (int i = 0; i < 10000; i++) {
             HashMap<String, Object> pvInfo = new HashMap<String, Object>();
             pvInfo.put("eventRate", 1.0f);
