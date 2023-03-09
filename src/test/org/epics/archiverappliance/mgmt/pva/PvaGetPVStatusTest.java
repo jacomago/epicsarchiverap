@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 import org.awaitility.Awaitility;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.TomcatSetup;
+import org.epics.archiverappliance.common.PVStatus;
 import org.epics.archiverappliance.mgmt.pva.actions.NTUtil;
 import org.epics.archiverappliance.mgmt.pva.actions.PvaArchivePVAction;
 import org.epics.archiverappliance.mgmt.pva.actions.PvaGetArchivedPVs;
@@ -39,7 +40,8 @@ import static org.epics.archiverappliance.mgmt.pva.PvaMgmtService.PVA_MGMT_SERVI
  *
  * @author Kunal Shroff
  */
-@Tag("integration")@Tag("localEpics")
+@Tag("integration")
+@Tag("localEpics")
 public class PvaGetPVStatusTest {
 
     private static final Logger logger = LogManager.getLogger(PvaGetPVStatusTest.class.getName());
@@ -50,7 +52,7 @@ public class PvaGetPVStatusTest {
     private static PVAClient pvaClient;
     private static PVAChannel pvaChannel;
 
-	@BeforeAll
+    @BeforeAll
     public static void setup() {
         logger.info("Set up for the PvaGetArchivedPVsTest");
         try {
@@ -67,7 +69,7 @@ public class PvaGetPVStatusTest {
         }
     }
 
-	@AfterAll
+    @AfterAll
     public static void tearDown() {
         logger.info("Tear Down for the PvaGetArchivedPVsTest");
         try {
@@ -80,10 +82,11 @@ public class PvaGetPVStatusTest {
         }
     }
 
-    private PVAStructure getCurrentStatus(List<String> pvNames, PVAChannel pvaChannel) throws ExecutionException,
-            InterruptedException, TimeoutException, MustBeArrayException {
+    private PVAStructure getCurrentStatus(List<String> pvNames, PVAChannel pvaChannel)
+            throws ExecutionException, InterruptedException, TimeoutException, MustBeArrayException {
 
-        PVATable archivePvStatusReqTable = PVATable.PVATableBuilder.aPVATable().name(PvaGetPVStatus.NAME)
+        PVATable archivePvStatusReqTable = PVATable.PVATableBuilder.aPVATable()
+                .name(PvaGetPVStatus.NAME)
                 .descriptor(PvaGetPVStatus.NAME)
                 .addColumn(new PVAStringArray("pv", pvNames.toArray(new String[pvNames.size()])))
                 .build();
@@ -101,48 +104,43 @@ public class PvaGetPVStatusTest {
             pvNamesAll.add(pvName);
             if (i % 2 == 0) {
                 pvNamesEven.add(pvName);
-                expectedStatus.put(pvName, "Being archived");
+                expectedStatus.put(pvName, PVStatus.BEING_ARCHIVED.toString());
             } else {
                 pvNamesOdd.add(pvName);
-                expectedStatus.put(pvName, "Not being archived");
+                expectedStatus.put(pvName, PVStatus.NOT_BEING_ARCHIVED.toString());
             }
         }
 
         try {
             // Submit all the even named pv's to be archived
-            PVATable archivePvStatusReqTable = PVATable.PVATableBuilder.aPVATable().name(PvaArchivePVAction.NAME)
+            PVATable archivePvStatusReqTable = PVATable.PVATableBuilder.aPVATable()
+                    .name(PvaArchivePVAction.NAME)
                     .descriptor(PvaArchivePVAction.NAME)
-                    .addColumn(new PVAStringArray("pv", pvNamesEven.toArray(new String[pvNamesEven.size()])))
+                    .addColumn(new PVAStringArray("pv", pvNamesEven.toArray(new String[0])))
                     .build();
             pvaChannel.invoke(archivePvStatusReqTable).get(30, TimeUnit.SECONDS);
-
 
             Awaitility.await()
                     .pollInterval(fibonacci(TimeUnit.SECONDS))
                     .atMost(5, TimeUnit.MINUTES)
-                    .untilAsserted(() ->
-                            Assertions.assertEquals(expectedStatus, getStatuses(pvNamesAll))
-                    );
+                    .untilAsserted(() -> Assertions.assertEquals(expectedStatus, getStatuses(pvNamesAll)));
 
         } catch (Exception e) {
             e.printStackTrace();
             Assertions.fail(e.getMessage());
         }
-
     }
 
-    private HashMap<String, String> getStatuses(List<String> pvNamesAll) throws ExecutionException, InterruptedException, TimeoutException, MustBeArrayException {
-        var statuses = NTUtil.extractStringArray(PVATable
-                .fromStructure(getCurrentStatus(pvNamesAll, pvaChannel))
-                .getColumn("status"));
-        var pvs = NTUtil.extractStringArray(PVATable
-                .fromStructure(getCurrentStatus(pvNamesAll, pvaChannel))
-                .getColumn("pv"));
+    private HashMap<String, String> getStatuses(List<String> pvNamesAll)
+            throws ExecutionException, InterruptedException, TimeoutException, MustBeArrayException {
+        var statuses = NTUtil.extractStringArray(
+                PVATable.fromStructure(getCurrentStatus(pvNamesAll, pvaChannel)).getColumn("status"));
+        var pvs = NTUtil.extractStringArray(
+                PVATable.fromStructure(getCurrentStatus(pvNamesAll, pvaChannel)).getColumn("pv"));
         var result = new HashMap<String, String>();
         for (int i = 0; i < pvs.length; i++) {
             result.put(pvs[i], statuses[i]);
         }
         return result;
     }
-
 }

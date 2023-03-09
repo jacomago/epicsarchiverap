@@ -14,7 +14,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
-import org.epics.archiverappliance.EventStreamDesc;
 import org.epics.archiverappliance.TomcatSetup;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.TimeUtils;
@@ -31,7 +30,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Instant;
@@ -45,6 +43,8 @@ import java.util.HashMap;
 @Tag("integration")
 public class YearSpanRetrievalTest {
     private static final Logger logger = LogManager.getLogger(YearSpanRetrievalTest.class.getName());
+    private static final String pvPrefix = YearSpanRetrievalTest.class.getSimpleName();
+    public static final String PV_NAME = pvPrefix + "--ArchUnitTestyspan";
     static long previousEpochSeconds = 0;
     PBCommonSetup pbSetup = new PBCommonSetup();
     PlainPBStoragePlugin pbplugin = new PlainPBStoragePlugin();
@@ -65,7 +65,7 @@ public class YearSpanRetrievalTest {
         for (short currentyear = (short) 2010; currentyear <= (short) 2013; currentyear++) {
             if (!PlainPBPathNameUtility.getPathNameForTime(
                             pbplugin,
-                            "--ArchUnitTestyspan",
+                            PV_NAME,
                             TimeUtils.getStartOfYear(currentyear),
                             new ArchPaths(),
                             configService.getPVNameToKeyConverter())
@@ -81,17 +81,21 @@ public class YearSpanRetrievalTest {
             for (short currentyear = (short) 2010; currentyear <= (short) 2013; currentyear++) {
                 Files.deleteIfExists(PlainPBPathNameUtility.getPathNameForTime(
                         pbplugin,
-                        "--ArchUnitTestyspan",
+                        PV_NAME,
                         TimeUtils.getStartOfYear(currentyear),
                         new ArchPaths(),
                         configService.getPVNameToKeyConverter()));
             }
 
             SimulationEventStream simstream = new SimulationEventStream(
-                    ArchDBRTypes.DBR_SCALAR_DOUBLE, new SineGenerator(0), TimeUtils.getStartOfYear(2010), TimeUtils.getEndOfYear(2013), 1);
+                    ArchDBRTypes.DBR_SCALAR_DOUBLE,
+                    new SineGenerator(0),
+                    TimeUtils.getStartOfYear(2010),
+                    TimeUtils.getEndOfYear(2013),
+                    1);
             // The pbplugin should handle all the rotation etc.
             try (BasicContext context = new BasicContext()) {
-                pbplugin.appendData(context, "--ArchUnitTestyspan", simstream);
+                pbplugin.appendData(context, PV_NAME, simstream);
             }
         }
     }
@@ -109,17 +113,10 @@ public class YearSpanRetrievalTest {
         Instant end = TimeUtils.convertFromISO8601String("2012-01-01T08:00:00.000Z");
         EventStream stream = null;
         try {
-            stream = rawDataRetrieval.getDataForPVS(
-                    new String[]{ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "yspan"},
-                    start,
-                    end,
-                    new RetrievalEventProcessor() {
-                        @Override
-                        public void newPVOnStream(EventStreamDesc desc) {
-                            logger.info("On the client side, switching to processing PV " + desc.getPvName());
-                            previousEpochSeconds = 0;
-                        }
-                    });
+            stream = rawDataRetrieval.getDataForPVS(new String[] {PV_NAME}, start, end, desc -> {
+                logger.info("On the client side, switching to processing PV " + desc.getPvName());
+                previousEpochSeconds = 0;
+            });
 
             // We are making sure that the stream we get back has times in sequential order...
 

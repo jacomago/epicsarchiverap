@@ -68,19 +68,20 @@ dependencies {
 			"lib/redisnio_0.0.1.jar")
 	testImplementation("com.hubspot.jinjava:jinjava:2.7.0")
 	testImplementation files("lib/test/BPLTaglets.jar")
-	testImplementation(":pbrawclient:0.0.9")
+	testImplementation(":pbrawclient:0.1.1")
+	testRuntimeOnly("org.apache.httpcomponents.client5:httpclient5-fluent:5.2.1")
+
 	// Maven dependencies
-	testImplementation("org.seleniumhq.selenium:selenium-api:4.9.0")
-	testImplementation("org.seleniumhq.selenium:selenium-firefox-driver:4.9.0")
-	testImplementation("org.seleniumhq.selenium:selenium-support:4.9.0")
-	testImplementation("io.github.bonigarcia:webdrivermanager:5.3.2")
-	testImplementation("org.apache.commons:commons-compress:1.23.0")
-	testImplementation("org.junit.jupiter:junit-jupiter-params:5.9.3")
-	implementation("org.apache.tomcat:tomcat-servlet-api:9.0.74")// Only needed for tests, but inbuilt to main)
+	testImplementation("org.seleniumhq.selenium:selenium-api:4.16.1")
+	testImplementation("org.seleniumhq.selenium:selenium-firefox-driver:4.16.1")
+	testImplementation("io.github.bonigarcia:webdrivermanager:5.6.2")
+	testImplementation("org.apache.commons:commons-compress:1.25.0")
+	testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.1")
+	implementation("org.apache.tomcat:tomcat-servlet-api:9.0.84")// Only needed for tests, but inbuilt to main)
 	implementation("org.epics:jca:2.4.7")
-	implementation('commons-codec:commons-codec:1.15')
-	implementation('commons-fileupload:commons-fileupload:1.5')
-	implementation('commons-io:commons-io:2.11.0')
+	implementation("commons-codec:commons-codec:1.16.0")
+	implementation("commons-fileupload:commons-fileupload:1.5")
+	implementation("commons-io:commons-io:2.15.1")
 	implementation("org.apache.commons:commons-lang3:3.12.0")
 	implementation("org.apache.commons:commons-math3:3.6.1")
 	implementation("commons-validator:commons-validator:1.7")
@@ -102,10 +103,10 @@ dependencies {
 	runtimeOnly("org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0")
 	implementation("com.opencsv:opencsv:5.7.1")
 	implementation("com.google.protobuf:protobuf-java:3.23.0")
-	testImplementation("commons-cli:commons-cli:1.5.0")
+	testImplementation ("commons-cli:commons-cli:1.5.0")
 	testImplementation("org.junit.jupiter:junit-jupiter-api:5.2.0")
 	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.2.0")
-	testImplementation('org.awaitility:awaitility:4.2.0')
+	testImplementation("org.awaitility:awaitility:4.2.0")
 	implementation("org.phoebus:core-pva:4.7.2")
 }
 
@@ -302,7 +303,7 @@ tasks.register("engineWar", War) {
 	webXml = file("${srcDir}/org/epics/archiverappliance/engine/WEB-INF/web.xml")
 }
 
-tasks.register("retreivalWar", War) {
+tasks.register("retrievalWar", War) {
 	group = "Wars"
 	dependsOn "zipSvgViewer"
 	from("${stageDir}/org/epics/archiverappliance/retrieval/staticcontent") {
@@ -317,7 +318,7 @@ tasks.register("buildRelease", Tar) {
 	group = "Wars"
 	description = "Builds a full release and zips up in a tar file."
 	dependsOn "mgmtWar"
-	dependsOn "retreivalWar"
+	dependsOn "retrievalWar"
 	dependsOn "etlWar"
 	dependsOn "engineWar"
 	dependsOn "generateReleaseNotes"
@@ -497,6 +498,7 @@ tasks.register("allTests", Test) {
 	description = "Run all the tests."
 	dependsOn "unitTests"
 	dependsOn "singleForkTests"
+	dependsOn "epicsTests"
 	dependsOn "integrationTests"
 	dependsOn "flakyTests"
 }
@@ -528,12 +530,12 @@ spotless {
 	java {
 		// Exclude the generated java from the protobuf
 		targetExclude(fileTree("$srcDir") { include("**/EPICSEvent.java") })
-		importOrder()
 		// don't need to set target, it is inferred from java
 		removeUnusedImports()
 		cleanthat()
 		// apply a specific flavor of google-java-format
 		palantirJavaFormat()
+		importOrder('', 'java|javax', '\\#')
 		// fix formatting of type annotations
 		formatAnnotations()
 	}

@@ -664,7 +664,8 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
             if (this.compressionMode == CompressionMode.NONE) {
                 path = paths.get(this.rootFolder);
                 if (!Files.exists(path)) {
-                    logger.warn(desc + ": The root folder specified does not exist - " + rootFolder + ". Creating it");
+                    logger.warn(desc + ": The root folder specified does not exist - " + path.toAbsolutePath()
+                            + ". Creating it");
                     Files.createDirectories(path);
                     return;
                 }

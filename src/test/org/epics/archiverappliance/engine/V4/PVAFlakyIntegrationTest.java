@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.TomcatSetup;
+import org.epics.archiverappliance.common.PVStatus;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.data.SampleValue;
@@ -26,17 +27,20 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.epics.archiverappliance.ArchiverTestClient.deletePVs;
+import static org.epics.archiverappliance.ArchiverTestClient.pausePV;
+import static org.epics.archiverappliance.ArchiverTestClient.waitForStatusChange;
 import static org.epics.archiverappliance.engine.V4.PVAccessUtil.convertBytesToPVAStructure;
-import static org.epics.archiverappliance.engine.V4.PVAccessUtil.waitForStatusChange;
 
 /**
  * Checks reconnects after connection drops as an integration test.
  */
 @Tag("integration")
-public class PVAFlakyIntegrationTest {
+class PVAFlakyIntegrationTest {
 
     private static final Logger logger = LogManager.getLogger(PVAFlakyIntegrationTest.class.getName());
     TomcatSetup tomcatSetup = new TomcatSetup();
@@ -49,16 +53,18 @@ public class PVAFlakyIntegrationTest {
         pvaServer = new PVAServer();
     }
 
+    String pvName = "PV:" + PVAFlakyIntegrationTest.class.getSimpleName() + ":" + UUID.randomUUID();
+
     @AfterEach
     public void tearDown() throws Exception {
+        pausePV(pvName);
+        deletePVs(List.of(pvName), true);
         tomcatSetup.tearDown();
         pvaServer.close();
     }
 
     @Test
-    public void testStartAfterArchive() throws Exception {
-
-        String pvName = "PV:" + org.epics.archiverappliance.engine.V4.PVAccessIntegrationTest.class.getSimpleName() + ":" + UUID.randomUUID();
+    void testStartAfterArchive() throws Exception {
 
         logger.info("Starting pvAccess test for pv " + pvName);
 
@@ -81,15 +87,13 @@ public class PVAFlakyIntegrationTest {
 
         GetUrlContent.getURLContentAsJSONArray(archivePVURL + pvURLName);
 
-        Instant start = firstInstant;
-
         long samplingPeriodMilliSeconds = 100;
 
         Map<Instant, PVAStructure> expectedValues = new HashMap<>();
         expectedValues.put(firstInstant, pvaStructure.cloneData());
 
         ServerPV serverPV = pvaServer.createPV(pvName, pvaStructure);
-        waitForStatusChange(pvName, "Being archived", 60, mgmtUrl, 10);
+        waitForStatusChange(pvName, PVStatus.BEING_ARCHIVED);
 
         Thread.sleep(samplingPeriodMilliSeconds);
         level1.set("level 1 1");
@@ -103,7 +107,7 @@ public class PVAFlakyIntegrationTest {
         serverPV.close();
         pvaServer.close();
         logger.info("Close pv " + pvName);
-        Thread.sleep(2 * 60 * 1000);
+        Thread.sleep(30 * 1000);
 
         // Restart the pv
         pvaServer = new PVAServer();
@@ -119,7 +123,7 @@ public class PVAFlakyIntegrationTest {
         expectedValues.put(instantSecondChange, pvaStructure.cloneData());
 
         Thread.sleep(samplingPeriodMilliSeconds);
-        double secondsToBuffer = 5.0;
+        double secondsToBuffer = 10.0;
         // Need to wait for the writer to write all the received data.
         Thread.sleep((long) secondsToBuffer * 1000);
         Instant end = Instant.now();
@@ -130,24 +134,28 @@ public class PVAFlakyIntegrationTest {
         EventStream stream = null;
         Map<Instant, SampleValue> actualValues = new HashMap<>();
         try {
-            stream = rawDataRetrieval.getDataForPVS(new String[]{pvName}, start, end, desc -> logger.info("Getting data for PV " + desc.getPvName()));
+            stream = rawDataRetrieval.getDataForPVS(
+                    new String[] {pvName},
+                    firstInstant,
+                    end,
+                    desc -> logger.info("Getting data for PV " + desc.getPvName()));
 
             // Make sure we get the DBR type we expect
-            Assertions.assertEquals(ArchDBRTypes.DBR_V4_GENERIC_BYTES, stream.getDescription().getArchDBRType());
+            Assertions.assertEquals(
+                    ArchDBRTypes.DBR_V4_GENERIC_BYTES, stream.getDescription().getArchDBRType());
 
             // We are making sure that the stream we get back has times in sequential order...
             for (Event e : stream) {
                 actualValues.put(e.getEventTimeStamp(), e.getSampleValue());
             }
         } finally {
-            if (stream != null) try {
-                stream.close();
-            } catch (Throwable ignored) {
-            }
+            if (stream != null)
+                try {
+                    stream.close();
+                } catch (Throwable ignored) {
+                }
         }
 
         Assertions.assertEquals(expectedValues, convertBytesToPVAStructure(actualValues));
     }
-
-
 }
