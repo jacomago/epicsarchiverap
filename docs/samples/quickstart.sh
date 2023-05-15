@@ -5,7 +5,7 @@ set -e
 # 
 # It then unpacks the tomcat distribution in the current folder and deploys the four WAR files onto this tomcat instance
 # The server.xml is overwritten with a default server.xml
-# A log4j.properties with DEBUG logging is copied into the tomcat lib folder. 
+# A log4j2.xml with DEBUG logging is copied into the tomcat lib folder.
 # Finally, the tomcat instance is started using catalina run
 #
 # If all goes well, we should be able to point the browser to tomcat instance and then see the archiver homescreen.
@@ -179,7 +179,7 @@ cat > "${TOMCAT_VERSION_FOLDER}/conf/server.xml" <<EOF
 EOF
 
 # Write a log4.properties file into the lib folder
-cat > "${TOMCAT_VERSION_FOLDER}/lib/log4j.properties" <<EOF
+cat > "${TOMCAT_VERSION_FOLDER}/lib/log4j2.xml" <<EOF
 log4j.rootLogger=${DEFAULT_LOG_LEVEL}, console
 log4j.logger.org.apache.http=ERROR
 log4j.logger.config.org.epics.archiverappliance=DEBUG

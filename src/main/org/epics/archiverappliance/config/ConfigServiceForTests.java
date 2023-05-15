@@ -1,20 +1,5 @@
 package org.epics.archiverappliance.config;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-
-import javax.servlet.ServletContext;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
@@ -24,14 +9,27 @@ import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 
+import javax.servlet.ServletContext;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+
 public class ConfigServiceForTests extends DefaultConfigService {
-	private static Logger logger = LogManager.getLogger(ConfigServiceForTests.class.getName());
-	private static Logger configlogger = LogManager.getLogger("config." + ConfigServiceForTests.class.getName());
+	private static final Logger logger = LogManager.getLogger(ConfigServiceForTests.class.getName());
+	private static final Logger configlogger = LogManager.getLogger("config." + ConfigServiceForTests.class.getName());
 
 	private File webInfClassesFolder;
 
 	public static final String TESTAPPLIANCE0 = "appliance0";
-	private boolean isUnitTests = false;
 	protected static final String DEFAULT_PB_SHORT_TERM_TEST_DATA_FOLDER = getDefaultShortTermFolder();
 	/**
 	 * A folder which is used to store the data for the unit tests...
@@ -94,7 +92,7 @@ public class ConfigServiceForTests extends DefaultConfigService {
 		try{
             InputStream is = this.getClass().getClassLoader().getResourceAsStream(DEFAULT_ARCHAPPL_PROPERTIES_FILENAME);
 			archapplproperties.load(is);
-			configlogger.info(String.format("loadings properties file. %s",DEFAULT_ARCHAPPL_PROPERTIES_FILENAME));
+			configlogger.info("loadings properties file. {}", DEFAULT_ARCHAPPL_PROPERTIES_FILENAME);
         }
         catch(NullPointerException e){
             Path config_path = Paths.get(this.webInfClassesFolder.getAbsolutePath() + File.separatorChar + DEFAULT_ARCHAPPL_PROPERTIES_FILENAME);
@@ -151,13 +149,9 @@ public class ConfigServiceForTests extends DefaultConfigService {
 
 	@Override
 	public ApplianceInfo getApplianceForPV(String pvName) {
-		ApplianceInfo applianceInfo = super.getApplianceForPV(pvName);
 		// We should do the following code only for unit tests (and not for the real config service).
-		if(applianceInfo == null && isUnitTests && pvName.startsWith(ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX)) {
-			logger.debug("Setting appliance for unit test pv " + pvName + " to self in unit tests mode.");
-			applianceInfo = myApplianceInfo;
-		}
-		return applianceInfo;
+
+		return super.getApplianceForPV(pvName);
 	}
 
 	@Override
