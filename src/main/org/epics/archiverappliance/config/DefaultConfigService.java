@@ -7,46 +7,29 @@
  *******************************************************************************/
 package org.epics.archiverappliance.config;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.management.ManagementFactory;
-import java.lang.management.PlatformLoggingMXBean;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import javax.servlet.ServletContext;
-
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.cache.RemovalListener;
+import com.google.common.eventbus.AsyncEventBus;
+import com.google.common.eventbus.EventBus;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
+import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.cluster.MembershipListener;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.listener.EntryAddedListener;
+import com.hazelcast.map.listener.EntryRemovedListener;
+import com.hazelcast.map.listener.EntryUpdatedListener;
+import com.hazelcast.topic.ITopic;
+import edu.stanford.slac.archiverappliance.PB.data.PBTypeSystem;
 import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -77,50 +60,56 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.xml.sax.SAXException;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
-import com.google.common.eventbus.AsyncEventBus;
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.Cluster;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
-import com.hazelcast.core.Message;
-import com.hazelcast.core.MessageListener;
-import com.hazelcast.map.listener.EntryAddedListener;
-import com.hazelcast.map.listener.EntryRemovedListener;
-import com.hazelcast.map.listener.EntryUpdatedListener;
-
-import edu.stanford.slac.archiverappliance.PB.data.PBTypeSystem;
-
+import javax.servlet.ServletContext;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.management.ManagementFactory;
+import java.lang.management.PlatformLoggingMXBean;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URL;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 
 /**
  * This is the default config service for the archiver appliance.
  * There is a subclass that is used in the junit tests.
- * 
- * @author mshankar
  *
+ * @author mshankar
  */
 public class DefaultConfigService implements ConfigService {
-	private static Logger logger = LogManager.getLogger(DefaultConfigService.class.getName());
-	private static Logger configlogger = LogManager.getLogger("config." + DefaultConfigService.class.getName());
-	private static Logger clusterLogger = LogManager.getLogger("cluster." + DefaultConfigService.class.getName());
+	private static final Logger logger = LogManager.getLogger(DefaultConfigService.class.getName());
+	private static final Logger configlogger = LogManager.getLogger("config." + DefaultConfigService.class.getName());
+	private static final Logger clusterLogger = LogManager.getLogger("cluster." + DefaultConfigService.class.getName());
 
 	static {
 		System.getProperties().setProperty("log4j1.compatibility", "true");
@@ -128,13 +117,13 @@ public class DefaultConfigService implements ConfigService {
 
 	public static final String SITE_FOR_UNIT_TESTS_NAME = "org.epics.archiverappliance.config.site";
 	public static final String SITE_FOR_UNIT_TESTS_VALUE = "tests";
-	
+
 	/**
 	 * Add a property in archappl.properties under this key to identify the class that implements the PVNameToKeyMapping for this installation.
 	 */
 	public static final String ARCHAPPL_PVNAME_TO_KEY_MAPPING_CLASSNAME = "org.epics.archiverappliance.config.DefaultConfigService.PVName2KeyMappingClassName";
 
-	
+
 	// Configuration state begins here.
 	protected String myIdentity;
 	protected ApplianceInfo myApplianceInfo = null;
@@ -152,23 +141,23 @@ public class DefaultConfigService implements ConfigService {
 	protected ITopic<PubSubEvent> pubSub = null;
 	protected Map<String, Boolean> namedFlags = null;
 	// Configuration state ends here.
-	
-	// Runtime state begins here 
-	protected LinkedList<Runnable> shutdownHooks = new LinkedList<Runnable>();
+
+	// Runtime state begins here
+	protected LinkedList<Runnable> shutdownHooks = new LinkedList<>();
 	protected PBThreeTierETLPVLookup etlPVLookup = null;
 	protected RetrievalState retrievalState = null;
 	protected MgmtRuntimeState mgmtRuntime = null;
 	protected EngineContext engineContext = null;
-	protected ConcurrentSkipListSet<String> appliancesInCluster = new ConcurrentSkipListSet<String>();
-	// Runtime state ends here 
+	protected ConcurrentSkipListSet<String> appliancesInCluster = new ConcurrentSkipListSet<>();
+	// Runtime state ends here
 
 	// This is an optimization; we cache a copy of PVs that are registered for this appliance.
 	protected ConcurrentSkipListSet<String> pvsForThisAppliance = null;
 	// Maintain a TRIE index for the pvNames in this appliance.
-	protected ConcurrentHashMap<String, ConcurrentSkipListSet<String>> parts2PVNamesForThisAppliance = new ConcurrentHashMap<String, ConcurrentSkipListSet<String>>(); 
+	protected ConcurrentHashMap<String, ConcurrentSkipListSet<String>> parts2PVNamesForThisAppliance = new ConcurrentHashMap<String, ConcurrentSkipListSet<String>>();
 	protected ConcurrentSkipListSet<String> pausedPVsForThisAppliance = null;
 	protected ApplianceAggregateInfo applianceAggregateInfo = new ApplianceAggregateInfo();
-	protected EventBus eventBus = new AsyncEventBus(Executors.newSingleThreadExecutor(new ThreadFactory() { @Override public Thread newThread(Runnable r) { return new Thread(r, "Event bus");}}));
+	protected EventBus eventBus = new AsyncEventBus(Executors.newSingleThreadExecutor(r -> new Thread(r, "Event bus")));
 	protected Properties archapplproperties = new Properties();
 	protected PVNameToKeyMapping pvName2KeyConverter = null;
 	protected ConfigPersistence persistanceLayer;
@@ -179,18 +168,17 @@ public class DefaultConfigService implements ConfigService {
 	protected STARTUP_SEQUENCE startupState = STARTUP_SEQUENCE.ZEROTH_STATE;
 	protected ScheduledExecutorService startupExecutor = null;
 	protected ProcessMetrics processMetrics = new ProcessMetrics();
-	private HashSet<String> runTimeFields = new HashSet<String>();
+	private final HashSet<String> runTimeFields = new HashSet<String>();
 	// Use a Guava cache to store one and only one ExecutePolicy object that expires after some inactivity.
 	// The side effect is that it may take this many minutes to update the policy that is cached.
-	private LoadingCache<String, ExecutePolicy> theExecutionPolicy = CacheBuilder.newBuilder()
+	private final LoadingCache<String, ExecutePolicy> theExecutionPolicy = CacheBuilder.newBuilder()
 			.expireAfterWrite(1, TimeUnit.MINUTES)
-			.removalListener(new RemovalListener<String, ExecutePolicy>() {
-				@Override
-				public void onRemoval(RemovalNotification<String, ExecutePolicy> arg) {
-					arg.getValue().close();
-				}
+			.removalListener((RemovalListener<String, ExecutePolicy>) arg -> {
+				assert arg.getValue() != null;
+				arg.getValue().close();
 			})
-			.build(new CacheLoader<String, ExecutePolicy>() {
+			.build(new CacheLoader<>() {
+				@Override
 				public ExecutePolicy load(String key) throws IOException {
 					logger.info("Updating the cached execute policy");
 					return new ExecutePolicy(DefaultConfigService.this);
@@ -198,10 +186,9 @@ public class DefaultConfigService implements ConfigService {
 			});
 
 
-
 	private ServletContext servletContext;
-	
-	private long appserverStartEpochSeconds = TimeUtils.getCurrentEpochSeconds();
+
+	private final long appserverStartEpochSeconds = TimeUtils.getCurrentEpochSeconds();
 
 	protected DefaultConfigService() {
 		// Only the unit tests config service uses this constructor.
@@ -211,19 +198,19 @@ public class DefaultConfigService implements ConfigService {
 	public void initialize(ServletContext sce) throws ConfigException {
 		this.servletContext = sce;
 		String contextPath = sce.getContextPath();
-		logger.info("DefaultConfigService was created with a servlet context " + contextPath);
-		
-		try { 
+		logger.info("DefaultConfigService was created with a servlet context {}", contextPath);
+
+		try {
 			String pathToVersionTxt = sce.getRealPath("ui/comm/version.txt");
-			logger.debug("The full path to the version.txt is " + pathToVersionTxt);
-			List<String> lines = Files.readAllLines(Paths.get(pathToVersionTxt), Charset.forName("UTF-8"));
-			for(String line : lines) { 
+			logger.debug("The full path to the version.txt is {}", pathToVersionTxt);
+			List<String> lines = Files.readAllLines(Paths.get(pathToVersionTxt), StandardCharsets.UTF_8);
+			for (String line : lines) {
 				configlogger.info(line);
 			}
-		} catch(Throwable t) {
-			logger.fatal("Unable to determine appliance version", t);
+		} catch (Exception e) {
+			logger.fatal("Unable to determine appliance version", e);
 		}
-		
+
 		try {
 			// We first try Java system properties for this appliance's identity
 			// If a property is not defined, then we check the environment.
@@ -233,9 +220,9 @@ public class DefaultConfigService implements ConfigService {
 			myIdentity = System.getProperty(ARCHAPPL_MYIDENTITY);
 			if(myIdentity == null) {
 				myIdentity = System.getenv(ARCHAPPL_MYIDENTITY);
-				if(myIdentity != null) { 
-					logger.info("Obtained my identity from environment variable " + myIdentity);
-				} else { 
+				if(myIdentity != null) {
+					logger.info("Obtained my identity from environment variable {}", myIdentity);
+				} else {
 					logger.info("Using the local machine's hostname " + myIdentity + " as my identity");
 					myIdentity = InetAddress.getLocalHost().getCanonicalHostName();
 				}
@@ -243,13 +230,13 @@ public class DefaultConfigService implements ConfigService {
 					throw new ConfigException("Unable to determine identity of this appliance");
 				}
 			} else {
-				logger.info("Obtained my identity from Java system properties " + myIdentity);
+				logger.info("Obtained my identity from Java system properties {}", myIdentity);
 			}
 
-			logger.info("My identity is " + myIdentity);
+			logger.info("My identity is {}", myIdentity);
 		} catch(Exception ex) {
 			String msg = "Cannot determine this appliance's identity using either the environment variable " + ARCHAPPL_MYIDENTITY + " or the java system property " + ARCHAPPL_MYIDENTITY;
-			configlogger.fatal(msg); 
+			configlogger.fatal(msg);
 			throw new ConfigException(msg, ex);
 		}
 		// Appliances should be local and come straight from persistence.
@@ -258,194 +245,163 @@ public class DefaultConfigService implements ConfigService {
 		} catch(Exception ex) {
 			throw new ConfigException("Exception loading appliances.xml", ex);
 		}
-		
+
 		myApplianceInfo = appliances.get(myIdentity);
 		if(myApplianceInfo == null) throw new ConfigException("Unable to determine applianceinfo using identity " + myIdentity);
-		configlogger.info("My identity is " + myApplianceInfo.getIdentity() + " and my mgmt URL is " + myApplianceInfo.getMgmtURL());
-		
+		configlogger.info("My identity is {}", myApplianceInfo.getIdentity() + " and my mgmt URL is " + myApplianceInfo.getMgmtURL());
+
 		// To make sure we are not starting multiple appliance with the same identity, we make sure that the hostnames match
-		try { 
+		try {
 			String machineHostName = InetAddress.getLocalHost().getCanonicalHostName();
 			String[] myAddrParts = myApplianceInfo.getClusterInetPort().split(":");
 			String myHostNameFromInfo = myAddrParts[0];
-			if(myHostNameFromInfo.equals("localhost")) { 
+			if(myHostNameFromInfo.equals("localhost")) {
 				logger.debug("Using localhost for the cluster inet port. If you are indeed running a cluster, the cluster members will not join the cluster.");
-			} else if (myHostNameFromInfo.equals(machineHostName)) { 
-				logger.debug("Hostname from config and hostname from InetAddress match exactly; we are correctly configured " + machineHostName);				
+			} else if (myHostNameFromInfo.equals(machineHostName)) {
+				logger.debug("Hostname from config and hostname from InetAddress match exactly; we are correctly configured {}", machineHostName);
 			} else if(InetAddressValidator.getInstance().isValid(myHostNameFromInfo)) {
-				logger.debug("Using ipAddress for cluster config " + myHostNameFromInfo);				
-			} else { 
-				String msg = "The hostname from appliances.xml is " + myHostNameFromInfo + " and from a call to InetAddress.getLocalHost().getCanonicalHostName() (typially FQDN) is " + machineHostName 
+				logger.debug("Using ipAddress for cluster config {}", myHostNameFromInfo);
+			} else {
+				String msg = "The hostname from appliances.xml is " + myHostNameFromInfo + " and from a call to InetAddress.getLocalHost().getCanonicalHostName() (typially FQDN) is " + machineHostName
 						+ ". These are not identical. They are probably equivalent but to prevent multiple appliances binding to the same identity we enforce this equality.";
 				configlogger.fatal(msg);
 				throw new ConfigException(msg);
 			}
-		} catch(UnknownHostException ex) { 
+		} catch(UnknownHostException ex) {
 			configlogger.error("Got an UnknownHostException when trying to determine the hostname. This happens when DNS is not set correctly on this machine (for example, when using VM's. See the documentation for InetAddress.getLocalHost().getCanonicalHostName()");
 		}
 
-		try { 
+		try {
 			String archApplPropertiesFileName = System.getProperty(ARCHAPPL_PROPERTIES_FILENAME);
 			if(archApplPropertiesFileName == null) {
 				archApplPropertiesFileName = System.getenv(ARCHAPPL_PROPERTIES_FILENAME);
-			} 
+			}
 			if(archApplPropertiesFileName == null) {
 				archApplPropertiesFileName = new URL(this.getClass().getClassLoader().getResource(DEFAULT_ARCHAPPL_PROPERTIES_FILENAME).toString()).getPath();
-				configlogger.info("Loading archappl.properties from the webapp classpath " + archApplPropertiesFileName);
-			} else { 
-				configlogger.info("Loading archappl.properties using the environment/JVM property from " + archApplPropertiesFileName);
+				configlogger.info("Loading archappl.properties from the webapp classpath {}", archApplPropertiesFileName);
+			} else {
+				configlogger.info("Loading archappl.properties using the environment/JVM property from {}", archApplPropertiesFileName);
 			}
-			try(InputStream is = new FileInputStream(new File(archApplPropertiesFileName))) {
+			try (InputStream is = new FileInputStream(archApplPropertiesFileName)) {
 				archapplproperties.load(is);
-				configlogger.info("Done loading installation specific properties file from " + archApplPropertiesFileName);
-			} catch(Exception ex) {
+				configlogger.info("Done loading installation specific properties file from {}", archApplPropertiesFileName);
+			} catch (Exception ex) {
 				throw new ConfigException("Exception loading installation specific properties file " + archApplPropertiesFileName, ex);
 			}
-		} catch(ConfigException cex) { 
+		} catch (ConfigException cex) {
 			throw cex;
-		} catch(Exception ex) { 
+		} catch (Exception ex) {
 			configlogger.fatal("Exception loading the appliance properties file", ex);
 		}
-		
-		switch(contextPath) {
-		case "/mgmt":
-			warFile = WAR_FILE.MGMT;
-			this.mgmtRuntime = new MgmtRuntimeState(this);
-			break;
-		case "/engine":
-			warFile = WAR_FILE.ENGINE;
-			this.engineContext=new EngineContext(this);
-			break;
-		case "/retrieval":
-			warFile = WAR_FILE.RETRIEVAL;
-			this.retrievalState = new RetrievalState(this);
-			break;
-		case "/etl":
-			this.etlPVLookup = new PBThreeTierETLPVLookup(this);
-			warFile = WAR_FILE.ETL;
-			break;
-		default:
-			logger.error("We seem to have introduced a new component into the system " + contextPath);
+
+		switch (contextPath) {
+			case "/mgmt" -> {
+				warFile = WAR_FILE.MGMT;
+				this.mgmtRuntime = new MgmtRuntimeState(this);
+			}
+			case "/engine" -> {
+				warFile = WAR_FILE.ENGINE;
+				this.engineContext = new EngineContext(this);
+			}
+			case "/retrieval" -> {
+				warFile = WAR_FILE.RETRIEVAL;
+				this.retrievalState = new RetrievalState(this);
+			}
+			case "/etl" -> {
+				this.etlPVLookup = new PBThreeTierETLPVLookup(this);
+				warFile = WAR_FILE.ETL;
+			}
+			default ->
+					logger.error("We seem to have introduced a new component into the system " + contextPath);
 		}
-		
-		
+
 
 		String pvName2KeyMappingClass = this.getInstallationProperties().getProperty(ARCHAPPL_PVNAME_TO_KEY_MAPPING_CLASSNAME);
-		if(pvName2KeyMappingClass == null || pvName2KeyMappingClass.equals("") || pvName2KeyMappingClass.length() < 1) {
+		if (pvName2KeyMappingClass == null || pvName2KeyMappingClass.length() < 1) {
 			logger.info("Using the default key mapping class");
 			pvName2KeyConverter = new ConvertPVNameToKey();
 			pvName2KeyConverter.initialize(this);
-		} else { 
-			try { 
+		} else {
+			try {
 				logger.info("Using " + pvName2KeyMappingClass + " as the name to key mapping class");
 				pvName2KeyConverter = (PVNameToKeyMapping) Class.forName(pvName2KeyMappingClass).getConstructor().newInstance();
 				pvName2KeyConverter.initialize(this);
-			} catch(Exception ex) { 
+			} catch (Exception ex) {
 				logger.fatal("Cannot initialize pv name to key mapping class " + pvName2KeyMappingClass, ex);
-				throw new ConfigException("Cannot initialize pv name to key mapping class " + pvName2KeyMappingClass, ex);			
+				throw new ConfigException("Cannot initialize pv name to key mapping class " + pvName2KeyMappingClass, ex);
 			}
 		}
 
 		String runtimeFieldsListStr = this.getInstallationProperties().getProperty("org.epics.archiverappliance.config.RuntimeKeys");
-		if(runtimeFieldsListStr != null && !runtimeFieldsListStr.isEmpty()) { 
-			logger.debug("Got runtime fields from the properties file " + runtimeFieldsListStr);
+		if (runtimeFieldsListStr != null && !runtimeFieldsListStr.isEmpty()) {
+			logger.debug("Got runtime fields from the properties file {}", runtimeFieldsListStr);
 			String[] runTimeFieldsArr = runtimeFieldsListStr.split(",");
-			for(String rf : runTimeFieldsArr) {
+			for (String rf : runTimeFieldsArr) {
 				this.runTimeFields.add(rf.trim());
 			}
 		}
-				
-		
-		startupExecutor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
-			@Override
-			public Thread newThread(Runnable r) {
-				Thread t = new Thread(r);
-				t.setName("Startup executor");
-				return t;
-			}
+
+
+		startupExecutor = Executors.newScheduledThreadPool(1, r -> {
+			Thread t = new Thread(r);
+			t.setName("Startup executor");
+			return t;
 		});
-		
-		this.addShutdownHook(new Runnable() {
-			@Override
-			public void run() {
-				logger.info("Shutting down startup scheduled executor...");
-				startupExecutor.shutdown();
-			}
+
+		this.addShutdownHook(() -> {
+			logger.info("Shutting down startup scheduled executor...");
+			startupExecutor.shutdown();
 		});
-		
+
 		this.startupState = STARTUP_SEQUENCE.READY_TO_JOIN_APPLIANCE;
-		if(this.warFile == WAR_FILE.MGMT) {
+		if (this.warFile == WAR_FILE.MGMT) {
 			logger.info("Scheduling webappReady's for the mgmt webapp ");
 			MgmtPostStartup mgmtPostStartup = new MgmtPostStartup(this);
 			ScheduledFuture<?> postStartupFuture = startupExecutor.scheduleAtFixedRate(mgmtPostStartup, 10, 20, TimeUnit.SECONDS);
 			mgmtPostStartup.setCancellingFuture(postStartupFuture);
 		} else {
-			logger.info("Scheduling webappReady's for the non-mgmt webapp " + this.warFile.toString());
+			logger.info("Scheduling webappReady's for the non-mgmt webapp {}", this.warFile);
 			NonMgmtPostStartup nonMgmtPostStartup = new NonMgmtPostStartup(this, this.warFile.toString());
 			ScheduledFuture<?> postStartupFuture = startupExecutor.scheduleAtFixedRate(nonMgmtPostStartup, 10, 20, TimeUnit.SECONDS);
 			nonMgmtPostStartup.setCancellingFuture(postStartupFuture);
 		}
-		
+
 		// Measure some JMX metrics once a minute
-		startupExecutor.scheduleAtFixedRate(new Runnable() {
-			@Override
-			public void run() {
-				processMetrics.takeMeasurement();
-			}
-		}, 60, 60, TimeUnit.SECONDS);
+		startupExecutor.scheduleAtFixedRate(() -> processMetrics.takeMeasurement(), 60, 60, TimeUnit.SECONDS);
 	}
-	
-	
+
+
 	/* (non-Javadoc)
 	 * @see org.epics.archiverappliance.config.ConfigService#postStartup()
 	 */
 	@Override
 	public void postStartup() throws ConfigException {
 		if(this.startupState != STARTUP_SEQUENCE.READY_TO_JOIN_APPLIANCE) {
-			configlogger.info("Webapp is not in correct state for postStartup " + this.getWarFile().toString() + ". It is in " + this.startupState.toString());
+			configlogger.info("Webapp is not in correct state for postStartup {}", this.getWarFile() + ". It is in " + this.startupState);
 			return;
 		}
-		
+
 		this.startupState = STARTUP_SEQUENCE.POST_STARTUP_RUNNING;
 		configlogger.info("Post startup for " + this.getWarFile().toString());
 
-		// Inherit logging from log4j configuration.
-		try { 
-			PlatformLoggingMXBean logging = ManagementFactory.getPlatformMXBean(PlatformLoggingMXBean.class);
-			if(logging != null) {
-				java.util.logging.Logger.getLogger("com.hazelcast");
-				if(clusterLogger.isDebugEnabled()) { 
-					logging.setLoggerLevel("com.hazelcast", java.util.logging.Level.FINE.toString());
-				} else if(clusterLogger.isInfoEnabled()) { 
-					logging.setLoggerLevel("com.hazelcast", java.util.logging.Level.INFO.toString());
-				} else { 
-					logger.info("Setting clustering logging based on log levels for cluster." + getClass().getName());
-					logging.setLoggerLevel("com.hazelcast", java.util.logging.Level.SEVERE.toString());
-				}
-			}
-
-		} catch(Exception ex) { 
-			logger.error("Exception setting logging JVM levels ", ex);
-		}
-		
 		// Add this to the system props before doing anything with Hz
 		System.getProperties().put("hazelcast.logging.type", "log4j2");
 
 		HazelcastInstance hzinstance = null;
-		
+
 		// Set the thread count to control how may threads this library spawns.
 		Properties hzThreadCounts = new Properties();
-		if(System.getenv().containsKey("ARCHAPPL_ALL_APPS_ON_ONE_JVM")) { 
+		if(System.getenv().containsKey("ARCHAPPL_ALL_APPS_ON_ONE_JVM")) {
 			logger.info("Reducing the generic clustering thread counts.");
 			hzThreadCounts.put("hazelcast.clientengine.thread.count", "2");
 			hzThreadCounts.put("hazelcast.operation.generic.thread.count", "2");
 			hzThreadCounts.put("hazelcast.operation.thread.count", "2");
 		}
-		
+
 		if(this.warFile == WAR_FILE.MGMT) {
 			// The management webapps are the head honchos in the cluster. We set them up differently
 
-			configlogger.debug("Initializing the MGMT webapp's clustering");
+			configlogger.info("Initializing the MGMT webapp's clustering");
 			// If we have a hazelcast.xml in the servlet classpath, the XmlConfigBuilder picks that up.
 			// If not we use the default config found in hazelcast.jar
 			// We then alter this config to suit our purposes.
@@ -466,15 +422,9 @@ public class DefaultConfigService implements ConfigService {
 					// We'll add the actual interface later below
 					config.getNetworkConfig().getInterfaces().setEnabled(true);
 					config.getNetworkConfig().getInterfaces().clear();
-					
-					// We don't really use the authentication provided by the tool; however, we set it to some default
-					config.getGroupConfig().setName("archappl");
-					config.getGroupConfig().setPassword("archappl");
 
 					// Backup count is 1 by default; we set it explicitly however...
 					config.getMapConfig("default").setBackupCount(1);
-					
-					config.setProperty("hazelcast.logging.type", "log4j2");
 				} else {
 					logger.debug("There is a hazelcast.xml in the classpath; skipping default configuration in the code.");
 				}
@@ -483,46 +433,46 @@ public class DefaultConfigService implements ConfigService {
 			}
 
 			config.setInstanceName(myIdentity);
-			
+
 			if(!hzThreadCounts.isEmpty()) {
 				logger.info("Reducing the generic clustering thread counts.");
 				config.getProperties().putAll(hzThreadCounts);
 			}
-			
+
 			try {
 				String[] myAddrParts = myApplianceInfo.getClusterInetPort().split(":");
 				String myHostName = myAddrParts[0];
 				InetAddress myInetAddr = InetAddress.getByName(myHostName);
-				if(!myHostName.equals("localhost") && myInetAddr.isLoopbackAddress()) { 
-					logger.info("Address for this appliance -- " + myInetAddr.toString() + " is a loopback address. Changing this to 127.0.0.1 to clustering happy");
+				if(!myHostName.equals("localhost") && myInetAddr.isLoopbackAddress()) {
+					logger.info("Address for this appliance -- " + myInetAddr + " is a loopback address. Changing this to 127.0.0.1 to clustering happy");
 					myInetAddr = InetAddress.getByName("127.0.0.1");
 				}
 				int myClusterPort = Integer.parseInt(myAddrParts[1]);
-				
+
 				logger.debug("We do not let the port auto increment for the MGMT webap");
-				config.getNetworkConfig().setPortAutoIncrement(false);				
+				config.getNetworkConfig().setPortAutoIncrement(false);
 
 				config.getNetworkConfig().setPort(myClusterPort);
 				config.getNetworkConfig().getInterfaces().addInterface(myInetAddr.getHostAddress());
-				configlogger.info("Setting my cluster port base to " + myClusterPort + " and using interface " + myInetAddr.getHostAddress());
-				
+				configlogger.info("Setting my cluster port base to {} and using interface {}", myClusterPort, myInetAddr.getHostAddress());
+
 				for(ApplianceInfo applInfo : appliances.values()) {
-					if(applInfo.getIdentity().equals(myIdentity) && this.warFile == WAR_FILE.MGMT) { 
+					if(applInfo.getIdentity().equals(myIdentity) && this.warFile == WAR_FILE.MGMT) {
 						logger.debug("Not adding myself to the discovery process when I am the mgmt webapp");
-					} else { 
+					} else {
 						String[] addressparts = applInfo.getClusterInetPort().split(":");
 						String inetaddrpart = addressparts[0];
-						try { 
+						try {
 							InetAddress inetaddr = InetAddress.getByName(inetaddrpart);
-							if(!inetaddrpart.equals("localhost") && inetaddr.isLoopbackAddress()) { 
-								logger.info("Address for appliance " + applInfo.getIdentity() + " -  "+ inetaddr.toString() + " is a loopback address. Changing this to 127.0.0.1 to clustering happy");
+							if(!inetaddrpart.equals("localhost") && inetaddr.isLoopbackAddress()) {
+								logger.info("Address for appliance {} - {} is a loopback address. Changing this to 127.0.0.1 to clustering happy", applInfo.getIdentity() , inetaddr);
 								inetaddr = InetAddress.getByName("127.0.0.1");
 							}
 							int clusterPort = Integer.parseInt(addressparts[1]);
-							logger.info("Adding " + applInfo.getIdentity() + " from appliances.xml to the cluster discovery using cluster inetport " + inetaddr.toString() + ":" + clusterPort);
+							logger.info("Adding {} from appliances.xml to the cluster discovery using cluster inetport {}:{}", applInfo.getIdentity(), inetaddr, clusterPort);
 							config.getNetworkConfig().getJoin().getTcpIpConfig().addMember(inetaddr.getHostAddress() + ":" + clusterPort);
-						} catch(UnknownHostException ex) { 
-							configlogger.info("Cannnot resolve the IP address for appliance " + inetaddrpart + ". Skipping adding this appliance to the cliuster.");
+						} catch(UnknownHostException ex) {
+							configlogger.info("Cannnot resolve the IP address for appliance {}. Skipping adding this appliance to the cliuster.", inetaddrpart);
 						}
 					}
 				}
@@ -532,7 +482,7 @@ public class DefaultConfigService implements ConfigService {
 			}
 		} else {
 			// All other webapps are "native" clients.
-			try { 
+			try {
 				configlogger.debug("Initializing a non-mgmt webapp's clustering");
 				/*
 				 * Loads the client config using the following resolution mechanism:
@@ -542,42 +492,37 @@ public class DefaultConfigService implements ConfigService {
 				 *   4. it loads the hazelcast-client-default.xml
 				 */
 				ClientConfig clientConfig = new XmlClientConfigBuilder().build();
-				clientConfig.getGroupConfig().setName("archappl");
-				clientConfig.getGroupConfig().setPassword("archappl");
-				clientConfig.setExecutorPoolSize(4);
 				// Non mgmt client can only connect to their MGMT webapp.
 				String[] myAddrParts = myApplianceInfo.getClusterInetPort().split(":");
 				String myHostName = myAddrParts[0];
 				InetAddress myInetAddr = InetAddress.getByName(myHostName);
-				if(!myHostName.equals("localhost") && myInetAddr.isLoopbackAddress()) { 
-					logger.info("Address for this appliance -- " + myInetAddr.toString() + " is a loopback address. Changing this to 127.0.0.1 to clustering happy");
+				if(!myHostName.equals("localhost") && myInetAddr.isLoopbackAddress()) {
+					logger.info("Address for this appliance -- {}", myInetAddr + " is a loopback address. Changing this to 127.0.0.1 to clustering happy");
 					myInetAddr = InetAddress.getByName("127.0.0.1");
 				}
 				int myClusterPort = Integer.parseInt(myAddrParts[1]);
-	
-				configlogger.debug(this.warFile + " connecting as a native client to " + myInetAddr.getHostAddress() + ":" + myClusterPort);
+
+				configlogger.debug(this.warFile + " connecting as a native client to {}", myInetAddr.getHostAddress() + ":" + myClusterPort);
 				clientConfig.getNetworkConfig().addAddress(myInetAddr.getHostAddress() + ":" + myClusterPort);
 				clientConfig.setProperty("hazelcast.logging.type", "log4j2");
-				
-				if(!hzThreadCounts.isEmpty()) {
+
+				if (!hzThreadCounts.isEmpty()) {
 					logger.info("Reducing the generic clustering thread counts.");
 					clientConfig.getProperties().putAll(hzThreadCounts);
 				}
 
-				configlogger.info("client network config conn attempt limit: " + clientConfig.getNetworkConfig().getConnectionAttemptLimit());
-				configlogger.info("client network config conn attempt period: " + clientConfig.getNetworkConfig().getConnectionAttemptPeriod());
-				configlogger.info("client network config conn timeout: " + clientConfig.getNetworkConfig().getConnectionTimeout());
-				configlogger.info("client network config addresses: " + clientConfig.getNetworkConfig().getAddresses().stream().map(Object::toString).collect(Collectors.joining(",")));
-				configlogger.info("client network config is redo: " + clientConfig.getNetworkConfig().isRedoOperation());
-				configlogger.info("client config properties: " + clientConfig.getProperties().toString());
+				configlogger.info("client network config conn timeout: {}", clientConfig.getNetworkConfig().getConnectionTimeout());
+				configlogger.info("client network config addresses: {}", clientConfig.getNetworkConfig().getAddresses().stream().map(Object::toString).collect(Collectors.joining(",")));
+				configlogger.info("client network config is redo: {}", clientConfig.getNetworkConfig().isRedoOperation());
+				configlogger.info("client config properties: {}", clientConfig.getProperties());
 				hzinstance = HazelcastClient.newHazelcastClient(clientConfig);
 			} catch(Exception ex) {
 				throw new ConfigException("Exception adding client to cluster", ex);
 			}
 		}
-		
-		
-		
+
+
+
 		pv2appliancemapping = hzinstance.getMap("pv2appliancemapping");
 		namedFlags = hzinstance.getMap("namedflags");
 		typeInfos = hzinstance.getMap("typeinfo");
@@ -588,47 +533,38 @@ public class DefaultConfigService implements ConfigService {
 		aliasNamesToRealNames = hzinstance.getMap("aliasNamesToRealNames");
 		pv2ChannelArchiverDataServer = hzinstance.getMap("pv2ChannelArchiverDataServer");
 		pubSub = hzinstance.getTopic("pubSub");
-		
+
 		final HazelcastInstance shutdownHzInstance = hzinstance;
-		shutdownHooks.add(0, new Runnable() {
-			@Override
-			public void run() {
-				logger.debug("Shutting down clustering instance in webapp " + warFile.toString());
-				shutdownHzInstance.shutdown();
-			}
+		shutdownHooks.add(0, () -> {
+			logger.debug("Shutting down clustering instance in webapp {}", warFile);
+			shutdownHzInstance.shutdown();
 		});
 
-		if(this.warFile == WAR_FILE.MGMT) {
+		if (this.warFile == WAR_FILE.MGMT) {
 			Cluster cluster = hzinstance.getCluster();
 			String localInetPort = getMemberKey(cluster.getLocalMember());
 			clusterInet2ApplianceIdentity.put(localInetPort, myIdentity);
-			logger.debug("Adding myself " + myIdentity + " as having inetport " + localInetPort);
-			hzinstance.getMap("clusterInet2ApplianceIdentity").addEntryListener(new EntryAddedListener<Object, Object>() {
-				@Override
-				public void entryAdded(EntryEvent<Object, Object> event) {
-					String appliden = (String) event.getValue();
-					appliancesInCluster.add(appliden);
-					logger.info("Adding appliance " + appliden + " to the list of active appliances as inetport " + ((String) event.getKey()));
-				}
+			logger.debug("Adding myself {} as having inetport {}", myIdentity, localInetPort);
+			hzinstance.getMap("clusterInet2ApplianceIdentity").addEntryListener((EntryAddedListener<Object, Object>) event -> {
+				String appliden = (String) event.getValue();
+				appliancesInCluster.add(appliden);
+				logger.info("Adding appliance {} to the list of active appliances as inetport {}", appliden, event.getKey());
 			}, true);
-			hzinstance.getMap("clusterInet2ApplianceIdentity").addEntryListener(new EntryRemovedListener<Object, Object>() {
-				@Override
-				public void entryRemoved(EntryEvent<Object, Object> event) {
-					String appliden = (String) event.getValue();
-					appliancesInCluster.remove(appliden);
-					logger.info("Removing appliance " + appliden + " from the list of active appliancesas inetport " + ((String) event.getKey()));
-				}				
+			hzinstance.getMap("clusterInet2ApplianceIdentity").addEntryListener((EntryRemovedListener<Object, Object>) event -> {
+				String appliden = (String) event.getValue();
+				appliancesInCluster.remove(appliden);
+				logger.info("Removing appliance {} from the list of active appliancesas inetport {}", appliden, event.getKey());
 			}, true);
-			
+
 			logger.debug("Establishing a cluster membership listener to detect when appliances drop off the cluster");
-			cluster.addMembershipListener(new MembershipListener(){
+			cluster.addMembershipListener(new MembershipListener() {
 				public void memberAdded(MembershipEvent membersipEvent) {
 					Member member = membersipEvent.getMember();
 					String inetPort = getMemberKey(member);
-					if(clusterInet2ApplianceIdentity.containsKey(inetPort)) {
+					if (clusterInet2ApplianceIdentity.containsKey(inetPort)) {
 						String appliden = clusterInet2ApplianceIdentity.get(inetPort);
 						appliancesInCluster.add(appliden);
-						configlogger.info("Adding newly started appliance " + appliden + " to the list of active appliances for inetport " + inetPort);
+						configlogger.info("Adding newly started appliance {} to the list of active appliances for inetport {}", appliden, inetPort);
 					} else {
 						logger.debug("Skipping adding appliance using inetport " + inetPort + " to the list of active instances as we do not have a mapping to its identity");
 					}
@@ -641,257 +577,174 @@ public class DefaultConfigService implements ConfigService {
 						appliancesInCluster.remove(appliden);
 						configlogger.info("Removing appliance " + appliden + " from the list of active appliances");
 					} else {
-						configlogger.debug("Received member removed event for " + inetPort);
+						configlogger.debug("Received member removed event for {}", inetPort);
 					}
-				}
-				@Override
-				public void memberAttributeChanged(MemberAttributeEvent membersipEvent) {
-					Member member = membersipEvent.getMember();
-					String inetPort = getMemberKey(member);
-					configlogger.debug("Received membership attribute changed event for " + inetPort);
 				}
 			});
 
 			logger.debug("Adding the current members in the cluster after establishing the cluster membership listener");
 			for (Member member : cluster.getMembers()) {
 				String mbrInetPort = getMemberKey(member);
-				logger.debug("Found member " + mbrInetPort);
+				logger.debug("Found member {}", mbrInetPort);
 				if(clusterInet2ApplianceIdentity.containsKey(mbrInetPort)) {
 					String appliden = clusterInet2ApplianceIdentity.get(mbrInetPort);
 					appliancesInCluster.add(appliden);
-					logger.info("Adding appliance " + appliden + " to the list of active appliances for inetport " + mbrInetPort);
+					logger.info("Adding appliance {} to the list of active appliances for inetport {}", appliden, mbrInetPort);
 				} else {
 					logger.debug("Skipping adding appliance using inetport " + mbrInetPort + " to the list of active instances as we do not have a mapping to its identity");
 				}
 			}
 			logger.info("Established subscription(s) for appliance availability");
-			
+
 			if(this.getInstallationProperties().containsKey(ARCHAPPL_NAMEDFLAGS_PROPERTIES_FILE_PROPERTY)) {
 				String namedFlagsFileName = (String) this.getInstallationProperties().get(ARCHAPPL_NAMEDFLAGS_PROPERTIES_FILE_PROPERTY);
-				configlogger.info("Loading named flags from file " + namedFlagsFileName);
+				configlogger.info("Loading named flags from file {}", namedFlagsFileName);
 				File namedFlagsFile = new File(namedFlagsFileName);
-				if(!namedFlagsFile.exists()) { 
+				if(!namedFlagsFile.exists()) {
 					configlogger.error("File containing named flags " + namedFlagsFileName + " specified but not present");
-				} else { 
+				} else {
 					Properties namedFlagsFromFile = new Properties();
-					try(FileInputStream is = new FileInputStream(namedFlagsFile)) { 
+					try(FileInputStream is = new FileInputStream(namedFlagsFile)) {
 						namedFlagsFromFile.load(is);
 						for(Object namedFlagFromFile : namedFlagsFromFile.keySet()) {
-							try { 
+							try {
 								String namedFlagFromFileStr = (String) namedFlagFromFile;
 								Boolean namedFlagFromFileValue = Boolean.parseBoolean((String)namedFlagsFromFile.get(namedFlagFromFileStr));
-								logger.debug("Setting named flag " + namedFlagFromFileStr + " to " + namedFlagFromFileValue);
+								logger.debug("Setting named flag {} to {}", namedFlagFromFileStr, namedFlagFromFileValue);
 								this.namedFlags.put(namedFlagFromFileStr, namedFlagFromFileValue);
-							} catch(Exception ex) { 
+							} catch(Exception ex) {
 								logger.error("Exception loading named flag from file" + namedFlagsFileName, ex);
 							}
 						}
-					} catch(Exception ex) { 
+					} catch(Exception ex) {
 						configlogger.error("Exception loading named flags from " + namedFlagsFileName, ex);
 					}
 				}
 			}
 		}
-		
+
 		if(this.warFile == WAR_FILE.ENGINE) {
 			// It can take a while for the engine to start up.
 			// We probably want to do this in the background so that the appliance as a whole starts up quickly and we get retrieval up and running quickly.
-			this.startupExecutor.schedule(new Runnable() {
-				@Override
-				public void run() {
-					try { 
-						logger.debug("Starting up the engine's channels on startup.");
-						archivePVSonStartup();
-						logger.debug("Done starting up the engine's channels in startup.");
-					} catch(Throwable t) { 
-						configlogger.fatal("Exception starting up the engine channels on startup", t);
-					}
+			this.startupExecutor.schedule(() -> {
+				try {
+					logger.debug("Starting up the engine's channels on startup.");
+					archivePVSonStartup();
+					logger.debug("Done starting up the engine's channels in startup.");
+				} catch (Throwable t) {
+					configlogger.fatal("Exception starting up the engine channels on startup", t);
 				}
-			}, 1, TimeUnit.SECONDS); 
+			}, 1, TimeUnit.SECONDS);
 		} else if(this.warFile == WAR_FILE.ETL) {
 			this.etlPVLookup.postStartup();
 		} else if(this.warFile == WAR_FILE.MGMT) {
 			pvsForThisAppliance = new ConcurrentSkipListSet<String>();
 			pausedPVsForThisAppliance = new ConcurrentSkipListSet<String>();
-			
+
 			initializePersistenceLayer();
 
 			loadTypeInfosFromPersistence();
-			
+
 			loadAliasesFromPersistence();
 
 			loadArchiveRequestsFromPersistence();
-			
+
 			loadExternalServersFromPersistence();
 
 			appliancesConfigLoaded.put(myIdentity, Boolean.TRUE);
-			
+
 			registerForNewExternalServers(hzinstance.getMap("channelArchiverDataServers"));
 
 			// Cache the aggregate of all the PVs that are registered to this appliance.
 			logger.debug("Building a local aggregate of PV infos that are registered to this appliance");
 			try {
-				for(String pvName : getPVsForThisAppliance()) {
-					if(!pvsForThisAppliance.contains(pvName)) {
+				for (String pvName : getPVsForThisAppliance()) {
+					if (!pvsForThisAppliance.contains(pvName)) {
 						applianceAggregateInfo.addInfoForPV(pvName, this.getTypeInfoForPV(pvName), this);
 					}
 				}
-			} catch(Exception ex) {
+			} catch (Exception ex) {
 				logger.error("Exception building data for capacity planning", ex);
 			}
 
 
-		} else if(this.warFile == WAR_FILE.RETRIEVAL) {
+		} else if (this.warFile == WAR_FILE.RETRIEVAL) {
 			initializeFailoverServerCache();
 		}
-		
+
 		// Register for changes to the typeinfo map.
 		logger.info("Registering for changes to typeinfos");
-		hzinstance.getMap("typeinfo").addEntryListener(new EntryAddedListener<Object, Object>() {
-			@Override
-			public void entryAdded(EntryEvent<Object, Object> entryEvent) {
-				logger.debug("Received entryAdded for pvTypeInfo");
-				PVTypeInfo typeInfo = (PVTypeInfo) entryEvent.getValue();
-				String pvName = typeInfo.getPvName();
-				eventBus.post(new PVTypeInfoEvent(pvName, typeInfo, ChangeType.TYPEINFO_ADDED));
-				if(persistanceLayer != null) { 
-					try { 
-						persistanceLayer.putTypeInfo(pvName, typeInfo);
-					} catch(Exception ex) { 
-						logger.error("Exception persisting pvTypeInfo for pv " + pvName, ex);
-					}
+		hzinstance.getMap("typeinfo").addEntryListener((EntryAddedListener<Object, Object>) entryEvent -> {
+			logger.debug("Received entryAdded for pvTypeInfo");
+			PVTypeInfo typeInfo = (PVTypeInfo) entryEvent.getValue();
+			String pvName = typeInfo.getPvName();
+			eventBus.post(new PVTypeInfoEvent(pvName, typeInfo, ChangeType.TYPEINFO_ADDED));
+			if (persistanceLayer != null) {
+				try {
+					persistanceLayer.putTypeInfo(pvName, typeInfo);
+				} catch (Exception ex) {
+					logger.error("Exception persisting pvTypeInfo for pv " + pvName, ex);
 				}
 			}
 		}, true);
-		hzinstance.getMap("typeinfo").addEntryListener(new EntryRemovedListener<Object, Object>() {
-			@Override
-			public void entryRemoved(EntryEvent<Object, Object> entryEvent) {
-				PVTypeInfo typeInfo =(PVTypeInfo) entryEvent.getOldValue();
-				String pvName = typeInfo.getPvName();
-				logger.info("Received entryRemoved for pvTypeInfo " + pvName);
-				eventBus.post(new PVTypeInfoEvent(pvName, typeInfo, ChangeType.TYPEINFO_DELETED));
-				if(persistanceLayer != null) { 
-					try { 
-						persistanceLayer.deleteTypeInfo(pvName);
-					} catch(Exception ex) { 
-						logger.error("Exception deleting pvTypeInfo for pv " + pvName, ex);
-					}
+		hzinstance.getMap("typeinfo").addEntryListener((EntryRemovedListener<Object, Object>) entryEvent -> {
+			PVTypeInfo typeInfo = (PVTypeInfo) entryEvent.getOldValue();
+			String pvName = typeInfo.getPvName();
+			logger.info("Received entryRemoved for pvTypeInfo {}", pvName);
+			eventBus.post(new PVTypeInfoEvent(pvName, typeInfo, ChangeType.TYPEINFO_DELETED));
+			if (persistanceLayer != null) {
+				try {
+					persistanceLayer.deleteTypeInfo(pvName);
+				} catch (Exception ex) {
+					logger.error("Exception deleting pvTypeInfo for pv " + pvName, ex);
 				}
 			}
 		}, true);
-		hzinstance.getMap("typeinfo").addEntryListener(new EntryUpdatedListener<Object, Object>() {
-			@Override
-			public void entryUpdated(EntryEvent<Object, Object> entryEvent) {
-				PVTypeInfo typeInfo =(PVTypeInfo) entryEvent.getValue();
-				String pvName = typeInfo.getPvName();
-				eventBus.post(new PVTypeInfoEvent(pvName, typeInfo, ChangeType.TYPEINFO_MODIFIED));
-				logger.debug("Received entryUpdated for pvTypeInfo");
-				if(persistanceLayer != null) { 
-					try { 
-						persistanceLayer.putTypeInfo(pvName, typeInfo);
-					} catch(Exception ex) { 
-						logger.error("Exception persisting pvTypeInfo for pv " + pvName, ex);
-					}
+		hzinstance.getMap("typeinfo").addEntryListener((EntryUpdatedListener<Object, Object>) entryEvent -> {
+			PVTypeInfo typeInfo = (PVTypeInfo) entryEvent.getValue();
+			String pvName = typeInfo.getPvName();
+			eventBus.post(new PVTypeInfoEvent(pvName, typeInfo, ChangeType.TYPEINFO_MODIFIED));
+			logger.debug("Received entryUpdated for pvTypeInfo");
+			if (persistanceLayer != null) {
+				try {
+					persistanceLayer.putTypeInfo(pvName, typeInfo);
+				} catch (Exception ex) {
+					logger.error("Exception persisting pvTypeInfo for pv " + pvName, ex);
 				}
 			}
 		}, true);
-		
+
 		eventBus.register(this);
-		
-		pubSub.addMessageListener(new MessageListener<PubSubEvent>() {
-			@Override
-			public void onMessage(Message<PubSubEvent> pubSubEventMsg) {
-				PubSubEvent pubSubEvent = pubSubEventMsg.getMessageObject();
-				if(pubSubEvent.getDestination() != null) {
-					if(pubSubEvent.getDestination().equals("ALL") 
-							|| (pubSubEvent.getDestination().startsWith(myIdentity) && pubSubEvent.getDestination().endsWith(DefaultConfigService.this.warFile.toString()))
-							) {
-						// We publish messages from hazelcast into this VM only if the intened WAR file is us.
-						logger.debug("Publishing event into this JVM " + pubSubEvent.generateEventDescription());
-						// In this case, we set the source as being the cluster to prevent republishing back into the cluster.
-						pubSubEvent.markSourceAsCluster();
-						eventBus.post(pubSubEvent);
-					} else { 
-						logger.debug("Skipping publishing event into this JVM " + pubSubEvent.generateEventDescription() + " as destination is not me " + DefaultConfigService.this.warFile.toString());
-					}
+
+		pubSub.addMessageListener(pubSubEventMsg -> {
+			PubSubEvent pubSubEvent = pubSubEventMsg.getMessageObject();
+			if (pubSubEvent.getDestination() != null) {
+				if (pubSubEvent.getDestination().equals("ALL")
+						|| (pubSubEvent.getDestination().startsWith(myIdentity) && pubSubEvent.getDestination().endsWith(DefaultConfigService.this.warFile.toString()))
+				) {
+					// We publish messages from hazelcast into this VM only if the intened WAR file is us.
+					logger.debug("Publishing event into this JVM {}", pubSubEvent.generateEventDescription());
+					// In this case, we set the source as being the cluster to prevent republishing back into the cluster.
+					pubSubEvent.markSourceAsCluster();
+					eventBus.post(pubSubEvent);
 				} else {
-					logger.debug("Skipping publishing event with null destination");
+					logger.debug("Skipping publishing event into this JVM {}", pubSubEvent.generateEventDescription() + " as destination is not me " + DefaultConfigService.this.warFile);
 				}
+			} else {
+				logger.debug("Skipping publishing event with null destination");
 			}
 		});
-		
+
 		logger.info("Done registering for changes to typeinfos");
 
-		
+
 		this.startupState = STARTUP_SEQUENCE.STARTUP_COMPLETE;
-		configlogger.info("Start complete for webapp " + this.warFile);
+		configlogger.info("Start complete for webapp {}", this.warFile);
 	}
 
 	@Override
 	public STARTUP_SEQUENCE getStartupState() {
 		return this.startupState;
-	}
-
-	@Subscribe public void updatePVSForThisAppliance(PVTypeInfoEvent event) {
-		if(logger.isDebugEnabled()) logger.debug("Received pvTypeInfo change event for pv " + event.getPvName());
-		PVTypeInfo typeInfo = event.getTypeInfo();
-		String pvName = typeInfo.getPvName();
-		if(typeInfo.getApplianceIdentity().equals(myApplianceInfo.getIdentity())) {
-			if(event.getChangeType() == ChangeType.TYPEINFO_DELETED) {
-				if(pvsForThisAppliance != null) {
-					if(pvsForThisAppliance.contains(pvName)) {
-						logger.debug("Removing pv " + pvName + " from the locally cached copy of pvs for this appliance");
-						pvsForThisAppliance.remove(pvName);
-						pausedPVsForThisAppliance.remove(pvName);
-						// For now, we do not anticipate many PVs being deleted from the cache to worry about keeping applianceAggregateInfo upto date...
-						// This may change later... 
-						String[] parts = this.pvName2KeyConverter.breakIntoParts(pvName);
-						for(String part : parts) { 
-							parts2PVNamesForThisAppliance.get(part).remove(pvName);
-						}
-					}
-				}
-			} else {
-				if(pvsForThisAppliance != null) {
-					if(!pvsForThisAppliance.contains(pvName)) {
-						logger.debug("Adding pv " + pvName + " to the locally cached copy of pvs for this appliance");
-						pvsForThisAppliance.add(pvName);
-						if(typeInfo.isPaused()) { 
-							pausedPVsForThisAppliance.add(typeInfo.getPvName());
-						}
-						String[] parts = this.pvName2KeyConverter.breakIntoParts(pvName);
-						for(String part : parts) { 
-							if(!parts2PVNamesForThisAppliance.containsKey(part)) { 
-								parts2PVNamesForThisAppliance.put(part, new ConcurrentSkipListSet<String>());
-							}
-							parts2PVNamesForThisAppliance.get(part).add(pvName);
-						}
-						applianceAggregateInfo.addInfoForPV(pvName, typeInfo, this);
-					} else { 
-						if(typeInfo.isPaused()) { 
-							pausedPVsForThisAppliance.add(typeInfo.getPvName());
-						} else { 
-							pausedPVsForThisAppliance.remove(typeInfo.getPvName());
-						}
-					}
-				}
-			}
-		}
-	}
-	
-	@Subscribe public void publishEventIntoCluster(PubSubEvent pubSubEvent) {
-		if(pubSubEvent.isSourceCluster()) { 
-			logger.debug("Skipping publishing events from the cluster back into the cluster " + pubSubEvent.generateEventDescription());
-			return;
-		}
-		
-		if(pubSubEvent.getDestination().startsWith(myIdentity) && pubSubEvent.getDestination().endsWith(this.warFile.toString())) {
-			logger.debug(this.warFile + " - Skipping publishing event " + pubSubEvent.generateEventDescription() + " meant for myself " + this.warFile.toString());
-		} else {
-			pubSubEvent.setSource(myIdentity);
-			logger.debug(this.warFile + " - Publishing event from local event bus onto cluster " + pubSubEvent.generateEventDescription());
-			pubSub.publish(pubSubEvent);
-		}
 	}
 
 	/**
@@ -913,27 +766,28 @@ public class DefaultConfigService implements ConfigService {
 					continue;
 				}
 
-				if(typeInfo.isPaused()) { 
+				if (typeInfo.isPaused()) {
 					logger.debug("Skipping archiving paused PV " + pvName + " on startup");
 					continue;
 				}
-				
+
 				ArchDBRTypes dbrType = typeInfo.getDBRType();
 				float samplingPeriod = typeInfo.getSamplingPeriod();
 				SamplingMethod samplingMethod = typeInfo.getSamplingMethod();
 				StoragePlugin firstDest = StoragePluginURLParser.parseStoragePlugin(typeInfo.getDataStores()[0], this);
 
 				Timestamp lastKnownTimestamp = typeInfo.determineLastKnownEventFromStores(this);
-				if(logger.isDebugEnabled()) logger.debug("Last known timestamp from ETL stores is for pv " + pvName + " is "+ TimeUtils.convertToHumanReadableString(lastKnownTimestamp));
+				if (logger.isDebugEnabled())
+					logger.debug("Last known timestamp from ETL stores is for pv {} is {}", pvName, TimeUtils.convertToHumanReadableString(lastKnownTimestamp));
 
-				ArchiveEngine.archivePV(pvName, samplingPeriod, samplingMethod, secondsToBuffer, firstDest, this, dbrType,lastKnownTimestamp, typeInfo.getControllingPV(), typeInfo.getArchiveFields(), typeInfo.getHostName(), typeInfo.isUsePVAccess(), typeInfo.isUseDBEProperties()); 
+				ArchiveEngine.archivePV(pvName, samplingPeriod, samplingMethod, secondsToBuffer, firstDest, this, dbrType, lastKnownTimestamp, typeInfo.getControllingPV(), typeInfo.getArchiveFields(), typeInfo.getHostName(), typeInfo.isUsePVAccess(), typeInfo.isUseDBEProperties());
 				currentPVCount++;
-				if(currentPVCount % pausePerGroupPVCount == 0) {
+				if (currentPVCount % pausePerGroupPVCount == 0) {
 					logger.debug("Sleeping for " + pausePerGroupPauseTimeInSeconds + " to prevent CA search storms");
-					Thread.sleep(pausePerGroupPauseTimeInSeconds*1000);
+					Thread.sleep(pausePerGroupPauseTimeInSeconds * 1000);
 				}
-			} catch(Throwable t) {
-				logger.error("Exception starting up archiving of PV " + pvName + ". Moving on to the next pv.", t);
+			} catch (Exception e) {
+				logger.error("Exception starting up archiving of PV " + pvName + ". Moving on to the next pv.", e);
 			}
 		}
 		configlogger.debug("Started " + currentPVCount + " PVs from persistence.");
@@ -943,7 +797,7 @@ public class DefaultConfigService implements ConfigService {
 	public boolean isStartupComplete() {
 		return startupState == STARTUP_SEQUENCE.STARTUP_COMPLETE;
 	}
-	
+
 
 	@Override
 	public Properties getInstallationProperties() {
@@ -958,21 +812,16 @@ public class DefaultConfigService implements ConfigService {
 				if(appliancesInCluster.contains(info.getIdentity())) {
 					sortedAppliances.add(info);
 				} else {
-					logger.debug("Skipping appliance that is in the persistence but not in the cluster" + info.getIdentity());
+					logger.debug("Skipping appliance that is in the persistence but not in the cluster{}", info.getIdentity());
 				}
 			} else {
 				// For non-mgmt apps, we add all the appliances into this call.
 				// This is because, the non-mgmt webapps are Hz clients; they do not receive the instance change events. So, appliancesInCluster is always empty.
-				sortedAppliances.add(info); 
+				sortedAppliances.add(info);
 			}
 		}
-		
-		Collections.sort(sortedAppliances, new Comparator<ApplianceInfo>() {
-			@Override
-			public int compare(ApplianceInfo o1, ApplianceInfo o2) {
-				return o1.getIdentity().compareTo(o2.getIdentity());
-			}
-		});
+
+		sortedAppliances.sort(Comparator.comparing(ApplianceInfo::getIdentity));
 		return sortedAppliances;
 	}
 
@@ -992,11 +841,11 @@ public class DefaultConfigService implements ConfigService {
 		return appliances.get(identity);
 	}
 
-	
+
 	@Override
 	public Collection<String> getAllPVs() {
 		List<PVApplianceCombo> sortedCombos = getSortedPVApplianceCombo();
-		ArrayList<String> allPVs = new ArrayList<String>();
+		ArrayList<String> allPVs = new ArrayList<>();
 		for(PVApplianceCombo combo : sortedCombos) {
 			allPVs.add(combo.pvName);
 		}
@@ -1006,24 +855,24 @@ public class DefaultConfigService implements ConfigService {
 	@Override
 	public ApplianceInfo getApplianceForPV(String pvName) {
 		ApplianceInfo applianceInfo = pv2appliancemapping.get(pvName);
-		if(applianceInfo == null && this.persistanceLayer != null) { 
-			try { 
+		if(applianceInfo == null && this.persistanceLayer != null) {
+			try {
 				PVTypeInfo typeInfo = this.persistanceLayer.getTypeInfo(pvName);
-				if(typeInfo != null) { 
+				if(typeInfo != null) {
 					applianceInfo = this.getAppliance(typeInfo.getApplianceIdentity());
 				}
-			} catch(IOException ex) { 
+			} catch(IOException ex) {
 				logger.error("Exception lookin up appliance for pv in persistence", ex);
 			}
 		}
 		return applianceInfo;
 	}
-	
+
 	@Override
 	public Iterable<String> getPVsForAppliance(ApplianceInfo info) {
 		String identity = info.getIdentity();
 		List<PVApplianceCombo> sortedCombos = getSortedPVApplianceCombo();
-		ArrayList<String> pvsForAppliance = new ArrayList<String>();
+		ArrayList<String> pvsForAppliance = new ArrayList<>();
 		for(PVApplianceCombo combo : sortedCombos) {
 			if(combo.applianceIdentity.equals(identity)) {
 				pvsForAppliance.add(combo.pvName);
@@ -1031,7 +880,7 @@ public class DefaultConfigService implements ConfigService {
 		}
 		return pvsForAppliance;
 	}
-	
+
 	@Override
 	public Iterable<String> getPVsForThisAppliance() {
 		if(pvsForThisAppliance != null) {
@@ -1040,7 +889,7 @@ public class DefaultConfigService implements ConfigService {
 		} else {
 			logger.debug("Fetching the list of PVs for this appliance from the mgmt app");
 			JSONArray pvs = GetUrlContent.getURLContentAsJSONArray(myApplianceInfo.getMgmtURL() + "/getPVsForThisAppliance");
-			LinkedList<String> retval = new LinkedList<String>();
+			LinkedList<String> retval = new LinkedList<>();
 			for(Object pv : pvs) {
 				retval.add((String) pv);
 			}
@@ -1054,109 +903,105 @@ public class DefaultConfigService implements ConfigService {
 		String plainPVName = PVNames.stripFieldNameFromPVName(pvName);
 		String fieldName = PVNames.getFieldName(pvName);
 		if(isField) {
-			// If this is a field, we have two possibilities. 
+			// If this is a field, we have two possibilities.
 			// Either the plainPVname is being archived and the field is an extra field
 			// Or the whole pv (with the field) is being archived.
-			if(this.pvsForThisAppliance.contains(pvName) 
+			if(this.pvsForThisAppliance.contains(pvName)
 					|| (this.pvsForThisAppliance.contains(plainPVName) && Arrays.asList(this.getTypeInfoForPV(plainPVName).getArchiveFields()).contains(fieldName))) {
 				return true;
 			}
-			
+
 		} else {
 			if(this.pvsForThisAppliance.contains(plainPVName)) {
 				return true;
 			}
 		}
-		
+
 		if(this.aliasNamesToRealNames.containsKey(pvName) && this.pvsForThisAppliance.contains(this.aliasNamesToRealNames.get(pvName))) {
 			return true;
 		}
-		
-		
-		if(this.aliasNamesToRealNames.containsKey(plainPVName)) { 
+
+
+		if(this.aliasNamesToRealNames.containsKey(plainPVName)) {
 			plainPVName = this.aliasNamesToRealNames.get(plainPVName);
 
 			if(isField) {
-				if(this.pvsForThisAppliance.contains(PVNames.transferField(pvName, plainPVName)) 
-						|| (this.pvsForThisAppliance.contains(plainPVName) && Arrays.asList(this.getTypeInfoForPV(plainPVName).getArchiveFields()).contains(fieldName))) {
-					return true;
-				}
-				
+				return this.pvsForThisAppliance.contains(PVNames.transferField(pvName, plainPVName))
+						|| (this.pvsForThisAppliance.contains(plainPVName) && Arrays.asList(this.getTypeInfoForPV(plainPVName).getArchiveFields()).contains(fieldName));
+
 			} else {
-				if(this.pvsForThisAppliance.contains(plainPVName)) {
-					return true;
-				}
+				return this.pvsForThisAppliance.contains(plainPVName);
 			}
 		}
 
-		
+
 		return false;
 	}
-	
+
 	@Override
 	public Set<String> getPVsForApplianceMatchingRegex(String nameToMatch) {
-		logger.debug("Finding matching names for " + nameToMatch);
+		logger.debug("Finding matching names for {}", nameToMatch);
 		LinkedList<String> fixedStringParts = new LinkedList<String>();
 		String[] parts = this.pvName2KeyConverter.breakIntoParts(nameToMatch);
 		Pattern fixedStringParttern = Pattern.compile("[a-zA-Z_0-9-]+");
-		for(String part : parts) { 
-			if(fixedStringParttern.matcher(part).matches()) { 
-				logger.debug("Fixed string part " +  part);
+		for(String part : parts) {
+			if(fixedStringParttern.matcher(part).matches()) {
+				logger.debug("Fixed string part {}", part);
 				fixedStringParts.add(part);
-			} else { 
-				logger.debug("Regex string part " + part);
+			} else {
+				logger.debug("Regex string part {}", part);
 			}
 		}
-		
-		if(fixedStringParts.size() > 0) {
+
+		if (!fixedStringParts.isEmpty()) {
 			HashSet<String> ret = new HashSet<String>();
-			HashSet<String> namesSubset = new HashSet<String>();
-			// This reverse is probably specific to SLAC's namespace rules but it does make a big difference. 
+			HashSet<String> namesSubset = new HashSet<>();
+			// This reverse is probably specific to SLAC's namespace rules but it does make a big difference.
 			// Perhaps we can use a more intelligent way of choosing the specific path thru the trie.
 			Collections.reverse(fixedStringParts);
-			for(String fixedStringPart : fixedStringParts) { 
+			for (String fixedStringPart : fixedStringParts) {
 				ConcurrentSkipListSet<String> pvNamesForPart = parts2PVNamesForThisAppliance.get(fixedStringPart);
-				if(pvNamesForPart != null) { 
-					if(namesSubset.isEmpty()) { 
+				if (pvNamesForPart != null) {
+					if (namesSubset.isEmpty()) {
 						namesSubset.addAll(pvNamesForPart);
-					} else { 
+					} else {
 						namesSubset.retainAll(pvNamesForPart);
 					}
 				}
 			}
-			logger.debug("Using fixed string path matching against names " + namesSubset.size());
+			logger.debug("Using fixed string path matching against names {}", namesSubset.size());
 			Pattern pattern = Pattern.compile(nameToMatch);
-			for(String pvName : namesSubset) { 
-				if(pattern.matcher(pvName).matches()) { 
+			for(String pvName : namesSubset) {
+				if(pattern.matcher(pvName).matches()) {
 					ret.add(pvName);
 				}
 			}
 			return ret;
-		} else { 
-			// The use pattern did not have any fixed elements at all. 
+		} else {
+			// The use pattern did not have any fixed elements at all.
 			// In this case we do brute force matching; should take longer.
 			// This is also not optimal but probably don't want yet another list of PV's
 			Pattern pattern = Pattern.compile(nameToMatch);
-			HashSet<String> allNames = new HashSet<String>();
-			HashSet<String> ret = new HashSet<String>();
+			HashSet<String> allNames = new HashSet<>();
+			HashSet<String> ret = new HashSet<>();
 			logger.debug("Using brute force pattern matching against names");
-			for(ConcurrentSkipListSet<String> pvNamesForPart : parts2PVNamesForThisAppliance.values()) { 
+			for (ConcurrentSkipListSet<String> pvNamesForPart : parts2PVNamesForThisAppliance.values()) {
 				allNames.addAll(pvNamesForPart);
 			}
-			for(String pvName : allNames) { 
-				if(pattern.matcher(pvName).matches()) { 
+			for (String pvName : allNames) {
+				if (pattern.matcher(pvName).matches()) {
 					ret.add(pvName);
 				}
 			}
 			return ret;
 		}
-	}	
+	}
 
 
 	@Override
 	public ApplianceAggregateInfo getAggregatedApplianceInfo(ApplianceInfo applianceInfo) throws IOException {
 		if(applianceInfo.getIdentity().equals(myApplianceInfo.getIdentity()) && this.warFile == WAR_FILE.MGMT) {
-			logger.debug("Returning local copy of appliance info for " + applianceInfo.getIdentity());
+			logger.debug("Returning local copy of appliance info for {}", applianceInfo.getIdentity());
 			return applianceAggregateInfo;
 		} else {
 			try {
@@ -1178,77 +1023,79 @@ public class DefaultConfigService implements ConfigService {
 		if(info != null) throw new AlreadyRegisteredException(info);
 		pv2appliancemapping.put(pvName, applianceInfo);
 	}
-	
-	
+
+
 	@Override
 	public PVTypeInfo getTypeInfoForPV(String pvName) {
 		if(typeInfos.containsKey(pvName))  {
-			logger.debug("Retrieving typeinfo from cache for pv " + pvName);
+			logger.debug("Retrieving typeinfo from cache for pv {}", pvName);
 			return typeInfos.get(pvName);
 		}
-		
+
 		return null;
 	}
-	
-	
+
+
 	@Override
 	public void updateTypeInfoForPV(String pvName, PVTypeInfo typeInfo) {
-		logger.debug("Updating typeinfo for " + pvName);
-		if(!typeInfo.keyAlreadyGenerated()) { 
+		logger.debug("Updating typeinfo for {}", pvName);
+		if(!typeInfo.keyAlreadyGenerated()) {
 			// This call should also typically set the chunk key in the type info.
 			this.pvName2KeyConverter.convertPVNameToKey(pvName);
 		}
-		
+
 		typeInfos.put(pvName, typeInfo);
 	}
 
 	@Override
 	public void removePVFromCluster(String pvName) {
-		logger.info("Removing PV from cluster.." + pvName);
+		logger.info("Removing PV from cluster..{}", pvName);
 		pv2appliancemapping.remove(pvName);
-		pvsForThisAppliance.remove(pvName);		
+		pvsForThisAppliance.remove(pvName);
 		typeInfos.remove(pvName);
 		pausedPVsForThisAppliance.remove(pvName);
 		String[] parts = this.pvName2KeyConverter.breakIntoParts(pvName);
-		for(String part : parts) { 
+		for(String part : parts) {
 			ConcurrentSkipListSet<String> pvNamesForPart = parts2PVNamesForThisAppliance.get(part);
-			if(pvNamesForPart != null) { 
+			if(pvNamesForPart != null) {
 				pvNamesForPart.remove(pvName);
 			}
 		}
 	}
 
-	private class PVApplianceCombo implements Comparable<PVApplianceCombo> {
+	private static class PVApplianceCombo implements Comparable<PVApplianceCombo> {
 		String applianceIdentity;
 		String pvName;
+
 		public PVApplianceCombo(String applianceIdentity, String pvName) {
 			this.applianceIdentity = applianceIdentity;
 			this.pvName = pvName;
 		}
+
 		@Override
 		public int compareTo(PVApplianceCombo other) {
-			if(this.applianceIdentity.equals(other.applianceIdentity)) {
+			if (this.applianceIdentity.equals(other.applianceIdentity)) {
 				return this.pvName.compareTo(other.pvName);
 			} else {
 				return this.applianceIdentity.compareTo(other.applianceIdentity);
 			}
 		}
 	}
-	
+
 	private List<PVApplianceCombo> getSortedPVApplianceCombo() {
 		ArrayList<PVApplianceCombo> sortedCombos = new ArrayList<PVApplianceCombo>();
-		for(Map.Entry<String, ApplianceInfo> entry : pv2appliancemapping.entrySet()) {
+		for (Entry<String, ApplianceInfo> entry : pv2appliancemapping.entrySet()) {
 			sortedCombos.add(new PVApplianceCombo(entry.getValue().getIdentity(), entry.getKey()));
 		}
 		Collections.sort(sortedCombos);
 		return sortedCombos;
 	}
-	
-	
+
+
 	@Override
 	public void addToArchiveRequests(String pvName, UserSpecifiedSamplingParams userSpecifiedSamplingParams) {
 		archivePVRequests.put(pvName, userSpecifiedSamplingParams);
-		try { 
+		try {
 			persistanceLayer.putArchivePVRequest(pvName, userSpecifiedSamplingParams);
 		} catch(IOException ex) {
 			logger.error("Exception adding request to persistence", ex);
@@ -1256,12 +1103,12 @@ public class DefaultConfigService implements ConfigService {
 	}
 
 	@Override
-	public void updateArchiveRequest(String pvName, UserSpecifiedSamplingParams userSpecifiedSamplingParams) { 
-		try { 
-			if(persistanceLayer.getArchivePVRequest(pvName) != null) { 
+	public void updateArchiveRequest(String pvName, UserSpecifiedSamplingParams userSpecifiedSamplingParams) {
+		try {
+			if(persistanceLayer.getArchivePVRequest(pvName) != null) {
 				archivePVRequests.put(pvName, userSpecifiedSamplingParams);
 				persistanceLayer.putArchivePVRequest(pvName, userSpecifiedSamplingParams);
-			} else { 
+			} else {
 				logger.error("Do not have user specified params for pv " + pvName + " in this appliance. Not updating.");
 			}
 		} catch(IOException ex) {
@@ -1269,18 +1116,18 @@ public class DefaultConfigService implements ConfigService {
 		}
 	}
 
-	
+
 
 	@Override
 	public Set<String> getArchiveRequestsCurrentlyInWorkflow() {
 		return new HashSet<String>(archivePVRequests.keySet());
 	}
-	
+
 	@Override
 	public boolean doesPVHaveArchiveRequestInWorkflow(String pvname) {
 		return archivePVRequests.containsKey(pvname);
 	}
-	
+
 	@Override
 	public UserSpecifiedSamplingParams getUserSpecifiedSamplingParams(String pvName) {
 		return archivePVRequests.get(pvName);
@@ -1289,7 +1136,7 @@ public class DefaultConfigService implements ConfigService {
 	@Override
 	public void archiveRequestWorkflowCompleted(String pvName) {
 		archivePVRequests.remove(pvName);
-		try { 
+		try {
 			persistanceLayer.removeArchivePVRequest(pvName);
 		} catch(IOException ex) {
 			logger.error("Exception removing request from persistence", ex);
@@ -1298,61 +1145,61 @@ public class DefaultConfigService implements ConfigService {
 
 	@Override
 	public int getInitialDelayBeforeStartingArchiveRequestWorkflow() {
-		int appliancesInCluster = this.appliances.size();		
+		int appliancesInCluster = this.appliances.size();
 		int initialDelayInSeconds = 10;
-		if(appliancesInCluster > 1) { 
+		if(appliancesInCluster > 1) {
 			// We use a longer initial delay here to get all the appliances in the cluster a chance to restart
 			// We also need some time to build up the capacity planning metrics.
 			initialDelayInSeconds = 30*60;
 		}
-		
+
 		return initialDelayInSeconds;
 	}
-	
-	
+
+
 	@Override
 	public void addAlias(String aliasName, String realName) {
 		aliasNamesToRealNames.put(aliasName, realName);
-		try { 
+		try {
 			persistanceLayer.putAliasNamesToRealName(aliasName, realName);
 		} catch(IOException ex) {
 			logger.error("Exception adding alias name to persistence " + aliasName, ex);
 		}
-		
+
 		// Add aliases into the trie
 		String[] parts = this.pvName2KeyConverter.breakIntoParts(aliasName);
-		for(String part : parts) { 
-			if(!parts2PVNamesForThisAppliance.containsKey(part)) { 
-				parts2PVNamesForThisAppliance.put(part, new ConcurrentSkipListSet<String>());
+		for(String part : parts) {
+			if (!parts2PVNamesForThisAppliance.containsKey(part)) {
+				parts2PVNamesForThisAppliance.put(part, new ConcurrentSkipListSet<>());
 			}
 			parts2PVNamesForThisAppliance.get(part).add(aliasName);
 		}
 	}
-	
-	
+
+
 	@Override
 	public void removeAlias(String aliasName, String realName) {
 		aliasNamesToRealNames.remove(aliasName);
-		try { 
+		try {
 			persistanceLayer.removeAliasName(aliasName, realName);
 		} catch(IOException ex) {
 			logger.error("Exception removing alias name from persistence " + aliasName, ex);
 		}
-		
+
 		// Remove the aliasname from the trie
 		String[] parts = this.pvName2KeyConverter.breakIntoParts(aliasName);
-		for(String part : parts) { 
+		for(String part : parts) {
 			parts2PVNamesForThisAppliance.get(part).remove(aliasName);
 		}
 	}
 
-	
+
 
 	@Override
 	public String getRealNameForAlias(String aliasName) {
 		return aliasNamesToRealNames.get(aliasName);
 	}
-	
+
 	@Override
 	public List<String> getAllAliases() {
 		return new ArrayList<String>(aliasNamesToRealNames.keySet());
@@ -1365,50 +1212,50 @@ public class DefaultConfigService implements ConfigService {
 	public String[] getExtraFields() {
 		return extraFields;
 	}
-	
-	
+
+
 	@Override
 	public Set<String> getRuntimeFields() {
 		return runTimeFields;
 	}
 
 
-	
+
 	@Override
 	public PBThreeTierETLPVLookup getETLLookup() {
 		return etlPVLookup;
 	}
-	
-	
+
+
 	@Override
 	public RetrievalState getRetrievalRuntimeState() {
 		return retrievalState;
 	}
 
-	
+
 	@Override
 	public boolean isShuttingDown() {
 		return startupExecutor.isShutdown();
 	}
-	
+
 	@Override
 	public void addShutdownHook(Runnable runnable) {
 		shutdownHooks.add(runnable);
-		
+
 	}
-	
-	private void runShutDownHooksAndCleanup() { 
+
+	private void runShutDownHooksAndCleanup() {
 		LinkedList<Runnable> shutDnHooks = new LinkedList<Runnable>(this.shutdownHooks);
 		Collections.reverse(shutDnHooks);
-		logger.debug("Running shutdown hooks in webapp " + this.warFile);
+		logger.debug("Running shutdown hooks in webapp {}", this.warFile);
 		for(Runnable shutdownHook : shutDnHooks) {
 			try {
 				shutdownHook.run();
 			} catch(Throwable t) {
-				logger.warn("Exception shutting down service using shutdown hook " + shutdownHook.toString(), t);
+				logger.warn("Exception shutting down service using shutdown hook " + shutdownHook, t);
 			}
 		}
-		logger.debug("Done running shutdown hooks in webapp " + this.warFile);
+		logger.debug("Done running shutdown hooks in webapp {}", this.warFile);
 	}
 
 	@Override
@@ -1416,10 +1263,10 @@ public class DefaultConfigService implements ConfigService {
 		this.runShutDownHooksAndCleanup();
 	}
 
-	
 
-	
-	
+
+
+
 	@Override
 	public Map<String, String> getExternalArchiverDataServers() {
 		return channelArchiverDataServers;
@@ -1429,24 +1276,23 @@ public class DefaultConfigService implements ConfigService {
 	public void addExternalArchiverDataServer(String serverURL, String archivesCSV) throws IOException {
 		String[] archives = archivesCSV.split(",");
 		boolean loadCAPVs = false;
-		if(!this.getExternalArchiverDataServers().containsKey(serverURL)) { 
+		if(!this.getExternalArchiverDataServers().containsKey(serverURL)) {
 			this.getExternalArchiverDataServers().put(serverURL, archivesCSV);
 			loadCAPVs = true;
-		} else { 
+		} else {
 			logger.info(serverURL + " already exists in the map. So, skipping loading PVs from the external server.");
 		}
-		
-		
+
+
 		// We always add to persistence; whether this is from the UI or from the other appliances in the cluster.
-		if(this.persistanceLayer != null) { 
+		if(this.persistanceLayer != null) {
 			persistanceLayer.putExternalDataServer(serverURL, archivesCSV);
 		}
-		
+
 		try {
 			// We load PVs from the external server only if this is the first server starting up...
-			if(loadCAPVs) { 
-				for(int i = 0; i < archives.length; i++) {
-					String archive = archives[i];
+			if (loadCAPVs) {
+				for (String archive : archives) {
 					loadExternalArchiverPVs(serverURL, archive);
 				}
 			}
@@ -1455,13 +1301,13 @@ public class DefaultConfigService implements ConfigService {
 			throw new IOException(ex);
 		}
 	}
-	
-	
+
+
 	@Override
 	public void removeExternalArchiverDataServer(String serverURL, String archivesCSV) throws IOException {
 		this.getExternalArchiverDataServers().remove(serverURL);
 		// We always add to persistence; whether this is from the UI or from the other appliances in the cluster.
-		if(this.persistanceLayer != null) { 
+		if(this.persistanceLayer != null) {
 			logger.info("Removing the channel archiver server " + serverURL + " from the persistent store.");
 			persistanceLayer.removeExternalDataServer(serverURL, archivesCSV);
 		}
@@ -1470,8 +1316,8 @@ public class DefaultConfigService implements ConfigService {
 
 
 	/**
-	 * Given a external Archiver data server URL and an archive; 
-	 * If this is a ChannelArchiver (archives != pbraw); 
+	 * Given a external Archiver data server URL and an archive;
+	 * If this is a ChannelArchiver (archives != pbraw);
 	 * this adds the PVs in the Channel Archiver so that they can be proxied.
 	 * @param serverURL
 	 * @param archive
@@ -1483,47 +1329,48 @@ public class DefaultConfigService implements ConfigService {
 			logger.debug("We do not load PV names from external EPICS archiver appliances. These can number in the multiple millions and the respone on retrieval is fast enough anyways");
 			return;
 		}
-		
+
 		ChannelArchiverDataServerInfo serverInfo = new ChannelArchiverDataServerInfo(serverURL, archive);
 		NamesHandler handler = new NamesHandler();
-		logger.debug("Getting list of PV's from Channel Archiver Server at " + serverURL + " using index " + archive);
+		logger.debug("Getting list of PV's from Channel Archiver Server at {} using index {}", serverURL, archive);
 		XMLRPCClient.archiverNames(serverURL, archive, handler);
 		HashMap<String, List<ChannelArchiverDataServerPVInfo>> tempPVNames = new HashMap<String, List<ChannelArchiverDataServerPVInfo>>();
 		long totalPVsProxied = 0;
 		for(NamesHandler.ChannelDescription pvChannelDesc : handler.getChannels()) {
 			String pvName = PVNames.normalizePVName(pvChannelDesc.getName());
-			if(this.pv2ChannelArchiverDataServer.containsKey(pvName)) { 
+			if(this.pv2ChannelArchiverDataServer.containsKey(pvName)) {
 				List<ChannelArchiverDataServerPVInfo> alreadyExistingServers = this.pv2ChannelArchiverDataServer.get(pvName);
-				logger.debug("Adding new server to already existing ChannelArchiver server for " + pvName);
+				logger.debug("Adding new server to already existing ChannelArchiver server for {}", pvName);
 				addExternalCAServerToExistingList(alreadyExistingServers, serverInfo, pvChannelDesc);
 				tempPVNames.put(pvName, alreadyExistingServers);
-			} else if(tempPVNames.containsKey(pvName)) { 
+			} else if(tempPVNames.containsKey(pvName)) {
 				List<ChannelArchiverDataServerPVInfo> alreadyExistingServers = tempPVNames.get(pvName);
-				logger.debug("Adding new server to already existing ChannelArchiver server (in tempspace) for " + pvName);
+				logger.debug("Adding new server to already existing ChannelArchiver server (in tempspace) for {}", pvName);
 				addExternalCAServerToExistingList(alreadyExistingServers, serverInfo, pvChannelDesc);
 				tempPVNames.put(pvName, alreadyExistingServers);
-			} else { 
+			} else {
 				List<ChannelArchiverDataServerPVInfo> caServersForPV = new ArrayList<ChannelArchiverDataServerPVInfo>();
 				caServersForPV.add(new ChannelArchiverDataServerPVInfo(serverInfo, pvChannelDesc.getStartSec(), pvChannelDesc.getEndSec()));
 				tempPVNames.put(pvName, caServersForPV);
 			}
-			
-			
-			if(tempPVNames.size() > 1000) { 
+
+
+			if(tempPVNames.size() > 1000) {
 				this.pv2ChannelArchiverDataServer.putAll(tempPVNames);
 				totalPVsProxied += tempPVNames.size();
 				tempPVNames.clear();
 			}
 		}
-		if(!tempPVNames.isEmpty()) { 
+		if (!tempPVNames.isEmpty()) {
 			this.pv2ChannelArchiverDataServer.putAll(tempPVNames);
 			totalPVsProxied += tempPVNames.size();
 			tempPVNames.clear();
 		}
-		if(logger.isDebugEnabled()) logger.debug("Proxied a total of " + totalPVsProxied + " from server " + serverURL + " using archive " + archive);
-		
+		if (logger.isDebugEnabled())
+			logger.debug("Proxied a total of {} from server {} using archive {}", totalPVsProxied, serverURL, archive);
+
 	}
-	
+
 	private void initializeFailoverServerCache() {
 		Map<String, String> existingCAServers = this.getExternalArchiverDataServers();
 		for(String serverURL : existingCAServers.keySet()) {
@@ -1533,17 +1380,17 @@ public class DefaultConfigService implements ConfigService {
 				try {
 					URI serverURI = new URI(serverURL);
 					HashMap<String, String> queryNVPairs = URIUtils.parseQueryString(serverURI);
-					if(queryNVPairs != null && !queryNVPairs.isEmpty() && queryNVPairs.containsKey("mergeDuringRetrieval")) {
+					if (!queryNVPairs.isEmpty() && queryNVPairs.containsKey("mergeDuringRetrieval")) {
 						configlogger.info("Merging data from " + serverURL + " during data retrieval");
 						failoverPVs.put(serverURL, CacheBuilder.newBuilder()
 								.expireAfterWrite(86400, TimeUnit.SECONDS)
 								.build(new CacheLoader<String, Boolean>() {
 									public Boolean load(String pvName) throws IOException {
 										String areWeURL = serverURL.split("\\?")[0] + "/" + "bpl/areWeArchivingPV?pv=" + pvName;
-										logger.debug("Checking to see if " + serverURL + " is archiving PV " + pvName + " using " + areWeURL);
+										logger.debug("Checking to see if {} is archiving PV {} using {}", serverURL, pvName, areWeURL);
 										try {
 											JSONObject areWeResp = GetUrlContent.getURLContentAsJSONObject(areWeURL);
-											return Boolean.valueOf((String)areWeResp.get("status"));
+											return Boolean.valueOf((String) areWeResp.get("status"));
 										} catch(Exception ex) {
 											logger.error("Exception checking to see if " + serverURL + " is archiving PV " + pvName, ex);
 										}
@@ -1557,42 +1404,41 @@ public class DefaultConfigService implements ConfigService {
 			}
 		}
 	}
-	
+
 	private static void addExternalCAServerToExistingList(List<ChannelArchiverDataServerPVInfo> alreadyExistingServers, ChannelArchiverDataServerInfo serverInfo, NamesHandler.ChannelDescription pvChannelDesc) {
 		List<ChannelArchiverDataServerPVInfo> copyOfAlreadyExistingServers = new LinkedList<ChannelArchiverDataServerPVInfo>();
-		for(ChannelArchiverDataServerPVInfo alreadyExistingServer : alreadyExistingServers) { 
-			if(alreadyExistingServer.getServerInfo().equals(serverInfo)) { 
-				logger.debug("Removing a channel archiver server that already exists " + alreadyExistingServer.toString());
-			} else { 
+		for(ChannelArchiverDataServerPVInfo alreadyExistingServer : alreadyExistingServers) {
+			if(alreadyExistingServer.getServerInfo().equals(serverInfo)) {
+				logger.debug("Removing a channel archiver server that already exists {}", alreadyExistingServer);
+			} else {
 				copyOfAlreadyExistingServers.add(alreadyExistingServer);
 			}
 		}
-		
+
 		int beforeCount = alreadyExistingServers.size();
 		alreadyExistingServers.clear();
 		alreadyExistingServers.addAll(copyOfAlreadyExistingServers);
-		
+
 		// Readd the CA server - this should take into account any updated start times, end times and so on.
 		alreadyExistingServers.add(new ChannelArchiverDataServerPVInfo(serverInfo, pvChannelDesc.getStartSec(), pvChannelDesc.getEndSec()));
-		
+
 		int afterCount = alreadyExistingServers.size();
 		logger.debug("We had " + beforeCount + " and now we have " + afterCount + " when adding external ChannelArchiver server");
 
 		// Sort the servers by ascending time stamps before adding it back.
 		ChannelArchiverDataServerPVInfo.sortServersBasedOnStartAndEndSecs(alreadyExistingServers);
 	}
-	
-	
+
+
 	@Override
 	public List<ChannelArchiverDataServerPVInfo> getChannelArchiverDataServers(String pvName) {
 		String normalizedPVName = PVNames.normalizePVName(pvName);
-		logger.debug("Looking for CA sever for pv " + normalizedPVName);
+		logger.debug("Looking for CA sever for pv {}", normalizedPVName);
 		return pv2ChannelArchiverDataServer.get(normalizedPVName);
 	}
 
 	@Override
 	public PolicyConfig computePolicyForPV(String pvName, MetaInfo metaInfo, UserSpecifiedSamplingParams userSpecParams) throws IOException {
-		try(InputStream is = this.getPolicyText()) {
 			logger.debug("Computing policy for pvName");
 			HashMap<String, Object> pvInfo = new HashMap<String, Object>();
 			pvInfo.put("dbrtype", metaInfo.getArchDBRTypes().toString());
@@ -1602,24 +1448,24 @@ public class DefaultConfigService implements ConfigService {
 			pvInfo.put("storageRate", metaInfo.getStorageRate());
 			pvInfo.put("aliasName", metaInfo.getAliasName());
 			if(userSpecParams != null && userSpecParams.getPolicyName() != null) {
-				logger.debug("Passing user override of policy " + userSpecParams.getPolicyName() + " as the dict entry policyName");
+				logger.debug("Passing user override of policy {}", userSpecParams.getPolicyName() + " as the dict entry policyName");
 				pvInfo.put("policyName", userSpecParams.getPolicyName());
 			}
-			if(userSpecParams.getControllingPV() != null) { 
+			if(userSpecParams.getControllingPV() != null) {
 				pvInfo.put("controlPV", userSpecParams.getControllingPV());
 			}
 
-			
+
 			HashMap<String,String> otherMetaInfo = metaInfo.getOtherMetaInfo();
 			for(String otherMetaInfoKey : this.getExtraFields()) {
 				if(otherMetaInfo.containsKey(otherMetaInfoKey)) {
 					if(otherMetaInfoKey.equals("ADEL") || otherMetaInfoKey.equals("MDEL")) {
-						try { 
+						try {
 							pvInfo.put(otherMetaInfoKey, Double.parseDouble(otherMetaInfo.get(otherMetaInfoKey)));
-						} catch(Exception ex) { 
+						} catch(Exception ex) {
 							logger.error("Exception adding MDEL and ADEL to the info", ex);
 						}
-					} else { 
+					} else {
 						pvInfo.put(otherMetaInfoKey,otherMetaInfo.get(otherMetaInfoKey));
 					}
 				}
@@ -1638,37 +1484,35 @@ public class DefaultConfigService implements ConfigService {
 				}
 				logger.debug(buf.toString());
 			}
-			
+
 			try {
 				// We only have one policy in the cache...
 				ExecutePolicy executePolicy = theExecutionPolicy.get("ThePolicy");
-				PolicyConfig policyConfig = executePolicy.computePolicyForPV(pvName, pvInfo);
-				return policyConfig;
+				return executePolicy.computePolicyForPV(pvName, pvInfo);
 			} catch (ExecutionException e) {
 				Throwable cause = e.getCause();
 				logger.error("Exception executing policy for pv " + pvName, cause);
-				if(cause instanceof IOException) { 
+				if(cause instanceof IOException) {
 					throw (IOException) cause;
-				} else { 
+				} else {
 					throw new IOException(cause);
 				}
 			}
-		}
+
 	}
-	
-	
-	
+
+
 	@Override
 	public HashMap<String, String> getPoliciesInInstallation() throws IOException {
-		try(ExecutePolicy executePolicy = new ExecutePolicy(this)) { 
+		try(ExecutePolicy executePolicy = new ExecutePolicy(this)) {
 			return executePolicy.getPolicyList();
 		}
 	}
-	
-	
+
+
 	@Override
 	public List<String> getFieldsArchivedAsPartOfStream() throws IOException {
-		try { 
+		try {
 			ExecutePolicy executePolicy = theExecutionPolicy.get("ThePolicy");
 			return executePolicy.getFieldsArchivedAsPartOfStream();
 		} catch(ExecutionException ex) {
@@ -1688,25 +1532,31 @@ public class DefaultConfigService implements ConfigService {
 		String policiesPyFile = System.getProperty(ARCHAPPL_POLICIES);
 		if(policiesPyFile == null) {
 			policiesPyFile = System.getenv(ARCHAPPL_POLICIES);
-			if(policiesPyFile != null) { 
-				if(!finishedLoggingPolicyLocation) { configlogger.info("Obtained policies location from environment " + policiesPyFile); finishedLoggingPolicyLocation = true; } 
-				return new FileInputStream(new File(policiesPyFile));
-			} else { 
+			if(policiesPyFile != null) {
+				if (!finishedLoggingPolicyLocation) {
+					configlogger.info("Obtained policies location from environment {}", policiesPyFile);
+					finishedLoggingPolicyLocation = true;
+				}
+				return new FileInputStream(policiesPyFile);
+			} else {
 				logger.info("Looking for /WEB-INF/classes/policies.py in classpath");
 				if(servletContext != null) {
-					if(!finishedLoggingPolicyLocation) { configlogger.info("Using policies file /WEB-INF/classes/policies.py found in classpath"); finishedLoggingPolicyLocation = true; } 
+					if(!finishedLoggingPolicyLocation) { configlogger.info("Using policies file /WEB-INF/classes/policies.py found in classpath"); finishedLoggingPolicyLocation = true; }
 					return servletContext.getResourceAsStream("/WEB-INF/classes/policies.py");
 				} else {
 					throw new IOException("Cannot determine location of policies file as both servlet context and webInfClassesFolder are null");
 				}
 			}
-		} else { 
-			if(!finishedLoggingPolicyLocation) { configlogger.info("Obtained policies location from system property " + policiesPyFile); finishedLoggingPolicyLocation = true; } 
+		} else {
+			if (!finishedLoggingPolicyLocation) {
+				configlogger.info("Obtained policies location from system property {}", policiesPyFile);
+				finishedLoggingPolicyLocation = true;
+			}
 			return new FileInputStream(new File(policiesPyFile));
 		}
 	}
-	
-	
+
+
 
 	@Override
 	public EngineContext getEngineContext() {
@@ -1722,7 +1572,7 @@ public class DefaultConfigService implements ConfigService {
 	public WAR_FILE getWarFile() {
 		return warFile;
 	}
-		
+
 	/**
 	 * Return a string representation of the member.
 	 * @param member
@@ -1742,13 +1592,13 @@ public class DefaultConfigService implements ConfigService {
 	public PVNameToKeyMapping getPVNameToKeyConverter() {
 		return pvName2KeyConverter;
 	}
-	
+
 	/**
 	 * Load typeInfos into the cluster hashmaps from the persistence layer on startup.
-	 * To avoid overwhelming the cluster, we batch the loads 
+	 * To avoid overwhelming the cluster, we batch the loads
 	 */
 	private void loadTypeInfosFromPersistence() {
-		try { 
+		try {
 			configlogger.info("Loading PVTypeInfo from persistence");
 			List<String> upgradedPVs = new LinkedList<String>();
 			List<PVTypeInfo> pvTypeInfos = persistanceLayer.getAllTypeInfosForAppliance(myIdentity);
@@ -1761,17 +1611,17 @@ public class DefaultConfigService implements ConfigService {
 				if(typeInfo.getApplianceIdentity().equals(myIdentity)) {
 					// Here's where we put schema update logic
 					upgradeTypeInfo(typeInfo, upgradedPVs);
-					
+
 					String pvName = typeInfo.getPvName();
 					newTypeInfos.put(pvName, typeInfo);
 					newPVMappings.put(pvName, appliances.get(typeInfo.getApplianceIdentity()));
 					pvsForThisAppliance.add(pvName);
-					if(typeInfo.isPaused()) { 
+					if(typeInfo.isPaused()) {
 						pausedPVsForThisAppliance.add(pvName);
 					}
 					String[] parts = this.pvName2KeyConverter.breakIntoParts(pvName);
-					for(String part : parts) { 
-						if(!parts2PVNamesForThisAppliance.containsKey(part)) { 
+					for(String part : parts) {
+						if(!parts2PVNamesForThisAppliance.containsKey(part)) {
 							parts2PVNamesForThisAppliance.put(part, new ConcurrentSkipListSet<String>());
 						}
 						parts2PVNamesForThisAppliance.get(part).add(pvName);
@@ -1790,7 +1640,7 @@ public class DefaultConfigService implements ConfigService {
 					newTypeInfos = new HashMap<String, PVTypeInfo>();
 					newPVMappings = new HashMap<String, ApplianceInfo>();
 					objectCount = 0;
-					logger.debug("Adding next batch of PVs " + batch++);
+					logger.debug("Adding next batch of PVs {}", batch++);
 				}
 			}
 
@@ -1805,11 +1655,11 @@ public class DefaultConfigService implements ConfigService {
 			}
 
 			configlogger.info("Done loading " + + clusterPVCount + " PVs from persistence into cluster");
-			
-			for(String upgradedPVName : upgradedPVs) { 
+
+			for(String upgradedPVName : upgradedPVs) {
 				logger.debug("PV " + upgradedPVName + "'s schema was upgraded");
 				persistanceLayer.putTypeInfo(upgradedPVName, getTypeInfoForPV(upgradedPVName));
-				logger.debug("Done persisting upgraded PV's " + upgradedPVName + "'s typeInfo");				
+				logger.debug("Done persisting upgraded PV's " + upgradedPVName + "'s typeInfo");
 			}
 		} catch(Exception ex) {
 			configlogger.error("Exception loading PVs from persistence", ex);
@@ -1822,19 +1672,19 @@ public class DefaultConfigService implements ConfigService {
 	 * @param upgradedPVs - Add the pvName here if we actually did an upgrade to the typeInfo.
 	 */
 	private void upgradeTypeInfo(PVTypeInfo typeInfo, List<String> upgradedPVs) {
-		// We added the chunkKey to typeInfo to permanently remember the key mapping to accomodate slowly changing key mappings. 
+		// We added the chunkKey to typeInfo to permanently remember the key mapping to accomodate slowly changing key mappings.
 		// This could be a possibility after talking to SPEAR folks.
-		if(!typeInfo.keyAlreadyGenerated()) { 
+		if(!typeInfo.keyAlreadyGenerated()) {
 			typeInfo.setChunkKey(this.pvName2KeyConverter.convertPVNameToKey(typeInfo.getPvName()));
 			upgradedPVs.add(typeInfo.getPvName());
 		}
 	}
-	
+
 	/**
 	 * Load alias mappings from persistence on startup in batches
 	 */
 	private void loadAliasesFromPersistence() {
-		try { 
+		try {
 			configlogger.info("Loading aliases from persistence");
 			List<String> pvNamesFromPersistence = persistanceLayer.getAliasNamesToRealNamesKeys();
 			HashMap<String, String> newAliases = new HashMap<String, String>();
@@ -1847,21 +1697,14 @@ public class DefaultConfigService implements ConfigService {
 					newAliases.put(pvNameFromPersistence, realName);
 					// Add the alias into the trie
 					String[] parts = this.pvName2KeyConverter.breakIntoParts(pvNameFromPersistence);
-					for(String part : parts) { 
-						if(!parts2PVNamesForThisAppliance.containsKey(part)) { 
+					for(String part : parts) {
+						if(!parts2PVNamesForThisAppliance.containsKey(part)) {
 							parts2PVNamesForThisAppliance.put(part, new ConcurrentSkipListSet<String>());
 						}
 						parts2PVNamesForThisAppliance.get(part).add(pvNameFromPersistence);
-					}					
+					}
 				}
 				// Add in batch sizes of 1000 or so...
-				if(objectCount > 1000) {
-					this.aliasNamesToRealNames.putAll(newAliases);
-					clusterPVCount += newAliases.size();
-					newAliases = new HashMap<String, String>();
-					objectCount = 0;
-					logger.debug("Adding next batch of aliases " + batch++);
-				}
 			}
 
 			if(newAliases.size() > 0) {
@@ -1875,15 +1718,15 @@ public class DefaultConfigService implements ConfigService {
 			configlogger.error("Exception loading aliases from persistence", ex);
 		}
 	}
-	
-	
+
+
 	/**
 	 * Load any pending archive requests that have not been fulfilled yet on startup
 	 * Also, start their workflows..
 	 * @throws ConfigException
 	 */
 	private void loadArchiveRequestsFromPersistence() throws ConfigException {
-		try { 
+		try {
 			configlogger.info("Loading archive requests from persistence");
 			List<String> pvNamesFromPersistence = persistanceLayer.getArchivePVRequestsKeys();
 			HashMap<String, UserSpecifiedSamplingParams> newArchiveRequests = new HashMap<String, UserSpecifiedSamplingParams>();
@@ -1895,13 +1738,6 @@ public class DefaultConfigService implements ConfigService {
 				// We should not need to add an appliance check here.. However, if after production deployment, we determine we need to do so; this is the right place.
 				newArchiveRequests.put(pvNameFromPersistence, userSpecifiedParams);
 				// Add in batch sizes of 1000 or so...
-				if(objectCount > 1000) {
-					this.archivePVRequests.putAll(newArchiveRequests);
-					clusterPVCount += newArchiveRequests.size();
-					newArchiveRequests = new HashMap<String, UserSpecifiedSamplingParams>();
-					objectCount = 0;
-					logger.debug("Adding next batch of archive pv requests " + batch++);
-				}
 			}
 
 			if(newArchiveRequests.size() > 0) {
@@ -1931,8 +1767,8 @@ public class DefaultConfigService implements ConfigService {
 			logger.info("Using MYSQL for persistence; we expect to find a JNDI connection pool called jdbc/archappl");
 			persistanceLayer = new MySQLPersistence();
 		} else {
-			try { 
-				logger.info("Using persistence provided by class " + persistenceFromEnv);
+			try {
+				logger.info("Using persistence provided by class {}", persistenceFromEnv);
 				persistanceLayer = (ConfigPersistence) getClass().getClassLoader().loadClass(persistenceFromEnv).getConstructor().newInstance();
 			} catch(Exception ex) {
 				throw new ConfigException("Exception initializing persistence layer using " + persistenceFromEnv, ex);
@@ -1943,39 +1779,35 @@ public class DefaultConfigService implements ConfigService {
 	public ProcessMetrics getProcessMetrics() {
 		return processMetrics;
 	}
-	
-	
+
+
 	@Override
 	public String getWebInfFolder() {
 		return servletContext.getRealPath("WEB-INF/");
 	}
-	
-	
+
+
 	private void loadExternalServersFromPersistence() throws ConfigException {
-		try { 
+		try {
 			configlogger.info("Loading external servers from persistence");
 			List<String> externalServerKeys = persistanceLayer.getExternalDataServersKeys();
 			for(String serverUrl : externalServerKeys) {
 				String archivesCSV = persistanceLayer.getExternalDataServer(serverUrl);
-				if(this.getExternalArchiverDataServers().containsKey(serverUrl)) { 
+				if (this.getExternalArchiverDataServers().containsKey(serverUrl)) {
 					configlogger.info("Skipping adding " + serverUrl + " on this appliance as another appliance has already added it");
-				} else { 
+				} else {
 					this.getExternalArchiverDataServers().put(serverUrl, archivesCSV);
 					String[] archives = archivesCSV.split(",");
 
-					this.startupExecutor.schedule(new Runnable() {
-						@Override
-						public void run() {
-							try {
-								for(int i = 0; i < archives.length; i++) {
-									String archive = archives[i];
-									loadExternalArchiverPVs(serverUrl, archive);
-								}
-							} catch(Exception ex) {
-								logger.error("Exception adding Channel Archiver archives " + serverUrl + " - " + archivesCSV, ex);
+					this.startupExecutor.schedule(() -> {
+						try {
+							for (String archive : archives) {
+								loadExternalArchiverPVs(serverUrl, archive);
 							}
+						} catch (Exception ex) {
+							logger.error("Exception adding Channel Archiver archives " + serverUrl + " - " + archivesCSV, ex);
 						}
-					}, 15, TimeUnit.SECONDS); 
+					}, 15, TimeUnit.SECONDS);
 				}
 			}
 			configlogger.info("Done loading external servers from persistence ");
@@ -1983,38 +1815,32 @@ public class DefaultConfigService implements ConfigService {
 			configlogger.error("Exception loading external servers from persistence", ex);
 		}
 	}
-	
-	
+
+
 	private void registerForNewExternalServers(IMap<Object, Object> dataServerMap) throws ConfigException {
-		dataServerMap.addEntryListener(new EntryAddedListener<Object, Object>() {
-			@Override
-			public void entryAdded(EntryEvent<Object, Object> arg0) {
-				String url = (String) arg0.getKey();
-				String archivesCSV = (String) arg0.getValue();
-				try { 
-					addExternalArchiverDataServer(url, archivesCSV);
-				} catch(Exception ex) { 
-					logger.error("Exception syncing external data server " + url + archivesCSV, ex);
-				}
+		dataServerMap.addEntryListener((EntryAddedListener<Object, Object>) arg0 -> {
+			String url = (String) arg0.getKey();
+			String archivesCSV = (String) arg0.getValue();
+			try {
+				addExternalArchiverDataServer(url, archivesCSV);
+			} catch (Exception ex) {
+				logger.error("Exception syncing external data server " + url + archivesCSV, ex);
 			}
 		}, true);
-		dataServerMap.addEntryListener(new EntryRemovedListener<Object, Object>() {
-			@Override
-			public void entryRemoved(EntryEvent<Object, Object> arg0) {
-				String url = (String) arg0.getKey();
-				String archivesCSV = (String) arg0.getValue();
-				try { 
-					removeExternalArchiverDataServer(url, archivesCSV);
-				} catch(Exception ex) { 
-					logger.error("Exception syncing external data server " + url + archivesCSV, ex);
-				}
+		dataServerMap.addEntryListener((EntryRemovedListener<Object, Object>) arg0 -> {
+			String url = (String) arg0.getKey();
+			String archivesCSV = (String) arg0.getValue();
+			try {
+				removeExternalArchiverDataServer(url, archivesCSV);
+			} catch (Exception ex) {
+				logger.error("Exception syncing external data server " + url + archivesCSV, ex);
 			}
 		}, true);
 	}
 
 	@Override
 	public Set<String> getPausedPVsInThisAppliance() {
-		if(pausedPVsForThisAppliance != null) { 
+		if(pausedPVsForThisAppliance != null) {
 			logger.debug("Returning the locally cached copy of the paused pvs for this appliance");
 			return pausedPVsForThisAppliance;
 		} else {
@@ -2031,21 +1857,19 @@ public class DefaultConfigService implements ConfigService {
 	@Override
 	public void refreshPVDataFromChannelArchiverDataServers() {
 		Map<String, String> existingCAServers = this.getExternalArchiverDataServers();
-		for(String serverURL : existingCAServers.keySet()) { 
-			String archivesCSV = existingCAServers.get(serverURL);
-			String[] archives = archivesCSV.split(",");
+		for (Entry<String, String> serverURLEntry : existingCAServers.entrySet()) {
+			String[] archives = serverURLEntry.getValue().split(",");
 
 			try {
-				for(int i = 0; i < archives.length; i++) {
-					String archive = archives[i];
-					loadExternalArchiverPVs(serverURL, archive);
+				for (String archive : archives) {
+					loadExternalArchiverPVs(serverURLEntry.getKey(), archive);
 				}
-			} catch(Throwable ex) {
-				logger.error("Exception adding Channel Archiver archives " + serverURL + " - " + archivesCSV, ex);
+			} catch (Exception ex) {
+				logger.error("Exception adding Channel Archiver archives {}" , serverURLEntry, ex);
 			}
 		}
 	}
-	
+
 	@Override
 	public String getFailoverApplianceURL(String pvName) {
 		for(String serverURL: failoverPVs.keySet()) {
@@ -2059,12 +1883,12 @@ public class DefaultConfigService implements ConfigService {
 		}
 		return null;
 	}
-	
+
 	@Override
 	public Set<String> getFailoverServerURLs() {
 		return failoverPVs.keySet();
 	}
-	
+
 	@Override
 	public void resetFailoverCaches() {
 		failoverPVs.clear();
@@ -2073,16 +1897,16 @@ public class DefaultConfigService implements ConfigService {
 
 	@Override
 	public boolean getNamedFlag(String name) {
-		if(name == null) { 
+		if(name == null) {
 			return false;
 		}
-		if(name.equalsIgnoreCase("false")) { 
+		if(name.equalsIgnoreCase("false")) {
 			return false;
 		}
-		if(name.equalsIgnoreCase("true")) { 
+		if(name.equalsIgnoreCase("true")) {
 			return true;
 		}
-		if(namedFlags.containsKey(name)) { 
+		if(namedFlags.containsKey(name)) {
 			return namedFlags.get(name);
 		}
 		// If we don't know about this named flag, we return false;
@@ -2108,37 +1932,37 @@ public class DefaultConfigService implements ConfigService {
 	public void getAllExpandedNames(Consumer<String> func) {
 		Collection<String> allPVs = this.getAllPVs();
 		// Add fields and the VAL field
-		for(String pvName : allPVs) { 
+		for(String pvName : allPVs) {
 			func.accept(pvName);
-			if(!PVNames.isField(pvName)) { 
+			if(!PVNames.isField(pvName)) {
 				func.accept(pvName + ".VAL");
 				PVTypeInfo typeInfo = this.getTypeInfoForPV(pvName);
-				if(typeInfo != null) { 
-					for(String fieldName : typeInfo.getArchiveFields()) { 
+				if(typeInfo != null) {
+					for(String fieldName : typeInfo.getArchiveFields()) {
 						func.accept(pvName + "." + fieldName);
 					}
 				}
 			}
 		}
 		List<String> allAliases = this.getAllAliases();
-		for(String pvName : allAliases) { 
+		for(String pvName : allAliases) {
 			func.accept(pvName);
-			if(!PVNames.isField(pvName)) { 
+			if(!PVNames.isField(pvName)) {
 				func.accept(pvName + ".VAL");
 				PVTypeInfo typeInfo = this.getTypeInfoForPV(pvName);
-				if(typeInfo != null) { 
-					for(String fieldName : typeInfo.getArchiveFields()) { 
+				if(typeInfo != null) {
+					for(String fieldName : typeInfo.getArchiveFields()) {
 						func.accept(pvName + "." + fieldName);
 					}
 				}
 			}
 		}
-		for(String pvName : this.getArchiveRequestsCurrentlyInWorkflow()) { 
+		for(String pvName : this.getArchiveRequestsCurrentlyInWorkflow()) {
 			func.accept(pvName);
-			if(!PVNames.isField(pvName)) { 
+			if(!PVNames.isField(pvName)) {
 				func.accept(pvName + ".VAL");
 			}
 		}
 	}
-	
+
 }

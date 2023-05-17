@@ -6,6 +6,8 @@
     </Appenders>
     <Loggers>
         <Logger name="org.apache.log4j.xml" level="info"/>
+        <Logger name="com.hazelcast" level="info"/>
+        <Logger name="com.hazelcast.cluster" level="info"/>
         <Root level="info">
             <AppenderRef ref="STDOUT"/>
         </Root>

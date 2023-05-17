@@ -25,16 +25,15 @@ import org.w3c.dom.NodeList;
  *
  */
 public class AppliancesList {
-	private static Logger logger = LogManager.getLogger(AppliancesList.class.getName());
+	private static final Logger logger = LogManager.getLogger(AppliancesList.class.getName());
 	
 	/**
 	 * Parses the appliances.xml file and loads the appliances into the specified appliancesList
 	 * @param servletContext ServletContext
 	 * @return appliancesList &emsp;
 	 * @throws IOException &emsp;
-	 * @throws ConfigException  &emsp;
 	 */
-	public static HashMap<String, ApplianceInfo> loadAppliancesXML(ServletContext servletContext) throws IOException, ConfigException {
+	public static HashMap<String, ApplianceInfo> loadAppliancesXML(ServletContext servletContext) throws IOException {
 		HashMap<String, ApplianceInfo> appliancesList = new HashMap<String, ApplianceInfo>();
 		try(InputStream appliancesXMLInputStream = determineApplianceXMLFileAndReturnStream(servletContext)) {
             DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
@@ -43,7 +42,7 @@ public class AppliancesList {
 
             NodeList applianceList = doc.getElementsByTagName("appliance");
             int totalAppliances = applianceList.getLength();
-            logger.debug("Found " + totalAppliances + " appliances in appliances.xml");
+            logger.info("Found " + totalAppliances + " appliances in appliances.xml");
             
             HashSet<String> allInetPorts = new HashSet<String>();
             
@@ -80,7 +79,7 @@ public class AppliancesList {
 		return appliancesList;
 	}
 
-	private static InputStream determineApplianceXMLFileAndReturnStream(ServletContext servletContext) throws IOException, FileNotFoundException {
+	private static InputStream determineApplianceXMLFileAndReturnStream(ServletContext servletContext) throws IOException {
 		String applianceFileFromEnvVar = System.getenv(ConfigService.ARCHAPPL_APPLIANCES);
 		if(applianceFileFromEnvVar == null || applianceFileFromEnvVar.equals("")) {
 			applianceFileFromEnvVar = System.getProperty(ConfigService.ARCHAPPL_APPLIANCES);
