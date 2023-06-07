@@ -103,14 +103,13 @@ public class PVAccessTypesTest {
                         fakeData.get(0).stream()
                                 .map((d) -> (PVAData) new PVADouble(VALUE_STRING, d))
                                 .toList()),
-                // entry(ArchDBRTypes.DBR_WAVEFORM_STRING, 
-                //         fakeData.stream()
-                //                 .map((dArray) -> (PVAData) new PVAStringArray(
-                //                         VALUE_STRING,
-                //                         dArray.stream().map((d) -> d.toString())
-                //                                 .toArray(String[]::new)))
-                //                 .toList()),
-                // Need to wait for https://github.com/ControlSystemStudio/phoebus/pull/2500 to be in release of phoebus library
+                entry(ArchDBRTypes.DBR_WAVEFORM_STRING,
+                     fakeData.stream()
+                             .map((dArray) -> (PVAData) new PVAStringArray(
+                                     VALUE_STRING,
+                                     dArray.stream().map(Object::toString)
+                                             .toArray(String[]::new)))
+                             .toList()),
                 entry(ArchDBRTypes.DBR_WAVEFORM_SHORT,
                         fakeData.stream()
                                 .map((dArray) -> {

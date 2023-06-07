@@ -89,7 +89,7 @@ public class PVAccessIntegrationTest {
         String archivePVURL = mgmtUrl + "archivePV?pv=pva://";
 
         GetUrlContent.getURLContentAsJSONArray(archivePVURL + pvURLName);
-        waitForStatusChange(pvName, "Being archived", 60, mgmtUrl, logger, 10);
+        waitForStatusChange(pvName, "Being archived", 60, mgmtUrl, 10);
 
         Timestamp start = TimeUtils.convertFromInstant(firstInstant);
 
