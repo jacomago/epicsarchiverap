@@ -245,7 +245,7 @@ public class EPICS_V4_PV implements PV,  ClientChannelListener, MonitorListener 
 				archDBRType = ArchDBRTypes.DBR_V4_GENERIC_BYTES;
 			} else {
 				logger.info("Value field in monitorConnect is of type " + valueField.getType());
-				archDBRType = determineDBRType(structureID, valueField.getType());
+				archDBRType = determineDBRType(structureID, valueField.getType(), valueField.formatType());
 			}
 
 			con = configservice.getArchiverTypeSystem().getV4Constructor(archDBRType);
@@ -477,7 +477,7 @@ public class EPICS_V4_PV implements PV,  ClientChannelListener, MonitorListener 
 		return tempHashMap;
 	}
 
-	private static ArchDBRTypes determineDBRType(String structureID, String valueTypeId) {
+	private static ArchDBRTypes determineDBRType(String structureID, String valueTypeId, String valueFormatType) {
 		if(structureID == null || valueTypeId == null) {
 			return ArchDBRTypes.DBR_V4_GENERIC_BYTES;
 		}
@@ -525,7 +525,16 @@ public class EPICS_V4_PV implements PV,  ClientChannelListener, MonitorListener 
 			case "enum_t" -> {
 					return ArchDBRTypes.DBR_SCALAR_ENUM;
 			}
+			case "structure[]" -> {
+				if (valueFormatType.startsWith("enum_t[]")) {
+					return ArchDBRTypes.DBR_WAVEFORM_ENUM;
+				}
+				return ArchDBRTypes.DBR_V4_GENERIC_BYTES;
+			}
 			case "structure" -> {
+					if (valueFormatType.startsWith("enum")) {
+						return ArchDBRTypes.DBR_SCALAR_ENUM;
+					}
 					return ArchDBRTypes.DBR_V4_GENERIC_BYTES;
 			}
 			default -> {

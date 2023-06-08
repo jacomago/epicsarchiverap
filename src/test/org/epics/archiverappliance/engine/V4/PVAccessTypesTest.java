@@ -32,8 +32,6 @@ import static org.junit.Assert.fail;
  */
 public class PVAccessTypesTest {
 
-    // TODO Add enums
-
     private static final Logger logger = LogManager.getLogger(PVAccessTypesTest.class.getName());
     private static final String VALUE_STRING = "value";
 
