@@ -12,8 +12,13 @@ import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.data.SampleValue;
 import org.epics.archiverappliance.retrieval.client.RawDataRetrievalAsEventStream;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
+import org.epics.pva.data.PVAByte;
+import org.epics.pva.data.PVAByteArray;
 import org.epics.pva.data.PVAData;
 import org.epics.pva.data.PVAInt;
+import org.epics.pva.data.PVAIntArray;
+import org.epics.pva.data.PVAShort;
+import org.epics.pva.data.PVAShortArray;
 import org.epics.pva.data.PVAString;
 import org.epics.pva.data.PVAStructure;
 import org.epics.pva.data.PVAStructureArray;
@@ -138,6 +143,89 @@ public class PVAccessIntegrationTest {
 
     }
 
+    @Test
+    public void testPVAccessUnsignedByte() throws Exception {
+        String pvName = "PV:" + PVAccessIntegrationTest.class.getSimpleName() + ":testPVAccessUnsignedByte:" + UUID.randomUUID();
+
+        var value = new PVAByte("value", true, Integer.valueOf(1).byteValue());
+        var value2 = new PVAByte("value", true, Integer.valueOf(255).byteValue());
+
+        testPVData(ArchDBRTypes.DBR_SCALAR_BYTE,
+                List.of(value, value2), (sampleValue) -> {
+                    return new PVAByte("value", true, sampleValue.getValue().byteValue());
+                }, "epics:nt/NTScalar:1.0", pvName);
+
+    }
+    @Test
+    public void testPVAccessUnsignedBytes() throws Exception {
+        String pvName = "PV:" + PVAccessIntegrationTest.class.getSimpleName() + ":testPVAccessUnsignedBytes:" + UUID.randomUUID();
+
+        var value = new PVAByteArray("value", true, Integer.valueOf(1).byteValue(),Integer.valueOf(-1).byteValue() );
+        var value2 = new PVAByteArray("value", true, Integer.valueOf(255).byteValue(), Integer.valueOf(1).byteValue());
+
+        testPVData(ArchDBRTypes.DBR_WAVEFORM_BYTE,
+                List.of(value, value2), (sampleValue) -> {
+                    var values = sampleValue.getValues();
+                    return new PVAByteArray("value", true, ((Number)values.get(0)).byteValue(), ((Number)values.get(1)).byteValue());
+                }, "epics:nt/NTScalarArray:1.0", pvName);
+
+    }
+    @Test
+    public void testPVAccessUnsignedShort() throws Exception {
+        String pvName = "PV:" + PVAccessIntegrationTest.class.getSimpleName() + ":testPVAccessUnsignedShort:" + UUID.randomUUID();
+
+        var value = new PVAShort("value", true, Integer.valueOf(1).shortValue());
+        var value2 = new PVAShort("value", true, Integer.valueOf(255).shortValue());
+
+        testPVData(ArchDBRTypes.DBR_SCALAR_SHORT,
+                List.of(value, value2), (sampleValue) -> {
+                    return new PVAShort("value", true, sampleValue.getValue().shortValue());
+                }, "epics:nt/NTScalar:1.0", pvName);
+
+    }
+    @Test
+    public void testPVAccessUnsignedShorts() throws Exception {
+        String pvName = "PV:" + PVAccessIntegrationTest.class.getSimpleName() + ":testPVAccessUnsignedShorts:" + UUID.randomUUID();
+
+        var value = new PVAShortArray("value", true, Integer.valueOf(1).shortValue(),Integer.valueOf(-1).shortValue() );
+        var value2 = new PVAShortArray("value", true, Integer.valueOf(255).shortValue(), Integer.valueOf(1).shortValue());
+
+        testPVData(ArchDBRTypes.DBR_WAVEFORM_SHORT,
+                List.of(value, value2), (sampleValue) -> {
+                    var values = sampleValue.getValues();
+                    return new PVAShortArray("value", true, ((Number)values.get(0)).shortValue(), ((Number)values.get(1)).shortValue());
+                }, "epics:nt/NTScalarArray:1.0", pvName);
+
+    }
+
+    @Test
+    public void testPVAccessUnsignedInt() throws Exception {
+        String pvName = "PV:" + PVAccessIntegrationTest.class.getSimpleName() + ":testPVAccessUnsignedInt:" + UUID.randomUUID();
+
+        var value = new PVAInt("value", true, 1);
+        var value2 = new PVAInt("value", true, 255);
+
+        testPVData(ArchDBRTypes.DBR_SCALAR_INT,
+                List.of(value, value2), (sampleValue) -> {
+                    return new PVAInt("value", true, sampleValue.getValue().shortValue());
+                }, "epics:nt/NTScalar:1.0", pvName);
+
+    }
+    @Test
+    public void testPVAccessUnsignedInts() throws Exception {
+        String pvName = "PV:" + PVAccessIntegrationTest.class.getSimpleName() + ":testPVAccessUnsignedInts:" + UUID.randomUUID();
+
+        var value = new PVAIntArray("value", true, 1, -1);
+        var value2 = new PVAIntArray("value", true, 255, 1);
+
+        testPVData(ArchDBRTypes.DBR_WAVEFORM_INT,
+                List.of(value, value2), (sampleValue) -> {
+                    var values = sampleValue.getValues();
+                    return new PVAIntArray("value", true, ((Number)values.get(0)).intValue(), ((Number)values.get(1)).intValue());
+                }, "epics:nt/NTScalarArray:1.0", pvName);
+
+    }
+
     public <PVA extends PVAData> void testPVData(ArchDBRTypes type,
         List<PVA> inputPvaDataList, Function<SampleValue, PVA> expectedDataMapping,
                                                  String structName, String pvName)
@@ -195,7 +283,7 @@ public class PVAccessIntegrationTest {
             stream = rawDataRetrieval.getDataForPVS(new String[]{pvName}, start, end, desc -> logger.info("Getting data for PV " + desc.getPvName()));
 
             // Make sure we get the DBR type we expect
-            assertEquals(stream.getDescription().getArchDBRType(), type);
+            assertEquals(type, stream.getDescription().getArchDBRType());
 
             // We are making sure that the stream we get back has times in sequential order...
             for (Event e : stream) {
