@@ -67,7 +67,7 @@ public class EventStreamWrapTest {
 					ArrayListEventStream testData = new ArrayListEventStream(86400, new RemotableEventStreamDesc(type, pvName, year));
 					int startofdayinseconds = day*86400;
 					for(int s = 0; s < 86400; s++) {
-						testData.add(new SimulationEvent(startofdayinseconds + s, year, type, new ScalarValue<Double>(1.0)));
+						testData.add(new SimulationEvent(startofdayinseconds + s, year, type, new ScalarValue<>(1.0)));
 					}
 					storageplugin.appendData(context, pvName, testData);
 				}
@@ -106,10 +106,7 @@ public class EventStreamWrapTest {
 			long t0 = System.currentTimeMillis();
 			List<Callable<EventStream>> callables = storageplugin.getDataForPV(context, pvName, start, end, mean_86400);
 			for(Callable<EventStream> callable : callables) { 
-				try (var call = callable.call()) {
-
-				}
-
+				callable.call();
 			}
 			long eventCount = 0;
 			EventStream consolidatedEventStream = ((PostProcessorWithConsolidatedEventStream)mean_86400).getConsolidatedEventStream();
@@ -154,8 +151,8 @@ public class EventStreamWrapTest {
 		info.setComputedStorageRate(40);
 		mean_86400.estimateMemoryConsumption(pvName, info, start, end, null);
 		try(BasicContext context = new BasicContext()) {
-			List<Future<EventStream>> futures = new ArrayList<Future<EventStream>>();
-			long t0 = System.currentTimeMillis();;
+			List<Future<EventStream>> futures = new ArrayList<>();
+			long t0 = System.currentTimeMillis();
 			ExecutorService executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
 
