@@ -55,8 +55,17 @@ public class SIOCSetup {
 			watchedProcess.destroyForcibly();
 		}
 	}
-	
-	
+
+	public void destroyIOC() {
+		if(watchedProcess.isAlive()) {
+			watchedProcess.destroy();
+		}
+	}
+	public void destroyForciblyIOC() {
+		if(watchedProcess.isAlive()) {
+			watchedProcess.destroyForcibly();
+		}
+	}
 	public static void caput(String pvName, double value) throws IllegalStateException, CAException, TimeoutException, SAXException, IOException, ConfigurationException, ConfigException {
 		new PVCaPut().caPut(pvName,value);
 	}

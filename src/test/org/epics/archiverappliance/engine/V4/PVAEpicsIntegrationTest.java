@@ -72,10 +72,131 @@ public class PVAEpicsIntegrationTest {
 
         logger.info("Stop the ioc");
         siocSetup.stopSIOC();
-        Thread.sleep(61 * 1000);
+        Thread.sleep(1 * 1000);
         logger.info("Restart the ioc");
         siocSetup.startSIOCWithDefaultDB();
+        Thread.sleep(5 * 1000);
         Thread.sleep(samplingPeriodMilliSeconds);
+        siocSetup.stopSIOC();
+        // Need to wait for the writer to write all the received data.
+        Thread.sleep((long) secondsToBuffer * 1000);
+        Timestamp end = TimeUtils.convertFromInstant(Instant.now());
+
+        RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT + "/retrieval/data/getData.raw");
+
+        EventStream stream = null;
+        Map<Instant, SampleValue> actualValues = new HashMap<>();
+        try {
+            stream = rawDataRetrieval.getDataForPVS(new String[]{pvName}, start, end, desc -> logger.info("Getting data for PV " + desc.getPvName()));
+
+            // Make sure we get the DBR type we expect
+            assertEquals(ArchDBRTypes.DBR_SCALAR_DOUBLE, stream.getDescription().getArchDBRType());
+
+            // We are making sure that the stream we get back has times in sequential order...
+            for (Event e : stream) {
+                actualValues.put(e.getEventTimeStamp().toInstant(), e.getSampleValue());
+            }
+        } finally {
+            if (stream != null) try {
+                stream.close();
+            } catch (Throwable ignored) {
+            }
+        }
+        logger.info("Data was {}", actualValues);
+        assertTrue(actualValues.size() > secondsToBuffer);
+    }
+    @Test
+    public void testDestoryEpicsIocPVA() throws Exception {
+
+        String pvName = "UnitTestNoNamingConvention:sine";
+
+        logger.info("Starting pvAccess test for pv " + pvName);
+
+        Instant firstInstant = Instant.now();
+
+        String pvURLName = URLEncoder.encode(pvName, StandardCharsets.UTF_8);
+
+        // Archive PV
+        String mgmtUrl = "http://localhost:17665/mgmt/bpl/";
+        String archivePVURL = mgmtUrl + "archivePV?pv=pva://";
+
+        GetUrlContent.getURLContentAsJSONArray(archivePVURL + pvURLName);
+        waitForStatusChange(pvName, "Being archived", 60, mgmtUrl, 10);
+
+        Timestamp start = TimeUtils.convertFromInstant(firstInstant);
+
+        long samplingPeriodMilliSeconds = 100;
+
+        Thread.sleep(samplingPeriodMilliSeconds);
+        double secondsToBuffer = 5.0;
+
+        logger.info("Stop the ioc");
+        siocSetup.destroyIOC();
+        Thread.sleep(1 * 1000);
+        logger.info("Restart the ioc");
+        siocSetup.startSIOCWithDefaultDB();
+        Thread.sleep(5 * 1000);
+        siocSetup.stopSIOC();
+        // Need to wait for the writer to write all the received data.
+        Thread.sleep((long) secondsToBuffer * 1000);
+        Timestamp end = TimeUtils.convertFromInstant(Instant.now());
+
+        RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT + "/retrieval/data/getData.raw");
+
+        EventStream stream = null;
+        Map<Instant, SampleValue> actualValues = new HashMap<>();
+        try {
+            stream = rawDataRetrieval.getDataForPVS(new String[]{pvName}, start, end, desc -> logger.info("Getting data for PV " + desc.getPvName()));
+
+            // Make sure we get the DBR type we expect
+            assertEquals(ArchDBRTypes.DBR_SCALAR_DOUBLE, stream.getDescription().getArchDBRType());
+
+            // We are making sure that the stream we get back has times in sequential order...
+            for (Event e : stream) {
+                actualValues.put(e.getEventTimeStamp().toInstant(), e.getSampleValue());
+            }
+        } finally {
+            if (stream != null) try {
+                stream.close();
+            } catch (Throwable ignored) {
+            }
+        }
+        logger.info("Data was {}", actualValues);
+        assertTrue(actualValues.size() > secondsToBuffer);
+    }
+    @Test
+    public void testDestoryForceEpicsIocPVA() throws Exception {
+
+        String pvName = "UnitTestNoNamingConvention:sine";
+
+        logger.info("Starting pvAccess test for pv " + pvName);
+
+        Instant firstInstant = Instant.now();
+
+        String pvURLName = URLEncoder.encode(pvName, StandardCharsets.UTF_8);
+
+        // Archive PV
+        String mgmtUrl = "http://localhost:17665/mgmt/bpl/";
+        String archivePVURL = mgmtUrl + "archivePV?pv=pva://";
+
+        GetUrlContent.getURLContentAsJSONArray(archivePVURL + pvURLName);
+        waitForStatusChange(pvName, "Being archived", 60, mgmtUrl, 10);
+
+        Timestamp start = TimeUtils.convertFromInstant(firstInstant);
+
+        long samplingPeriodMilliSeconds = 100;
+
+        Thread.sleep(samplingPeriodMilliSeconds);
+        double secondsToBuffer = 5.0;
+
+        logger.info("Stop the ioc");
+        siocSetup.destroyForciblyIOC();
+        Thread.sleep(1 * 1000);
+        logger.info("Restart the ioc");
+        siocSetup.startSIOCWithDefaultDB();
+        Thread.sleep(5 * 1000);
+        Thread.sleep(samplingPeriodMilliSeconds);
+        siocSetup.stopSIOC();
         // Need to wait for the writer to write all the received data.
         Thread.sleep((long) secondsToBuffer * 1000);
         Timestamp end = TimeUtils.convertFromInstant(Instant.now());

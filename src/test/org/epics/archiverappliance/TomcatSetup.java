@@ -107,20 +107,16 @@ public class TomcatSetup {
 
 	public void tearDown() throws Exception {
 		for(Process process : watchedProcesses) {
-			// First try to kill the process cleanly
-			long pid = process.pid();
-			String cmd = "kill -s SIGINT " + pid;
-			logger.info("Sending a signal using " + cmd);
-			Runtime.getRuntime().exec(cmd);
+			process.destroy();
 			try {
-				Thread.sleep(15 * 1000);
+				Thread.sleep(1 * 1000);
 			} catch (Exception ignored) {
 			}
 			if (process.isAlive()) {
 				logger.warn("Tomcat process did not stop propoerly within time. Forcibly stopping it.");
 				process.destroyForcibly();
 				try {
-					Thread.sleep(3 * 60 * 1000);
+					Thread.sleep(3 * 1000);
 				} catch (Exception ignored) {
 				}
 			}
