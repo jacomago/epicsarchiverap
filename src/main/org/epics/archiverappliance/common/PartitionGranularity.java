@@ -52,4 +52,5 @@ public enum PartitionGranularity {
     public int getApproxMinutesPerChunk() {
         return approxMinutesPerChunk;
     }
+
 }

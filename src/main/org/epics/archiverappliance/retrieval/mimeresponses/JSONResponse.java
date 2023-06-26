@@ -45,7 +45,7 @@ public class JSONResponse implements MimeResponse {
 		}
 		out.print("{ \"secs\": " + evnt.getEpochSeconds() 
 				+ ", \"val\": " + evnt.getSampleValue().toJSONString()
-                + ", \"nanos\": " + Integer.toString(evnt.getEventTimeStamp().getNano())
+				+ ", \"nanos\": " + Integer.toString(evnt.getEventTimeStamp().getNano())
 				+ ", \"severity\":" + Integer.toString(evnt.getSeverity())
 				+ ", \"status\":" + Integer.toString(evnt.getStatus())
 				+ consumeMetadata(evnt)
@@ -89,7 +89,7 @@ public class JSONResponse implements MimeResponse {
 	}
 
 	@Override
-    public void processingPV(BasicContext retrievalContext, String pv, Instant start, Instant end, EventStreamDesc streamDesc) {
+	public void processingPV(BasicContext retrievalContext, String pv, Instant start, Instant end, EventStreamDesc streamDesc) {
 		if(firstPV) {
 			firstPV = false;
 		} else {

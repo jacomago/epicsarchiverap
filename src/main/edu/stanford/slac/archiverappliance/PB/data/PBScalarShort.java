@@ -7,6 +7,7 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PB.data;
 
+import com.google.protobuf.Message;
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent;
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.FieldValue;
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.ScalarShort.Builder;
@@ -45,13 +46,18 @@ public class PBScalarShort implements DBRTimeEvent {
 		this.bar = bar;
 		this.year = year;
 	}
-	
+
+	public PBScalarShort(short year, Message.Builder message) {
+		this.dbevent = (EPICSEvent.ScalarShort) message.build();
+		this.bar = new ByteArray(LineEscaper.escapeNewLines(dbevent.toByteArray()));
+		this.year = year;
+	}
 	public PBScalarShort(DBRTimeEvent ev) {
 		YearSecondTimestamp yst = TimeUtils.convertToYearSecondTimestamp(ev.getEventTimeStamp());
 		year = yst.getYear();
 		Builder builder = EPICSEvent.ScalarShort.newBuilder()
 				.setSecondsintoyear(yst.getSecondsintoyear())
-                .setNano(yst.getNano())
+				.setNano(yst.getNano())
 				.setVal(ev.getSampleValue().getValue().intValue());
 		if(ev.getSeverity() != 0) builder.setSeverity(ev.getSeverity());
 		if(ev.getStatus() != 0) builder.setStatus(ev.getStatus());
@@ -73,7 +79,7 @@ public class PBScalarShort implements DBRTimeEvent {
 		year = yst.getYear();
 		Builder builder = EPICSEvent.ScalarShort.newBuilder()
 				.setSecondsintoyear(yst.getSecondsintoyear())
-                .setNano(yst.getNano())
+				.setNano(yst.getNano())
 				.setVal(realtype.getShortValue()[0]);
 		if(realtype.getSeverity().getValue() != 0) builder.setSeverity(realtype.getSeverity().getValue());
 		if(realtype.getStatus().getValue() != 0) builder.setStatus(realtype.getStatus().getValue());
@@ -90,7 +96,7 @@ public class PBScalarShort implements DBRTimeEvent {
         year = yst.getYear();
         Builder builder = EPICSEvent.ScalarShort.newBuilder()
                         .setSecondsintoyear(yst.getSecondsintoyear())
-                .setNano(yst.getNano())
+                        .setNano(yst.getNano())
                         .setVal(value);
 		if(alarm.severity != 0) builder.setSeverity(alarm.severity);
 		if(alarm.status != 0) builder.setStatus(alarm.status);
@@ -98,14 +104,25 @@ public class PBScalarShort implements DBRTimeEvent {
         bar = new ByteArray(LineEscaper.escapeNewLines(dbevent.toByteArray()));
     }
 
-	
+
+	@Override
+	public Message getMessage() {
+
+		unmarshallEventIfNull();return dbevent;
+	}
+
+	@Override
+	public Class<? extends Message> getMessageClass() {
+		return EPICSEvent.ScalarShort.class;
+	}
+
 	@Override
 	public Event makeClone() {
 		return new PBScalarShort(this);
 	}
 
 	@Override
-    public Instant getEventTimeStamp() {
+	public Instant getEventTimeStamp() {
 		unmarshallEventIfNull();
 		return TimeUtils.convertFromYearSecondTimestamp(new YearSecondTimestamp(year, dbevent.getSecondsintoyear(), dbevent.getNano()));
 	}

@@ -151,12 +151,12 @@ public class ConsolidateETLJobsForOnePVTest {
         assert filesMediumTerm != null;
         Assertions.assertTrue(
                 filesMediumTerm.length != 0, "there should be PB files int medium term storage but there is no ");
-        // ArchUnitTestConsolidateETLJobsForOnePVTest:_pb.zip
-        String zip_suffix = ":_pb.zip";
+        // ArchUnitTestConsolidateETLJobsForOnePVTest+_pb.zip
+        String zip_suffix = "+_pb.zip";
         File zipFileOflongTermFile = new File(longTermFolderName + "/" + pvName + zip_suffix);
         Assertions.assertTrue(
                 zipFileOflongTermFile.exists(),
-                longTermFolderName + "/" + pvName + ":_pb.zip shoule exist but it doesn't");
+                longTermFolderName + "/" + pvName + "+_pb.zip shoule exist but it doesn't");
         ZipFile lastZipFile1 = new ZipFile(zipFileOflongTermFile);
         Enumeration<ZipArchiveEntry> enumeration1 = lastZipFile1.getEntries();
         int ss = 0;
@@ -166,7 +166,7 @@ public class ConsolidateETLJobsForOnePVTest {
         }
         Assertions.assertTrue(
                 ss < dayCount,
-                "the zip file of " + longTermFolderName + "/" + pvName + ":_pb.zip should contain pb files less than "
+                "the zip file of " + longTermFolderName + "/" + pvName + "+_pb.zip should contain pb files less than "
                         + dayCount + ",but the number is " + ss);
         // consolidate
         String storageName = "LTS";
@@ -187,11 +187,11 @@ public class ConsolidateETLJobsForOnePVTest {
                 + "PB files");
         Assertions.assertEquals(0, filesMediumTerm2.length, "there should be no files int medium term storage but there are still " + filesMediumTerm2.length
                 + "PB files");
-        // ArchUnitTestConsolidateETLJobsForOnePVTest:_pb.zip
+        // ArchUnitTestConsolidateETLJobsForOnePVTest+_pb.zip
         File zipFileOflongTermFile2 = new File(longTermFolderName + "/" + pvName + zip_suffix);
         Assertions.assertTrue(
                 zipFileOflongTermFile2.exists(),
-                longTermFolderName + "/" + pvName + ":_pb.zip shoule exist but it doesn't");
+                longTermFolderName + "/" + pvName + "+_pb.zip shoule exist but it doesn't");
 
         ZipFile lastZipFile = new ZipFile(zipFileOflongTermFile2);
         Enumeration<ZipArchiveEntry> enumeration = lastZipFile.getEntries();

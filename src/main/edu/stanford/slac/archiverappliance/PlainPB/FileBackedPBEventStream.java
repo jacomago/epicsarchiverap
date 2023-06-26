@@ -8,6 +8,7 @@
 package edu.stanford.slac.archiverappliance.PlainPB;
 
 import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
+import edu.stanford.slac.archiverappliance.PB.data.PartionedTime;
 import edu.stanford.slac.archiverappliance.PB.search.FileEventStreamSearch;
 import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
 import org.apache.logging.log4j.LogManager;
@@ -142,6 +143,7 @@ public class FileBackedPBEventStream implements EventStream, RemotableOverRaw, E
                 theIterator = new FileBackedPBEventStreamPositionBasedIterator(
                         path, startFilePos, endFilePos, desc.getYear(), type);
             } else {
+
                 theIterator =
                         new FileBackedPBEventStreamTimeBasedIterator(path, startTime, endTime, desc.getYear(), type);
             }

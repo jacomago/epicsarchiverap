@@ -49,11 +49,11 @@ public class ExportCSV {
 			strm = new FileBackedPBEventStream(info.getPVName(), path, info.getType());
 			for(Event e : strm) {
 				DBRTimeEvent evnt = (DBRTimeEvent) e;
-                Instant ts = evnt.getEventTimeStamp();
+				Instant ts = evnt.getEventTimeStamp();
 				long epicsEpochSeconds = e.getEpochSeconds() - TimeUtils.EPICS_EPOCH_2_JAVA_EPOCH_OFFSET;
 
 				System.out.println(epicsEpochSeconds + "," +
-                                ts.getNano() + "," +
+						ts.getNano() + "," +
 						evnt.getSampleValue().toString() + "," +
 						evnt.getStatus() + "," +
 						evnt.getSeverity()

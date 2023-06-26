@@ -36,10 +36,10 @@ public class InputStreamBackedEventStream implements EventStream, RemotableOverR
 	private RemotableEventStreamDesc descFromFirstLine;
 	private RetrievalEventProcessor retrievalEventProcessor;
 	InputStream is = null;
-    Instant startTime;
+	Instant startTime;
 	private InputStreamBackedEventStreamIterator theIterator;
 
-    public InputStreamBackedEventStream(InputStream is, Instant startTime) throws IOException {
+	public InputStreamBackedEventStream(InputStream is, Instant startTime) throws IOException {
 		this.is = is;
 		this.startTime = startTime;
 		assert(is.markSupported());
@@ -62,7 +62,7 @@ public class InputStreamBackedEventStream implements EventStream, RemotableOverR
 		}
 	}
 
-    public InputStreamBackedEventStream(InputStream is, Instant startTime, RetrievalEventProcessor retrievalEventProcessor) throws IOException {
+	public InputStreamBackedEventStream(InputStream is, Instant startTime, RetrievalEventProcessor retrievalEventProcessor) throws IOException {
 		this(is, startTime);
 		this.retrievalEventProcessor = retrievalEventProcessor;
 	}

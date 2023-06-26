@@ -11,6 +11,7 @@ import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
 import edu.stanford.slac.archiverappliance.PB.data.PBScalarDouble;
 import edu.stanford.slac.archiverappliance.PB.search.FileEventStreamSearch;
 import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
+import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
 import edu.stanford.slac.archiverappliance.PlainPB.PBFileInfo;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
@@ -40,33 +41,35 @@ import java.time.Instant;
  */
 public class SearchInPBFileTest {
     private static final Logger logger = LogManager.getLogger(SearchInPBFileTest.class.getName());
-	PBCommonSetup pbSetup = new PBCommonSetup();
-	private ConfigService configService;
+    PBCommonSetup pbSetup = new PBCommonSetup();
+    private ConfigService configService;
 
-	@BeforeEach
-	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
-	}
-	@Test
-	public void testSeekToTime() throws Exception {
-		PlainPBStoragePlugin pbplugin = new PlainPBStoragePlugin();
-		pbSetup.setUpRootFolder(pbplugin);
-        short year = TimeUtils.getCurrentYear();
-        Instant start = TimeUtils.getStartOfYear(year);
+    @BeforeEach
+    public void setUp() throws Exception {
+        configService = new ConfigServiceForTests(new File("./bin"));
+    }
+
+    @Test
+    public void testSeekToTime() throws Exception {
+        PlainPBStoragePlugin pbplugin = new PlainPBStoragePlugin(FileExtension.PB);
+        pbSetup.setUpRootFolder(pbplugin, FileExtension.PB);
+		short year = TimeUtils.getCurrentYear();
+	    Instant start = TimeUtils.getStartOfYear(year);
         long numberOfSamples =
-                GenerateData.generateSineForPV("Sine1", 0, ArchDBRTypes.DBR_SCALAR_DOUBLE, start, start.plusSeconds(10000));
+                GenerateData.generateSineForPV("Sine1", 0, ArchDBRTypes.DBR_SCALAR_DOUBLE, FileExtension.PB, start, start.plusSeconds(10000));
         try {
             Path testPath = PlainPBPathNameUtility.getPathNameForTime(
                     pbplugin,
                     "Sine1",
                     TimeUtils.getStartOfYear(year),
                     new ArchPaths(),
-                    configService.getPVNameToKeyConverter());
-			logger.info("Searching for times in file " + testPath);
-			long filelen = Files.size(testPath);
-			int step = 983;
-			PBFileInfo fileInfo = new PBFileInfo(testPath);
-			// step is some random prime number that hopefully makes this go thru all the reasonable cases.
+                    configService.getPVNameToKeyConverter(),
+                    FileExtension.PB);
+            logger.info("Searching for times in file " + testPath);
+            long filelen = Files.size(testPath);
+            int step = 983;
+            PBFileInfo fileInfo = new PBFileInfo(testPath);
+            // step is some random prime number that hopefully makes this go thru all the reasonable cases.
             // We need to start from 2 as the SimulationEventStreamIterator generates data from 1 and we return success
             // only if we find e1 <= sample < e2
             for (int secondsintoyear = 2; secondsintoyear < numberOfSamples; secondsintoyear += step) {

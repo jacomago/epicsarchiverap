@@ -8,6 +8,7 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
+import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,13 +21,15 @@ import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.DefaultConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.data.ScalarValue;
 import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.retrieval.workers.CurrentThreadWorkerEventStream;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -42,9 +45,29 @@ import java.util.stream.Stream;
  * @author mshankar
  *
  */
-@Tag("slow")
 public class GradualAccumulationETLTest {
     private static final Logger logger = LogManager.getLogger(GradualAccumulationETLTest.class.getName());
+    static DefaultConfigService configService;
+    static PlainPBStoragePlugin etlSrcPB;
+    static PlainPBStoragePlugin etlDestPB;
+    static PlainPBStoragePlugin etlSrcParquet;
+    static PlainPBStoragePlugin etlDestParquet;
+    int ratio = 10; // Size of the test
+
+    @BeforeAll
+    public static void setup() throws ConfigException {
+        etlSrcPB = new PlainPBStoragePlugin(FileExtension.PB);
+        etlDestPB = new PlainPBStoragePlugin(FileExtension.PB);
+        etlSrcParquet = new PlainPBStoragePlugin(FileExtension.PARQUET);
+        etlDestParquet = new PlainPBStoragePlugin(FileExtension.PARQUET);
+        configService = new ConfigServiceForTests(new File("./bin"), 1);
+    }
+
+    @AfterAll
+    public static void tearDown() {
+
+        configService.shutdownNow();
+    }
 
     /**
      * In a running appserver, the sequence is expected to be as follows
@@ -58,24 +81,43 @@ public class GradualAccumulationETLTest {
     public static Stream<Arguments> provideGradualAccumulation() {
         return Arrays.stream(PartitionGranularity.values())
                 .filter(g -> g.getNextLargerGranularity() != null)
-                .flatMap(g -> Stream.of(Arguments.of(g, true), Arguments.of(g, false)));
+                .flatMap(g -> Arrays.stream(FileExtension.values()).flatMap(f -> {
+                    PlainPBStoragePlugin etlSrc =
+                            switch (f) {
+                                case PB -> etlSrcPB;
+                                case PARQUET -> etlSrcParquet;
+                            };
+                    PlainPBStoragePlugin etlDest =
+                            switch (f) {
+                                case PB -> etlDestPB;
+                                case PARQUET -> etlDestParquet;
+                            };
+
+                    return Stream.of(
+                            Arguments.of(g, true, f, etlSrc, etlDest), Arguments.of(g, false, f, etlSrc, etlDest));
+                }));
     }
 
     @ParameterizedTest
     @MethodSource("provideGradualAccumulation")
     public void testGradualAccumulation(
-            PartitionGranularity granularity, boolean backUpfiles)
+            PartitionGranularity granularity,
+            boolean backUpfiles,
+            FileExtension fileExtension,
+            PlainPBStoragePlugin etlSrc,
+            PlainPBStoragePlugin etlDest)
             throws Exception {
-        PlainPBStoragePlugin etlSrc = new PlainPBStoragePlugin();
+
         PBCommonSetup srcSetup = new PBCommonSetup();
-        PlainPBStoragePlugin etlDest = new PlainPBStoragePlugin();
         PBCommonSetup destSetup = new PBCommonSetup();
-        DefaultConfigService configService = new ConfigServiceForTests(new File("./bin"), 1);
         etlDest.setBackupFilesBeforeETL(backUpfiles);
 
-        srcSetup.setUpRootFolder(etlSrc, "GradualAccumulationETLTestSrc_" + granularity, granularity);
+        srcSetup.setUpRootFolder(etlSrc, "GradualAccumulationETLTestSrc_" + granularity, granularity, fileExtension);
         destSetup.setUpRootFolder(
-                etlDest, "GradualAccumulationETLTestDest" + granularity, granularity.getNextLargerGranularity());
+                etlDest,
+                "GradualAccumulationETLTestDest" + granularity,
+                granularity.getNextLargerGranularity(),
+                fileExtension);
 
         logger.info("Testing gradual accumulation for " + etlSrc.getPartitionGranularity() + " to "
                 + etlDest.getPartitionGranularity() + " with backup = " + backUpfiles);
@@ -83,11 +125,11 @@ public class GradualAccumulationETLTest {
         short year = TimeUtils.getCurrentYear();
         long startOfYearInEpochSeconds = TimeUtils.getStartOfCurrentYearInSeconds();
         long curEpochSeconds = startOfYearInEpochSeconds;
-        int secondsintoyear = 0;
-        int incrementSeconds = 450;
+        int secondsInTestingPeriod = 0;
+        int incrementSeconds = granularity.getApproxSecondsPerChunk() / ratio;
         int eventsgenerated = 0;
 
-        String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "ETL_testGradual"
+        String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + fileExtension.getSuffix() + backUpfiles + "ETL_testGradual"
                 + etlSrc.getPartitionGranularity();
 
         PVTypeInfo typeInfo = new PVTypeInfo(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
@@ -97,16 +139,14 @@ public class GradualAccumulationETLTest {
         configService.registerPVToAppliance(pvName, configService.getMyApplianceInfo());
         configService.getETLLookup().manualControlForUnitTests();
 
-        while (secondsintoyear < 60 * 60 * 24 * 365) {
-            // The 60x60X20 is to generate 20 hours worth of data in each shot.
-            int eventsPerShot = Math.max(60 * 60 * 20, granularity.getApproxSecondsPerChunk() * 2) / incrementSeconds;
+        while (secondsInTestingPeriod < granularity.getApproxSecondsPerChunk() * ratio) {
             ArrayListEventStream instream = new ArrayListEventStream(
-                    eventsPerShot, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, year));
-            for (int i = 0; i < eventsPerShot; i++) {
+                    incrementSeconds, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, year));
+            for (int i = 0; i < ratio; i++) {
                 instream.add(new SimulationEvent(
-                        secondsintoyear, year, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<Double>((double)
-                                secondsintoyear)));
-                secondsintoyear += incrementSeconds;
+                        secondsInTestingPeriod, year, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<Double>((double)
+                        secondsInTestingPeriod)));
+                secondsInTestingPeriod += incrementSeconds;
                 curEpochSeconds += incrementSeconds;
                 eventsgenerated++;
             }
@@ -127,7 +167,6 @@ public class GradualAccumulationETLTest {
 
         srcSetup.deleteTestFolder();
         destSetup.deleteTestFolder();
-        configService.shutdownNow();
     }
 
     private void checkDataValidity(
@@ -151,13 +190,16 @@ public class GradualAccumulationETLTest {
         int afterCount = 0;
 
         try (BasicContext context = new BasicContext();
-                EventStream afterDest = new CurrentThreadWorkerEventStream(
-                        pvName, etlDest.getDataForPV(context, pvName, startOfRequest, endOfRequest))) {
+             EventStream afterDest = new CurrentThreadWorkerEventStream(
+                     pvName, etlDest.getDataForPV(context, pvName, startOfRequest, endOfRequest))) {
             for (Event e : afterDest) {
-                Assertions.assertEquals(expectedEpochSeconds, e.getEpochSeconds(), testDesc + "Expected seconds "
-                        + TimeUtils.convertToHumanReadableString(expectedEpochSeconds)
-                        + " is not the same as actual seconds "
-                        + TimeUtils.convertToHumanReadableString(e.getEpochSeconds()));
+                Assertions.assertEquals(
+                        expectedEpochSeconds,
+                        e.getEpochSeconds(),
+                        testDesc + "Expected seconds "
+                                + TimeUtils.convertToHumanReadableString(expectedEpochSeconds)
+                                + " is not the same as actual seconds "
+                                + TimeUtils.convertToHumanReadableString(e.getEpochSeconds()));
                 expectedEpochSeconds += incrementSeconds;
                 afterCount++;
             }
@@ -165,13 +207,16 @@ public class GradualAccumulationETLTest {
         }
 
         try (BasicContext context = new BasicContext();
-                EventStream afterSrc = new CurrentThreadWorkerEventStream(
-                        pvName, etlSrc.getDataForPV(context, pvName, startOfRequest, endOfRequest))) {
+             EventStream afterSrc = new CurrentThreadWorkerEventStream(
+                     pvName, etlSrc.getDataForPV(context, pvName, startOfRequest, endOfRequest))) {
             for (Event e : afterSrc) {
-                Assertions.assertEquals(expectedEpochSeconds, e.getEpochSeconds(), testDesc + "Expected seconds "
-                        + TimeUtils.convertToHumanReadableString(expectedEpochSeconds)
-                        + " is not the same as actual seconds "
-                        + TimeUtils.convertToHumanReadableString(e.getEpochSeconds()));
+                Assertions.assertEquals(
+                        expectedEpochSeconds,
+                        e.getEpochSeconds(),
+                        testDesc + "Expected seconds "
+                                + TimeUtils.convertToHumanReadableString(expectedEpochSeconds)
+                                + " is not the same as actual seconds "
+                                + TimeUtils.convertToHumanReadableString(e.getEpochSeconds()));
                 expectedEpochSeconds += incrementSeconds;
                 afterCount++;
             }

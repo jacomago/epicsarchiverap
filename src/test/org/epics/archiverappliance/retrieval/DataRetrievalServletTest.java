@@ -11,6 +11,7 @@ import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
 import edu.stanford.slac.archiverappliance.PBOverHTTP.PBOverHTTPStoragePlugin;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -58,7 +59,7 @@ public class DataRetrievalServletTest {
 	@BeforeEach
 	public void setUp() throws Exception {
 		configService = new ConfigServiceForTests(new File("./bin"));
-		pbSetup.setUpRootFolder(pbplugin);
+		pbSetup.setUpRootFolder(pbplugin, FileExtension.PB);
 		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
 	}
 
@@ -66,7 +67,7 @@ public class DataRetrievalServletTest {
 	public void tearDown() throws Exception {
 		tomcatSetup.tearDown();
 
-		Files.deleteIfExists(PlainPBPathNameUtility.getPathNameForTime(pbplugin, pvName, TimeUtils.getStartOfYear(year), new ArchPaths(), configService.getPVNameToKeyConverter()));
+		Files.deleteIfExists(PlainPBPathNameUtility.getPathNameForTime(pbplugin, pvName, TimeUtils.getStartOfYear(year), new ArchPaths(), configService.getPVNameToKeyConverter(), FileExtension.PB));
 	}
 	
 	
@@ -79,7 +80,7 @@ public class DataRetrievalServletTest {
 		ConfigService configService = new ConfigServiceForTests(new File("./bin"));
 		storagePlugin.initialize("pbraw://localhost?rawURL=" + URLEncoder.encode("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw", StandardCharsets.UTF_8), configService);
 
-		Files.deleteIfExists(PlainPBPathNameUtility.getPathNameForTime(pbplugin, pvName, TimeUtils.getStartOfYear(year), new ArchPaths(), configService.getPVNameToKeyConverter()));
+		Files.deleteIfExists(PlainPBPathNameUtility.getPathNameForTime(pbplugin, pvName, TimeUtils.getStartOfYear(year), new ArchPaths(), configService.getPVNameToKeyConverter(), FileExtension.PB));
 		SimulationEventStream simstream = new SimulationEventStream(ArchDBRTypes.DBR_SCALAR_DOUBLE, new SineGenerator(0), TimeUtils.getStartOfYear(year), TimeUtils.getEndOfYear(year), 1);
 		try(BasicContext context = new BasicContext()) {
 			pbplugin.appendData(context, pvName, simstream);

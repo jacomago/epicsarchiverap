@@ -85,10 +85,10 @@ public class NthAndNCountProcessorTest {
     		nthProcessor.wrap(CallableEventStream.makeOneStreamCallable(testData, null, false)).call();
     		EventStream retData = nthProcessor.getConsolidatedEventStream();
     		int eventCount = 0;
-			Instant previousTimeStamp = TimeUtils.convertFromYearSecondTimestamp(startOfSamples);
+    		Instant previousTimeStamp = TimeUtils.convertFromYearSecondTimestamp(startOfSamples);
     		int n = 0;
     		for(Event e : retData) {
-			    Instant eventTs = e.getEventTimeStamp();
+    			Instant eventTs = e.getEventTimeStamp();
     			Assertions.assertTrue(eventTs.compareTo(previousTimeStamp) >= 0, "Event timestamp " + TimeUtils.convertToISO8601String(eventTs) + " is the same or after previous timestamp " + TimeUtils.convertToISO8601String(previousTimeStamp));
     			Assertions.assertEquals(testData.get(n).getSampleValue().getValue().doubleValue(), e.getSampleValue().getValue().doubleValue(), Double.MIN_VALUE, "Event value should match the n-th value in the test data");
     			n+=sampling[i];
@@ -126,11 +126,11 @@ public class NthAndNCountProcessorTest {
     		nthProcessor.wrap(CallableEventStream.makeOneStreamCallable(testData, null, false)).call();
     		EventStream retData = nthProcessor.getConsolidatedEventStream();
     		int eventCount = 0;
-			Instant previousTimeStamp = TimeUtils.convertFromYearSecondTimestamp(startOfSamples);
+    		Instant previousTimeStamp = TimeUtils.convertFromYearSecondTimestamp(startOfSamples);
     		//starting with the n-th from the raw data array
     		int n = 4*24*60;
     		for(Event e : retData) {
-			    Instant eventTs = e.getEventTimeStamp();
+    			Instant eventTs = e.getEventTimeStamp();
     			Assertions.assertTrue(eventTs.compareTo(previousTimeStamp) >= 0, "Event timestamp " + TimeUtils.convertToISO8601String(eventTs) + " is the same or after previous timestamp " + TimeUtils.convertToISO8601String(previousTimeStamp));
     			Assertions.assertEquals(testData.get(n).getSampleValue().getValue().doubleValue(), e.getSampleValue().getValue().doubleValue(), Double.MIN_VALUE, "Event value should match the n-th value in the test data");
     			n+=sampling[i];

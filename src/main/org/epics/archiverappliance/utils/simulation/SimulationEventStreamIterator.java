@@ -40,8 +40,8 @@ public class SimulationEventStreamIterator implements Iterator<Event> {
 
 	@Override
 	public boolean hasNext() {
-		return this.currentTime.isBefore(this.end);
-	}
+        return this.currentTime.isBefore(this.end);
+    }
 
 	@Override
 	public Event next() {

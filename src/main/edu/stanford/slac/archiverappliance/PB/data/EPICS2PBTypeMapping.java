@@ -18,8 +18,8 @@ import org.epics.pva.data.PVAStructure;
  *
  */
 public class EPICS2PBTypeMapping {
-	private static Logger logger = LogManager.getLogger(EPICS2PBTypeMapping.class.getName());
-	private static HashMap<ArchDBRTypes, EPICS2PBTypeMapping> typemap = new HashMap<ArchDBRTypes, EPICS2PBTypeMapping>();
+	private static final Logger logger = LogManager.getLogger(EPICS2PBTypeMapping.class.getName());
+	private static final HashMap<ArchDBRTypes, EPICS2PBTypeMapping> typemap = new HashMap<ArchDBRTypes, EPICS2PBTypeMapping>();
 
 	// Initialization stuff from now on
 	static {

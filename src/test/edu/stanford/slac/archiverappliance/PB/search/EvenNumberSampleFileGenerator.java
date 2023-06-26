@@ -34,7 +34,7 @@ public class EvenNumberSampleFileGenerator {
 		try {
 			fos = new PrintStream(new BufferedOutputStream(new FileOutputStream(f, false)));
 			for(int i = 0; i <= MAXSAMPLEINT; i=i+2) {
-				fos.print("" + i + LineEscaper.NEWLINE_CHAR_STR);
+				fos.print(i + LineEscaper.NEWLINE_CHAR_STR);
 			}
 		} catch (IOException ex){
 			logger.error(ex.getMessage(), ex);

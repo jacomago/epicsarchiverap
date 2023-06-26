@@ -19,7 +19,7 @@ import java.util.List;
  *
  */
 public class ScalarStringSampleValue implements SampleValue {
-    private final String value;
+	private final String value;
 
 	public ScalarStringSampleValue(String val) {
 		this.value = val;

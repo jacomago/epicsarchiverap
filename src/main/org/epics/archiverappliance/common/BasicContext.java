@@ -22,8 +22,8 @@ import org.epics.archiverappliance.utils.nio.ArchPaths;
  *
  */
 public class BasicContext implements Closeable {
-	private ArchPaths paths = new ArchPaths();
-	private LinkedList<Closeable> resources = new LinkedList<Closeable>();
+	private final ArchPaths paths = new ArchPaths();
+	private final LinkedList<Closeable> resources = new LinkedList<Closeable>();
 	/**
 	 * During retrieval, the controller can set this to the expected DBR types.
 	 * Plugins can use this to convert or throw an exception if the expected DBR type does not match the DBR type in the plugin
@@ -53,15 +53,7 @@ public class BasicContext implements Closeable {
 	public ArchPaths getPaths() {
 		return paths;
 	}
-	
-	/**
-	 * Add a resource that needs to be closed once we finish the unit of work..
-	 * @param resource Closeable resouce
-	 */
-	public void addResource(Closeable resource) {
-		resources.add(resource);
-	}
-	
+
 
 	@Override
 	public void close() throws IOException {

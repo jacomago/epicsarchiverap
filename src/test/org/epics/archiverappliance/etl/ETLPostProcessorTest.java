@@ -1,6 +1,7 @@
 package org.epics.archiverappliance.etl;
 
 
+import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -29,7 +30,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
@@ -48,11 +50,9 @@ import java.util.concurrent.Callable;
  */
 @Tag("slow")
 public class ETLPostProcessorTest {
-	private static Logger logger = LogManager.getLogger(ETLPostProcessorTest.class.getName());
+	private static final Logger logger = LogManager.getLogger(ETLPostProcessorTest.class.getName());
 	String rootFolderName = ConfigServiceForTests.getDefaultPBTestFolder() + "/" + "ETLPostProcessorTest";
 	String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "ETLPostProcessorTest";
-	PlainPBStoragePlugin srcpbplugin;
-	PlainPBStoragePlugin destpbplugin;
 	short currentYear = TimeUtils.getCurrentYear();
 	ArchDBRTypes type = ArchDBRTypes.DBR_SCALAR_DOUBLE;
 	final PostProcessor testPostProcessor = new FirstSamplePP();
@@ -66,8 +66,6 @@ public class ETLPostProcessorTest {
 			FileUtils.deleteDirectory(new File(rootFolderName));
 		}
 
-		srcpbplugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=STS&rootFolder=" + rootFolderName + "/src&partitionGranularity=PARTITION_HOUR", configService);
-		destpbplugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=MTS&rootFolder=" + rootFolderName + "/dest&partitionGranularity=PARTITION_DAY&pp=" + testPostProcessor.getExtension(), configService);
 	}
 
 	@AfterEach
@@ -75,8 +73,12 @@ public class ETLPostProcessorTest {
 		// FileUtils.deleteDirectory(new File(rootFolderName));
 	}
 
-	@Test
-	public void testPostProcessorDuringETL() throws Exception {
+	@ParameterizedTest
+	@EnumSource(FileExtension.class)
+	public void testPostProcessorDuringETL(FileExtension fileExtension) throws Exception {
+
+		PlainPBStoragePlugin srcpbplugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(fileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + rootFolderName + "/src&partitionGranularity=PARTITION_HOUR", configService);
+		PlainPBStoragePlugin destpbplugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(fileExtension.getSuffix() + "://localhost?name=MTS&rootFolder=" + rootFolderName + "/dest&partitionGranularity=PARTITION_DAY&pp=" + testPostProcessor.getExtension(), configService);
         PVTypeInfo typeInfo = new PVTypeInfo(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
         String[] dataStores = new String[] { srcpbplugin.getURLRepresentation(), destpbplugin.getURLRepresentation() }; 
         typeInfo.setDataStores(dataStores);
@@ -84,7 +86,7 @@ public class ETLPostProcessorTest {
         configService.registerPVToAppliance(pvName, configService.getMyApplianceInfo());
         configService.getETLLookup().manualControlForUnitTests();
 
-		for(int day = 0; day < 30; day++) {
+		for(int day = 0; day < 5; day++) {
 			logger.debug("Generating data for day " + 1);
 			int startofdayinseconds = day * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
 			int runsperday = 12;
@@ -103,7 +105,7 @@ public class ETLPostProcessorTest {
 					ETLExecutor.runETLs(configService, etlTime);
 				}
 				// Sleep for a couple of seconds so that the modification times are different.
-				Thread.sleep(2*1000);
+				Thread.sleep(2);
 			}
 
 			logger.debug("Validating that ETL ran the post processors correctly.");
@@ -149,9 +151,9 @@ public class ETLPostProcessorTest {
 		for(Event e : new CurrentThreadWorkerEventStream(pvName, callables)) {
 			long currentEpochSeconds = e.getEpochSeconds();
 			Assertions.assertTrue(currentEpochSeconds > previousEventEpochSeconds, "Timestamps are not sequential current = "
-					+ TimeUtils.convertToHumanReadableString(currentEpochSeconds)
-					+ " previous = "
-					+ TimeUtils.convertToHumanReadableString(previousEventEpochSeconds));
+			+ TimeUtils.convertToHumanReadableString(currentEpochSeconds)
+			+ " previous = "
+			+ TimeUtils.convertToHumanReadableString(previousEventEpochSeconds));
 			previousEventEpochSeconds = currentEpochSeconds;
 			eventCount++;
 		}

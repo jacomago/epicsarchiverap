@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.POJOEvent;
+import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.data.DBRTimeEvent;
@@ -37,10 +38,10 @@ public class ExtraFieldsPostProcessor implements PostProcessor {
 	}
 
 	@Override
-    public long estimateMemoryConsumption(String pvName, PVTypeInfo typeInfo, Instant start, Instant end, HttpServletRequest req) {
+	public long estimateMemoryConsumption(String pvName, PVTypeInfo typeInfo, Instant start, Instant end, HttpServletRequest req) {
 		// We do not expect the extra fields to change that much.
 		// The engine adds an entry once a day and we use that to estimate
-		int estimatedDays = 1 + ((int) (TimeUtils.convertToEpochSeconds(end) - TimeUtils.convertToEpochSeconds(start))/86400);
+		int estimatedDays = 1 + ((int) (TimeUtils.convertToEpochSeconds(end) - TimeUtils.convertToEpochSeconds(start))/ PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk());
 		float storageRate = typeInfo.getComputedStorageRate();
 		// Add a fudge factor of 2 for java 
 		long estimatedMemoryConsumption = (long) storageRate*estimatedDays*2;

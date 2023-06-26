@@ -207,7 +207,7 @@ public class JSONDecoder<T> {
 		public void decode(JSONObject jsonObj, T obj) throws IllegalAccessException, InvocationTargetException, InstantiationException {
 			if(jsonObj.containsKey(propertyName)) {
 				String tsstr = (String) jsonObj.get(propertyName);
-                Instant ts = TimeUtils.convertFromISO8601String(tsstr);
+				Instant ts = TimeUtils.convertFromISO8601String(tsstr);
 				writeMethod.invoke(obj, ts);
 			}
 		}

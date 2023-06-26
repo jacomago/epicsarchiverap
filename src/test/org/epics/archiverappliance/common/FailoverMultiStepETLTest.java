@@ -7,6 +7,18 @@
  *******************************************************************************/
 package org.epics.archiverappliance.common;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URLEncoder;
+import java.time.Instant;
+import java.util.List;
+import java.util.concurrent.Callable;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -33,15 +45,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URLEncoder;
-import java.time.Instant;
-import java.util.List;
-import java.util.concurrent.Callable;
 
 /**
  * A more complex test for testing ETL for failover.
@@ -83,7 +86,7 @@ public class FailoverMultiStepETLTest {
 	 * @param genEventCount - The expected event count.
 	 * @throws Exception
 	 */
-    private long registerPVForOther(String applURL, String applianceName, Instant startTime, Instant endTime, long genEventCount)
+	private long registerPVForOther(String applURL, String applianceName, Instant startTime, Instant endTime, long genEventCount)
 			throws Exception {
 		
 		JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream(new File("src/test/org/epics/archiverappliance/retrieval/postprocessor/data/PVTypeInfoPrototype.json"))));
@@ -122,15 +125,15 @@ public class FailoverMultiStepETLTest {
 		return rtvlEventCount;
 	}
 
-    private int generateData(String applianceName, Instant ts, int startingOffset) throws IOException {
+	private int generateData(String applianceName, Instant ts, int startingOffset) throws IOException {
 		int genEventCount = 0;
 		StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=MTS&rootFolder=" + "tomcat_"+ this.getClass().getSimpleName() + "/" + applianceName + "/mts" + "&partitionGranularity=PARTITION_DAY", configService);
 		try(BasicContext context = new BasicContext()) {
-            for (Instant s = TimeUtils.getPreviousPartitionLastSecond(ts, PartitionGranularity.PARTITION_DAY).plusSeconds(1 + startingOffset); // We generate a months worth of data.
-                 s.isBefore(TimeUtils.getNextPartitionFirstSecond(ts, PartitionGranularity.PARTITION_DAY));
-                 s = s.plusSeconds(stepSeconds)) {
+			for(Instant s = TimeUtils.getPreviousPartitionLastSecond(ts, PartitionGranularity.PARTITION_DAY) .plusSeconds(1 + startingOffset); // We generate a months worth of data.
+			    s.isBefore(TimeUtils.getNextPartitionFirstSecond(ts, PartitionGranularity.PARTITION_DAY));
+			    s = s.plusSeconds(stepSeconds)) {
 				ArrayListEventStream strm = new ArrayListEventStream(0, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, TimeUtils.convertToYearSecondTimestamp(s).getYear()));
-                POJOEvent genEvent = new POJOEvent(ArchDBRTypes.DBR_SCALAR_DOUBLE, s, new ScalarValue<Double>((double) s.getEpochSecond()), 0, 0);
+				POJOEvent genEvent = new POJOEvent(ArchDBRTypes.DBR_SCALAR_DOUBLE, s, new ScalarValue<Double>((double)s.getEpochSecond()), 0, 0);
 				strm.add(genEvent);
 				genEventCount++;
 				plugin.appendData(context, pvName, strm);
@@ -160,7 +163,7 @@ public class FailoverMultiStepETLTest {
 		configService.registerPVToAppliance(pvName, configService.getMyApplianceInfo());
 	}
 
-    private long testMergedRetrieval(String applianceName, Instant startTime, Instant endTime, boolean expectContinous) throws Exception {
+	private long testMergedRetrieval(String applianceName, Instant startTime, Instant endTime, boolean expectContinous) throws Exception {
 		long rtvlEventCount = 0;
 		long lastEvEpoch = 0;
 		StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=LTS&rootFolder=" + "tomcat_"+ this.getClass().getSimpleName() + "/" + applianceName + "/lts" + "&partitionGranularity=PARTITION_YEAR", configService);
@@ -187,11 +190,11 @@ public class FailoverMultiStepETLTest {
 	public void testETL() throws Exception {
 		configService.getETLLookup().manualControlForUnitTests();
 		// Register the PV with both appliances and generate data.
-        Instant startTime = TimeUtils.minusDays(TimeUtils.now(), 365);
-        Instant endTime = TimeUtils.now();
+		Instant startTime = TimeUtils.minusDays(TimeUtils.now(), 365);
+		Instant endTime = TimeUtils.now();
 
 		long oCount = 0;
-        for (Instant ts = startTime; ts.isBefore(endTime); ts = TimeUtils.plusDays(ts, 1)) {
+		for(Instant ts = startTime; ts.isBefore(endTime); ts=TimeUtils.plusDays(ts, 1)) {
 			oCount = oCount + generateData(ConfigServiceForTests.TESTAPPLIANCE0, ts, 0);
 		}
 		registerPVForOther("http://localhost:17665", ConfigServiceForTests.TESTAPPLIANCE0, TimeUtils.minusDays(TimeUtils.now(), 5*365), TimeUtils.plusDays(TimeUtils.now(), 10), oCount);
@@ -201,7 +204,7 @@ public class FailoverMultiStepETLTest {
 		System.getProperties().put("ARCHAPPL_LONG_TERM_FOLDER",   "tomcat_"+ this.getClass().getSimpleName() + "/" + "dest_appliance" + "/lts"); 
 
 		long dCount = 0;
-        for (Instant ts = startTime; ts.isBefore(endTime); ts = TimeUtils.plusDays(ts, 1)) {
+		for(Instant ts = startTime; ts.isBefore(endTime); ts=TimeUtils.plusDays(ts, 1)) {
 			dCount = dCount + generateData("dest_appliance", ts, 1);
 		}
 		testMergedRetrieval("dest_appliance", TimeUtils.minusDays(TimeUtils.now(), 5*365), TimeUtils.plusDays(TimeUtils.now(), 10), false);
@@ -209,9 +212,9 @@ public class FailoverMultiStepETLTest {
 		
 		changeMTSForDest();
 		long lastCount = 0;
-        for (Instant ts = startTime; ts.isBefore(endTime); ts = TimeUtils.plusDays(ts, 1)) {
-            Instant queryStart = TimeUtils.minusDays(TimeUtils.now(), 5 * 365), queryEnd = TimeUtils.plusDays(ts, 10);
-            Instant timeETLruns = TimeUtils.getNextPartitionFirstSecond(ts, PartitionGranularity.PARTITION_DAY).plusSeconds(60);
+		for(Instant ts = startTime; ts.isBefore(endTime); ts=TimeUtils.plusDays(ts, 1)) {
+			Instant queryStart = TimeUtils.minusDays(TimeUtils.now(), 5*365), queryEnd = TimeUtils.plusDays(ts, 10);
+			Instant timeETLruns = TimeUtils.getNextPartitionFirstSecond(ts, PartitionGranularity.PARTITION_DAY).plusSeconds( 60);
 			// Add 3 days to take care of the hold and gather
 			timeETLruns = TimeUtils.plusDays(timeETLruns, 3);
 	    	logger.info("Running ETL now as if it is " + TimeUtils.convertToHumanReadableString(timeETLruns));

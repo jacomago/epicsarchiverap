@@ -45,7 +45,8 @@ public class PlainPBPathNameUtility {
             String pvName,
             Instant ts,
             ArchPaths paths,
-            PVNameToKeyMapping pv2key)
+            PVNameToKeyMapping pv2key,
+            FileExtension fileExtension)
             throws IOException {
         return getPathNameForTime(
                 plugin.getRootFolder(),
@@ -54,7 +55,8 @@ public class PlainPBPathNameUtility {
                 plugin.getPartitionGranularity(),
                 paths,
                 plugin.getCompressionMode(),
-                pv2key);
+                pv2key,
+                fileExtension);
     }
 
     public static Path getPathNameForTime(
@@ -64,13 +66,14 @@ public class PlainPBPathNameUtility {
             PartitionGranularity partitionGranularity,
             ArchPaths paths,
             CompressionMode compressionMode,
-            PVNameToKeyMapping pv2key)
+            PVNameToKeyMapping pv2key,
+            FileExtension fileExtension)
             throws IOException {
         return getFileName(
                 rootFolder,
                 pvName,
                 ts,
-                PlainPBStoragePlugin.pbFileExtension,
+                fileExtension.getExtensionString(),
                 partitionGranularity,
                 false,
                 paths,
@@ -78,38 +81,11 @@ public class PlainPBPathNameUtility {
                 pv2key);
     }
 
-    public static Path getSparsifiedPathNameForTime(
-            PlainPBStoragePlugin plugin, String pvName, Instant ts,
-            ArchPaths paths, PVNameToKeyMapping pv2key)
-            throws IOException {
-        return getSparsifiedPathNameForTime(
-                plugin.getRootFolder(),
-                pvName,
-                ts,
-                plugin.getPartitionGranularity(),
-                paths,
-                plugin.getCompressionMode(),
-                pv2key);
-    }
-
-    public static Path getSparsifiedPathNameForTime(
-            String rootFolder,
-            String pvName,
-            Instant ts,
-            PartitionGranularity partitionGranularity,
-            ArchPaths paths,
-            CompressionMode compressionMode,
-            PVNameToKeyMapping pv2key)
-            throws IOException {
-        return getFileName(
-                rootFolder, pvName, ts, ".pbs", partitionGranularity, false, paths, compressionMode, pv2key);
-    }
-
     /**
-     * Given a parent folder, this method returns a list of all the paths with data that falls within the specified
-     * timeframe. We assume the pathnames follow the syntax used by the PlainPBStorage plugin. The alg for matching is
-     * based on this
-     * <pre>
+     * Given a parent folder, this method returns a list of all the paths with data that falls within the specified timeframe.
+     * We assume the pathnames follow the syntax used by the PlainPBStorage plugin.
+     * The alg for matching is based on this
+     *  <pre>
      *       --------
      *  [ ] [|] [ ] [|] [ ]
      *  </pre>
@@ -522,8 +498,8 @@ public class PlainPBPathNameUtility {
     }
 
     /**
-     * The PlainPBStorage plugin has a naming scheme that provides much information. This class encapsulates the
-     * potential start and end times of a particular chunk.
+     * The PlainPBStorage plugin has a naming scheme that provides much information.
+     * This class encapsulates the potential start and end times of a particular chunk.
      */
     static class StartEndTimeFromName {
         ZonedDateTime pathDataStartTime;
@@ -605,7 +581,8 @@ public class PlainPBPathNameUtility {
                     int hour = Integer.parseInt(timecomponents[3]);
                     int min = Integer.parseInt(timecomponents[4]);
 
-                    pathDataStartTime = ZonedDateTime.of(year, month, day, hour, min, 0, 0, ZoneId.from(ZoneOffset.UTC));
+                    pathDataStartTime =
+                            ZonedDateTime.of(year, month, day, hour, min, 0, 0, ZoneId.from(ZoneOffset.UTC));
                     pathDataEndTime = pathDataStartTime
                             .withMinute(min + granularity.getApproxMinutesPerChunk() - 1)
                             .withSecond(59);

@@ -72,7 +72,7 @@ public class IsSubset {
 			System.exit(-1);
 		}
 
-        HashSet<Instant> ts0 = getTimes(srcPath0), ts1 = getTimes(srcPath1);
+		HashSet<Instant> ts0 = getTimes(srcPath0), ts1 = getTimes(srcPath1);
 		if(!ts1.containsAll(ts0)) {
 			ts0.removeAll(ts1);
             for (Instant ts : ts0) {
@@ -82,8 +82,8 @@ public class IsSubset {
 		}
 	}
 
-    private static HashSet<Instant> getTimes(Path path) throws Exception {
-        HashSet<Instant> ret = new HashSet<Instant>();
+	private static HashSet<Instant> getTimes(Path path) throws Exception {
+		HashSet<Instant> ret = new HashSet<Instant>();
 		PBFileInfo info = new PBFileInfo(path);
 		try (FileBackedPBEventStream strm = new FileBackedPBEventStream(info.getPVName(), path, info.getType())) {
 			for(Event ev : strm) {

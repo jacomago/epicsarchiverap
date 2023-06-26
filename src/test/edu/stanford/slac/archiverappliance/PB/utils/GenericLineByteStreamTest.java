@@ -16,21 +16,22 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class GenericLineByteStreamTest {
 	private static Logger logger = LogManager.getLogger(GenericLineByteStreamTest.class.getName());
 	private File testFolder = new File(ConfigServiceForTests.getDefaultPBTestFolder() + File.separator + GenericLineByteStreamTest.class.getName());
 	private String fileName =  testFolder.getAbsolutePath() + "/" + "LineByteStream.txt";
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		Files.createDirectories(testFolder.toPath());
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws Exception {
 		FileUtils.deleteDirectory(testFolder);
 	}
@@ -100,11 +101,12 @@ public class GenericLineByteStreamTest {
 					b = dataBytes[currentPositionInDataBytes++];
 					
 					// Add byte to return value
-					switch(b) {
-					case LineEscaper.ESCAPE_ESCAPE_CHAR: returnBytes[retIndex++] = LineEscaper.ESCAPE_CHAR;break;
-					case LineEscaper.NEWLINE_ESCAPE_CHAR: returnBytes[retIndex++] = LineEscaper.NEWLINE_CHAR;break;
-					case LineEscaper.CARRIAGERETURN_ESCAPE_CHAR: returnBytes[retIndex++] = LineEscaper.CARRIAGERETURN_CHAR;break;
-					default: returnBytes[retIndex++] = b;break;
+					switch (b) {
+						case LineEscaper.ESCAPE_ESCAPE_CHAR -> returnBytes[retIndex++] = LineEscaper.ESCAPE_CHAR;
+						case LineEscaper.NEWLINE_ESCAPE_CHAR -> returnBytes[retIndex++] = LineEscaper.NEWLINE_CHAR;
+						case LineEscaper.CARRIAGERETURN_ESCAPE_CHAR ->
+								returnBytes[retIndex++] = LineEscaper.CARRIAGERETURN_CHAR;
+						default -> returnBytes[retIndex++] = b;
 					}
 				} else { 
 					returnBytes[retIndex++] = b;
@@ -152,7 +154,7 @@ public class GenericLineByteStreamTest {
 			while(ret != null) {
 				String line = new String(ret.data, ret.offset, ret.length);
 				String expectedNumStr = format.format(expectedNum);
-				assertEquals(expectedNumStr, line);
+				Assertions.assertEquals(expectedNumStr, line);
 				ret = lis.readLine();
 				expectedNum++;
 			}
@@ -188,7 +190,7 @@ public class GenericLineByteStreamTest {
 			while(ret != null) {
 				String line = new String(ret.data, ret.offset, ret.length);
 				String expectedNumStr = format.format(expectedNum);
-				assertEquals(expectedNumStr, line);
+				Assertions.assertEquals(expectedNumStr, line);
 				ret = lis.readLine();
 				expectedNum++;
 			}
@@ -225,13 +227,13 @@ public class GenericLineByteStreamTest {
 			{ 
 				String line = new String(ret.data, ret.offset, ret.length);
 				String expectedNumStr = "";
-				assertEquals(expectedNumStr, line);
+				Assertions.assertEquals(expectedNumStr, line);
 				ret = lis.readLine();
 			}
 			while(ret != null) {
 				String line = new String(ret.data, ret.offset, ret.length);
 				String expectedNumStr = format.format(expectedNum);
-				assertEquals(expectedNumStr, line);
+				Assertions.assertEquals(expectedNumStr, line);
 				ret = lis.readLine();
 				expectedNum++;
 			}
@@ -269,17 +271,17 @@ public class GenericLineByteStreamTest {
 				if(expectedNum < count) { 
 					String line = new String(ret.data, ret.offset, ret.length);
 					String expectedNumStr = format.format(expectedNum);
-					assertEquals(expectedNumStr, line);
+					Assertions.assertEquals(expectedNumStr, line);
 					ret = lis.readLine();
 				} else { 
 					String line = new String(ret.data, ret.offset, ret.length);
 					String expectedNumStr = "";
-					assertEquals(expectedNumStr, line);
+					Assertions.assertEquals(expectedNumStr, line);
 					ret = lis.readLine();
 				}
 				expectedNum++;
 			}
-			assertTrue("Expected " + (count+3) + " numbers got " + expectedNum, (count+3) == expectedNum);
+			Assertions.assertEquals((count + 3), expectedNum, "Expected " + (count + 3) + " numbers got " + expectedNum);
 		}
 	}
 	
@@ -312,11 +314,11 @@ public class GenericLineByteStreamTest {
 			while(ret != null) {
 				String line = new String(ret.data, ret.offset, ret.length);
 				String expectedNumStr = format.format(expectedNum);
-				assertEquals(expectedNumStr, line);
+				Assertions.assertEquals(expectedNumStr, line);
 				ret = lis.readLine();
 				expectedNum++;
 			}
-			assertTrue("Expected " + count + " numbers got " + expectedNum, count == expectedNum);
+			Assertions.assertEquals(count, expectedNum, "Expected " + count + " numbers got " + expectedNum);
 		}
 	}
 	
@@ -344,14 +346,14 @@ public class GenericLineByteStreamTest {
 		try(Lis lis = new Lis(f)) {
 			lis.position(31);
 			lis.readLine();
-			assertTrue("Expected position to be " + 32 + " Got " + lis.position() + " instead ", lis.position() == 32);
+			Assertions.assertEquals(32, lis.position(), "Expected position to be " + 32 + " Got " + lis.position() + " instead ");
 			int expectedNum = 14;
 			long start = System.currentTimeMillis();
 			LisRet ret = lis.readLine();
 			while(ret != null) {
 				String line = new String(ret.data, ret.offset, ret.length);
 				String expectedNumStr = format.format(expectedNum);
-				assertEquals(expectedNumStr, line);
+				Assertions.assertEquals(expectedNumStr, line);
 				ret = lis.readLine();
 				expectedNum++;
 			}

@@ -1362,14 +1362,14 @@ public class DataRetrievalServlet extends HttpServlet {
 			return false;
 		}
 
-        LinkedList<Instant> timeRangesList = new LinkedList<Instant>();
+		LinkedList<Instant> timeRangesList = new LinkedList<Instant>();
 		for(String timeRangesStrItem : timeRangesStrList) { 
 			try {
-                Instant ts = TimeUtils.convertFromISO8601String(timeRangesStrItem);
+				Instant ts = TimeUtils.convertFromISO8601String(timeRangesStrItem);
                 timeRangesList.add(ts);
             } catch (IllegalArgumentException ex) {
 				try {
-                    Instant ts = TimeUtils.convertFromDateTimeStringWithOffset(timeRangesStrItem);
+					Instant ts = TimeUtils.convertFromDateTimeStringWithOffset(timeRangesStrItem);
                     timeRangesList.add(ts);
                 } catch (IllegalArgumentException ex2) {
                     String msg = "Cannot parse time " + timeRangesStrItem;
@@ -1382,10 +1382,10 @@ public class DataRetrievalServlet extends HttpServlet {
         }
 
 		assert(timeRangesList.size()%2 == 0);
-        Instant prevEnd = null;
+		Instant prevEnd = null;
 		while(!timeRangesList.isEmpty()) {
-            Instant t0 = timeRangesList.pop();
-            Instant t1 = timeRangesList.pop();
+			Instant t0 = timeRangesList.pop();
+			Instant t1 = timeRangesList.pop();
 
             if (t1.isBefore(t0)) {
 				String msg = "For request, end " + t1.toString() + " is before start " + t0.toString() + " for pv " + pvName;

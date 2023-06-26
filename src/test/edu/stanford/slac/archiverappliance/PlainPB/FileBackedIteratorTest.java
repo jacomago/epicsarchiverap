@@ -1,5 +1,6 @@
 package edu.stanford.slac.archiverappliance.PlainPB;
 
+import edu.stanford.slac.archiverappliance.parquet.ParquetBackedPBEventIterator;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,11 +32,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.stream.Stream;
-
-import static edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.pbFileExtension;
-import static edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.pbFileSuffix;
 
 /**
  * The FileBackedPBEventStream supports two iterators - one is a file-position based one and the other is a time based one.
@@ -70,7 +69,11 @@ public class FileBackedIteratorTest {
     private static final short currentYear = TimeUtils.getCurrentYear();
     private static final Path pbFilePath = Paths.get(
             testFolder.getAbsolutePath(),
-            pvName.replace(":", "/").replace("--", "") + ":" + currentYear + pbFileExtension);
+            pvName.replace(":", "/").replace("--", "") + "+" + currentYear + FileExtension.PB.getExtensionString());
+    private static final Path parquetFilePath = Paths.get(
+            testFolder.getAbsolutePath(),
+            pvName.replace(":", "/").replace("--", "") + "+" + currentYear
+                    + FileExtension.PARQUET.getExtensionString());
     private static final ConfigService configService;
 
     static {
@@ -86,7 +89,8 @@ public class FileBackedIteratorTest {
     @BeforeAll
     public static void setUp() throws Exception {
         try {
-            generateData();
+            generateData(FileExtension.PB);
+            generateData(FileExtension.PARQUET);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -99,70 +103,92 @@ public class FileBackedIteratorTest {
 
     public static Stream<Arguments> provideCorrectIterator() {
 
-        PBFileInfo fileInfo;
-        try {
-            fileInfo = new PBFileInfo(pbFilePath);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        Instant FKTS = fileInfo.getFirstEvent().getEventTimeStamp();
-        Instant LKTS = fileInfo.getLastEvent().getEventTimeStamp();
-        logger.info("After generating data," + "FKTS = "
-                + TimeUtils.convertToISO8601String(FKTS) + "LKTS = "
-                + TimeUtils.convertToISO8601String(LKTS));
+        return Arrays.stream(FileExtension.values()).flatMap(fileExtension -> {
+            var filePath =
+                    switch (fileExtension) {
+                        case PB -> pbFilePath;
+                        case PARQUET -> parquetFilePath;
+                    };
+            FileInfo fileInfo;
+            try {
+                fileInfo = FileInfo.extensionPath(fileExtension, filePath);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            Instant FKTS = fileInfo.getFirstEvent().getEventTimeStamp();
+            Instant LKTS = fileInfo.getLastEvent().getEventTimeStamp();
+            logger.info("After generating data," + "FKTS = "
+                    + TimeUtils.convertToISO8601String(FKTS) + "LKTS = "
+                    + TimeUtils.convertToISO8601String(LKTS));
 
-        var mainIteratorClass = FileBackedPBEventStreamPositionBasedIterator.class;
-        return Stream.of(
-                Arguments.of(
-                        "Case 1",
-                        TimeUtils.minusDays(FKTS, 5),
-                        TimeUtils.minusDays(FKTS, 2),
-                        TimeUtils.minusDays(FKTS, 4),
-                        FKTS,
-                        EmptyEventIterator.class),
-                Arguments.of(
-                        "Case 2",
-                        TimeUtils.minusDays(FKTS, 5),
-                        TimeUtils.minusDays(FKTS, 2),
-                        TimeUtils.plusDays(FKTS, 1),
-                        TimeUtils.plusDays(FKTS, 10),
-                        mainIteratorClass),
-                Arguments.of(
-                        "Case 3",
-                        TimeUtils.minusDays(FKTS, 5),
-                        TimeUtils.minusDays(FKTS, 1),
-                        TimeUtils.plusDays(LKTS, 1),
-                        TimeUtils.plusDays(LKTS, 10),
-                        mainIteratorClass),
-                Arguments.of(
-                        "Case 4",
-                        FKTS,
-                        TimeUtils.plusDays(FKTS, 5),
-                        TimeUtils.minusDays(LKTS, 10),
-                        TimeUtils.minusDays(LKTS, 1),
-                        mainIteratorClass),
-                Arguments.of(
-                        "Case 5",
-                        FKTS,
-                        TimeUtils.plusDays(FKTS, 5),
-                        LKTS,
-                        TimeUtils.plusDays(LKTS, 10),
-                        mainIteratorClass),
-                Arguments.of(
-                        "Case 6",
-                        TimeUtils.plusDays(LKTS, 1),
-                        TimeUtils.plusDays(LKTS, 10),
-                        TimeUtils.plusDays(LKTS, 1),
-                        TimeUtils.plusDays(LKTS, 10),
-                        EmptyEventIterator.class,
-                        mainIteratorClass));
+            var mainIteratorClass =
+                    switch (fileExtension) {
+                        case PB -> FileBackedPBEventStreamPositionBasedIterator.class;
+                        case PARQUET -> ParquetBackedPBEventIterator.class;
+                    };
+            return Stream.of(
+                    Arguments.of(
+                            "Case 1",
+                            TimeUtils.minusDays(FKTS, 5),
+                            TimeUtils.minusDays(FKTS, 2),
+                            TimeUtils.minusDays(FKTS, 4),
+                            FKTS,
+                            EmptyEventIterator.class,
+                            filePath,
+                            fileExtension),
+                    Arguments.of(
+                            "Case 2",
+                            TimeUtils.minusDays(FKTS, 5),
+                            TimeUtils.minusDays(FKTS, 2),
+                            TimeUtils.plusDays(FKTS, 1),
+                            TimeUtils.plusDays(FKTS, 10),
+                            mainIteratorClass,
+                            filePath,
+                            fileExtension),
+                    Arguments.of(
+                            "Case 3",
+                            TimeUtils.minusDays(FKTS, 5),
+                            TimeUtils.minusDays(FKTS, 1),
+                            TimeUtils.plusDays(LKTS, 1),
+                            TimeUtils.plusDays(LKTS, 10),
+                            mainIteratorClass,
+                            filePath,
+                            fileExtension),
+                    Arguments.of(
+                            "Case 4",
+                            FKTS,
+                            TimeUtils.plusDays(FKTS, 5),
+                            TimeUtils.minusDays(LKTS, 10),
+                            TimeUtils.minusDays(LKTS, 1),
+                            mainIteratorClass,
+                            filePath,
+                            fileExtension),
+                    Arguments.of(
+                            "Case 5",
+                            FKTS,
+                            TimeUtils.plusDays(FKTS, 5),
+                            LKTS,
+                            TimeUtils.plusDays(LKTS, 10),
+                            mainIteratorClass,
+                            filePath,
+                            fileExtension),
+                    Arguments.of(
+                            "Case 6",
+                            TimeUtils.plusDays(LKTS,1),
+                            TimeUtils.plusDays(LKTS, 10),
+                            TimeUtils.plusDays(LKTS, 1),
+                            TimeUtils.plusDays(LKTS, 10),
+                            EmptyEventIterator.class,
+                            filePath,
+                            fileExtension));
+        });
     }
 
-    private static void generateData() throws IOException {
-        logger.info("generate Data " + pbFileExtension + " to " + pbFilePath);
+    private static void generateData(FileExtension fileExtension) throws IOException {
+        logger.info("generate Data " + fileExtension + " to " + pbFilePath + " " + parquetFilePath);
         PlainPBStoragePlugin storagePlugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                pbFileSuffix + "://localhost?name=FileBackedIteratorTest&rootFolder=" + testFolder.getAbsolutePath()
-                        + "&partitionGranularity=PARTITION_YEAR",
+                fileExtension.getSuffix() + "://localhost?name=FileBackedIteratorTest&rootFolder="
+                        + testFolder.getAbsolutePath() + "&partitionGranularity=PARTITION_YEAR",
                 FileBackedIteratorTest.configService);
 
         // Add data with gaps every month
@@ -177,8 +203,8 @@ public class FileBackedIteratorTest {
             // Generate data for  10 days
             for (int day = 0; day < 10; day++) {
                 for (int second = 0;
-                     second < PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
-                     second += 15) {
+                        second < PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
+                        second += 15) {
                     strm.add(new POJOEvent(
                             ArchDBRTypes.DBR_SCALAR_DOUBLE,
                             TimeUtils.convertFromEpochSeconds(
@@ -209,7 +235,9 @@ public class FileBackedIteratorTest {
             Instant maxQTS,
             Instant minQTE,
             Instant maxQTE,
-            Class<? extends Iterator<Event>> expectedIteratorClass)
+            Class<? extends Iterator<Event>> expectedIteratorClass,
+            Path pbFilePath,
+            FileExtension fileExtension)
             throws IOException {
         for (Instant QTS = minQTS; QTS.isBefore(maxQTS); QTS = TimeUtils.plusDays(QTS, 1)) {
             for (Instant QTE = minQTE; QTE.isBefore(maxQTE); QTE = TimeUtils.plusDays(QTE, 1)) {
@@ -220,7 +248,7 @@ public class FileBackedIteratorTest {
                         + TimeUtils.convertToISO8601String(QTE));
 
                 try (EventStream strm =
-                             FileStreamCreator.getTimeStream(pvName, pbFilePath, dbrType, QTS, QTE, false)) {
+                        FileStreamCreator.getTimeStream(fileExtension, pvName, pbFilePath, dbrType, QTS, QTE, false)) {
                     Assertions.assertSame(
                             expectedIteratorClass,
                             strm.iterator().getClass(),

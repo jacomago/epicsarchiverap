@@ -38,17 +38,17 @@ public class RawDataRetrievalAsEventStream implements DataRetrieval {
 	}
 
 	@Override
-    public EventStream getDataForPVS(String[] pvNames, Instant startTime, Instant endTime, RetrievalEventProcessor retrievalEventProcessor) {
+	public EventStream getDataForPVS(String[] pvNames, Instant startTime, Instant endTime, RetrievalEventProcessor retrievalEventProcessor) {
 		return getDataForPVS(pvNames, startTime, endTime, retrievalEventProcessor, false, null);
 	}
 
 	@Override
-    public EventStream getDataForPVS(String[] pvNames, Instant startTime, Instant endTime, RetrievalEventProcessor retrievalEventProcessor, boolean useReducedDataSet) {
+	public EventStream getDataForPVS(String[] pvNames, Instant startTime, Instant endTime, RetrievalEventProcessor retrievalEventProcessor, boolean useReducedDataSet) {
 		return getDataForPVS(pvNames, startTime, endTime, retrievalEventProcessor, useReducedDataSet, null);
 	}
 
 	@Override
-    public EventStream getDataForPVS(String[] pvNames, Instant startTime, Instant endTime, RetrievalEventProcessor retrievalEventProcessor, boolean useReducedDataSet, HashMap<String, String> otherParams) {
+	public EventStream getDataForPVS(String[] pvNames, Instant startTime, Instant endTime, RetrievalEventProcessor retrievalEventProcessor, boolean useReducedDataSet, HashMap<String, String> otherParams) {
 		StringWriter concatedPVs = new StringWriter();
 		boolean isFirstEntry = true;
 		for(String pvName : pvNames) {

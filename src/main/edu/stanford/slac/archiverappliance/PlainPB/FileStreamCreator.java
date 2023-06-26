@@ -7,6 +7,7 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PlainPB;
 
+import edu.stanford.slac.archiverappliance.parquet.ParquetBackedPBEventStream;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.etl.ETLStreamCreator;
@@ -23,12 +24,71 @@ import java.time.Instant;
 public class FileStreamCreator implements ETLStreamCreator {
     private final String pvName;
     private final Path path;
-    private final PBFileInfo info;
+    private final FileInfo info;
 
-    public FileStreamCreator(String pvName, Path path, PBFileInfo fileinfo) {
+    private final FileExtension fileExtension;
+
+    public FileStreamCreator(String pvName, Path path, FileInfo fileinfo, FileExtension fileExtension) {
         this.pvName = pvName;
         this.path = path;
         this.info = fileinfo;
+        this.fileExtension = fileExtension;
+    }
+
+    public static EventStream getTimeStream(
+            FileExtension fileExtension,
+            String pvName,
+            Path path,
+            ArchDBRTypes dbrType,
+            Instant start,
+            Instant end,
+            boolean skipSearch) throws IOException {
+
+        return switch (fileExtension) {
+            case PB -> new FileBackedPBEventStream(pvName, path, dbrType, start, end, skipSearch);
+
+            case PARQUET -> new ParquetBackedPBEventStream(pvName, path, dbrType, start, end);
+        };
+    }
+    public static EventStream getTimeStream(
+            FileExtension fileExtension,
+            String pvName,
+            Path path,
+            Instant start,
+            Instant end,
+            boolean skipSearch, FileInfo fileInfo) throws IOException {
+
+        return switch (fileExtension) {
+            case PB -> new FileBackedPBEventStream(pvName, path, fileInfo.getType(), start, end, skipSearch);
+
+            case PARQUET -> new ParquetBackedPBEventStream(pvName, path, fileInfo.getType(), start, end, fileInfo);
+        };
+    }
+
+    public static EventStream getStream(
+            FileExtension fileExtension,
+            String pvName,
+            Path path,
+            ArchDBRTypes dbrType) throws IOException {
+
+        return switch (fileExtension) {
+            case PB -> new FileBackedPBEventStream(pvName, path, dbrType);
+
+            case PARQUET -> new ParquetBackedPBEventStream(pvName, path, dbrType);
+        };
+    }
+
+    public static EventStream getStream(
+            FileExtension fileExtension,
+            String pvName,
+            Path path,
+            FileInfo fileInfo) throws IOException {
+
+        return switch (fileExtension) {
+            case PB -> new FileBackedPBEventStream(pvName, path, fileInfo.getType());
+
+            case PARQUET -> new ParquetBackedPBEventStream(pvName, path, fileInfo.getType(), fileInfo);
+        };
     }
 
     public static EventStream getTimeStream(
@@ -62,8 +122,10 @@ public class FileStreamCreator implements ETLStreamCreator {
 
     @Override
     public EventStream getStream() throws IOException {
-        return new FileBackedPBEventStream(pvName, path, info.getType());
+        return switch (fileExtension) {
+            case PB -> new FileBackedPBEventStream(pvName, path, info.getType());
+
+            case PARQUET -> new ParquetBackedPBEventStream(pvName, path, info.getType());
+        };
     }
-
-
 }

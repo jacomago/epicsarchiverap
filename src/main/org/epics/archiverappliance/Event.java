@@ -7,6 +7,7 @@
  *******************************************************************************/
 package org.epics.archiverappliance;
 
+import com.google.protobuf.Message;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.data.SampleValue;
 
@@ -33,13 +34,13 @@ public interface Event {
 	
 	/**
 	 * Get the epoch seconds and the nanos..
-     * We use Instant as the main timestamp class.
+	 * We use Instant as the main timestamp class.
 	 * See TimeUtils for more time related utilities.
 	 * @return The java epoch seconds and the nanos of this event
 	 */
-    public Instant getEventTimeStamp();
+	public Instant getEventTimeStamp();
 
-	
+
 	/**
 	 * Return a serialized form of this event in the internal currency of the archiver appliance. For now, this is Google's Protocol Buffers
 	 * Note that the raw form is always escaped according to the archiver specification. 
@@ -47,7 +48,17 @@ public interface Event {
 	 * @return A serialization of this event in the internal currency of the archiver appliance. 
 	 */
 	public ByteArray getRawForm();
-	
+
+	/**
+	 * Return the protobuf message.
+	 */
+	public Message getMessage();
+
+	/**
+	 * Return the protobuf message class.
+	 */
+	public Class<? extends Message> getMessageClass();
+
 	/**
 	 * Get this event's value. The value for an EPICS sample is a complex thing and can be scalars and vectors of numbers and strings.
 	 * With EPICS v4, this can get even more complicated. 

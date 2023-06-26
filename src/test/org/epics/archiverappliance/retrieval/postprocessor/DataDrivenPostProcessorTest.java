@@ -96,7 +96,7 @@ public class DataDrivenPostProcessorTest {
 		checkRetrieval("meanSample_7(" + newPVName + ")", start, end, 1, true);
 	}
 
-    private int checkRetrieval(String retrievalPVName, Instant start, Instant end, int expectedAtLeastEvents, boolean exactMatch) throws IOException {
+	private int checkRetrieval(String retrievalPVName, Instant start, Instant end, int expectedAtLeastEvents, boolean exactMatch) throws IOException {
 		long startTimeMillis = System.currentTimeMillis();
 		RawDataRetrieval rawDataRetrieval = new RawDataRetrieval("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw?param1=abc123&param2=def456");
 		int eventCount = 0;

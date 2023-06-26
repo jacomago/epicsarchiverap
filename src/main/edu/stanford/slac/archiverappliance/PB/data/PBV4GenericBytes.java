@@ -1,6 +1,7 @@
 package edu.stanford.slac.archiverappliance.PB.data;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Message;
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent;
 import edu.stanford.slac.archiverappliance.PB.utils.LineEscaper;
 import org.apache.logging.log4j.LogManager;
@@ -41,13 +42,18 @@ public class PBV4GenericBytes implements DBRTimeEvent, PartionedTime {
 		this.year = year;
 	}
 
+	public PBV4GenericBytes(short year, Message.Builder message) {
+		this.dbevent = (EPICSEvent.V4GenericBytes) message.build();
+		this.bar = new ByteArray(LineEscaper.escapeNewLines(dbevent.toByteArray()));
+		this.year = year;
+	}
 	public PBV4GenericBytes(DBRTimeEvent ev) {
 		YearSecondTimestamp yst = TimeUtils.convertToYearSecondTimestamp(ev.getEventTimeStamp());
 		year = yst.getYear();
 		ByteString byteString = ByteString.copyFrom(ev.getSampleValue().getValueAsBytes());
 		EPICSEvent.V4GenericBytes.Builder builder = EPICSEvent.V4GenericBytes.newBuilder()
 				.setSecondsintoyear(yst.getSecondsintoyear())
-                .setNano(yst.getNano())
+				.setNano(yst.getNano())
 				.setVal(byteString);
 		if(ev.getSeverity() != 0) builder.setSeverity(ev.getSeverity());
 		if(ev.getStatus() != 0) builder.setStatus(ev.getStatus());
@@ -84,7 +90,7 @@ public class PBV4GenericBytes implements DBRTimeEvent, PartionedTime {
 		year = yst.getYear();
 		EPICSEvent.V4GenericBytes.Builder builder = EPICSEvent.V4GenericBytes.newBuilder()
 				.setSecondsintoyear(yst.getSecondsintoyear())
-                    .setNano(yst.getNano())
+					.setNano(yst.getNano())
 				.setUserTag(userTag)
 				.setVal(byteString);
 
@@ -96,6 +102,17 @@ public class PBV4GenericBytes implements DBRTimeEvent, PartionedTime {
 		bar = new ByteArray(LineEscaper.escapeNewLines(dbevent.toByteArray()));
 	}
 
+	@Override
+	public Message getMessage() {
+
+		unmarshallEventIfNull();return dbevent;
+	}
+
+	@Override
+	public Class<? extends Message> getMessageClass() {
+		return EPICSEvent.V4GenericBytes.class;
+	}
+
 
 	@Override
 	public Event makeClone() {
@@ -104,7 +121,7 @@ public class PBV4GenericBytes implements DBRTimeEvent, PartionedTime {
 
 
 	@Override
-    public Instant getEventTimeStamp() {
+	public Instant getEventTimeStamp() {
 		unmarshallEventIfNull();
 		return TimeUtils.convertFromYearSecondTimestamp(new YearSecondTimestamp(year, dbevent.getSecondsintoyear(), dbevent.getNano()));
 	}

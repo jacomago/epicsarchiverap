@@ -100,7 +100,7 @@ public class MatlabFileTest {
 			MLUInt64 ret = new MLUInt64("nanos", new int[] {dest.size(), 1} );
 			int i = 0;
 			for(Event e : dest) {
-                ret.set((long) e.getEventTimeStamp().getNano(), i++);
+				ret.set((long) e.getEventTimeStamp().getNano(), i++);
 			}
 			return ret;
 		}

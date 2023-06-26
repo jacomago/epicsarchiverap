@@ -48,13 +48,13 @@ public class MemBufWriter implements Writer {
 	}
 
 	@Override
-    public int appendData(BasicContext context, String arg0, EventStream arg1) throws IOException {
-        int eventsAppended = 0;
+	public int appendData(BasicContext context, String arg0, EventStream arg1) throws IOException {
+		int eventsAppended = 0;
 		for(Event e : arg1) {
 			buf.add(e);
-            eventsAppended++;
+			eventsAppended++;
 		}
-        return eventsAppended;
+		return eventsAppended;
 	}
 
 	@Override

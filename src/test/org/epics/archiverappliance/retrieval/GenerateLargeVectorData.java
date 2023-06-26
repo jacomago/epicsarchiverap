@@ -52,8 +52,8 @@ public class GenerateLargeVectorData {
 		String pluginURL = "pb://localhost?name=LTS&rootFolder=" + folder + "&partitionGranularity=PARTITION_DAY";
 		StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(pluginURL, configService);
 
-        Instant end = TimeUtils.minusDays(TimeUtils.now(), 1);
-        Instant start = TimeUtils.minusDays(end, 30);
+		Instant end = TimeUtils.minusDays(TimeUtils.now(), 1);
+		Instant start = TimeUtils.minusDays(end, 30);
 		long startEpochSeconds = TimeUtils.convertToEpochSeconds(start);
 		long endEpochSeconds = TimeUtils.convertToEpochSeconds(end);
 		

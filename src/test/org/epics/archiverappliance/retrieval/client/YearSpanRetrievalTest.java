@@ -8,6 +8,7 @@
 package org.epics.archiverappliance.retrieval.client;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
+import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.logging.log4j.LogManager;
@@ -54,7 +55,7 @@ public class YearSpanRetrievalTest {
     @BeforeEach
     public void setUp() throws Exception {
         configService = new ConfigServiceForTests(new File("./bin"));
-        pbSetup.setUpRootFolder(pbplugin);
+        pbSetup.setUpRootFolder(pbplugin, FileExtension.PB);
         tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
         generateDataForYears();
     }
@@ -68,7 +69,8 @@ public class YearSpanRetrievalTest {
                             "--ArchUnitTestyspan",
                             TimeUtils.getStartOfYear(currentyear),
                             new ArchPaths(),
-                            configService.getPVNameToKeyConverter())
+                            configService.getPVNameToKeyConverter(),
+                            pbplugin.getFileExtension())
                     .toFile()
                     .exists()) {
                 logger.info("File for year " + currentyear + " does not exist. Generating data for all the years.");
@@ -84,7 +86,8 @@ public class YearSpanRetrievalTest {
                         "--ArchUnitTestyspan",
                         TimeUtils.getStartOfYear(currentyear),
                         new ArchPaths(),
-                        configService.getPVNameToKeyConverter()));
+                        configService.getPVNameToKeyConverter(),
+                        pbplugin.getFileExtension()));
             }
 
             SimulationEventStream simstream = new SimulationEventStream(
@@ -110,7 +113,7 @@ public class YearSpanRetrievalTest {
         EventStream stream = null;
         try {
             stream = rawDataRetrieval.getDataForPVS(
-                    new String[]{ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "yspan"},
+                    new String[] {ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "yspan"},
                     start,
                     end,
                     new RetrievalEventProcessor() {

@@ -99,8 +99,8 @@ public class ScanSamplingMethodTest {
 
 	private void testDataRetrieval(String pvName, int expectedCount, long expectedGapBetweenSamples, boolean consecutiveValuesExpected) {
 		RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
-        Instant end = TimeUtils.now();
-        Instant start = TimeUtils.minusHours(end, 1);
+		Instant end = TimeUtils.now();
+		Instant start = TimeUtils.minusHours(end, 1);
 
 		EventStream stream = null;
 		try {
@@ -117,7 +117,7 @@ public class ScanSamplingMethodTest {
 				long previousEventMillis = -1;
 				long previousValue = -1;
 				for(Event e : stream) {
-                    long currentMillis = e.getEventTimeStamp().toEpochMilli();
+					long currentMillis = e.getEventTimeStamp().toEpochMilli();
 					Assertions.assertTrue(previousEventMillis == -1 || ((currentMillis - previousEventMillis) <= expectedGapBetweenSamples), "Gap between samples " + (currentMillis - previousEventMillis) + " is more than expected " + expectedGapBetweenSamples + " for PV " + pvName);
 					previousEventMillis = currentMillis;
 					eventCount++;
@@ -168,8 +168,8 @@ public class ScanSamplingMethodTest {
 	
 	private void testLastSampleOfManualPV(String pvName, double lastValue) {
 		RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
-        Instant end = TimeUtils.plusHours(TimeUtils.now(), 10);
-        Instant start = TimeUtils.minusHours(end, 10);
+		Instant end = TimeUtils.plusHours(TimeUtils.now(), 10);
+		Instant start = TimeUtils.minusHours(end, 10);
 
 		EventStream stream = null;
 		try {

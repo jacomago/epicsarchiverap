@@ -29,7 +29,8 @@ import org.epics.archiverappliance.retrieval.workers.CurrentThreadWorkerEventStr
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.io.File;
 import java.util.List;
@@ -41,83 +42,128 @@ import java.util.concurrent.Callable;
  *
  */
 public class RenamePVTest {
-	private static final Logger logger = LogManager.getLogger(RenamePVTest.class);
-	private ConfigService configService;
-	private File rootFolder = new File(ConfigServiceForTests.getDefaultPBTestFolder() + File.separator + "RenamePV"); 
+    private static final Logger logger = LogManager.getLogger(RenamePVTest.class);
+    private ConfigService configService;
+    private final File rootFolder =
+            new File(ConfigServiceForTests.getDefaultPBTestFolder() + File.separator + "RenamePV");
 
-	private String oldPVName = "Test:rename:oldPVName";
-	private String newPVName = "Test:rename:newPVName";
+    @BeforeEach
+    public void setUp() throws Exception {
+        configService = new ConfigServiceForTests(new File("./bin"));
+        if (rootFolder.exists()) {
+            FileUtils.deleteDirectory(rootFolder);
+        }
+        assert rootFolder.mkdirs();
+    }
 
-	@BeforeEach
-	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(new File("./bin"));
-		if(rootFolder.exists()) {
-			FileUtils.deleteDirectory(rootFolder);
-		}
-		rootFolder.mkdirs();
-	}
+    @AfterEach
+    public void tearDown() throws Exception {
+        FileUtils.deleteDirectory(rootFolder);
+    }
 
-	@AfterEach
-	public void tearDown() throws Exception {
-		FileUtils.deleteDirectory(rootFolder);
-	}
-	
-	/**
-	 * Generate data for some partitions.
-	 * Rename PV
-	 * Check the number of data points before and after the rename.
-	 * 
-	 * @throws Exception
-	 */
-	@Test
-	public void testRenamePV() throws Exception {
-		PlainPBStoragePlugin plugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=RenameTest&rootFolder=" + rootFolder + "&partitionGranularity=PARTITION_DAY", configService);
-		short currentYear = TimeUtils.getCurrentYear();
-		ArrayListEventStream strm = new ArrayListEventStream(86400, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, oldPVName, currentYear));
-		for(int i = 0; i < 365*86400; i+=1500) { 
-			strm.add(new POJOEvent(ArchDBRTypes.DBR_SCALAR_DOUBLE, TimeUtils.convertFromYearSecondTimestamp(new YearSecondTimestamp(currentYear, i, 0)), new ScalarValue<Double>((double)i), 0, 0));
-		}
-		try(BasicContext context = new BasicContext()) { 
-			plugin.appendData(context, oldPVName, strm);
-		}
-		
-		long oldPVEventCount = 0;
-		int oldPathCount;
-		try(BasicContext context = new BasicContext()) { 
-			List<Callable<EventStream>> callables = plugin.getDataForPV(context, oldPVName, TimeUtils.convertFromYearSecondTimestamp(new YearSecondTimestamp((short)(currentYear-1), 0, 0)), TimeUtils.convertFromYearSecondTimestamp(new YearSecondTimestamp((short)(currentYear+1), 0, 0)));
-			try(EventStream data = new CurrentThreadWorkerEventStream(oldPVName, callables)) {
-				for(@SuppressWarnings("unused") Event e : data) { 
-					oldPVEventCount++;
-				}
-			}
-			oldPathCount = PlainPBPathNameUtility.getAllPathsForPV(context.getPaths(), plugin.getRootFolder(), oldPVName, PlainPBStoragePlugin.pbFileExtension, PartitionGranularity.PARTITION_DAY, CompressionMode.NONE, configService.getPVNameToKeyConverter()).length;
-		}
-		logger.info("Done generating data with " +  oldPVEventCount + " points   About to rename PV");
-		
-		try(BasicContext context = new BasicContext()) { 
-			plugin.renamePV(context, oldPVName, newPVName);
-		}
-		logger.info("Done renaming PV");
+    /**
+     * Generate data for some partitions.
+     * Rename PV
+     * Check the number of data points before and after the rename.
+     *
+     * @throws Exception
+     */
+    @ParameterizedTest
+    @EnumSource(FileExtension.class)
+    public void testRenamePV(FileExtension fileExtension) throws Exception {
+        PlainPBStoragePlugin plugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+                fileExtension.getSuffix() + "://localhost?name=RenameTest&rootFolder=" + rootFolder
+                        + "&partitionGranularity=PARTITION_DAY",
+                configService);
+        short currentYear = TimeUtils.getCurrentYear();
+        String oldPVName = "Test:rename:oldPVName";
+        ArrayListEventStream strm = new ArrayListEventStream(
+                PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, oldPVName, currentYear));
+        for (int i = 0; i < 365 * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(); i += 1500) {
+            strm.add(new POJOEvent(
+                    ArchDBRTypes.DBR_SCALAR_DOUBLE,
+                    TimeUtils.convertFromYearSecondTimestamp(new YearSecondTimestamp(currentYear, i, 0)),
+                    new ScalarValue<Double>((double) i),
+                    0,
+                    0));
+        }
+        try (BasicContext context = new BasicContext()) {
+            assert plugin != null;
+            plugin.appendData(context, oldPVName, strm);
+        }
 
-		long newPVEventCount = 0;
-		int newPathCount = 0;
-		int newPathForOldPVNameCount = -1;
-		try(BasicContext context = new BasicContext()) { 
-			List<Callable<EventStream>> callables = plugin.getDataForPV(context, newPVName, TimeUtils.convertFromYearSecondTimestamp(new YearSecondTimestamp((short)(currentYear-1), 0, 0)), TimeUtils.convertFromYearSecondTimestamp(new YearSecondTimestamp((short)(currentYear+1), 0, 0)));
-			try(EventStream data = new CurrentThreadWorkerEventStream(newPVName, callables)) {
-				for(@SuppressWarnings("unused") Event e : data) { 
-					newPVEventCount++;
-				}
-			}
-			newPathCount = PlainPBPathNameUtility.getAllPathsForPV(context.getPaths(), plugin.getRootFolder(), newPVName, PlainPBStoragePlugin.pbFileExtension, PartitionGranularity.PARTITION_DAY, CompressionMode.NONE, configService.getPVNameToKeyConverter()).length;
-			newPathForOldPVNameCount = PlainPBPathNameUtility.getAllPathsForPV(context.getPaths(), plugin.getRootFolder(), oldPVName, PlainPBStoragePlugin.pbFileExtension, PartitionGranularity.PARTITION_DAY, CompressionMode.NONE, configService.getPVNameToKeyConverter()).length;
-		}
+        long oldPVEventCount = 0;
+        int oldPathCount;
+        try (BasicContext context = new BasicContext()) {
+            List<Callable<EventStream>> callables = plugin.getDataForPV(
+                    context,
+                    oldPVName,
+                    TimeUtils.convertFromYearSecondTimestamp(new YearSecondTimestamp((short) (currentYear - 1), 0, 0)),
+                    TimeUtils.convertFromYearSecondTimestamp(new YearSecondTimestamp((short) (currentYear + 1), 0, 0)));
+            try (EventStream data = new CurrentThreadWorkerEventStream(oldPVName, callables)) {
+                for (@SuppressWarnings("unused") Event e : data) {
+                    oldPVEventCount++;
+                }
+            }
+            oldPathCount = PlainPBPathNameUtility.getAllPathsForPV(
+                            context.getPaths(),
+                            plugin.getRootFolder(),
+                    oldPVName,
+                            plugin.getFileExtension().getExtensionString(),
+                            PartitionGranularity.PARTITION_DAY,
+                            CompressionMode.NONE,
+                            configService.getPVNameToKeyConverter())
+                    .length;
+        }
+        logger.info("Done generating data with " + oldPVEventCount + " points   About to rename PV");
 
-		logger.info("Old count " + oldPVEventCount + " and new count " + newPVEventCount);
-		logger.info("Old path count " + oldPathCount + " and new path count " + newPathCount);
-		Assertions.assertTrue(newPVEventCount==oldPVEventCount, "Event counts before and after the move are not the same. Old count " + oldPVEventCount + " and new count " + newPVEventCount);
-		Assertions.assertTrue(oldPathCount==newPathCount, "Path counts before and after the move are not the same. Old count " + oldPathCount + " and new count " + newPathCount);
-		Assertions.assertTrue(newPathForOldPVNameCount==oldPathCount, "Path counts for the old PV name after the rename " + newPathForOldPVNameCount + " is not the same as before the rename " + oldPathCount);
-	}
+        String newPVName = "Test:rename:newPVName";
+        try (BasicContext context = new BasicContext()) {
+            plugin.renamePV(context, oldPVName, newPVName);
+        }
+        logger.info("Done renaming PV");
 
+        long newPVEventCount = 0;
+        int newPathCount = 0;
+        int newPathForOldPVNameCount = -1;
+        try (BasicContext context = new BasicContext()) {
+            List<Callable<EventStream>> callables = plugin.getDataForPV(
+                    context,
+                    newPVName,
+                    TimeUtils.convertFromYearSecondTimestamp(new YearSecondTimestamp((short) (currentYear - 1), 0, 0)),
+                    TimeUtils.convertFromYearSecondTimestamp(new YearSecondTimestamp((short) (currentYear + 1), 0, 0)));
+            try (EventStream data = new CurrentThreadWorkerEventStream(newPVName, callables)) {
+                for (@SuppressWarnings("unused") Event e : data) {
+                    newPVEventCount++;
+                }
+            }
+            newPathCount = PlainPBPathNameUtility.getAllPathsForPV(
+                            context.getPaths(),
+                            plugin.getRootFolder(),
+                    newPVName,
+                            plugin.getFileExtension().getExtensionString(),
+                            PartitionGranularity.PARTITION_DAY,
+                            CompressionMode.NONE,
+                            configService.getPVNameToKeyConverter())
+                    .length;
+            newPathForOldPVNameCount = PlainPBPathNameUtility.getAllPathsForPV(
+                            context.getPaths(),
+                            plugin.getRootFolder(),
+                    oldPVName,
+                            plugin.getFileExtension().getExtensionString(),
+                            PartitionGranularity.PARTITION_DAY,
+                            CompressionMode.NONE,
+                            configService.getPVNameToKeyConverter())
+                    .length;
+        }
+
+        logger.info("Old count " + oldPVEventCount + " and new count " + newPVEventCount);
+        logger.info("Old path count " + oldPathCount + " and new path count " + newPathCount);
+        Assertions.assertEquals(newPVEventCount, oldPVEventCount, "Event counts before and after the move are not the same. Old count " + oldPVEventCount
+                + " and new count " + newPVEventCount);
+        Assertions.assertEquals(oldPathCount, newPathCount, "Path counts before and after the move are not the same. Old count " + oldPathCount + " and new count "
+                + newPathCount);
+        Assertions.assertEquals(newPathForOldPVNameCount, oldPathCount, "Path counts for the old PV name after the rename " + newPathForOldPVNameCount
+                + " is not the same as before the rename " + oldPathCount);
+    }
 }

@@ -8,6 +8,7 @@ import java.util.HashMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.etl.StorageMetricsContext;
 import org.epics.archiverappliance.utils.nio.ArchPaths;
@@ -126,7 +127,7 @@ public class ETLMetricsForLifetime implements StorageMetricsContext {
 			// We choose a week and an days's partition - so we have 7 buckets
 			// One of the bucket's (tomorrow's) is almost always 0
 			// One of the bucket's (todays's) is almost always incomplete
-			long epochDays =  epochSeconds/(24*60*60);
+			long epochDays =  epochSeconds/(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk());
 			int dayBucket = (int) (epochDays % 7);
 			weeklyETLUsageInMillis[dayBucket] = weeklyETLUsageInMillis[dayBucket] + lastETLTimeWeSpentInETLInMilliSeconds;
 			// Reset tomorrow's times..
@@ -151,7 +152,7 @@ public class ETLMetricsForLifetime implements StorageMetricsContext {
 	 */
 	public double getWeeklyETLUsageInPercent() { 
 		long epochSeconds = System.currentTimeMillis()/1000;
-		long startOfEpochDayInSeconds =  (epochSeconds/(24*60*60))*(24*60*60);
+		long startOfEpochDayInSeconds =  (epochSeconds/(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk()))*(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk());
 		long secondsIntoDay = epochSeconds - startOfEpochDayInSeconds;
 		long totalWeeklyETLMillis = 0;
 		long totalDaysInMetric = 0;
@@ -165,7 +166,7 @@ public class ETLMetricsForLifetime implements StorageMetricsContext {
 		// See updateApproximateGlobalLastETLTime
 		// One of the bucket's (todays's) is almost always incomplete
 		totalDaysInMetric = totalDaysInMetric - 1;
-		long totalSecondsInMetric = totalDaysInMetric * (24*60*60) + secondsIntoDay;
+		long totalSecondsInMetric = totalDaysInMetric * (PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk()) + secondsIntoDay;
 		logger.debug("totalWeeklyETLSeconds = " + totalWeeklyETLSeconds + " totalSecondsInMetric " + totalSecondsInMetric);
 		return (totalWeeklyETLSeconds*100.0)/totalSecondsInMetric;
 	}

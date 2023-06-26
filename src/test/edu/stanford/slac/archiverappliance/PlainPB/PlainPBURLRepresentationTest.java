@@ -6,18 +6,21 @@ import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.io.File;
 
 public class PlainPBURLRepresentationTest {
-    @Test
-    public void testToAndFromURL() throws Exception {
-        PlainPBStoragePlugin etlSrc = new PlainPBStoragePlugin();
+
+    @ParameterizedTest
+    @EnumSource(FileExtension.class)
+    public void testToAndFromURL(FileExtension fileExtension) throws Exception {
+        PlainPBStoragePlugin etlSrc = new PlainPBStoragePlugin(fileExtension);
         PBCommonSetup srcSetup = new PBCommonSetup();
 
         srcSetup.setUpRootFolder(
-                etlSrc, "SimpleETLTestSrc_" + PartitionGranularity.PARTITION_HOUR, PartitionGranularity.PARTITION_HOUR);
+                etlSrc, "SimpleETLTestSrc_" + PartitionGranularity.PARTITION_HOUR, PartitionGranularity.PARTITION_HOUR, fileExtension);
         String urlRep = etlSrc.getURLRepresentation();
         ConfigService configService = new ConfigServiceForTests(new File("./bin"));
         PlainPBStoragePlugin after =

@@ -7,8 +7,9 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PlainPB.utils;
 
-import edu.stanford.slac.archiverappliance.PlainPB.FileBackedPBEventStream;
-import edu.stanford.slac.archiverappliance.PlainPB.PBFileInfo;
+import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
+import edu.stanford.slac.archiverappliance.PlainPB.FileInfo;
+import edu.stanford.slac.archiverappliance.PlainPB.FileStreamCreator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -22,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Instant;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -35,42 +37,39 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ValidatePBFile {
     private static final Logger logger = LogManager.getLogger(ValidatePBFile.class.getName());
 
-    public static boolean validatePBFile(Path path, boolean verboseMode)
+    public static boolean validatePBFile(Path path, boolean verboseMode, FileExtension fileExtension)
             throws IOException {
-        PBFileInfo info = new PBFileInfo(path);
+        FileInfo info = FileInfo.extensionPath(fileExtension, path);
         logger.info("File " + path.getFileName().toString() + " is for PV " + info.getPVName() + " of type "
                 + info.getType() + " for year " + info.getDataYear());
-        long previousEpochSeconds = Long.MIN_VALUE;
+        Instant previousTimestamp = Instant.EPOCH;
         long eventnum = 0;
-        try (EventStream strm = new FileBackedPBEventStream(info.getPVName(), path, info.getType())) {
+        try (EventStream strm = FileStreamCreator.getStream(fileExtension, info.getPVName(), path, info.getType())) {
             Event firstEvent = null;
             Event lastEvent = null;
             for (Event ev : strm) {
-                long epochSeconds = ev.getEpochSeconds();
-                if (epochSeconds >= previousEpochSeconds) {
-                    previousEpochSeconds = epochSeconds;
+                Instant eventTimeStamp = ev.getEventTimeStamp();
+                if (eventTimeStamp.isAfter(previousTimestamp) || eventTimeStamp.equals(previousTimestamp)) {
+                    previousTimestamp = eventTimeStamp;
                 } else {
                     throw new IOException("We expect to see monotonically increasing timestamps in a PB file"
                             + ". This is not true at " + eventnum
                             + ". The previous time stamp is "
-                            + TimeUtils.convertToISO8601String(
-                                    TimeUtils.convertFromEpochSeconds(previousEpochSeconds, 0))
+                            + previousTimestamp
                             + ". The current time stamp is "
-                            + TimeUtils.convertToISO8601String(TimeUtils.convertFromEpochSeconds(epochSeconds, 0)));
+                            + eventTimeStamp);
                 }
-                if (firstEvent == null)
-                    firstEvent = ev;
+                if (firstEvent == null) firstEvent = ev;
                 lastEvent = ev;
                 eventnum++;
             }
 
             if (verboseMode) {
+                assert firstEvent != null;
                 logger.info("File " + path.getFileName().toString() + " appears to be valid. It has data ranging from "
-                        + TimeUtils.convertToISO8601String(
-                                TimeUtils.convertFromEpochSeconds(firstEvent.getEpochSeconds(), 0))
+                        + firstEvent.getEventTimeStamp()
                         + " to "
-                        + TimeUtils.convertToISO8601String(
-                                TimeUtils.convertFromEpochSeconds(lastEvent.getEpochSeconds(), 0)));
+                        + lastEvent.getEventTimeStamp());
             }
             if (verboseMode) {
                 System.out.println(path + " seems to be a valid PB file.");
@@ -133,7 +132,7 @@ public class ValidatePBFile {
 
                             @Override
                             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                                if (!validatePBFile(file, verboseMode)) {
+                                if (!validatePBFile(file, verboseMode, FileExtension.PB)) {
                                     failures.incrementAndGet();
                                 }
                                 return FileVisitResult.CONTINUE;
@@ -150,7 +149,7 @@ public class ValidatePBFile {
                             }
                         }.init(verboseMode));
             } else {
-                if (!validatePBFile(path, verboseMode)) {
+                if (!validatePBFile(path, verboseMode, FileExtension.PB)) {
                     failures.incrementAndGet();
                 }
             }

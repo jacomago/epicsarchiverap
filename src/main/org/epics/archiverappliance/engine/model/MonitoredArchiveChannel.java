@@ -45,7 +45,7 @@ public class MonitoredArchiveChannel extends ArchiveChannel {
 	 */
 	public MonitoredArchiveChannel(final String name, final Writer writer,
 			final Enablement enablement, final int buffer_capacity,
-                                   final Instant last_archived_timestamp,
+			final Instant last_archived_timestamp,
 			final double period_estimate, final ConfigService configservice,
 			final ArchDBRTypes archdbrtype, final String controlPVname,
 			final int commandThreadID, final boolean usePVAccess) throws Exception {

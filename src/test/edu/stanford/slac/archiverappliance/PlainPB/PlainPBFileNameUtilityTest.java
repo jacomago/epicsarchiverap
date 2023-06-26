@@ -19,8 +19,9 @@ import org.epics.archiverappliance.utils.nio.ArchPaths;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
@@ -55,9 +56,9 @@ public class PlainPBFileNameUtilityTest {
             case PARTITION_YEAR -> "yyyy";
         };
     }
-
-    static Stream<PartitionGranularity> providePartitionFileExtension() {
-        return Arrays.stream(PartitionGranularity.values()).filter(g -> g.getNextLargerGranularity() != null);
+    static Stream<Arguments> providePartitionFileExtension() {
+        return Arrays.stream(FileExtension.values())
+                .flatMap(f -> Arrays.stream(PartitionGranularity.values()).filter(g -> g.getNextLargerGranularity() != null).map(g -> Arguments.of(f, g)));
     }
 
     private static void mkPath(Path nf) throws IOException {
@@ -86,18 +87,18 @@ public class PlainPBFileNameUtilityTest {
 
     @ParameterizedTest
     @MethodSource("providePartitionFileExtension")
-    public void testGetFilesWithData(PartitionGranularity granularity) throws Exception {
+    public void testGetFilesWithData(FileExtension fileExtension, PartitionGranularity granularity) throws Exception {
         // Lets create some files that cater to this partition.
         Instant startOfYear = TimeUtils.getStartOfYear(TimeUtils.getCurrentYear());
         String pvName = granularity.name() + "Part_1";
-        String extension = PlainPBStoragePlugin.pbFileExtension;
+        String extension = fileExtension.getExtensionString();
         long nIntervals = 1 + granularity.getNextLargerGranularity().getApproxSecondsPerChunk()
                 / granularity.getApproxSecondsPerChunk();
         Instant fileTime = null;
         for (long nGranularity = 0;
-             nGranularity
-                     < nIntervals;
-             nGranularity++) {
+                nGranularity
+                        < nIntervals;
+                nGranularity++) {
             fileTime = startOfYear.plusSeconds(nGranularity * granularity.getApproxSecondsPerChunk());
             mkPath(PlainPBPathNameUtility.getPathNameForTime(
                     rootFolderStr,
@@ -106,7 +107,8 @@ public class PlainPBFileNameUtilityTest {
                     granularity,
                     new ArchPaths(),
                     CompressionMode.NONE,
-                    configService.getPVNameToKeyConverter()));
+                    configService.getPVNameToKeyConverter(),
+                    fileExtension));
         }
 
         Path[] matchingPaths = PlainPBPathNameUtility.getPathsWithData(
@@ -146,12 +148,13 @@ public class PlainPBFileNameUtilityTest {
         assert fileTime != null;
         String fileEnding = fileTime.atZone(ZoneId.of("Z")).format(DateTimeFormatter.ofPattern(getFormatString(granularity)));
         Assertions.assertTrue(
-                mostRecentFile.getName().endsWith(fileEnding + extension),
+                mostRecentFile.getName().endsWith(fileEnding + fileExtension.getExtensionString()),
                 "Unxpected most recent file " + mostRecentFile.getAbsolutePath() + " expected ending " + fileEnding);
     }
 
-    @Test
-    public void testGetFilesWithDataOnAYearlyPartition() throws Exception {
+    @ParameterizedTest
+    @EnumSource(FileExtension.class)
+    public void testGetFilesWithDataOnAYearlyPartition(FileExtension fileExtension) throws Exception {
         // Lets create some files that cater to this partition.
         ZonedDateTime startOfYear =
                 TimeUtils.getStartOfYear(TimeUtils.getCurrentYear()).atZone(ZoneId.from(ZoneOffset.UTC));
@@ -159,9 +162,9 @@ public class PlainPBFileNameUtilityTest {
         ZonedDateTime curr = startOfYear;
         String pvName = "First:Second:Third:YearPart_1";
         PartitionGranularity partition = PartitionGranularity.PARTITION_YEAR;
-        String extension = PlainPBStoragePlugin.pbFileExtension;
+        String extension = fileExtension.getExtensionString();
         ZonedDateTime endYear =
-                null;
+               null;
         for (int years = 0; years < 20; years++) {
             mkPath(PlainPBPathNameUtility.getPathNameForTime(
                     rootFolderStr,
@@ -170,7 +173,8 @@ public class PlainPBFileNameUtilityTest {
                     partition,
                     new ArchPaths(),
                     CompressionMode.NONE,
-                    configService.getPVNameToKeyConverter()));
+                    configService.getPVNameToKeyConverter(),
+                    fileExtension));
             curr = curr.plusYears(1);
             if (years == 7) endYear = curr;
         }
@@ -211,7 +215,7 @@ public class PlainPBFileNameUtilityTest {
                 .toFile();
         Assertions.assertNotNull(mostRecentFile, "Most recent file is null?");
         Assertions.assertTrue(
-                mostRecentFile.getName().endsWith(curr.minusYears(1).getYear() + extension),
+                mostRecentFile.getName().endsWith(curr.minusYears(1).getYear() + fileExtension.getExtensionString()),
                 "Unxpected most recent file " + mostRecentFile.getAbsolutePath());
 
         File mostRecentFile2 = PlainPBPathNameUtility.getMostRecentPathBeforeTime(
@@ -225,7 +229,7 @@ public class PlainPBFileNameUtilityTest {
                         configService.getPVNameToKeyConverter())
                 .toFile();
         Assertions.assertNotNull(mostRecentFile2, "Most recent file is null?");
-        String expectedEnd2 = endYear.minusYears(1).getYear() + extension;
+        String expectedEnd2 = endYear.minusYears(1).getYear() + fileExtension.getExtensionString();
         Assertions.assertTrue(
                 mostRecentFile2.getName().endsWith(expectedEnd2),
                 "Unxpected most recent file " + mostRecentFile2.getAbsolutePath() + " expecting " + expectedEnd2);

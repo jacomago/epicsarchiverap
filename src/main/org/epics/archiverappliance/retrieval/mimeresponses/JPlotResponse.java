@@ -30,7 +30,7 @@ public class JPlotResponse implements MimeResponse {
 	boolean needComma = false;
 	boolean firstPV = true;
 	boolean closePV = false;
-    private final ZoneId localTimeZone = ZoneId.systemDefault();
+	private final ZoneId localTimeZone = ZoneId.systemDefault();
 
 	@Override
 	public void consumeEvent(Event e) throws Exception {
@@ -40,7 +40,7 @@ public class JPlotResponse implements MimeResponse {
 			out.println(",");
 		}
 		// Add 3 zeros for millseconds...
-        out.print("[" + e.getEventTimeStamp().atZone(localTimeZone) + ", " + e.getSampleValue().toString() + "]");
+		out.print("[" + e.getEventTimeStamp().atZone(localTimeZone) + ", " + e.getSampleValue().toString() + "]");
 	}
 
 	@Override
@@ -60,7 +60,7 @@ public class JPlotResponse implements MimeResponse {
 	}
 
 	@Override
-    public void processingPV(BasicContext retrievalContext, String pv, Instant start, Instant end, EventStreamDesc streamDesc) {
+	public void processingPV(BasicContext retrievalContext, String pv, Instant start, Instant end, EventStreamDesc streamDesc) {
 		if(firstPV) {
 			firstPV = false;
 		} else {

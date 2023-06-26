@@ -252,7 +252,7 @@ public class OptimizedWithLastSample implements PostProcessor, PostProcessorWith
               try {
                 DBRTimeEvent dbrTimeEvent = (DBRTimeEvent) e;
                 long epochSeconds = dbrTimeEvent.getEpochSeconds();
-                  if (dbrTimeEvent.getEventTimeStamp().isAfter(previousEventTimestamp)) {
+                if (dbrTimeEvent.getEventTimeStamp().isAfter(previousEventTimestamp)) {
                   previousEventTimestamp = dbrTimeEvent.getEventTimeStamp();
                 } else {
                   // Note that this is expected. ETL is not transactional; so we

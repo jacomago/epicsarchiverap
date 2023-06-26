@@ -126,8 +126,8 @@ public class PVTypeInfo implements Serializable {
 	 */
 	private int computedBytesPerEvent;
 	private float userSpecifiedEventRate;
-    private Instant creationTime;
-    private Instant modificationTime;
+	private Instant creationTime;
+	private Instant modificationTime;
 	private boolean paused = false;
 	private SamplingMethod samplingMethod;
 	private float samplingPeriod;
@@ -219,20 +219,20 @@ public class PVTypeInfo implements Serializable {
 		return userSpecifiedEventRate;
 	}
 
-    public Instant getCreationTime() {
+	public Instant getCreationTime() {
 		return creationTime;
 	}
 
-    public void setCreationTime(Instant creationTime) {
+	public void setCreationTime(Instant creationTime) {
 		this.creationTime = creationTime;
 		this.modificationTime = creationTime;
 	}
 
-    public Instant getModificationTime() {
+	public Instant getModificationTime() {
 		return modificationTime;
 	}
 
-    public void setModificationTime(Instant modificationTime) {
+	public void setModificationTime(Instant modificationTime) {
 		this.modificationTime = modificationTime;
 	}
 
@@ -544,9 +544,9 @@ public class PVTypeInfo implements Serializable {
 	 * Loop thru the stores outlined in this typeinfo and determine the most recent event for this pv
 	 * @param configService ConfigService
 	 * @throws IOException  &emsp;
-     * @return Instant  &emsp;
+	 * @return Instant  &emsp;
 	 */
-    public Instant determineLastKnownEventFromStores(ConfigService configService) throws IOException {
+	public Instant determineLastKnownEventFromStores(ConfigService configService) throws IOException {
 		try(BasicContext context = new BasicContext()) {
 			for(String storeUrl : this.dataStores) {
 				try {

@@ -153,8 +153,8 @@ public class ArchiveFieldsNotInStreamTest {
 	
 	private void testRetrievalCount(String pvName, double[] expectedValues) throws IOException {
 		RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
-        Instant end = TimeUtils.plusDays(TimeUtils.now(), 1);
-        Instant start = TimeUtils.minusDays(end, 2);
+		Instant end = TimeUtils.plusDays(TimeUtils.now(), 1);
+		Instant start = TimeUtils.minusDays(end, 2);
 		try(EventStream stream = rawDataRetrieval.getDataForPVS(new String[] { pvName }, start, end, null)) {
 			long previousEpochSeconds = 0;
 			int eventCount = 0;

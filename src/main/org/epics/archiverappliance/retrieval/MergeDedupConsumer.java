@@ -30,12 +30,12 @@ import java.time.Instant;
  */
 class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 	private static Logger logger = LogManager.getLogger(MergeDedupConsumer.class.getName());
-    private Instant startTimeStamp;
+	private Instant startTimeStamp;
 	int totalEvents = 0;
 	int skippedEvents = 0;
 	int comparedEvents = 0;
 	OutputStream os = null;
-    private Instant timestampOfLastEvent;
+	private Instant timestampOfLastEvent;
 	boolean amIDeduping = false;
 	boolean haveIpushedTheFirstEvent = false;
 	Event firstEvent = null;
@@ -104,7 +104,7 @@ class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 		}
 	}
 
-    public void processingPV(BasicContext retrievalContext, String PV, Instant start, Instant end, EventStreamDesc streamDesc) {
+	public void processingPV(BasicContext retrievalContext, String PV, Instant start, Instant end, EventStreamDesc streamDesc) {
 		pushRemainingEvents();
 		logNumbersAndCollectTotal();
 		this.startTimeStamp = start;
@@ -200,7 +200,7 @@ class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 		totalEvents = 0;
 		skippedEvents = 0;
 		comparedEvents = 0;
-        timestampOfLastEvent = Instant.ofEpochMilli(Long.MIN_VALUE);
+		timestampOfLastEvent = Instant.ofEpochMilli(Long.MIN_VALUE);
 		amIDeduping = false;
 		firstEvent = null;
 		haveIpushedTheFirstEvent = false;

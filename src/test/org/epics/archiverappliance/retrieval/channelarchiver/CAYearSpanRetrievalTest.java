@@ -53,8 +53,8 @@ public class CAYearSpanRetrievalTest {
 
 		// Now we try to retrieve this over the wire.
 		RawDataRetrievalAsEventStream dataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
-        Instant startTime = TimeUtils.convertFromISO8601String("2010-11-24T00:00:00.000Z");
-        Instant endTime = TimeUtils.convertFromISO8601String("2011-01-15T00:00:00.000Z");
+		Instant startTime = TimeUtils.convertFromISO8601String("2010-11-24T00:00:00.000Z");
+		Instant endTime = TimeUtils.convertFromISO8601String("2011-01-15T00:00:00.000Z");
 		try(EventStream st = dataRetrieval.getDataForPVS(new String[] {pvName} , startTime, endTime, null)) {
 			for(Event event : st) {
 				StringBuilder eventStr = new StringBuilder();

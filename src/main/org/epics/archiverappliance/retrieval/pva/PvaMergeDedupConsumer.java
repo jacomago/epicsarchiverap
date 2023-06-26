@@ -32,11 +32,11 @@ import java.time.Instant;
 public class PvaMergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 	private static final Logger logger = LogManager.getLogger(PvaMergeDedupConsumer.class.getName());
 
-    private Instant startTimeStamp;
+	private Instant startTimeStamp;
 	int totalEvents = 0;
 	int skippedEvents = 0;
 	int comparedEvents = 0;
-    private Instant timestampOfLastEvent;
+	private Instant timestampOfLastEvent;
 	boolean amIDeduping = false;
 	boolean haveIpushedTheFirstEvent = false;
 	Event firstEvent = null;
@@ -193,7 +193,7 @@ public class PvaMergeDedupConsumer implements EventStreamConsumer, AutoCloseable
 		totalEvents = 0;
 		skippedEvents = 0;
 		comparedEvents = 0;
-        timestampOfLastEvent = Instant.ofEpochMilli(Long.MIN_VALUE);
+		timestampOfLastEvent = Instant.ofEpochMilli(Long.MIN_VALUE);
 		amIDeduping = false;
 		firstEvent = null;
 		haveIpushedTheFirstEvent = false;

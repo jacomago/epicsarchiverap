@@ -68,10 +68,10 @@ public class ETLSourceGetStreamsTest {
 	@Test
 	public void getETLStreams() throws Exception {
 		short currentYear = TimeUtils.getCurrentYear();
-		ZonedDateTime startOfToday = ZonedDateTime.now(ZoneId.from(ZoneOffset.UTC))
-				.withHour(0)
-				.withMinute(0)
-				.withSecond(0);
+        ZonedDateTime startOfToday = ZonedDateTime.now(ZoneId.from(ZoneOffset.UTC))
+                .withHour(0)
+                .withMinute(0)
+                .withSecond(0);
 
 		HashMap<PartitionGranularity, DataForGetETLStreamsTest> testParams = new HashMap<PartitionGranularity, DataForGetETLStreamsTest>();
 		testParams.put(PartitionGranularity.PARTITION_5MIN, new DataForGetETLStreamsTest(3600*24, 600)); // One day; sample every 10 mins
@@ -115,9 +115,9 @@ public class ETLSourceGetStreamsTest {
 				}
 				List<ETLInfo> ETLFiles = pbplugin.getETLStreams(pvName, currentTime, etlContext);
 				Assertions.assertTrue((ETLFiles != null) ? (ETLFiles.size() == expectedFiles) : (expectedFiles == 0), "getETLStream failed for "
-						+ TimeUtils.convertToISO8601String(currentTime)
-						+ " for partition " + partitionGranularity
-						+ " Expected " + expectedFiles + " got " + (ETLFiles != null ? Integer.toString(ETLFiles.size()) : "null"));
+				+ TimeUtils.convertToISO8601String(currentTime)
+				+ " for partition " + partitionGranularity
+				+ " Expected " + expectedFiles + " got " + (ETLFiles != null ? Integer.toString(ETLFiles.size()) : "null"));
 			}
 		}
 	}

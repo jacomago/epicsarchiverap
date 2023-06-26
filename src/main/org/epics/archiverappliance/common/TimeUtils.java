@@ -144,13 +144,11 @@ public class TimeUtils {
         if (epochMillis == 0) return 0;
         return epochMillis
                 + ZoneId.systemDefault()
-                .getRules()
-                .getOffset(Instant.ofEpochMilli(epochMillis))
-                .getTotalSeconds()
-                * 1000L;
+                                .getRules()
+                                .getOffset(Instant.ofEpochMilli(epochMillis))
+                                .getTotalSeconds()
+                        * 1000L;
     }
-
-	
 
     public static long getStartOfCurrentYearInSeconds() {
         return getStartOfYearInSeconds(
@@ -215,6 +213,16 @@ public class TimeUtils {
         long diffInSecs = epochseconds - startOfYearInSeconds;
         assert (diffInSecs <= Integer.MAX_VALUE);
         return (int) (diffInSecs);
+    }
+
+    /**
+     * Convert Java EPOCH seconds to a seconds into year
+     * @param instant  &emsp;
+     * @return SecondsIntoYear The difference in Seconds
+     */
+    public static int getSecondsIntoYear(Instant instant) {
+        long epochseconds = instant.getEpochSecond();
+        return getSecondsIntoYear(epochseconds);
     }
 
     /**
@@ -333,30 +341,30 @@ public class TimeUtils {
             case PARTITION_MONTH -> {
                 return dateTime.getYear() + "_"
                         + (dateTime.getMonth().getValue() < 10
-                        ? TWO_DIGIT_EXPANSIONS[dateTime.getMonth().getValue()]
-                        : dateTime.getMonth().getValue());
+                                ? TWO_DIGIT_EXPANSIONS[dateTime.getMonth().getValue()]
+                                : dateTime.getMonth().getValue());
             }
             case PARTITION_DAY -> {
                 return dateTime.getYear()
                         + "_"
                         + (dateTime.getMonth().getValue() < 10
-                        ? TWO_DIGIT_EXPANSIONS[dateTime.getMonth().getValue()]
-                        : dateTime.getMonth().getValue())
+                                ? TWO_DIGIT_EXPANSIONS[dateTime.getMonth().getValue()]
+                                : dateTime.getMonth().getValue())
                         + "_"
                         + (dateTime.getDayOfMonth() < 10
-                        ? TWO_DIGIT_EXPANSIONS[dateTime.getDayOfMonth()]
-                        : dateTime.getDayOfMonth());
+                                ? TWO_DIGIT_EXPANSIONS[dateTime.getDayOfMonth()]
+                                : dateTime.getDayOfMonth());
             }
             case PARTITION_HOUR -> {
                 return dateTime.getYear()
                         + "_"
                         + (dateTime.getMonth().getValue() < 10
-                        ? TWO_DIGIT_EXPANSIONS[dateTime.getMonth().getValue()]
-                        : dateTime.getMonth().getValue())
+                                ? TWO_DIGIT_EXPANSIONS[dateTime.getMonth().getValue()]
+                                : dateTime.getMonth().getValue())
                         + "_"
                         + (dateTime.getDayOfMonth() < 10
-                        ? TWO_DIGIT_EXPANSIONS[dateTime.getDayOfMonth()]
-                        : dateTime.getDayOfMonth())
+                                ? TWO_DIGIT_EXPANSIONS[dateTime.getDayOfMonth()]
+                                : dateTime.getDayOfMonth())
                         + "_"
                         + (dateTime.getHour() < 10 ? TWO_DIGIT_EXPANSIONS[dateTime.getHour()] : dateTime.getHour());
             }
@@ -366,18 +374,18 @@ public class TimeUtils {
                 return dateTime.getYear()
                         + "_"
                         + (dateTime.getMonth().getValue() < 10
-                        ? TWO_DIGIT_EXPANSIONS[dateTime.getMonth().getValue()]
-                        : dateTime.getMonth().getValue())
+                                ? TWO_DIGIT_EXPANSIONS[dateTime.getMonth().getValue()]
+                                : dateTime.getMonth().getValue())
                         + "_"
                         + (dateTime.getDayOfMonth() < 10
-                        ? TWO_DIGIT_EXPANSIONS[dateTime.getDayOfMonth()]
-                        : dateTime.getDayOfMonth())
+                                ? TWO_DIGIT_EXPANSIONS[dateTime.getDayOfMonth()]
+                                : dateTime.getDayOfMonth())
                         + "_"
                         + (dateTime.getHour() < 10 ? TWO_DIGIT_EXPANSIONS[dateTime.getHour()] : dateTime.getHour())
                         + "_"
                         + (startOfPartition_Min < 10
-                        ? TWO_DIGIT_EXPANSIONS[startOfPartition_Min]
-                        : startOfPartition_Min);
+                                ? TWO_DIGIT_EXPANSIONS[startOfPartition_Min]
+                                : startOfPartition_Min);
             }
             default -> throw new UnsupportedOperationException("Invalid Partition type " + granularity);
         }
@@ -536,7 +544,7 @@ public class TimeUtils {
         Instant timestamp = TimeUtils.convertFromEpochSeconds(secondsPastEpoch, nanoSeconds);
         return TimeUtils.convertToYearSecondTimestamp(timestamp);
     }
-	
+
     /**
      * Break a time span into smaller time spans according to binSize The first time span has the start time and the end
      * of the first bin. The next one has the end of the first bin and the start of the second bin. The last time span

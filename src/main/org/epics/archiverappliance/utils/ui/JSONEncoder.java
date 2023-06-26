@@ -183,7 +183,7 @@ public class JSONEncoder<T> {
 		@SuppressWarnings("unchecked")
 		@Override
 		public void encode(Object obj, JSONObject jsonObj) throws IllegalAccessException, InvocationTargetException {
-            Instant ts = (Instant) readMethod.invoke(obj);
+			Instant ts = (Instant) readMethod.invoke(obj);
 			if(ts != null) {
 				jsonObj.put(propertyName, TimeUtils.convertToISO8601String(ts));
 			}

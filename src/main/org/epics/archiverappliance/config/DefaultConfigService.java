@@ -40,6 +40,7 @@ import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
+import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.ProcessMetrics;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.PVTypeInfoEvent.ChangeType;
@@ -1533,7 +1534,7 @@ public class DefaultConfigService implements ConfigService {
 					if(queryNVPairs != null && !queryNVPairs.isEmpty() && queryNVPairs.containsKey("mergeDuringRetrieval")) {
 						configlogger.info("Merging data from " + serverURL + " during data retrieval");
 						failoverPVs.put(serverURL, CacheBuilder.newBuilder()
-								.expireAfterWrite(86400, TimeUnit.SECONDS)
+								.expireAfterWrite(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), TimeUnit.SECONDS)
 								.build(new CacheLoader<String, Boolean>() {
 									public Boolean load(String pvName) throws IOException {
 										String areWeURL = serverURL.split("\\?")[0] + "/" + "bpl/areWeArchivingPV?pv=" + pvName;

@@ -40,8 +40,8 @@ public class ArchivePVState {
 	private ConfigService configService;
 	private List<String> fieldsArchivedAsPartOfStream;
 	private String applianceIdentityAfterCapacityPlanning;
-    private Instant startOfWorkflow = TimeUtils.now();
-    private Instant metaInfoRequestedSubmitted = null;
+	private Instant startOfWorkflow = TimeUtils.now();
+	private Instant metaInfoRequestedSubmitted = null;
 	private String myIdentity;
 	private MetaInfo metaInfo = null;
 
@@ -300,7 +300,7 @@ public class ArchivePVState {
 		configService.getEventBus().post(pubSubEvent);
 	}
 
-    public Instant getStartOfWorkflow() {
+	public Instant getStartOfWorkflow() {
 		return startOfWorkflow;
 	}
 	
@@ -435,7 +435,7 @@ public class ArchivePVState {
 		return pvName;
 	}
 
-    public Instant getMetaInfoRequestedSubmitted() {
+	public Instant getMetaInfoRequestedSubmitted() {
 		return metaInfoRequestedSubmitted;
 	}
 

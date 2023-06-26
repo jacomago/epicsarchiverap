@@ -21,11 +21,11 @@ public class DataSourceforPV implements Comparable<DataSourceforPV> {
 	private String pvName;
 	private StoragePlugin storagePlugin;
 	private int lifetimeId;
-    private Instant dataStartTime;
-    private Instant dataEndTime;
+	private Instant dataStartTime;
+	private Instant dataEndTime;
 	
 	public DataSourceforPV(String pvName, StoragePlugin storagePlugin, int lifetimeid,
-                           Instant dataStartTime, Instant dataEndTime) {
+			Instant dataStartTime, Instant dataEndTime) {
 		super();
 		this.pvName = pvName;
 		this.storagePlugin = storagePlugin;
@@ -38,7 +38,7 @@ public class DataSourceforPV implements Comparable<DataSourceforPV> {
 		return pvName;
 	}
 
-    public Instant getDataStartTime() {
+	public Instant getDataStartTime() {
 		return dataStartTime;
 	}
 

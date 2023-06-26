@@ -98,7 +98,7 @@ public class PBScalarByte implements DBRTimeEvent {
         year = yst.getYear();
         Builder builder = EPICSEvent.ScalarByte.newBuilder()
                         .setSecondsintoyear(yst.getSecondsintoyear())
-		        .setNano(yst.getNano())
+                        .setNano(yst.getNano())
                         .setVal(ByteString.copyFrom(bytes));
 		if(alarm.severity != 0) builder.setSeverity(alarm.severity);
 		if(alarm.status != 0) builder.setStatus(alarm.status);
@@ -106,6 +106,17 @@ public class PBScalarByte implements DBRTimeEvent {
         bar = new ByteArray(LineEscaper.escapeNewLines(dbevent.toByteArray()));
 }
 
+
+	@Override
+	public Message getMessage() {
+		unmarshallEventIfNull();
+		return dbevent;
+	}
+
+	@Override
+	public Class<? extends Message> getMessageClass() {
+		return EPICSEvent.ScalarByte.class;
+	}
 
 	@Override
 	public Event makeClone() {
@@ -119,10 +130,10 @@ public class PBScalarByte implements DBRTimeEvent {
 	}
 
 
-	@Override
-	public YearSecondTimestamp getYearSecondTimestamp() {
-		unmarshallEventIfNull();
-		return new YearSecondTimestamp(this.year, dbevent.getSecondsintoyear(), dbevent.getNano());
+    @Override
+    public YearSecondTimestamp getYearSecondTimestamp() {
+	    unmarshallEventIfNull();
+	    return new YearSecondTimestamp(this.year, dbevent.getSecondsintoyear(), dbevent.getNano());
 	}
 
 	@Override

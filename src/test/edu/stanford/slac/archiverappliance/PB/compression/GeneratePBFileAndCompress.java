@@ -22,10 +22,10 @@ public class GeneratePBFileAndCompress {
         }
 
 
-    // path it the ROOT  DIRECTORY of all PB files
+        // path it the ROOT  DIRECTORY of all PB files
 
 
-    private  static String packAllPBFiles(String parentPath,String destfileName,boolean useZip64) throws Exception
+        private  static String packAllPBFiles(String parentPath,String destfileName,boolean useZip64) throws Exception
         {
                 File parentFile =new File(parentPath);
 

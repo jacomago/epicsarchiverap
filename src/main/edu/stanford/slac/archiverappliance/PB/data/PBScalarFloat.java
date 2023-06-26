@@ -96,13 +96,25 @@ public class PBScalarFloat implements DBRTimeEvent {
         year = yst.getYear();
         Builder builder = EPICSEvent.ScalarFloat.newBuilder()
                         .setSecondsintoyear(yst.getSecondsintoyear())
-		        .setNano(yst.getNano())
+                        .setNano(yst.getNano())
                         .setVal(value);
 		if(alarm.severity != 0) builder.setSeverity(alarm.severity);
 		if(alarm.status != 0) builder.setStatus(alarm.status);
         dbevent = builder.build();
         bar = new ByteArray(LineEscaper.escapeNewLines(dbevent.toByteArray()));
     }
+
+	@Override
+	public Message getMessage() {
+
+		unmarshallEventIfNull();
+		return dbevent;
+	}
+
+	@Override
+	public Class<? extends Message> getMessageClass() {
+		return EPICSEvent.ScalarFloat.class;
+	}
 
 	@Override
 	public Event makeClone() {

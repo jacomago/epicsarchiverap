@@ -1,6 +1,7 @@
 package org.epics.archiverappliance.retrieval.client;
 
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
+import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
 import io.github.bonigarcia.wdm.WebDriverManager;
@@ -41,8 +42,6 @@ import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Random;
-
-import static edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.pbFileExtension;
 
 /**
  * Generate known amount of data for a PV; corrupt known number of the values.
@@ -88,9 +87,9 @@ public class PostProcessorWithPBErrorDailyTest {
 			for(short y = dataGeneratedForYears; y > 0; y--) { 
 				short year = (short)(currentYear - y);
 				for(int day = 0; day < 365; day++) {
-					ArrayListEventStream testData = new ArrayListEventStream(24*60*60, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, year));
-					int startofdayinseconds = day*24*60*60;
-					for(int secondintoday = 0; secondintoday < 24*60*60; secondintoday += 60) {
+					ArrayListEventStream testData = new ArrayListEventStream(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, year));
+					int startofdayinseconds = day*PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
+					for(int secondintoday = 0; secondintoday < PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(); secondintoday += 60) {
 						// The value should be the secondsIntoYear integer divided by 600.
 						testData.add(new SimulationEvent(startofdayinseconds + secondintoday, year, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<Double>((double) (((int)(startofdayinseconds + secondintoday)/600)))));
 					}
@@ -203,7 +202,7 @@ public class PostProcessorWithPBErrorDailyTest {
                     context.getPaths(),
                     mtsFolderName,
                     pvName,
-		            pbFileExtension,
+                    FileExtension.PB.getExtensionString(),
                     PartitionGranularity.PARTITION_DAY,
                     CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());

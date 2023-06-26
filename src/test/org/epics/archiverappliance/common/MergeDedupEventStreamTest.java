@@ -23,9 +23,10 @@ import org.epics.archiverappliance.data.ScalarValue;
 import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test the MergeDedupEventStream
@@ -37,7 +38,7 @@ public class MergeDedupEventStreamTest {
 	String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + ":MergeDedupEventStreamTest";
 	ArchDBRTypes dbrType = ArchDBRTypes.DBR_SCALAR_DOUBLE;
 	short currentYear = TimeUtils.getCurrentYear();
-	
+
 
 	@Test
 	public void testMergeDedup() throws Exception {
@@ -62,20 +63,20 @@ public class MergeDedupEventStreamTest {
 			firstthreequarters.add(new SimulationEvent(s, currentYear, dbrType, new ScalarValue<Double>((double) s)));
 		}
 		
-		ArrayListEventStream combn = new ArrayListEventStream(60*60*24, new RemotableEventStreamDesc(dbrType, pvName, currentYear));
-		for(int s = 0; s < 60*60*24; s++) {
+		ArrayListEventStream combn = new ArrayListEventStream(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), new RemotableEventStreamDesc(dbrType, pvName, currentYear));
+		for(int s = 0; s < PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(); s++) {
 			combn.add(new SimulationEvent(s, currentYear, dbrType, new ScalarValue<Double>((double) s)));
 		}
 		
-		assertTrue("odd+empty", takeTwoStreamsMergeAndCompareWithExpected(odd, new EmptyEventStream(pvName, dbrType), odd));
-		assertTrue("empty+odd", takeTwoStreamsMergeAndCompareWithExpected(new EmptyEventStream(pvName, dbrType), odd, odd));
-		assertTrue("odd+odd", takeTwoStreamsMergeAndCompareWithExpected(odd, odd, odd));		
-		assertTrue("odd+even", takeTwoStreamsMergeAndCompareWithExpected(odd, even, combn));
-		assertTrue("even+odd", takeTwoStreamsMergeAndCompareWithExpected(even, odd, combn));
-		assertTrue("firsthalf+secondhalf", takeTwoStreamsMergeAndCompareWithExpected(firsthalf, secondhalf, combn));
-		assertTrue("secondhalf+firsthalf", takeTwoStreamsMergeAndCompareWithExpected(secondhalf, firsthalf, combn));
-		assertTrue("firstthreequarters+secondhalf", takeTwoStreamsMergeAndCompareWithExpected(firstthreequarters, secondhalf, combn));
-		assertTrue("secondhalf+firstthreequarters", takeTwoStreamsMergeAndCompareWithExpected(secondhalf, firstthreequarters, combn));
+		Assertions.assertTrue(takeTwoStreamsMergeAndCompareWithExpected(odd, new EmptyEventStream(pvName, dbrType), odd), "odd+empty");
+		Assertions.assertTrue(takeTwoStreamsMergeAndCompareWithExpected(new EmptyEventStream(pvName, dbrType), odd, odd), "empty+odd");
+		Assertions.assertTrue(takeTwoStreamsMergeAndCompareWithExpected(odd, odd, odd), "odd+odd");
+		Assertions.assertTrue(takeTwoStreamsMergeAndCompareWithExpected(odd, even, combn), "odd+even");
+		Assertions.assertTrue(takeTwoStreamsMergeAndCompareWithExpected(even, odd, combn), "even+odd");
+		Assertions.assertTrue(takeTwoStreamsMergeAndCompareWithExpected(firsthalf, secondhalf, combn), "firsthalf+secondhalf");
+		Assertions.assertTrue(takeTwoStreamsMergeAndCompareWithExpected(secondhalf, firsthalf, combn), "secondhalf+firsthalf");
+		Assertions.assertTrue(takeTwoStreamsMergeAndCompareWithExpected(firstthreequarters, secondhalf, combn), "firstthreequarters+secondhalf");
+		Assertions.assertTrue(takeTwoStreamsMergeAndCompareWithExpected(secondhalf, firstthreequarters, combn), "secondhalf+firstthreequarters");
 	}
 	
 	private boolean takeTwoStreamsMergeAndCompareWithExpected(EventStream strm1, EventStream strm2, EventStream expected) throws IOException {

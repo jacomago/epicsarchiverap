@@ -1,5 +1,6 @@
 package org.epics.archiverappliance.config;
 
+import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
@@ -56,11 +57,22 @@ public class ConfigServiceForTests extends DefaultConfigService {
     String rootFolder = ConfigServiceForTests.DEFAULT_PB_TEST_DATA_FOLDER;
     public static final int defaultSecondsDisconnect = 10;
 
+    FileExtension fileExtension;
+    private File webInfClassesFolder;
+
+	public ConfigServiceForTests() throws ConfigException {
+        super();
+    }
+
+    public ConfigServiceForTests(FileExtension fileExtension) throws ConfigException {
+        super();
+        this.fileExtension = fileExtension;
+    }
 
     public ConfigServiceForTests(File WebInfClassesFolder) throws ConfigException {
         this(WebInfClassesFolder, -1);
     }
-    private final File webInfClassesFolder;
+
     public ConfigServiceForTests(File WebInfClassesFolder, int jcaCommandThreadCount) throws ConfigException {
         this.webInfClassesFolder = WebInfClassesFolder;
         configlogger.info("The WEB-INF/classes folder is " + this.webInfClassesFolder.getAbsolutePath());
@@ -158,6 +170,10 @@ public class ConfigServiceForTests extends DefaultConfigService {
         } else {
             return "/dev/shm/test";
         }
+    }
+
+    public FileExtension getFileExtension() {
+        return this.fileExtension;
     }
 
     @Override

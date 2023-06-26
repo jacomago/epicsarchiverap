@@ -7,6 +7,7 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval.channelarchiver;
 
+import com.google.protobuf.Message;
 import org.epics.archiverappliance.ByteArray;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.config.ArchDBRTypes;
@@ -50,7 +51,7 @@ public class HashMapEvent implements DBRTimeEvent {
 		this.type = type;
 		values = new HashMap<String, Object>();
 		values.put(HashMapEvent.SECS_FIELD_NAME, Long.toString(event.getEpochSeconds()));
-        values.put(HashMapEvent.NANO_FIELD_NAME, Integer.toString(event.getEventTimeStamp().getNano()));
+		values.put(HashMapEvent.NANO_FIELD_NAME, Integer.toString(event.getEventTimeStamp().getNano()));
 		values.put(HashMapEvent.STAT_FIELD_NAME, Integer.toString(event.getStatus()));
 		values.put(HashMapEvent.SEVR_FIELD_NAME, Integer.toString(event.getSeverity()));
 		if(event.hasFieldValues()) { 
@@ -105,6 +106,24 @@ public class HashMapEvent implements DBRTimeEvent {
 	@Override
 	public ByteArray getRawForm() {
 		throw new UnsupportedOperationException("There should be no need to support a raw form here.");
+    }
+
+    /**
+     *
+     * @return
+     */
+    @Override
+    public Message getMessage() {
+		return null;
+    }
+
+    /**
+     *
+     * @return
+     */
+    @Override
+    public Class<? extends Message> getMessageClass() {
+		return null;
 	}
 
 	@Override

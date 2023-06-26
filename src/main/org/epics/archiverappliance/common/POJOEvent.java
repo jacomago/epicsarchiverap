@@ -1,5 +1,6 @@
 package org.epics.archiverappliance.common;
 
+import com.google.protobuf.Message;
 import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -91,10 +92,20 @@ public class POJOEvent implements DBRTimeEvent {
 
 	@Override
 	public ByteArray getRawForm() {
-		DBRTimeEvent ev = getDbrTimeEvent();
-		return ev.getRawForm();
-	}
+			DBRTimeEvent ev = getDbrTimeEvent();
+			return ev.getRawForm();
+    }
 
+    /**
+     *
+     * @return
+     */
+    @Override
+    public Message getMessage() {
+
+	    DBRTimeEvent ev = getDbrTimeEvent();
+	    return ev.getMessage();
+    }
 
 	private DBRTimeEvent getDbrTimeEvent() {
 		DBRTimeEvent ev = null;
@@ -103,9 +114,19 @@ public class POJOEvent implements DBRTimeEvent {
 		} catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
 
 			logger.error("Exception creating event object", e);
-			throw new RuntimeException("Unable to serialize a simulation event stream");
-		}
+			throw new RuntimeException("Unable to serialize a simulation event stream");	    }
 		return ev;
+	}
+
+	/**
+     *
+     * @return
+     */
+    @Override
+    public Class<? extends Message> getMessageClass() {
+
+	    DBRTimeEvent ev = getDbrTimeEvent();
+	    return ev.getMessageClass();
 	}
 
 

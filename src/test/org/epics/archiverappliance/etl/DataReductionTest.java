@@ -10,6 +10,7 @@ package org.epics.archiverappliance.etl;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
+import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
 import edu.stanford.slac.archiverappliance.PlainPB.utils.ValidatePBFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -85,9 +86,9 @@ public class DataReductionTest {
         	logger.info("Testing data reduction for " + etlSrc.getPartitionGranularity() + " to " + etlDest.getPartitionGranularity());
 
         	String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "ETL_testMove" + etlSrc.getPartitionGranularity();
-            short currentYear = TimeUtils.getCurrentYear();
+	        short currentYear = TimeUtils.getCurrentYear();
 
-            SimulationEventStream simstream = new SimulationEventStream(ArchDBRTypes.DBR_SCALAR_DOUBLE, new SineGenerator(0), TimeUtils.getStartOfYear(currentYear), TimeUtils.getEndOfYear(currentYear), 1);
+	        SimulationEventStream simstream = new SimulationEventStream(ArchDBRTypes.DBR_SCALAR_DOUBLE, new SineGenerator(0), TimeUtils.getStartOfYear(currentYear), TimeUtils.getEndOfYear(currentYear),1);
         	try(BasicContext context = new BasicContext()) {
         		etlSrc.appendData(context, pvName, simstream);
         	}
@@ -117,20 +118,20 @@ public class DataReductionTest {
         	configService.registerPVToAppliance(pvName, configService.getMyApplianceInfo());
         	configService.getETLLookup().manualControlForUnitTests();
 
-            Instant timeETLruns = TimeUtils.plusDays(TimeUtils.now(), 365 * 10);
+        	Instant timeETLruns = TimeUtils.plusDays(TimeUtils.now(), 365*10);
         	ETLExecutor.runETLs(configService, timeETLruns);
         	logger.info("Done performing ETL as though today is " + TimeUtils.convertToHumanReadableString(timeETLruns));
 
-            Instant startOfRequest = TimeUtils.minusDays(TimeUtils.now(), 366);
-            Instant endOfRequest = TimeUtils.plusDays(TimeUtils.now(), 366);
+        	Instant startOfRequest = TimeUtils.minusDays(TimeUtils.now(), 366);
+        	Instant endOfRequest = TimeUtils.plusDays(TimeUtils.now(), 366);
 
         	// Check that all the files in the destination store are valid files.
-	        Path[] allPaths = PlainPBPathNameUtility.getAllPathsForPV(new ArchPaths(), etlDest.getRootFolder(), pvName, PlainPBStoragePlugin.pbFileExtension, etlDest.getPartitionGranularity(), CompressionMode.NONE, configService.getPVNameToKeyConverter());
+        	Path[] allPaths = PlainPBPathNameUtility.getAllPathsForPV(new ArchPaths(), etlDest.getRootFolder(), pvName, ".pb", etlDest.getPartitionGranularity(), CompressionMode.NONE, configService.getPVNameToKeyConverter());
         	Assertions.assertTrue(allPaths != null, "PlainPBFileNameUtility returns null for getAllFilesForPV for " + pvName);
         	Assertions.assertTrue(allPaths.length > 0, "PlainPBFileNameUtility returns empty array for getAllFilesForPV for " + pvName + " when looking in " + etlDest.getRootFolder());
 
         	for(Path destPath : allPaths) {
-        		Assertions.assertTrue(ValidatePBFile.validatePBFile(destPath, false), "File validation failed for " + destPath.toAbsolutePath().toString());
+        		Assertions.assertTrue(ValidatePBFile.validatePBFile(destPath, false, FileExtension.PB), "File validation failed for " + destPath.toAbsolutePath().toString());
 
         	}
 

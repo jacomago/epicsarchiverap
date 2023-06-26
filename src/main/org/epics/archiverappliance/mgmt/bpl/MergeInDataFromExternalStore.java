@@ -123,7 +123,7 @@ public class MergeInDataFromExternalStore implements BPLAction {
 
 		class MergeInData implements ConversionFunction {
 			@Override
-            public EventStream convertStream(EventStream srcEventStream, Instant streamStartTime, Instant streamEndTime) throws IOException {
+			public EventStream convertStream(EventStream srcEventStream, Instant streamStartTime, Instant streamEndTime) throws IOException {
 				if(srcEventStream.getDescription() instanceof RemotableEventStreamDesc) {
 					RemotableEventStreamDesc desc = (RemotableEventStreamDesc) srcEventStream.getDescription();
 					String serverURL = other + "/data/getData.raw" 
@@ -145,7 +145,7 @@ public class MergeInDataFromExternalStore implements BPLAction {
 			}
 
 			@Override
-            public boolean shouldConvert(EventStream srcEventStream, Instant streamStartTime, Instant streamEndTime) throws IOException {
+			public boolean shouldConvert(EventStream srcEventStream, Instant streamStartTime, Instant streamEndTime) throws IOException {
 				if(srcEventStream.getDescription() instanceof RemotableEventStreamDesc) {
 					RemotableEventStreamDesc desc = (RemotableEventStreamDesc) srcEventStream.getDescription();
 					String serverURL = other + "/data/getData.raw" 

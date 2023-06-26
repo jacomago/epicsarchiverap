@@ -15,7 +15,8 @@ import org.epics.archiverappliance.retrieval.GenerateData;
 import org.epics.archiverappliance.utils.nio.ArchPaths;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -37,21 +38,23 @@ public class PBFileInfoTest {
         Files.deleteIfExists(pBfile);
     }
 
-    @Test
-    public void testPBInfo() throws Exception {
-        PlainPBStoragePlugin storagePlugin = new PlainPBStoragePlugin();
+    @ParameterizedTest
+    @EnumSource(FileExtension.class)
+    public void testPBInfo(FileExtension fileExtension) throws Exception {
+        PlainPBStoragePlugin storagePlugin = new PlainPBStoragePlugin(fileExtension);
         short currentYear = TimeUtils.getCurrentYear();
-        setup.setUpRootFolder(storagePlugin);
+        setup.setUpRootFolder(storagePlugin, fileExtension);
         pBfile = PlainPBPathNameUtility.getPathNameForTime(
                 storagePlugin,
                 pvName,
                 TimeUtils.getStartOfYear(currentYear),
                 new ArchPaths(),
-                (new ConfigServiceForTests(new File("./bin")).getPVNameToKeyConverter()));
+                (new ConfigServiceForTests(new File("./bin")).getPVNameToKeyConverter()),
+                fileExtension);
         Instant start = TimeUtils.getStartOfYear(currentYear);
         Instant end = start.plusSeconds(10000);
-        GenerateData.generateSineForPV(pvName, 0, ArchDBRTypes.DBR_SCALAR_DOUBLE, start, end);
-        PBFileInfo info = new PBFileInfo(pBfile);
+        GenerateData.generateSineForPV(pvName, 0, ArchDBRTypes.DBR_SCALAR_DOUBLE, fileExtension, start, end);
+        FileInfo info = FileInfo.extensionPath(fileExtension, pBfile);
         Assertions.assertEquals(info.getPVName(), pvName, "PVInfo PV name " + info.getPVName());
         Assertions.assertEquals(info.getDataYear(), currentYear, "PVInfo year " + info.getDataYear());
         Assertions.assertEquals(info.getType(), ArchDBRTypes.DBR_SCALAR_DOUBLE, "PVInfo type " + info.getType());

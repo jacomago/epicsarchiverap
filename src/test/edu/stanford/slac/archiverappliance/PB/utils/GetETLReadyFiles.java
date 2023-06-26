@@ -19,8 +19,6 @@ import java.io.File;
 import java.nio.file.Path;
 import java.time.Instant;
 
-import static edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.pbFileExtension;
-
 /**
  * Utility to check what files are ready for ETL for a given PV, folder and partition granularity.
  * @author mshankar
@@ -44,8 +42,8 @@ public class GetETLReadyFiles {
 			throw new Exception("Unable to determine granularity for " + args[2]);
 		}
 
-        Instant now = TimeUtils.now();
-		Path[] paths = PlainPBPathNameUtility.getPathsBeforeCurrentPartition(new ArchPaths(), folder.getAbsolutePath(), pvName, now, pbFileExtension, granularity, CompressionMode.NONE, configService.getPVNameToKeyConverter());
+		Instant now = TimeUtils.now();
+		Path[] paths = PlainPBPathNameUtility.getPathsBeforeCurrentPartition(new ArchPaths(), folder.getAbsolutePath(), pvName, now, ".pb", granularity, CompressionMode.NONE, configService.getPVNameToKeyConverter());
 		if(paths == null || paths.length == 0) {
 			System.out.println("No files for pv " + pvName + " before current partition using time " + TimeUtils.convertToHumanReadableString(now));
 		}

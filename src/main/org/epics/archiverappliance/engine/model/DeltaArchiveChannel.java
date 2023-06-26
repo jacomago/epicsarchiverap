@@ -55,7 +55,7 @@ public class DeltaArchiveChannel extends ArchiveChannel {
 	 */
 	public DeltaArchiveChannel(final String name, final Writer writer,
 			final Enablement enablement, final int buffer_capacity,
-                               final Instant last_timeestamp, final double period_estimate,
+			final Instant last_timeestamp, final double period_estimate,
 			final double delta, final ConfigService configservice,
 			final ArchDBRTypes archdbrtype, final String controlPVname,
 			final int commandThreadID, final boolean usePVAccess) throws Exception {

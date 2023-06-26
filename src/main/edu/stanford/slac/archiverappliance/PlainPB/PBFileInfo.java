@@ -30,30 +30,31 @@ import java.nio.file.Path;
  * @author mshankar
  *
  */
-public class PBFileInfo {
+public class PBFileInfo extends FileInfo {
 	private static final Logger logger = LogManager.getLogger(PBFileInfo.class);
 	PayloadInfo info;
-	DBRTimeEvent firstEvent = null;
-	DBRTimeEvent lastEvent = null;
 	long positionOfFirstSample = 0L;
 	long positionOfLastSample = 0;
 
-    @Override
-    public String toString() {
-        return "PBFileInfo{" +
-                "info=" + info +
-                ", positionOfFirstSample=" + positionOfFirstSample +
-                ", positionOfLastSample=" + positionOfLastSample +
-                ", firstEvent=" + firstEvent +
-                ", lastEvent=" + lastEvent +
-                '}';
-    }
+	@Override
+	public String toString() {
+		return "PBFileInfo{" +
+				"info=" + info +
+				", positionOfFirstSample=" + positionOfFirstSample +
+				", positionOfLastSample=" + positionOfLastSample +
+				", firstEvent=" + firstEvent +
+				", lastEvent=" + lastEvent +
+				'}';
+	}
 
 	public PBFileInfo(Path path) throws IOException {
+
 		this(path, true);
 	}
 
 	public PBFileInfo(Path path, boolean lookupLastEvent) throws IOException {
+		super();
+
 		try(LineByteStream lis = new LineByteStream(path)) {
 			byte[] payloadLine = LineEscaper.unescapeNewLines(lis.readLine());
 			info = PayloadInfo.parseFrom(payloadLine);
@@ -68,7 +69,7 @@ public class PBFileInfo {
 			lis.seekToFirstNewLine();
 			byte[] firstLine = lis.readLine();
 			if(firstLine != null) {
-				firstEvent = (DBRTimeEvent) unmarshallingConstructor.newInstance(getDataYear(), new ByteArray(firstLine));
+				firstEvent = unmarshallingConstructor.newInstance(getDataYear(), new ByteArray(firstLine));
 				if(lookupLastEvent) {
 					// If we do not have a first line, we probably do not have a last line
 					this.lookupLastEvent(path, lis, unmarshallingConstructor);
@@ -77,7 +78,7 @@ public class PBFileInfo {
 				logger.debug("File " + path.toAbsolutePath().toString() + " does not seem to have any first line?");
 			}
 		} catch(Exception e) {
-			logger.warn("Exception determing header information from file " + path.toAbsolutePath().toString(), e);
+			logger.warn("Exception determing header information from file " + path.toAbsolutePath(), e);
 			throw new IOException(e);
 		}
 	}

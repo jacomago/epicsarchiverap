@@ -2,6 +2,7 @@ package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
+import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,6 +32,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -52,8 +54,8 @@ public class PlainPBConversionTest {
 
     @BeforeAll
     public static void setup() {
-    }
 
+    }
     public static Stream<Arguments> providePlainPBConversion() {
         return Stream.of(
                         provideConversionForGranularity(PartitionGranularity.PARTITION_HOUR),
@@ -63,34 +65,40 @@ public class PlainPBConversionTest {
     }
 
     private static Stream<Arguments> provideConversionForGranularity(PartitionGranularity granularity) {
-        return Stream.of(
-                Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_INT, ArchDBRTypes.DBR_SCALAR_DOUBLE),
-                Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_ENUM, ArchDBRTypes.DBR_SCALAR_DOUBLE),
-                Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_FLOAT, ArchDBRTypes.DBR_SCALAR_DOUBLE),
-                Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_ENUM, ArchDBRTypes.DBR_SCALAR_INT),
-                Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_INT, ArchDBRTypes.DBR_SCALAR_ENUM),
-                Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_DOUBLE, ArchDBRTypes.DBR_SCALAR_ENUM),
-                Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_DOUBLE, ArchDBRTypes.DBR_SCALAR_INT),
-                Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_DOUBLE, ArchDBRTypes.DBR_SCALAR_FLOAT),
-                Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_SHORT, ArchDBRTypes.DBR_SCALAR_INT),
-                Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_SHORT, ArchDBRTypes.DBR_SCALAR_FLOAT),
-                Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_SHORT, ArchDBRTypes.DBR_SCALAR_DOUBLE));
+        return Arrays.stream(FileExtension.values())
+                .flatMap(f -> Stream.of(
+                        Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_INT, ArchDBRTypes.DBR_SCALAR_DOUBLE, f),
+                        Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_ENUM, ArchDBRTypes.DBR_SCALAR_DOUBLE, f),
+                        Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_FLOAT, ArchDBRTypes.DBR_SCALAR_DOUBLE, f),
+                        Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_ENUM, ArchDBRTypes.DBR_SCALAR_INT, f),
+                        Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_INT, ArchDBRTypes.DBR_SCALAR_ENUM, f),
+                        Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_DOUBLE, ArchDBRTypes.DBR_SCALAR_ENUM, f),
+                        Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_DOUBLE, ArchDBRTypes.DBR_SCALAR_INT, f),
+                        Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_DOUBLE, ArchDBRTypes.DBR_SCALAR_FLOAT, f),
+                        Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_SHORT, ArchDBRTypes.DBR_SCALAR_INT, f),
+                        Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_SHORT, ArchDBRTypes.DBR_SCALAR_FLOAT, f),
+                        Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_SHORT, ArchDBRTypes.DBR_SCALAR_DOUBLE, f)));
     }
 
-    public static Stream<PartitionGranularity> provideFailedConversionForDBRType() {
-        return Stream.of(
-                PartitionGranularity.PARTITION_HOUR,
-                PartitionGranularity.PARTITION_DAY,
-                PartitionGranularity.PARTITION_MONTH);
+    public static Stream<Arguments> provideFailedConversionForDBRType() {
+        return Arrays.stream(FileExtension.values())
+                .flatMap(f -> Stream.of(
+                        Arguments.of(PartitionGranularity.PARTITION_HOUR, f),
+                        Arguments.of(PartitionGranularity.PARTITION_DAY, f),
+                        Arguments.of(PartitionGranularity.PARTITION_MONTH, f)));
     }
 
     @ParameterizedTest
     @MethodSource("providePlainPBConversion")
     public void testThruNumberConversionForDBRType(
-            PartitionGranularity granularity, ArchDBRTypes srcDBRType, ArchDBRTypes destDBRType) throws Exception {
-        PlainPBStoragePlugin storagePlugin = new PlainPBStoragePlugin();
+            PartitionGranularity granularity,
+            ArchDBRTypes srcDBRType,
+            ArchDBRTypes destDBRType,
+            FileExtension fileExtension)
+            throws Exception {
+        PlainPBStoragePlugin storagePlugin = new PlainPBStoragePlugin(fileExtension);
         PBCommonSetup setup = new PBCommonSetup();
-        setup.setUpRootFolder(storagePlugin, "PlainPBConversionTest", granularity);
+        setup.setUpRootFolder(storagePlugin, "PlainPBConversionTest", granularity, fileExtension);
         logger.info("Testing conversion from " + srcDBRType.toString() + " to " + destDBRType.toString());
         String pvName = "PlainPBConversionTest_" + srcDBRType + "_" + destDBRType;
         int periodInSeconds = granularity.getApproxSecondsPerChunk() / ratio;
@@ -109,10 +117,11 @@ public class PlainPBConversionTest {
 
     @ParameterizedTest
     @MethodSource("provideFailedConversionForDBRType")
-    public void testFailedConversionForDBRType(PartitionGranularity granularity) throws Exception {
-        PlainPBStoragePlugin storagePlugin = new PlainPBStoragePlugin();
+    public void testFailedConversionForDBRType(PartitionGranularity granularity, FileExtension fileExtension)
+            throws Exception {
+        PlainPBStoragePlugin storagePlugin = new PlainPBStoragePlugin(fileExtension);
         PBCommonSetup setup = new PBCommonSetup();
-        setup.setUpRootFolder(storagePlugin, "PlainPBConversionTest", granularity);
+        setup.setUpRootFolder(storagePlugin, "PlainPBConversionTest", granularity, fileExtension);
         logger.info("Testing failed conversion from " + ArchDBRTypes.DBR_SCALAR_DOUBLE + " to "
                 + ArchDBRTypes.DBR_WAVEFORM_STRING + ". You could see an exception here; ignore it. It is expected");
         String pvName =

@@ -7,6 +7,7 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
+import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
@@ -35,8 +36,6 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.nio.file.Path;
 import java.time.Instant;
-
-import static edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.pbFileExtension;
 
 /**
  * Test if the named flags control of ETL works if the flag is set and unset
@@ -195,15 +194,15 @@ public class NamedFlagETLTest {
         	ETLExecutor.runETLs(configService, timeETLruns);
         	logger.info("Done performing ETL as though today is " + TimeUtils.convertToHumanReadableString(timeETLruns));
 
-            Instant startOfRequest = TimeUtils.minusDays(TimeUtils.now(), 366);
-            Instant endOfRequest = TimeUtils.plusDays(TimeUtils.now(), 366);
+        	Instant startOfRequest = TimeUtils.minusDays(TimeUtils.now(), 366);
+        	Instant endOfRequest = TimeUtils.plusDays(TimeUtils.now(), 366);
 
         	// Check that all the files in the destination store are valid files.
-	        Path[] allPaths = PlainPBPathNameUtility.getAllPathsForPV(new ArchPaths(), etlDest.getRootFolder(), pvName, pbFileExtension, etlDest.getPartitionGranularity(), CompressionMode.NONE, configService.getPVNameToKeyConverter());
+	        Path[] allPaths = PlainPBPathNameUtility.getAllPathsForPV(new ArchPaths(), etlDest.getRootFolder(), pvName, FileExtension.PB.getExtensionString(), etlDest.getPartitionGranularity(), CompressionMode.NONE, configService.getPVNameToKeyConverter());
         	Assertions.assertTrue(allPaths != null, "PlainPBFileNameUtility returns null for getAllFilesForPV for " + pvName);
 
         	for(Path destPath : allPaths) {
-        		Assertions.assertTrue(ValidatePBFile.validatePBFile(destPath, false), "File validation failed for " + destPath.toAbsolutePath().toString());
+        		Assertions.assertTrue(ValidatePBFile.validatePBFile(destPath, false, FileExtension.PB), "File validation failed for " + destPath.toAbsolutePath().toString());
         	}
 
         	logger.info("Asking for data between" 

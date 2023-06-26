@@ -210,7 +210,7 @@ public class LineByteStream implements Closeable {
 	}
 	
 	/**
-	 * Seeks and positions the pointer to to the last line in the file.
+	 * Seeks and positions the pointer to the last line in the file.
 	 * The file pointer is located just before the last line so that readLine gets a valid line.
 	 * About the only thing once can do after this is to read a line and stop...	 
 	 * @throws IOException  &emsp;

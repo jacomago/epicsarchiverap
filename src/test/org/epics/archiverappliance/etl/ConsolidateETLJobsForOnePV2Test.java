@@ -140,11 +140,11 @@ public class ConsolidateETLJobsForOnePV2Test {
                 filesShortTerm.length != 0, "there should be PB files int short term storage but there is no ");
         Assertions.assertTrue(
                 filesMediumTerm.length != 0, "there should be PB files int medium term storage but there is no ");
-        // ArchUnitTestConsolidateETLJobsForOnePVTest:_pb.zip
-        File zipFileOflongTermFile = new File(longTermFolderName + "/" + pvName + ":_pb.zip");
+        // ArchUnitTestConsolidateETLJobsForOnePVTest+_pb.zip
+        File zipFileOflongTermFile = new File(longTermFolderName + "/" + pvName + "+_pb.zip");
         Assertions.assertTrue(
                 zipFileOflongTermFile.exists(),
-                longTermFolderName + "/" + pvName + ":_pb.zip shoule exist but it doesn't");
+                longTermFolderName + "/" + pvName + "+_pb.zip shoule exist but it doesn't");
 
         // consolidate
         // String storageName="LTS";

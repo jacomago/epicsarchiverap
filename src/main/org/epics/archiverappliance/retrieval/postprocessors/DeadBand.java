@@ -55,7 +55,7 @@ public class DeadBand implements PostProcessor {
 	}
 
 	@Override
-    public long estimateMemoryConsumption(String pvName, PVTypeInfo typeInfo, Instant start, Instant end, HttpServletRequest req) {
+	public long estimateMemoryConsumption(String pvName, PVTypeInfo typeInfo, Instant start, Instant end, HttpServletRequest req) {
 		float storageRate = typeInfo.getComputedStorageRate();
 		long numSeconds = TimeUtils.convertToEpochSeconds(end) - TimeUtils.convertToEpochSeconds(start);
 		// Add a fudge factor of 2 for java 
@@ -131,7 +131,7 @@ public class DeadBand implements PostProcessor {
 								logger.debug("Writing out from magnitude change at " + TimeUtils.convertToISO8601String(clone.getEventTimeStamp()));
 								continue;
 							}
-						} catch(PBParseException ex) { 
+						} catch (PBParseException ex) {
 							logger.error("Skipping possible corrupted event for pv " + strm.getDescription());
 						}
 					}

@@ -13,15 +13,15 @@ import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.utils.nio.ArchPaths;
 import org.epics.archiverappliance.utils.simulation.SimulationEventStream;
 import org.epics.archiverappliance.utils.simulation.SineGenerator;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.time.Instant;
-
-import static edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.pbFileExtension;
 
 /**
  * Tests that the PB plugin appendData stores data in clean partitions.
@@ -38,13 +38,17 @@ public class CleanPartitionsTest {
         configService = new ConfigServiceForTests(new File("./bin"));
     }
 
-    @Test
-    public void testCleanPartitions() throws Exception {
+    @AfterEach
+    public void tearDown() throws Exception {}
+
+    @ParameterizedTest
+    @EnumSource(FileExtension.class)
+    public void testCleanPartitions(FileExtension fileExtension) throws Exception {
         for (PartitionGranularity granularity : PartitionGranularity.values()) {
-            PlainPBStoragePlugin pbPlugin = new PlainPBStoragePlugin();
+            PlainPBStoragePlugin pbPlugin = new PlainPBStoragePlugin(fileExtension);
             PBCommonSetup srcSetup = new PBCommonSetup();
 
-            srcSetup.setUpRootFolder(pbPlugin, "TestCleanPartitions_" + granularity, granularity);
+            srcSetup.setUpRootFolder(pbPlugin, "TestCleanPartitions_" + granularity, granularity, fileExtension);
 
             String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "CleanPartition"
                     + pbPlugin.getPartitionGranularity();
@@ -64,12 +68,13 @@ public class CleanPartitionsTest {
                     new ArchPaths(),
                     pbPlugin.getRootFolder(),
                     pvName,
-                    pbFileExtension,
+                    fileExtension.getExtensionString(),
                     pbPlugin.getPartitionGranularity(),
                     CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());
+            Assertions.assertTrue(allPaths.length > 1);
             for (Path pbFile : allPaths) {
-                PBFileInfo fileInfo = new PBFileInfo(pbFile);
+                FileInfo fileInfo = FileInfo.extensionPath(fileExtension, pbFile);
                 StartEndTimeFromName chunkTimes = PlainPBPathNameUtility.determineTimesFromFileName(
                         pvName,
                         pbFile.getFileName().toString(),
@@ -89,11 +94,11 @@ public class CleanPartitionsTest {
                 Assertions.assertTrue(
                         fileInfo.getLastEvent().getEventTimeStamp().isBefore(chunkTimes.pathDataEndTime.toInstant())
                                 || fileInfo.getLastEvent()
-                                .getEventTimeStamp()
-                                .equals(chunkTimes.pathDataEndTime.toInstant()),
+                                        .getEventTimeStamp()
+                                        .equals(chunkTimes.pathDataEndTime.toInstant()),
                         "End time as determined by PBFileinfo "
                                 + fileInfo.getLastEvent().getEventTimeStamp()
-                                + " is later than latest time as determined by partition name "
+                                + " is later than latest time as determined by partition name"
                                 + chunkTimes.pathDataEndTime);
             }
             srcSetup.deleteTestFolder();

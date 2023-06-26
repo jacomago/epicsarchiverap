@@ -41,7 +41,7 @@ public class UnitOfRetrieval implements Callable<RetrievalResult> {
 	private List<Callable<EventStream>> failoverStrms;
 
 
-    public UnitOfRetrieval(String desc, Reader reader, String pvName, String pvNameFromRequest, Instant start, Instant end, PostProcessor postProcessor, BasicContext context) {
+	public UnitOfRetrieval(String desc, Reader reader, String pvName, String pvNameFromRequest, Instant start, Instant end, PostProcessor postProcessor, BasicContext context) {
 		this.description = desc;
 		this.reader = reader;
 		this.pvName = pvName;
@@ -90,12 +90,12 @@ public class UnitOfRetrieval implements Callable<RetrievalResult> {
 	}
 
 
-    public Instant getStart() {
+	public Instant getStart() {
 		return start;
 	}
 
 
-    public Instant getEnd() {
+	public Instant getEnd() {
 		return end;
 	}
 

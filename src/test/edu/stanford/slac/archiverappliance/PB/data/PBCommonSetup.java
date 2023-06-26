@@ -8,6 +8,7 @@
 package edu.stanford.slac.archiverappliance.PB.data;
 
 
+import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -27,7 +28,7 @@ import java.util.Set;
  *
  */
 public class PBCommonSetup {
-	private static Logger logger = LogManager.getLogger(PBCommonSetup.class.getName());
+	private static final Logger logger = LogManager.getLogger(PBCommonSetup.class.getName());
 	private File tempFolderForTests;
 	private String testSpecificFolder;
     static ConfigServiceForTests configService;
@@ -52,15 +53,15 @@ public class PBCommonSetup {
 
 	}
 
-	public void setUpRootFolder(PlainPBStoragePlugin pbplugin) throws Exception {
+	public void setUpRootFolder(PlainPBStoragePlugin pbplugin, FileExtension fileExtension) throws Exception {
 		setUpRootFolder();
 		tempFolderForTests = new File(configService.getPBRootFolder());
-		pbplugin.initialize("pb://localhost?name=UnitTest&rootFolder="+tempFolderForTests+"&partitionGranularity=PARTITION_YEAR", configService);
+		pbplugin.initialize(fileExtension.getSuffix() + "://localhost?name=UnitTest&rootFolder="+tempFolderForTests+"&partitionGranularity=PARTITION_YEAR", configService);
 		pbplugin.setRootFolder(tempFolderForTests.getAbsolutePath());
 		pbplugin.setName(tempFolderForTests.getAbsolutePath());
 	}
 	
-	public void setUpRootFolder(PlainPBStoragePlugin pbplugin, String testSpecificFolder) throws Exception {
+	public void setUpRootFolder(PlainPBStoragePlugin pbplugin, String testSpecificFolder, FileExtension fileExtension) throws Exception {
 		setUpRootFolder();
 		this.testSpecificFolder = testSpecificFolder;
 		
@@ -70,14 +71,14 @@ public class PBCommonSetup {
 		}
 		tempFolderForTests.mkdirs();
 
-		pbplugin.initialize("pb://localhost?name=UnitTest&rootFolder="+tempFolderForTests+"&partitionGranularity=PARTITION_YEAR", configService);
+		pbplugin.initialize(fileExtension.getSuffix() + "://localhost?name=UnitTest&rootFolder="+tempFolderForTests+"&partitionGranularity=PARTITION_YEAR", configService);
 
 		
 		pbplugin.setRootFolder(tempFolderForTests.getAbsolutePath());
 		pbplugin.setName(tempFolderForTests.getAbsolutePath());
 	}
 	
-	public void setUpRootFolder(PlainPBStoragePlugin pbplugin, String testSpecificFolder, PartitionGranularity partitionGranularity) throws Exception {
+	public void setUpRootFolder(PlainPBStoragePlugin pbplugin, String testSpecificFolder, PartitionGranularity partitionGranularity, FileExtension fileExtension) throws Exception {
 		setUpRootFolder();
 		this.testSpecificFolder = testSpecificFolder;
 		
@@ -87,7 +88,7 @@ public class PBCommonSetup {
 		}
 		tempFolderForTests.mkdirs();
 
-		pbplugin.initialize("pb://localhost?name=UnitTest&rootFolder="+tempFolderForTests+"&partitionGranularity="+partitionGranularity.toString(), configService);
+		pbplugin.initialize(fileExtension.getSuffix() + "://localhost?name=UnitTest&rootFolder="+tempFolderForTests+"&partitionGranularity="+partitionGranularity.toString(), configService);
 
 		
 		pbplugin.setRootFolder(tempFolderForTests.getAbsolutePath());

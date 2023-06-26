@@ -67,7 +67,7 @@ public class MergeDataFromExternalStoreTest {
 	 * @param startingOffset - Use 0 for even seconds; 1 for odd seconds. When merged, we test to make sure; we get data one second apart.
 	 * @throws Exception
 	 */
-    private long generateMTSData(String applURL, String applianceName, Instant lastMonth, int startingOffset)
+	private long generateMTSData(String applURL, String applianceName, Instant lastMonth, int startingOffset)
 			throws Exception {
 		int genEventCount = 0;
 		StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=LTS&rootFolder=" + "tomcat_"+ this.getClass().getSimpleName() + "/" + applianceName + "/mts" + "&partitionGranularity=PARTITION_DAY", configService);
@@ -165,7 +165,7 @@ public class MergeDataFromExternalStoreTest {
 	@Test
 	public void testRetrieval() throws Exception {
 		// Register the PV with both appliances and generate data.
-        Instant lastMonth = TimeUtils.minusDays(TimeUtils.now(), 31);
+		Instant lastMonth = TimeUtils.minusDays(TimeUtils.now(), 31);
 		long dCount = generateMTSData("http://localhost:17665", "dest_appliance", lastMonth, 0);
 		long oCount = generateMTSData("http://localhost:17669", "other_appliance", lastMonth, 1);
 		tCount = dCount + oCount;

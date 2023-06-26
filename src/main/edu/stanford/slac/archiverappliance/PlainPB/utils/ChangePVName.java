@@ -37,7 +37,7 @@ import edu.stanford.slac.archiverappliance.PlainPB.PBFileInfo;
  *
  */
 public class ChangePVName {
-	private static Logger logger = LogManager.getLogger(ChangePVName.class.getName());
+	private static final Logger logger = LogManager.getLogger(ChangePVName.class.getName());
 	
 	/**
 	 * @param args  &emsp;

@@ -35,7 +35,7 @@ import org.epics.archiverappliance.config.exception.ConfigException;
  * @author mshankar
  */
 public class ConvertPVNameToKey implements PVNameToKeyMapping {
-	private static Logger configlogger = LogManager.getLogger("config." + ConvertPVNameToKey.class.getName());
+	private static final Logger configlogger = LogManager.getLogger("config." + ConvertPVNameToKey.class.getName());
 	private static final String SITE_NAME_SPACE_SEPARATORS = "org.epics.archiverappliance.config.ConvertPVNameToKey.siteNameSpaceSeparators";
 	private static final String SITE_NAME_SPACE_TERMINATOR = "org.epics.archiverappliance.config.ConvertPVNameToKey.siteNameSpaceTerminator";
 	private String siteNameSpaceSeparators;
@@ -53,7 +53,8 @@ public class ConvertPVNameToKey implements PVNameToKeyMapping {
 	public String convertPVNameToKey(String pvName) {
 		// First check the local cache for the mapping.
 		String chunkKey = chunkKeys.get(pvName);
-		if(chunkKey != null) return chunkKey;
+		if(chunkKey != null)
+			return chunkKey;
 		PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
 		if(typeInfo == null) { 
 			return generateChunkKey(pvName);

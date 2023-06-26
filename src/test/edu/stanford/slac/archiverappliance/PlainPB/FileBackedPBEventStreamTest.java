@@ -1,6 +1,5 @@
 package edu.stanford.slac.archiverappliance.PlainPB;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -24,6 +23,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
@@ -31,6 +31,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.stream.Stream;
@@ -59,6 +62,9 @@ public class FileBackedPBEventStreamTest {
     static ArchDBRTypes dbrType = ArchDBRTypes.DBR_SCALAR_DOUBLE;
     static String storagePBPluginString = "pb://localhost?name=" + FileBackedPBEventStreamTest.class.getSimpleName()
             + "&rootFolder=" + testFolder.getAbsolutePath() + "&partitionGranularity=PARTITION_YEAR";
+    static String storageParquetPluginString =
+            "parquet://localhost?name=" + FileBackedPBEventStreamTest.class.getSimpleName() + "&rootFolder="
+                    + testFolder.getAbsolutePath() + "&partitionGranularity=PARTITION_YEAR";
     private static long events;
 
     private static final Instant oneWeekIntoYear =
@@ -74,28 +80,23 @@ public class FileBackedPBEventStreamTest {
 
     @BeforeAll
     public static void setUp() throws Exception {
-        deleteData();
-        events = createTestData();
+        events = createTestData(FileExtension.PB);
+        createTestData(FileExtension.PARQUET);
     }
 
     @AfterAll
-    public static void tearDown() throws IOException {
-        deleteData();
-    }
+    public static void tearDown() throws Exception {}
 
-    private static void deleteData() throws IOException {
-        FileUtils.deleteDirectory(new File(getStoragePlugin().getRootFolder()));
-    }
-
-    private static long createTestData() throws IOException {
-        PlainPBStoragePlugin storagePlugin = getStoragePlugin();
+    private static long createTestData(FileExtension fileExtension) throws IOException {
+        PlainPBStoragePlugin storagePlugin = getStoragePlugin(fileExtension);
+        int phasediffindegrees = 10;
         short currentYear = TimeUtils.getCurrentYear();
         Instant start = TimeUtils.getStartOfYear(currentYear);
         Instant end = TimeUtils.getEndOfYear(currentYear);
         logger.info("start {} end {}", start, end);
         SimulationEventStream simstream = new SimulationEventStream(
                 dbrType,
-                new SineGenerator(10),
+                new SineGenerator(phasediffindegrees),
                 start,
                 end,
                 1);
@@ -105,18 +106,22 @@ public class FileBackedPBEventStreamTest {
         }
     }
 
-    private static PlainPBStoragePlugin getStoragePlugin() throws IOException {
+    private static PlainPBStoragePlugin getStoragePlugin(FileExtension fileExtension) throws IOException {
         return (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                storagePBPluginString,
+                switch (fileExtension) {
+                    case PARQUET -> storageParquetPluginString;
+                    case PB -> storagePBPluginString;
+                },
                 configService);
     }
 
     private static Stream<Arguments> provideTimeBasedIterator() {
         long twoDays = PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() * 2L;
-        return Arrays.stream(new Boolean[]{true, false})
+        return Arrays.stream(FileExtension.values()).flatMap(f -> Arrays.stream(new Boolean[] {true, false})
                 .flatMap(sS -> Stream.of(
                         // Start 11 seconds into the year and get two seconds worth of data.
                         Arguments.of(
+                                f,
                                 sS,
                                 convertFromEpochSeconds(getStartOfCurrentYearInSeconds() + 11L, 0),
                                 convertFromEpochSeconds(getStartOfCurrentYearInSeconds() + 11L + 2, 0),
@@ -124,6 +129,7 @@ public class FileBackedPBEventStreamTest {
 
                         // Start one second before the year and end one second in to get one second of data
                         Arguments.of(
+                                f,
                                 sS,
                                 convertFromEpochSeconds(getStartOfCurrentYearInSeconds() - 1, 0),
                                 convertFromEpochSeconds(getStartOfCurrentYearInSeconds() - 1 + 2, 0),
@@ -131,6 +137,7 @@ public class FileBackedPBEventStreamTest {
 
                         // Start at one second before end of year and end 2 seconds later to get 1 second
                         Arguments.of(
+                                f,
                                 sS,
                                 convertFromEpochSeconds(
                                         getStartOfYearInSeconds(getCurrentYear())
@@ -141,30 +148,32 @@ public class FileBackedPBEventStreamTest {
                                                 - 1
                                                 + 2,
                                         0),
-                                1 + 1)));
+                                1 + 1))));
     }
 
-    @Test
-    public void testCompleteStream() throws Exception {
-        PlainPBStoragePlugin storagePlugin = getStoragePlugin();
+    @ParameterizedTest
+    @EnumSource(FileExtension.class)
+    public void testCompleteStream(FileExtension fileExtension) throws Exception {
 
         try (BasicContext context = new BasicContext()) {
             long startMs = System.currentTimeMillis();
             Path path = PlainPBPathNameUtility.getPathNameForTime(
-                    storagePlugin,
+                    getStoragePlugin(fileExtension),
                     pvName,
                     oneWeekIntoYear,
                     context.getPaths(),
-                    configService.getPVNameToKeyConverter());
-	        Assertions.assertNotNull(path, "Did we not write any data?");
-            long eventCount = 0;
-            try (FileBackedPBEventStream stream = new FileBackedPBEventStream(pvName, path, dbrType)) {
+                    configService.getPVNameToKeyConverter(),
+                    fileExtension);
+            Assertions.assertNotNull(path, "Did we not write any data?");
+            int eventCount = 0;
+            try (EventStream stream = FileStreamCreator.getStream(fileExtension, pvName, path, dbrType)) {
                 for (Event e : stream) {
                     e.getEventTimeStamp();
                     eventCount++;
                 }
             }
-            Assertions.assertEquals(events, eventCount, "Expected " + events + " got " + eventCount);
+            int expectedSamples = (int) events;
+            Assertions.assertEquals(expectedSamples, eventCount, "Expected " + expectedSamples + " got " + eventCount);
             long endMs = System.currentTimeMillis();
             logger.info("Time for " + eventCount + " samples = " + (endMs - startMs) + "(ms)");
         }
@@ -172,7 +181,7 @@ public class FileBackedPBEventStreamTest {
 
     @Test
     public void testLocationBasedIterator() throws Exception {
-        PlainPBStoragePlugin storagePlugin = getStoragePlugin();
+        PlainPBStoragePlugin storagePlugin = getStoragePlugin(FileExtension.PB);
 
         try (BasicContext context = new BasicContext()) {
             Path path = PlainPBPathNameUtility.getPathNameForTime(
@@ -180,15 +189,16 @@ public class FileBackedPBEventStreamTest {
                     pvName,
                     oneWeekIntoYear,
                     context.getPaths(),
-                    configService.getPVNameToKeyConverter());
-            long eventCount = 0;
+                    configService.getPVNameToKeyConverter(),
+                    FileExtension.PB);
+            int eventCount = 0;
             try (FileBackedPBEventStream stream =
-                    new FileBackedPBEventStream(pvName, path, dbrType, 0, Files.size(path))) {
+                         new FileBackedPBEventStream(pvName, path, dbrType, 0, Files.size(path))) {
                 for (@SuppressWarnings("unused") Event e : stream) {
                     eventCount++;
                 }
             }
-            long expectedSamples = events;
+            int expectedSamples = (int) events;
             Assertions.assertEquals(expectedSamples, eventCount, "Expected " + expectedSamples + " got " + eventCount);
         }
 
@@ -198,35 +208,38 @@ public class FileBackedPBEventStreamTest {
                     pvName,
                     oneWeekIntoYear,
                     context.getPaths(),
-                    configService.getPVNameToKeyConverter());
-            long eventCount = 0;
+                    configService.getPVNameToKeyConverter(),
+                    FileExtension.PB);
+            int eventCount = 0;
             try (FileBackedPBEventStream stream =
-                    new FileBackedPBEventStream(pvName, path, dbrType, Files.size(path), Files.size(path) + 1)) {
+                         new FileBackedPBEventStream(pvName, path, dbrType, Files.size(path), Files.size(path) + 1)) {
                 for (@SuppressWarnings("unused") Event e : stream) {
                     eventCount++;
                 }
             }
-            long expectedSamples = 0;
+            int expectedSamples = 0;
             Assertions.assertEquals(expectedSamples, eventCount, "Expected " + expectedSamples + " got " + eventCount);
         }
     }
 
     @ParameterizedTest
     @MethodSource("provideTimeBasedIterator")
-    public void testTimeBasedIterator(boolean skipSearch, Instant start, Instant end, long expectedEventCount)
+    public void testTimeBasedIterator(
+            FileExtension fileExtension, boolean skipSearch, Instant start, Instant end, int expectedEventCount)
             throws IOException {
 
-        PlainPBStoragePlugin storagePlugin = getStoragePlugin();
+        PlainPBStoragePlugin storagePlugin = getStoragePlugin(fileExtension);
         try (BasicContext context = new BasicContext()) {
             Path path = PlainPBPathNameUtility.getPathNameForTime(
                     storagePlugin,
                     pvName,
                     oneWeekIntoYear,
                     context.getPaths(),
-                    configService.getPVNameToKeyConverter());
-            long eventCount = 0;
-            try (FileBackedPBEventStream stream =
-                         new FileBackedPBEventStream(pvName, path, dbrType, start, end, skipSearch)) {
+                    configService.getPVNameToKeyConverter(),
+                    fileExtension);
+            int eventCount = 0;
+            try (EventStream stream =
+                         FileStreamCreator.getTimeStream(fileExtension, pvName, path, dbrType, start, end, skipSearch)) {
                 long eventEpochSeconds = 0;
                 for (Event e : stream) {
                     eventEpochSeconds = e.getEpochSeconds();
@@ -250,26 +263,21 @@ public class FileBackedPBEventStreamTest {
 
     @Test
     public void testLocationBasedEventBeforeTime() throws IOException {
-        PlainPBStoragePlugin storagePlugin = getStoragePlugin();
 
         try (BasicContext context = new BasicContext()) {
             Path path = PlainPBPathNameUtility.getPathNameForTime(
-                    storagePlugin,
+                    getStoragePlugin(FileExtension.PB),
                     pvName,
                     oneWeekIntoYear,
                     context.getPaths(),
-                    configService.getPVNameToKeyConverter());
+                    configService.getPVNameToKeyConverter(),
+                    FileExtension.PB);
             // Start 11 days into the year and get two days worth of data.
             long epochSeconds = getStartOfCurrentYearInSeconds()
                     + 7L * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
             Instant time = convertFromEpochSeconds(epochSeconds, 0);
             try (EventStream stream = FileStreamCreator.getTimeStream(
-                    pvName,
-                    path,
-                    dbrType,
-                    time,
-                    time.plusSeconds(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() * 2L),
-                    false)) {
+                    FileExtension.PB, pvName, path, dbrType, time, getEndOfYear(getCurrentYear()), false)) {
                 boolean firstEvent = true;
                 for (Event e : stream) {
                     if (firstEvent) {
@@ -293,17 +301,17 @@ public class FileBackedPBEventStreamTest {
         }
     }
 
-    @Test
-    public void makeSureWeGetTheLastEventInTheFile() throws IOException {
-        PlainPBStoragePlugin storagePlugin = getStoragePlugin();
-
+    @ParameterizedTest
+    @EnumSource(FileExtension.class)
+    public void makeSureWeGetTheLastEventInTheFile(FileExtension fileExtension) throws IOException {
         try (BasicContext context = new BasicContext()) {
             Path path = PlainPBPathNameUtility.getPathNameForTime(
-                    storagePlugin,
+                    getStoragePlugin(fileExtension),
                     pvName,
                     oneWeekIntoYear,
                     context.getPaths(),
-                    configService.getPVNameToKeyConverter());
+                    configService.getPVNameToKeyConverter(),
+                    fileExtension);
             // Start near the end of the year
             long startEpochSeconds = getStartOfCurrentYearInSeconds()
                     + 360L * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
@@ -311,12 +319,12 @@ public class FileBackedPBEventStreamTest {
             Instant endTime = convertFromEpochSeconds(
                     startEpochSeconds + 20L * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), 0);
             Event finalEvent = null;
-            try (FileBackedPBEventStream stream =
-                    new FileBackedPBEventStream(pvName, path, dbrType, startTime, endTime, false)) {
+            try (EventStream stream =
+                         FileStreamCreator.getTimeStream(fileExtension, pvName, path, dbrType, startTime, endTime, false)) {
                 boolean firstEvent = true;
                 for (Event e : stream) {
                     if (firstEvent) {
-                        Assertions.assertEquals(startTime, e.getEventTimeStamp());
+                        Assertions.assertEquals( startTime,e.getEventTimeStamp());
                         firstEvent = false;
                     } else {
                         finalEvent = e.makeClone();
@@ -336,10 +344,11 @@ public class FileBackedPBEventStreamTest {
      * For this we generate data into a new PB file.
      * @throws IOException
      */
-    @Test
-    public void testHighRateEndLocation() throws IOException {
+    @ParameterizedTest
+    @EnumSource(FileExtension.class)
+    public void testHighRateEndLocation(FileExtension fileExtension) throws IOException {
         PlainPBStoragePlugin highRatePlugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                PlainPBStoragePlugin.pbFileSuffix + "://localhost?name=FileBackedPBEventStreamTest&rootFolder="
+                fileExtension.getSuffix() + "://localhost?name=FileBackedPBEventStreamTest&rootFolder="
                         + testFolder.getAbsolutePath() + "&partitionGranularity=PARTITION_YEAR",
                 configService);
         String highRatePVName =
@@ -383,12 +392,13 @@ public class FileBackedPBEventStreamTest {
                     highRatePVName,
                     oneWeekIntoYear,
                     context.getPaths(),
-                    configService.getPVNameToKeyConverter());
-            try (FileBackedPBEventStream stream =
-                    new FileBackedPBEventStream(highRatePVName, path, dbrType, startTime, endTime, false)) {
+                    configService.getPVNameToKeyConverter(),
+                    fileExtension);
+            try (EventStream stream = FileStreamCreator.getTimeStream(
+                    fileExtension, highRatePVName, path, dbrType, startTime, endTime, false)) {
                 boolean firstEvent = true;
-                long eventCount = 0;
-                long expectedEventCount = 10;
+                int eventCount = 0;
+                int expectedEventCount = 10;
                 for (Event e : stream) {
                     eventCount++;
                     if (firstEvent) {

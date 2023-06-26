@@ -34,19 +34,19 @@ import java.util.Iterator;
  */
 public class MultiFilePBEventStream implements EventStream, RemotableOverRaw {
 	private static final Logger logger = LogManager.getLogger(MultiFilePBEventStream.class);
-	private LineByteStreamCreator istreams[] = null;
-	private String pvName;
-	private ArchDBRTypes type;
-	private RemotableEventStreamDesc desc;
+	private LineByteStreamCreator[] istreams = null;
+	private final String pvName;
+	private final ArchDBRTypes type;
+	private final RemotableEventStreamDesc desc;
 	private MultiFilePBEventStreamIterator theIterator = null;
 
-    public MultiFilePBEventStream(Path[] paths, String pvName, ArchDBRTypes dbrtype, Instant startTime, Instant endTime) throws IOException {
+	public MultiFilePBEventStream(Path[] paths, String pvName, ArchDBRTypes dbrtype, Instant startTime, Instant endTime) throws IOException {
 		this.pvName = pvName;
 		this.type = dbrtype;
 		
 		YearSecondTimestamp startYTS = TimeUtils.convertToYearSecondTimestamp(startTime);
 	    YearSecondTimestamp endYTS = TimeUtils.convertToYearSecondTimestamp(endTime);
-		
+
 		// We need at least two files for this event stream to work correctly.
 		assert(paths.length > 1);
 		PBFileInfo pbinfo = new PBFileInfo(paths[0]);
@@ -102,7 +102,7 @@ public class MultiFilePBEventStream implements EventStream, RemotableOverRaw {
 					}
 				} else {
 					// Use whole file for chunks in the middle.
-					logger.debug("Using all the data from file " + path.toAbsolutePath().toString());
+					logger.debug("Using all the data from file " + path.toAbsolutePath());
 					istreams[i] = new LineByteStreamCreator(path, pvName, type);
 				}
 			} catch(IOException ex) {

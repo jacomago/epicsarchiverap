@@ -7,7 +7,8 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PB.data;
 
-import edu.stanford.slac.archiverappliance.PlainPB.PBFileInfo;
+import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
+import edu.stanford.slac.archiverappliance.PlainPB.FileInfo;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
@@ -28,7 +29,8 @@ import org.epics.archiverappliance.utils.nio.ArchPaths;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -53,10 +55,12 @@ public class LargePBLineTest {
     public void tearDown() throws Exception {
         largeLineSetup.deleteTestFolder();
     }
-    @Test
-    public void testLargeLines() throws Exception {
-        PlainPBStoragePlugin storagePlugin = new PlainPBStoragePlugin();
-        largeLineSetup.setUpRootFolder(storagePlugin, "largeLineTest", PartitionGranularity.PARTITION_HOUR);
+
+    @ParameterizedTest
+    @EnumSource(FileExtension.class)
+    public void testLargeLines(FileExtension fileExtension) throws Exception {
+        PlainPBStoragePlugin storagePlugin = new PlainPBStoragePlugin(fileExtension);
+        largeLineSetup.setUpRootFolder(storagePlugin, "largeLineTest", PartitionGranularity.PARTITION_HOUR, fileExtension);
 
         // We create vector doubles with a large number of elements; write it out and then test the read.
         String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "LargeLineTest"
@@ -83,7 +87,7 @@ public class LargePBLineTest {
                 new ArchPaths(),
                 storagePlugin.getRootFolder(),
                 pvName,
-                PlainPBStoragePlugin.pbFileExtension,
+                fileExtension.getExtensionString(),
                 storagePlugin.getPartitionGranularity(),
                 CompressionMode.NONE,
                 configService.getPVNameToKeyConverter());
@@ -93,9 +97,10 @@ public class LargePBLineTest {
 
         for (Path destPath : allPaths) {
             try {
-                new PBFileInfo(destPath);
+                FileInfo info =FileInfo.extensionPath(fileExtension, destPath);
+                info.getLastEventEpochSeconds();
                 Assertions.assertTrue(
-                        ValidatePBFile.validatePBFile(destPath, false),
+                        ValidatePBFile.validatePBFile(destPath, false, fileExtension),
                         "File validation failed for " + destPath.toAbsolutePath());
             } catch (Exception ex) {
                 logger.error("Exception parsing file" + destPath.toAbsolutePath(), ex);

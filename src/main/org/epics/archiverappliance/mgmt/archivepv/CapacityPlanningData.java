@@ -111,9 +111,9 @@ public class CapacityPlanningData {
 			throw new IOException(e);
 		}
 	}
-	
+
 	public static CPStaticData getMetricsForAppliances(ConfigService configService) throws IOException {
-        Instant now = TimeUtils.now();
+		Instant now = TimeUtils.now();
 		if(cachedCPStaticData != null) {
             if ((now.toEpochMilli() - cachedCPStaticData.timeofData.toEpochMilli()) > MEASURED_DATA_CACHE_TIME) {
                 logger.debug("Refetching static data for capacity planning as it is stale " + (now.toEpochMilli() - cachedCPStaticData.timeofData.toEpochMilli()));
@@ -133,7 +133,7 @@ public class CapacityPlanningData {
 		cachedCPStaticData = newStaticData;
 		return cachedCPStaticData;
 	}
-	
+
 	public static class CPStaticData {
 		public ConcurrentHashMap<ApplianceInfo, CapacityPlanningData> cpApplianceMetrics;
         Instant timeofData;

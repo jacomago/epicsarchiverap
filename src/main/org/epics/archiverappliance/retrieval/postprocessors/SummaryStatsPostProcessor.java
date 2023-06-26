@@ -48,7 +48,7 @@ public abstract class SummaryStatsPostProcessor implements PostProcessor, PostPr
 	
 	private static Logger logger = LogManager.getLogger(SummaryStatsPostProcessor.class.getName());
 	int intervalSecs = PostProcessors.DEFAULT_SUMMARIZING_INTERVAL;
-    private Instant previousEventTimestamp = Instant.ofEpochMilli(1);
+	private Instant previousEventTimestamp = Instant.ofEpochMilli(1);
 	
 	static class SummaryValue { 
 		/**
@@ -122,7 +122,7 @@ public abstract class SummaryStatsPostProcessor implements PostProcessor, PostPr
 	
 
 	@Override
-    public long estimateMemoryConsumption(String pvName, PVTypeInfo typeInfo, Instant start, Instant end, HttpServletRequest req) {
+	public long estimateMemoryConsumption(String pvName, PVTypeInfo typeInfo, Instant start, Instant end, HttpServletRequest req) {
 		firstBin = TimeUtils.convertToEpochSeconds(start)/intervalSecs;
 		lastBin = TimeUtils.convertToEpochSeconds(end)/intervalSecs;
 		logger.debug("Expecting " + lastBin + " - " + firstBin + " values " + (lastBin+2 - firstBin)); // Add 2 for the first and last bins..

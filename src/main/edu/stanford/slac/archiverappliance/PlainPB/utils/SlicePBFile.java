@@ -109,7 +109,7 @@ public class SlicePBFile {
 		System.out.println();
 	}
 
-    public static void slicePBFile(Path srcPath, Instant startTs, Instant endTs, Path destPath) {
+	public static void slicePBFile(Path srcPath, Instant startTs, Instant endTs, Path destPath) {
 		logger.info("Slicing " + srcPath.toString() + " from " + TimeUtils.convertToISO8601String(startTs) + " to " + TimeUtils.convertToISO8601String(endTs) + " into " + destPath);
 		try (ArchPaths contexts = new ArchPaths()) {
 			try { 

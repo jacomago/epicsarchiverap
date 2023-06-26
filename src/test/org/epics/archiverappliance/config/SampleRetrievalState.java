@@ -1,6 +1,7 @@
 package org.epics.archiverappliance.config;
 
 
+import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,15 +19,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SampleRetrievalState extends RetrievalState {
-	private static Logger logger = LogManager.getLogger(SampleRetrievalState.class.getName());
+	private static final Logger logger = LogManager.getLogger(SampleRetrievalState.class.getName());
+	FileExtension fileExtension;
 	ConfigServiceForTests configService;
 	public SampleRetrievalState(ConfigServiceForTests parentConfigService) {
 		super(parentConfigService);
 		this.configService = parentConfigService;
+		this.fileExtension = parentConfigService.getFileExtension();
 	}
 	
 	@Override
-    public List<DataSourceforPV> getDataSources(BasicContext context, String pvName, PVTypeInfo typeInfo, Instant start, Instant end, HttpServletRequest req) throws IOException {
+	public List<DataSourceforPV> getDataSources(BasicContext context, String pvName, PVTypeInfo typeInfo, Instant start, Instant end, HttpServletRequest req)  throws IOException {
 		if(pvName.startsWith(ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX)) {
 			logger.info("Returnng unit test data sources");
 			return getUnitTestDataSources(pvName);

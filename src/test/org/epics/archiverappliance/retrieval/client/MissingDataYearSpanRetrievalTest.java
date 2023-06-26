@@ -9,6 +9,7 @@ package org.epics.archiverappliance.retrieval.client;
 
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
+import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -17,6 +18,7 @@ import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.TomcatSetup;
 import org.epics.archiverappliance.common.BasicContext;
+import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.YearSecondTimestamp;
 import org.epics.archiverappliance.config.ArchDBRTypes;
@@ -60,11 +62,11 @@ public class MissingDataYearSpanRetrievalTest {
 	PlainPBStoragePlugin pbplugin = new PlainPBStoragePlugin();
 	TomcatSetup tomcatSetup = new TomcatSetup();
 
-    private final LinkedList<Instant> generatedTimeStamps = new LinkedList<Instant>();
+	private final LinkedList<Instant> generatedTimeStamps = new LinkedList<Instant>();
 
 	@BeforeEach
 	public void setUp() throws Exception {
-		pbSetup.setUpRootFolder(pbplugin);
+		pbSetup.setUpRootFolder(pbplugin, FileExtension.PB);
 		logger.info("Data folder is " + dataFolder.getAbsolutePath());
 		FileUtils.deleteDirectory(dataFolder);
 		generateData();
@@ -74,14 +76,14 @@ public class MissingDataYearSpanRetrievalTest {
 	private void generateData() throws IOException {
 		{
 			// Generate some data for Sep 2011 - Oct 2011, one per day
-            Instant sep2011 = TimeUtils.convertFromISO8601String("2011-09-01T00:00:00.000Z");
+			Instant sep2011 = TimeUtils.convertFromISO8601String("2011-09-01T00:00:00.000Z");
 			int sep201101secsIntoYear = TimeUtils.getSecondsIntoYear(TimeUtils.convertToEpochSeconds(sep2011));
 			short year = 2011;
 			ArrayListEventStream strm = new ArrayListEventStream(0, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, year));
 			for(int day = 0; day < 30; day++) { 
 				// Set the nanos to 111000000 so that we don't always get the sample with the same timestamp
 				// This unit test is supposed to test the fact that we get the last known timestamp for various cases.
-				YearSecondTimestamp yts = new YearSecondTimestamp(year, sep201101secsIntoYear + day*86400, 111000000);
+				YearSecondTimestamp yts = new YearSecondTimestamp(year, sep201101secsIntoYear + day* PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), 111000000);
 				strm.add(new SimulationEvent(yts, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<Double>(0.0)));
 				generatedTimeStamps.add(TimeUtils.convertFromYearSecondTimestamp(yts));
 			}
@@ -92,12 +94,12 @@ public class MissingDataYearSpanRetrievalTest {
 		
 		{
 			// Generate some data for Jun 2012 - Jul 2012, one per day
-            Instant jun2012 = TimeUtils.convertFromISO8601String("2012-06-01T00:00:00.000Z");
+			Instant jun2012 = TimeUtils.convertFromISO8601String("2012-06-01T00:00:00.000Z");
 			int jun201201secsIntoYear = TimeUtils.getSecondsIntoYear(TimeUtils.convertToEpochSeconds(jun2012));
 			short year = 2012;
 			ArrayListEventStream strm = new ArrayListEventStream(0, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, year));
 			for(int day = 0; day < 30; day++) { 
-				YearSecondTimestamp yts = new YearSecondTimestamp(year, jun201201secsIntoYear + day*86400, 111000000);
+				YearSecondTimestamp yts = new YearSecondTimestamp(year, jun201201secsIntoYear + day*PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), 111000000);
 				strm.add(new SimulationEvent(yts, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<Double>(0.0)));
 				generatedTimeStamps.add(TimeUtils.convertFromYearSecondTimestamp(yts));
 			}
@@ -160,9 +162,9 @@ public class MissingDataYearSpanRetrievalTest {
 	 * @throws IOException
 	 */
 	private void testRetrieval(String startStr, String endStr, int expectedMinEventCount, String firstTimeStampExpectedStr, int firstTSIndex, String msg) throws IOException {
-        Instant start = TimeUtils.convertFromISO8601String(startStr);
-        Instant end = TimeUtils.convertFromISO8601String(endStr);
-        Instant firstTimeStampExpected = null;
+		Instant start = TimeUtils.convertFromISO8601String(startStr);
+		Instant end = TimeUtils.convertFromISO8601String(endStr);
+		Instant firstTimeStampExpected = null;
 		if(firstTimeStampExpectedStr != null) { 
 			firstTimeStampExpected = TimeUtils.convertFromISO8601String(firstTimeStampExpectedStr);
 		}
@@ -170,7 +172,7 @@ public class MissingDataYearSpanRetrievalTest {
 			Assertions.assertTrue(firstTimeStampExpected.equals(generatedTimeStamps.get(firstTSIndex)), "Incorrect specification - Str is " + firstTimeStampExpectedStr + " and from array " + TimeUtils.convertToISO8601String(generatedTimeStamps.get(firstTSIndex)) + " for " + msg);
 		}
 		RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
-        Instant obtainedFirstSample = null;
+		Instant obtainedFirstSample = null;
 		int eventCount = 0;
 		try(EventStream stream = rawDataRetrieval.getDataForPVS(new String[] { pvName }, start, end, null)) {
 			if(stream != null) {

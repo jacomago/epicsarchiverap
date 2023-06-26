@@ -1,10 +1,13 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
+import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
+import edu.stanford.slac.archiverappliance.PlainPB.FileInfo;
 import edu.stanford.slac.archiverappliance.PlainPB.PBFileInfo;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
+import edu.stanford.slac.archiverappliance.parquet.ParquetInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BasicContext;
@@ -19,8 +22,9 @@ import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.utils.nio.ArchPaths;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -29,7 +33,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
-import static edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.pbFileExtension;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit test to test for timezones that are ahead of UTC; use "Australia/Sydney".
@@ -40,41 +44,61 @@ import static edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.p
 public class TimezoneAheadTest {
     private static final Logger logger = LogManager.getLogger(TimezoneAheadTest.class.getName());
 
-    public static Stream<Arguments> provideArguments() {
-        return Stream.of(
-                Arguments.of(PartitionGranularity.PARTITION_HOUR, PartitionGranularity.PARTITION_DAY),
-                Arguments.of(PartitionGranularity.PARTITION_DAY, PartitionGranularity.PARTITION_DAY));
-    }
-
-    @BeforeEach
+    @Before
     public void setUp() throws Exception {
         System.getProperties().put("user.timezone", "Australia/Sydney");
+    }
+
+    @After
+    public void tearDown() throws Exception {}
+
+    public static Stream<Arguments> provideArguments() {
+        return Stream.of(
+                Arguments.of(
+                        PartitionGranularity.PARTITION_HOUR,
+                        PartitionGranularity.PARTITION_DAY,
+                        FileExtension.PB),
+                Arguments.of(
+                        PartitionGranularity.PARTITION_HOUR,
+                        PartitionGranularity.PARTITION_DAY,
+                        FileExtension.PARQUET),
+                Arguments.of(
+                        PartitionGranularity.PARTITION_DAY,
+                        PartitionGranularity.PARTITION_DAY,
+                        FileExtension.PB),
+                Arguments.of(
+                        PartitionGranularity.PARTITION_DAY,
+                        PartitionGranularity.PARTITION_DAY,
+                        FileExtension.PARQUET));
     }
 
     @ParameterizedTest
     @MethodSource("provideArguments")
     public void testETLMoveForPartitionGranularity(
-            PartitionGranularity srcGranularity, PartitionGranularity destGranularity) throws Exception {
+            PartitionGranularity srcGranularity,
+            PartitionGranularity destGranularity,
+            FileExtension fileExtension)
+            throws Exception {
         logger.debug(TimeUtils.convertToHumanReadableString(TimeUtils.now()));
 
-        PlainPBStoragePlugin etlSrc = new PlainPBStoragePlugin();
+        PlainPBStoragePlugin etlSrc = new PlainPBStoragePlugin(fileExtension);
         PBCommonSetup srcSetup = new PBCommonSetup();
-        PlainPBStoragePlugin etlDest = new PlainPBStoragePlugin();
+        PlainPBStoragePlugin etlDest = new PlainPBStoragePlugin(fileExtension);
         PBCommonSetup destSetup = new PBCommonSetup();
         DefaultConfigService configService = new ConfigServiceForTests(new File("./bin"), 1);
 
-        srcSetup.setUpRootFolder(etlSrc, "TimeZoneAheadETLTestSrc_" + srcGranularity, srcGranularity);
-        destSetup.setUpRootFolder(etlDest, "TimeZoneAheadETLTestDest" + srcGranularity, destGranularity);
+        srcSetup.setUpRootFolder(etlSrc, "TimeZoneAheadETLTestSrc_" + srcGranularity, srcGranularity, fileExtension);
+        destSetup.setUpRootFolder(etlDest, "TimeZoneAheadETLTestDest" + srcGranularity, destGranularity, fileExtension);
 
         long nowEpochSeconds = TimeUtils.getCurrentEpochSeconds();
-        long startEpochSeconds = nowEpochSeconds - 10 * srcGranularity.getApproxSecondsPerChunk();
-        long endEpochSeconds = nowEpochSeconds + 10 * srcGranularity.getApproxSecondsPerChunk();
+        long startEpochSeconds = nowEpochSeconds - 10L * srcGranularity.getApproxSecondsPerChunk();
+        long endEpochSeconds = nowEpochSeconds + 10L * srcGranularity.getApproxSecondsPerChunk();
 
         String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "ETL_testTimeZoneAhead"
                 + etlSrc.getPartitionGranularity();
 
         PVTypeInfo typeInfo = new PVTypeInfo(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
-        String[] dataStores = new String[]{etlSrc.getURLRepresentation(), etlDest.getURLRepresentation()};
+        String[] dataStores = new String[] {etlSrc.getURLRepresentation(), etlDest.getURLRepresentation()};
         typeInfo.setDataStores(dataStores);
         configService.updateTypeInfoForPV(pvName, typeInfo);
         configService.registerPVToAppliance(pvName, configService.getMyApplianceInfo());
@@ -110,7 +134,7 @@ public class TimezoneAheadTest {
                         new ArchPaths(),
                         etlSrc.getRootFolder(),
                         pvName,
-                        pbFileExtension,
+                        fileExtension.getExtensionString(),
                         etlSrc.getPartitionGranularity(),
                         CompressionMode.NONE,
                         configService.getPVNameToKeyConverter());
@@ -118,15 +142,14 @@ public class TimezoneAheadTest {
                         new ArchPaths(),
                         etlDest.getRootFolder(),
                         pvName,
-                        pbFileExtension,
+                        fileExtension.getExtensionString(),
                         etlDest.getPartitionGranularity(),
                         CompressionMode.NONE,
                         configService.getPVNameToKeyConverter());
                 long srcBeforeEpochSeconds = -1;
 
                 if (srcPathsBefore.length > 0) {
-                    srcBeforeEpochSeconds =
-                            (new PBFileInfo(srcPathsBefore[0])).getFirstEvent().getEpochSeconds();
+                    srcBeforeEpochSeconds = FileInfo.extensionPath(fileExtension, srcPathsBefore[0]).getFirstEventEpochSeconds();
                 }
 
                 ETLExecutor.runETLs(configService, TimeUtils.convertFromEpochSeconds(eventSeconds, 0));
@@ -135,7 +158,7 @@ public class TimezoneAheadTest {
                         new ArchPaths(),
                         etlSrc.getRootFolder(),
                         pvName,
-                        pbFileExtension,
+                        fileExtension.getExtensionString(),
                         etlSrc.getPartitionGranularity(),
                         CompressionMode.NONE,
                         configService.getPVNameToKeyConverter());
@@ -143,7 +166,7 @@ public class TimezoneAheadTest {
                         new ArchPaths(),
                         etlDest.getRootFolder(),
                         pvName,
-                        pbFileExtension,
+                        fileExtension.getExtensionString(),
                         etlDest.getPartitionGranularity(),
                         CompressionMode.NONE,
                         configService.getPVNameToKeyConverter());
@@ -155,17 +178,14 @@ public class TimezoneAheadTest {
                 long srcAfterEpochSeconds = -1;
 
                 if (srcPathsAfter.length > 0) {
-                    srcAfterEpochSeconds =
-                            (new PBFileInfo(srcPathsAfter[0])).getFirstEvent().getEpochSeconds();
+                    srcAfterEpochSeconds = FileInfo.extensionPath(fileExtension, srcPathsAfter[0]).getFirstEventEpochSeconds();
                 }
 
                 if (srcAfterEpochSeconds > 0 && srcBeforeEpochSeconds > 0) {
-                    Assertions.assertTrue(
-                            srcAfterEpochSeconds > srcBeforeEpochSeconds,
-                            "The first event in the source after ETL "
-                                    + TimeUtils.convertToHumanReadableString(srcAfterEpochSeconds)
-                                    + " should be greater then the first event in the source before ETL"
-                                    + TimeUtils.convertToHumanReadableString(srcBeforeEpochSeconds));
+                    Assertions.assertTrue(srcAfterEpochSeconds > srcBeforeEpochSeconds, "The first event in the source after ETL "
+                            + TimeUtils.convertToHumanReadableString(srcAfterEpochSeconds)
+                            + " should be greater then the first event in the source before ETL"
+                            + TimeUtils.convertToHumanReadableString(srcBeforeEpochSeconds));
                 } else {
                     logger.warn("ETL did not move data at " + TimeUtils.convertToHumanReadableString(eventSeconds));
                 }

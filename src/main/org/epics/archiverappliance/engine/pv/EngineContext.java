@@ -18,6 +18,7 @@ import gov.aps.jca.Context;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
+import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ArchDBRTypes;
@@ -323,9 +324,9 @@ public class EngineContext {
 		// Need to make sure this leak is no more.
 		long currentEpochSeconds = TimeUtils.getCurrentEpochSeconds();
 		// Start the metadata updates tomorrow afternoon; doesn't really matter what time; minimze impact with ETL etc
-		long tomorrowAfternoon = ((currentEpochSeconds/(24*60*60)) + 1)*24*60*60 + 22*60*60;
+		long tomorrowAfternoon = ((currentEpochSeconds/(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk())) + 1)*PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() + 22*60*60;
 		logger.info("Starting the metadata updater from " + TimeUtils.convertToHumanReadableString(tomorrowAfternoon));
-		miscTasksScheduler.scheduleAtFixedRate(new MetadataUpdater(), tomorrowAfternoon-currentEpochSeconds, 24*60*60, TimeUnit.SECONDS);
+		miscTasksScheduler.scheduleAtFixedRate(new MetadataUpdater(), tomorrowAfternoon-currentEpochSeconds, PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), TimeUnit.SECONDS);
 	}
 	
 	public JCACommandThread getJCACommandThread(int jcaCommandThreadId) {
@@ -517,11 +518,11 @@ public class EngineContext {
 			this.configService = configService;
 			this.myIdentity = myIdentity;
 		}
-		
-		
+
+
 		@Override
 		public void completed(MetaInfo metaInfo) {
-			try { 
+			try {
 				logger.debug("Completed computing archive info for pv " + pvName);
 				PubSubEvent confirmationEvent = new PubSubEvent("MetaInfoFinished", myIdentity + "_" + ConfigService.WAR_FILE.MGMT, pvName);
 				JSONEncoder<MetaInfo> encoder = JSONEncoder.getEncoder(MetaInfo.class);
@@ -533,8 +534,8 @@ public class EngineContext {
 			}
 		}
 	}
-	
-	
+
+
 	private void startArchivingPV(String pvName) throws Exception {
 		PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
 		if(typeInfo == null) {
@@ -551,13 +552,13 @@ public class EngineContext {
         Instant lastKnownTimeStamp = typeInfo.determineLastKnownEventFromStores(configService);
 		String controllingPV = typeInfo.getControllingPV();
 		String[] archiveFields = typeInfo.getArchiveFields();
-		
+
 		logger.info("Archiving PV " + pvName + "using " + samplingMethod.toString() + " with a sampling period of "+ samplingPeriod + "(s)");
-		ArchiveEngine.archivePV(pvName, samplingPeriod, samplingMethod, secondsToBuffer, firstDest, configService, dbrType, lastKnownTimeStamp, controllingPV, archiveFields, typeInfo.getHostName(), typeInfo.isUsePVAccess(), typeInfo.isUseDBEProperties()); 
+		ArchiveEngine.archivePV(pvName, samplingPeriod, samplingMethod, secondsToBuffer, firstDest, configService, dbrType, lastKnownTimeStamp, controllingPV, archiveFields, typeInfo.getHostName(), typeInfo.isUsePVAccess(), typeInfo.isUseDBEProperties());
 	}
-	
-	
-	public boolean abortComputeMetaInfo(String pvName) { 
+
+
+	public boolean abortComputeMetaInfo(String pvName) {
 		return MetaGet.abortMetaGet(pvName);
 	}
 

@@ -49,8 +49,8 @@ public class BlackholeStoragePlugin implements StoragePlugin, ETLDest {
 	}
 
 	@Override
-    public int appendData(BasicContext context, String pvName, EventStream stream) {
-        return 1;
+	public int appendData(BasicContext context, String pvName, EventStream stream) {
+		return 1;
 	}
 
 	@Override

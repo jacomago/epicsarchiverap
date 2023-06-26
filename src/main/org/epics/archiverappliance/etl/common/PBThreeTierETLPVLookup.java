@@ -90,26 +90,26 @@ public final class PBThreeTierETLPVLookup {
 		// Seconds.
 		int DEFAULT_ETL_INITIAL_DELAY = 60;
 		configServiceSyncThread.scheduleWithFixedDelay(() -> {
-			try {
-				Iterable<String> pVsForThisAppliance = configService.getPVsForThisAppliance();
+            try {
+                Iterable<String> pVsForThisAppliance = configService.getPVsForThisAppliance();
 				if (pVsForThisAppliance != null) {
 					for (String pvName : pVsForThisAppliance) {
 						if (!pvsForWhomWeHaveAddedETLJobs.contains(pvName)) {
-							PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+                            PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
 							if (!typeInfo.isPaused()) {
-								addETLJobs(pvName, typeInfo);
-							} else {
-								logger.info("Skipping adding ETL jobs for paused PV " + pvName);
-							}
-						}
-					}
-				} else {
-					configlogger.info("There are no PVs on this appliance yet");
-				}
+                                addETLJobs(pvName, typeInfo);
+                            } else {
+                                logger.info("Skipping adding ETL jobs for paused PV " + pvName);
+                            }
+                        }
+                    }
+                } else {
+                    configlogger.info("There are no PVs on this appliance yet");
+                }
 			} catch (Throwable t) {
-				configlogger.error("Excepting syncing ETL jobs with config service", t);
-			}
-		}, DEFAULT_ETL_INITIAL_DELAY, DEFAULT_ETL_PERIOD, TimeUnit.SECONDS);
+                configlogger.error("Excepting syncing ETL jobs with config service", t);
+            }
+        }, DEFAULT_ETL_INITIAL_DELAY, DEFAULT_ETL_PERIOD, TimeUnit.SECONDS);
 		configlogger.debug("Done initializing ETL post startup.");
 	}
 	
@@ -152,7 +152,7 @@ public final class PBThreeTierETLPVLookup {
 					lifetimeId2PVName2LookupItem.get(etllifetimeid).put(pvName, etlpvLookupItems);
 					// We schedule using the source granularity or a shift (8 hours) whichever is smaller.
 					int delaybetweenETLJobs = Math.min(etlSource.getPartitionGranularity().getApproxSecondsPerChunk(), 8*60*60);
-					Instant currentTime = Instant.now();
+                    Instant currentTime = Instant.now();
 					// We then compute the start of the next partition.
 					Instant nextPartitionFirstSec = TimeUtils.getNextPartitionFirstSecond(currentTime, etlSource.getPartitionGranularity());
 					// Add a small buffer to this
@@ -302,10 +302,10 @@ public final class PBThreeTierETLPVLookup {
 
 	private record ETLLifeTimeThreadFactory(int lifetimeid) implements ThreadFactory {
 		@Override
-		public Thread newThread(Runnable r) {
+			public Thread newThread(Runnable r) {
 			return new Thread(r, "ETL - " + lifetimeid);
+			}
 		}
-	}
 
 	public List<ETLMetricsForLifetime> getApplianceMetrics() {
 		return applianceMetrics;

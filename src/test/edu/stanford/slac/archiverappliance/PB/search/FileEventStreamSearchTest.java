@@ -10,7 +10,7 @@ package edu.stanford.slac.archiverappliance.PB.search;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -19,11 +19,12 @@ import java.util.Random;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 
 import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test a file event stream
@@ -35,14 +36,14 @@ public class FileEventStreamSearchTest {
 	String pathName = ConfigServiceForTests.getDefaultPBTestFolder() + "/" + "FileEventStreamSearchTest.txt";
 	Path path = Paths.get(pathName);
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		Files.deleteIfExists(path);
 
 		EvenNumberSampleFileGenerator.generateSampleFile(pathName);
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws Exception {
 		Files.deleteIfExists(path);
 	}
@@ -82,38 +83,33 @@ public class FileEventStreamSearchTest {
 	//	}
 	private static void seekAndCheck(Path path, final int searchNum) throws IOException {
 		try {
-			CompareEventLine compare = new CompareEventLine() {
-				@Override
-				public CompareEventLine.NextStep compare(byte[] line1, byte[] line2) {
-					try {
-						String inputline1 = new String(line1, "UTF-8");
-						int inputNum1 = Integer.parseInt(inputline1);
-						int inputNum2 = Integer.MAX_VALUE; 
-						if(line2 != null) {
-							String inputline2 = new String(line2, "UTF-8");
-							inputNum2 = Integer.parseInt(inputline2);
-						}
-						if(inputNum1 > searchNum) {
-							logger.debug("When searching for " + searchNum + ", comparing with " + inputNum1 + " and " + inputNum2 + " sayz GO_LEFT 1");
-							return NextStep.GO_LEFT;
-						} else if(inputNum2 < searchNum) {
-							logger.debug("When searching for " + searchNum + ", comparing with " + inputNum1 + " and " + inputNum2 + " sayz GO_RIGHT 2");
-							return NextStep.GO_RIGHT;
+			CompareEventLine compare = (line1, line2) -> {
+				String inputline1 = new String(line1, StandardCharsets.UTF_8);
+				int inputNum1 = Integer.parseInt(inputline1);
+				int inputNum2 = Integer.MAX_VALUE;
+				if(line2 != null) {
+					String inputline2 = new String(line2, StandardCharsets.UTF_8);
+					inputNum2 = Integer.parseInt(inputline2);
+				}
+				if(inputNum1 > searchNum) {
+					logger.debug("When searching for " + searchNum + ", comparing with " + inputNum1 + " and " + inputNum2 + " sayz GO_LEFT 1");
+					return CompareEventLine.NextStep.GO_LEFT;
+				} else if(inputNum2 < searchNum) {
+					logger.debug("When searching for " + searchNum + ", comparing with " + inputNum1 + " and " + inputNum2 + " sayz GO_RIGHT 2");
+					return CompareEventLine.NextStep.GO_RIGHT;
+				} else {
+					if(line2 != null) {
+						if(inputNum1 < searchNum) {
+							logger.debug("When searching for " + searchNum + ", comparing with " + inputNum1 + " and " + inputNum2 + " sayz STAY_WHERE_YOU_ARE 3");
+							return CompareEventLine.NextStep.STAY_WHERE_YOU_ARE;
 						} else {
-							if(line2 != null) {
-								if(inputNum1 < searchNum && inputNum2 >= searchNum) {
-									logger.debug("When searching for " + searchNum + ", comparing with " + inputNum1 + " and " + inputNum2 + " sayz STAY_WHERE_YOU_ARE 3");
-									return NextStep.STAY_WHERE_YOU_ARE;
-								} else {
-									logger.debug("When searching for " + searchNum + ", comparing with " + inputNum1 + " and " + inputNum2 + " sayz GO_LEFT 4");
-									return NextStep.GO_LEFT;
-								}
-							} else {
-								logger.debug("When searching for " + searchNum + ", comparing with " + inputNum1 + " and " + inputNum2 + " sayz STAY_WHERE_YOU_ARE 5");
-								return NextStep.STAY_WHERE_YOU_ARE;
-							}
+							logger.debug("When searching for " + searchNum + ", comparing with " + inputNum1 + " and " + inputNum2 + " sayz GO_LEFT 4");
+							return CompareEventLine.NextStep.GO_LEFT;
 						}
-					} catch (UnsupportedEncodingException ex) { throw new RuntimeException(ex);}
+					} else {
+						logger.debug("When searching for " + searchNum + ", comparing with " + inputNum1 + " and " + inputNum2 + " sayz STAY_WHERE_YOU_ARE 5");
+						return CompareEventLine.NextStep.STAY_WHERE_YOU_ARE;
+					}
 				}
 			};
 
@@ -124,11 +120,10 @@ public class FileEventStreamSearchTest {
 					if(searchNum == 0) { 
 						logger.debug("0 is a special case as it is the first item on the list and technically we did not find an event that satisfies the conditions.");
 					} else { 
-						fail("Failure when searching for " + searchNum);
+						Assertions.fail("Failure when searching for " + searchNum);
 					}
-				} else {
-					// The number was out of range anyways...
-				}
+				}  // The number was out of range anyways...
+
 			} else {
 				// Check to see if s1 <= t1 < s2
 				try(LineByteStream lis = new LineByteStream(path, bs.getFoundPosition())) { 
@@ -137,22 +132,20 @@ public class FileEventStreamSearchTest {
 					byte[] line2 = lis.readLine();
 					if(line1 == null || line2 == null || line1.length == 0 || line2.length == 0) {
 						if(searchNum >=0 && searchNum < EvenNumberSampleFileGenerator.MAXSAMPLEINT) {
-							fail("One of the lines was null but we could not find the number " + searchNum);
-						} else {
-							// In this case, we really did not find the event as it is out of range.
-						}
+							Assertions.fail("One of the lines was null but we could not find the number " + searchNum);
+						}  // In this case, we really did not find the event as it is out of range.
+
 					} else {
-						int num1 = Integer.parseInt(new String(line1, "UTF-8"));
-						int num2 = Integer.parseInt(new String(line2, "UTF-8"));
+						int num1 = Integer.parseInt(new String(line1, StandardCharsets.UTF_8));
+						int num2 = Integer.parseInt(new String(line2, StandardCharsets.UTF_8));
 						// s1 <= t1 < s2
 						if(num1 < searchNum && searchNum <= num2) {
 
 						} else {
 							if(searchNum >=0 && searchNum < EvenNumberSampleFileGenerator.MAXSAMPLEINT) {
-								fail("Potential failure - could not locate " + searchNum);
-							} else {
-								// In this case, we really did not find the event as it is out of range.
-							}
+								Assertions.fail("Potential failure - could not locate " + searchNum);
+							}  // In this case, we really did not find the event as it is out of range.
+
 						}
 					}
 				}

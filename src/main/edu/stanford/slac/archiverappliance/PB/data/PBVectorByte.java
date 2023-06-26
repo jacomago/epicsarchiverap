@@ -127,6 +127,17 @@ public class PBVectorByte implements DBRTimeEvent {
     }
 
     @Override
+    public Message getMessage() {
+
+        unmarshallEventIfNull();return dbevent;
+    }
+
+    @Override
+    public Class<? extends Message> getMessageClass() {
+        return EPICSEvent.VectorChar.class;
+    }
+
+    @Override
     public Event makeClone() {
         return new PBVectorByte(this);
     }
@@ -144,7 +155,6 @@ public class PBVectorByte implements DBRTimeEvent {
         unmarshallEventIfNull();
         return new YearSecondTimestamp(this.year, dbevent.getSecondsintoyear(), dbevent.getNano());
     }
-
     @Override
     public long getEpochSeconds() {
         unmarshallEventIfNull();

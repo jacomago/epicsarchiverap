@@ -18,12 +18,11 @@ import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.io.File;
 import java.nio.file.Path;
-
-import static edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.pbFileExtension;
 
 /**
  * Bug where we could not get data for 015-PSD1:VoltRef.
@@ -44,10 +43,11 @@ public class SingleEventTimeBasedIteratorTest {
         configService = new ConfigServiceForTests(new File("./bin"));
     }
 
-    @Test
-    public void testSingleEvent() throws Exception {
+    @ParameterizedTest
+    @EnumSource(FileExtension.class)
+    public void testSingleEvent(FileExtension fileExtension) throws Exception {
         PlainPBStoragePlugin pbplugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                "pb://localhost?name=STS&rootFolder=" + rootFolderName
+                fileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + rootFolderName
                         + "&partitionGranularity=PARTITION_HOUR",
                 configService);
 
@@ -59,7 +59,7 @@ public class SingleEventTimeBasedIteratorTest {
         // Generate one event on Feb 21 in the current year.
         try (BasicContext context = new BasicContext()) {
             ArrayListEventStream testData =
-                    new ArrayListEventStream(24 * 60 * 60, new RemotableEventStreamDesc(type, pvName, (short) 2013));
+                    new ArrayListEventStream(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), new RemotableEventStreamDesc(type, pvName, (short) 2013));
             YearSecondTimestamp eventTs = TimeUtils.convertToYearSecondTimestamp(
                     TimeUtils.convertFromISO8601String("2013-02-21T18:45:08.570Z"));
             testData.add(new SimulationEvent(eventTs, type, new ScalarValue<Double>(6.855870246887207)));
@@ -71,13 +71,14 @@ public class SingleEventTimeBasedIteratorTest {
                     context.getPaths(),
                     rootFolderName,
                     pvName,
-                    pbFileExtension,
+                    fileExtension.getExtensionString(),
                     PartitionGranularity.PARTITION_HOUR,
                     CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());
             Assertions.assertEquals(1, paths.length, "We should get only one file, instead we got " + paths.length);
             long eventCount = 0;
-            try (EventStream strm = new FileBackedPBEventStream(
+            try (EventStream strm = FileStreamCreator.getTimeStream(
+                    fileExtension,
                     pvName,
                     paths[0],
                     type,

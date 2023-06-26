@@ -1,6 +1,7 @@
 package org.epics.archiverappliance.zipfs;
 
 import edu.stanford.slac.archiverappliance.PlainPB.FileBackedPBEventStream;
+import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.commons.io.FileUtils;
@@ -63,11 +64,11 @@ public class ZipSingleDayRawFetchTest {
                         new RemotableEventStreamDesc(type, pvName, currentYear));
                 int startofdayinseconds = day * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
                 for (int secondintoday = 0;
-                     secondintoday < PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
-                     secondintoday++) {
+                        secondintoday < PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
+                        secondintoday++) {
                     testData.add(new SimulationEvent(
                             startofdayinseconds + secondintoday, currentYear, type, new ScalarValue<Double>((double)
-                            secondintoday)));
+                                    secondintoday)));
                 }
                 pbplugin.appendData(context, pvName, testData);
             }
@@ -136,7 +137,8 @@ public class ZipSingleDayRawFetchTest {
                     pvName,
                     startTime,
                     context.getPaths(),
-                    configService.getPVNameToKeyConverter());
+                    configService.getPVNameToKeyConverter(),
+                    FileExtension.PB);
             for (Event e : new FileBackedPBEventStream(pvName, path, ArchDBRTypes.DBR_SCALAR_DOUBLE)) {
                 Instant actualTime = e.getEventTimeStamp();
                 // The PlainPBStorage plugin will also yield the last event of the previous partition.

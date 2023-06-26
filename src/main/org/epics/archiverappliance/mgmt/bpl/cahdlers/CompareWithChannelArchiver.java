@@ -50,7 +50,7 @@ public class CompareWithChannelArchiver implements BPLAction {
 		eventData.put("sevr", Integer.toString(event.getSeverity()));
 		eventData.put("src", src);
 	}
-	
+
 	@Override
 	public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService) throws IOException {
 		String pv = req.getParameter("pv");
@@ -69,13 +69,13 @@ public class CompareWithChannelArchiver implements BPLAction {
 
 
 		// ISO datetimes are of the form "2011-02-02T08:00:00.000Z"
-        Instant end = TimeUtils.now();
+		Instant end = TimeUtils.now();
 		if(endTimeStr != null) {
 			end = TimeUtils.convertFromISO8601String(endTimeStr);
 		}
 
 		// We get one day by default
-        Instant start = TimeUtils.minusDays(end, 1);
+		Instant start = TimeUtils.minusDays(end, 1);
 		if(startTimeStr != null) {
 			start = TimeUtils.convertFromISO8601String(startTimeStr);
 		}
@@ -116,8 +116,8 @@ public class CompareWithChannelArchiver implements BPLAction {
 							addEventToEventList(retVals, archEvent, "arch");
 							archEvent = archEvents.hasNext() ? ((DBRTimeEvent) archEvents.next()) : null;
 						} else {
-                            Instant archTs = archEvent.getEventTimeStamp();
-                            Instant caTs = caEvent.getEventTimeStamp();
+							Instant archTs = archEvent.getEventTimeStamp();
+							Instant caTs = caEvent.getEventTimeStamp();
 
                             if (archTs.isAfter(caTs)) {
 								logger.debug("Arch event is after caEvent; moving to next CA event");

@@ -27,10 +27,10 @@ public class ETLExecutor {
 	/**
 	 * This should only be called from within unit tests...
 	 * @param configService  ConfigService 
-     * @param timeETLruns Instant
+	 * @param timeETLruns Instant
 	 * @throws IOException  &emsp;
 	 */
-    public static void runETLs(ConfigService configService, Instant timeETLruns) throws IOException {
+	public static void runETLs(ConfigService configService, Instant timeETLruns) throws IOException {
 		for(String pvName : configService.getPVsForThisAppliance()) {
 			logger.debug("Running ETL for " + pvName);
 			LinkedList<ETLPVLookupItems> lookupItems = configService.getETLLookup().getLookupItemsForPV(pvName);
@@ -38,7 +38,8 @@ public class ETLExecutor {
 				logger.debug("Running ETL for " + pvName + " for lifetime " + lookupItem.getLifetimeorder() + " from " + lookupItem.getETLSource().getDescription() + " to " + lookupItem.getETLDest().getDescription());
 				ETLJob job = new ETLJob(lookupItem, timeETLruns);
 				job.run();
-				if(job.getExceptionFromLastRun() != null) throw new IOException(job.getExceptionFromLastRun());
+				if(job.getExceptionFromLastRun() != null)
+					throw new IOException(job.getExceptionFromLastRun());
 			}
 		}
 	}
@@ -48,7 +49,7 @@ public class ETLExecutor {
 	 * Run ETL for one PV until one storage; used in consolidate...
 	 * Make sure that the regular ETL has been paused..
 	 * @param configService ConfigService  
-     * @param timeETLruns Instant
+	 * @param timeETLruns Instant
 	 * @param pvName The name of PV.
 	 * @param storageName   &emsp;
 	 * @throws IOException  &emsp;

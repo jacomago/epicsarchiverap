@@ -87,8 +87,8 @@ public class MergeDedupStoragePlugin implements StoragePlugin, ETLSource, ETLDes
 	
 
 	@Override
-    public List<Callable<EventStream>> getDataForPV(BasicContext context, String pvName, Instant startTime,
-                                                    Instant endTime, PostProcessor postProcessor) throws IOException {
+	public List<Callable<EventStream>> getDataForPV(BasicContext context, String pvName, Instant startTime,
+			Instant endTime, PostProcessor postProcessor) throws IOException {
 		List<Callable<EventStream>> destStrms = dest.getDataForPV(context, pvName, startTime, endTime, postProcessor);
 		List<Callable<EventStream>> othrStrms = other.getDataForPV(context, pvName, startTime, endTime, postProcessor);
 		PVTypeInfo info = configService.getTypeInfoForPV(pvName);
@@ -97,28 +97,28 @@ public class MergeDedupStoragePlugin implements StoragePlugin, ETLSource, ETLDes
 		}
 		return CallableEventStream.makeOneStreamCallableList(new MergeDedupWithCallablesEventStream(destStrms, othrStrms), postProcessor, true);
 	}
-	
+
 	@Override
-    public List<ETLInfo> getETLStreams(String pv, Instant currentTime, ETLContext context) throws IOException {
+	public List<ETLInfo> getETLStreams(String pv, Instant currentTime, ETLContext context) throws IOException {
 		List<ETLInfo> infos = ((ETLSource)dest).getETLStreams(pv, currentTime, context);
 		if(infos == null) {
 			logger.error("No ETL streams from " + dest.getDescription());
 			return infos;
 		}
 		for(ETLInfo info : infos) {
-            Instant startTime = TimeUtils.getPreviousPartitionLastSecond(info.getFirstEvent().getEventTimeStamp(), info.getGranularity());
-            Instant endTime = TimeUtils.getNextPartitionFirstSecond(info.getFirstEvent().getEventTimeStamp(), info.getGranularity());
+			Instant startTime = TimeUtils.getPreviousPartitionLastSecond(info.getFirstEvent().getEventTimeStamp(), info.getGranularity());
+			Instant endTime = TimeUtils.getNextPartitionFirstSecond(info.getFirstEvent().getEventTimeStamp(), info.getGranularity());
 			info.setStrmCreator(new MergeStreamCreator(info.getStrmCreator(), info.getPvName(), startTime, endTime));
 		}
 		return infos;
 	}
-	
+
 	@Override
 	public Event getFirstKnownEvent(BasicContext context, String pvName) throws IOException {
 		Event destE = dest.getFirstKnownEvent(context, pvName);
 		Event otherE = other.getFirstKnownEvent(context, pvName);
 		if (destE != null && otherE != null) {
-            if (destE.getEventTimeStamp().isBefore(otherE.getEventTimeStamp())) {
+			if (destE.getEventTimeStamp().isBefore(otherE.getEventTimeStamp())) {
 				return destE;
 			} else {
 				return otherE;
@@ -135,7 +135,7 @@ public class MergeDedupStoragePlugin implements StoragePlugin, ETLSource, ETLDes
 		Event destE = dest.getLastKnownEvent(context, pvName);
 		Event otherE = other.getLastKnownEvent(context, pvName);
 		if (destE != null && otherE != null) {
-            if (destE.getEventTimeStamp().isAfter(otherE.getEventTimeStamp())) {
+			if (destE.getEventTimeStamp().isAfter(otherE.getEventTimeStamp())) {
 				return destE;
 			} else {
 				return otherE;
@@ -148,7 +148,7 @@ public class MergeDedupStoragePlugin implements StoragePlugin, ETLSource, ETLDes
 	}
 
 	@Override
-    public int appendData(BasicContext context, String pvName, EventStream stream) throws IOException {
+	public int appendData(BasicContext context, String pvName, EventStream stream) throws IOException {
 		return dest.appendData(context, pvName, stream);
 	}
 

@@ -134,8 +134,8 @@ public class ClusterAliasTest {
 	
 	private void testRetrievalCountOnServer(String pvName, String serverRetrievalURL) throws IOException { 
 		 RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream(serverRetrievalURL);
-        Instant end = TimeUtils.plusDays(TimeUtils.now(), 3);
-        Instant start = TimeUtils.minusDays(end, 6);
+		 Instant end = TimeUtils.plusDays(TimeUtils.now(), 3);
+		 Instant start = TimeUtils.minusDays(end, 6);
 		 try(EventStream stream = rawDataRetrieval.getDataForPVS(new String[] { pvName}, start, end, null)) {
 			 long previousEpochSeconds = 0;
 			 int eventCount = 0;

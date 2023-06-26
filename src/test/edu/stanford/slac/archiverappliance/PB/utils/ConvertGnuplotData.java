@@ -39,8 +39,8 @@ public class ConvertGnuplotData {
 		storagePlugin.initialize("http://archiver:15646/retrieval/data/getData.raw", configService);
 
 		// Ask for a days worth of data
-        Instant start = TimeUtils.convertFromISO8601String("2011-02-01T08:00:00.000Z");
-        Instant end = TimeUtils.convertFromISO8601String("2011-02-02T08:00:00.000Z");
+		Instant start = TimeUtils.convertFromISO8601String("2011-02-01T08:00:00.000Z");
+		Instant end = TimeUtils.convertFromISO8601String("2011-02-02T08:00:00.000Z");
 		
 		String pvName = "Sine1";
 		if(args.length > 0) {

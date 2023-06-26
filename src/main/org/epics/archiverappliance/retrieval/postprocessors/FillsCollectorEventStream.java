@@ -101,7 +101,7 @@ public class FillsCollectorEventStream implements EventStream, RemotableOverRaw 
 				}
 				if(currentEvent != null) { 
 					long epochSeconds = binNum*intervalSecs + intervalSecs/2;
-                    Instant eventTs = null;
+					Instant eventTs = null;
 					if(fillOperator) {
 						logger.debug("For fill operators, we put the event time stamp in the center of the bin.");
 						eventTs = TimeUtils.convertFromEpochSeconds(epochSeconds, 0);

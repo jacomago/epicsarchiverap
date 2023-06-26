@@ -7,6 +7,7 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PB.data;
 
+import com.google.protobuf.Message;
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent;
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.FieldValue;
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.ScalarInt.Builder;
@@ -22,8 +23,8 @@ import org.epics.archiverappliance.data.DBRAlarm;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.data.SampleValue;
 import org.epics.archiverappliance.data.ScalarValue;
-import org.epics.pva.data.PVAStructure;
 import org.epics.pva.data.PVAInt;
+import org.epics.pva.data.PVAStructure;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -45,13 +46,18 @@ public class PBScalarInt implements DBRTimeEvent {
 		this.bar = bar;
 		this.year = year;
 	}
-	
+
+	public PBScalarInt(short year, Message.Builder message) {
+			this.dbevent = (EPICSEvent.ScalarInt) message.build();
+			this.bar = new ByteArray(LineEscaper.escapeNewLines(dbevent.toByteArray()));
+			this.year = year;
+	}
 	public PBScalarInt(DBRTimeEvent ev) {
 		YearSecondTimestamp yst = TimeUtils.convertToYearSecondTimestamp(ev.getEventTimeStamp());
 		year = yst.getYear();
 		Builder builder = EPICSEvent.ScalarInt.newBuilder()
 				.setSecondsintoyear(yst.getSecondsintoyear())
-                .setNano(yst.getNano())
+				.setNano(yst.getNano())
 				.setVal(ev.getSampleValue().getValue().intValue());
 		if(ev.getSeverity() != 0) builder.setSeverity(ev.getSeverity());
 		if(ev.getStatus() != 0) builder.setStatus(ev.getStatus());
@@ -73,7 +79,7 @@ public class PBScalarInt implements DBRTimeEvent {
 		year = yst.getYear();
 		Builder builder = EPICSEvent.ScalarInt.newBuilder()
 				.setSecondsintoyear(yst.getSecondsintoyear())
-                .setNano(yst.getNano())
+				.setNano(yst.getNano())
 				.setVal(realtype.getIntValue()[0]);
 		if(realtype.getSeverity().getValue() != 0) builder.setSeverity(realtype.getSeverity().getValue());
 		if(realtype.getStatus().getValue() != 0) builder.setStatus(realtype.getStatus().getValue());
@@ -90,7 +96,7 @@ public class PBScalarInt implements DBRTimeEvent {
         year = yst.getYear();
         Builder builder = EPICSEvent.ScalarInt.newBuilder()
                         .setSecondsintoyear(yst.getSecondsintoyear())
-                .setNano(yst.getNano())
+                        .setNano(yst.getNano())
                         .setVal(value);
 		if(alarm.severity != 0) builder.setSeverity(alarm.severity);
 		if(alarm.status != 0) builder.setStatus(alarm.status);
@@ -100,12 +106,24 @@ public class PBScalarInt implements DBRTimeEvent {
 
 
 	@Override
+	public Message getMessage() {
+
+		unmarshallEventIfNull();
+		return dbevent;
+	}
+
+	@Override
+	public Class<? extends Message> getMessageClass() {
+		return EPICSEvent.ScalarInt.class;
+	}
+
+	@Override
 	public Event makeClone() {
 		return new PBScalarInt(this);
 	}
 	
 	@Override
-    public Instant getEventTimeStamp() {
+	public Instant getEventTimeStamp() {
 		unmarshallEventIfNull();
 		return TimeUtils.convertFromYearSecondTimestamp(new YearSecondTimestamp(year, dbevent.getSecondsintoyear(), dbevent.getNano()));
 	}

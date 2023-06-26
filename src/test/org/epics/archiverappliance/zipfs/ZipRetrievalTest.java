@@ -104,8 +104,8 @@ public class ZipRetrievalTest {
 		String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + ":SimpleZipTest";
 		ArchDBRTypes dbrType = ArchDBRTypes.DBR_SCALAR_DOUBLE;
 		int phasediffindegrees = 10;
-        short currentYear = TimeUtils.getCurrentYear();
-        SimulationEventStream simstream = new SimulationEventStream(dbrType, new SineGenerator(phasediffindegrees), TimeUtils.getStartOfYear(currentYear), TimeUtils.getEndOfYear(currentYear), 1);
+		short currentYear = TimeUtils.getCurrentYear();
+		SimulationEventStream simstream = new SimulationEventStream(dbrType, new SineGenerator(phasediffindegrees), TimeUtils.getStartOfYear(currentYear), TimeUtils.getEndOfYear(currentYear), 1);
 		try(BasicContext context = new BasicContext()) {
 			storagePlugin.appendData(context, pvName, simstream);
 		}
@@ -121,7 +121,7 @@ public class ZipRetrievalTest {
 				eventCount++;
 			}
 			logger.info("Got " + eventCount + " events");
-            Assertions.assertTrue(eventCount >= (simstream.getNumberOfEvents() - 1), "Retrieval does not seem to return any events " + eventCount);
+			Assertions.assertTrue(eventCount >= (simstream.getNumberOfEvents()-1), "Retrieval does not seem to return any events " + eventCount);
 		}
 	}
 	
@@ -134,8 +134,8 @@ public class ZipRetrievalTest {
 			PlainPBStoragePlugin storagePlugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=ZipTest&rootFolder=" + rootFolder + "&partitionGranularity=PARTITION_DAY", configService);
 			logger.info(storagePlugin.getURLRepresentation());
 			int phasediffindegrees = 10;
-            short currentYear = TimeUtils.getCurrentYear();
-            SimulationEventStream simstream = new SimulationEventStream(dbrType, new SineGenerator(phasediffindegrees), TimeUtils.getStartOfYear(currentYear), TimeUtils.getEndOfYear(currentYear), 1);
+			short currentYear = TimeUtils.getCurrentYear();
+			SimulationEventStream simstream = new SimulationEventStream(dbrType, new SineGenerator(phasediffindegrees), TimeUtils.getStartOfYear(currentYear), TimeUtils.getEndOfYear(currentYear), 1);
 			try(BasicContext context = new BasicContext()) {
 				storagePlugin.appendData(context, pvName, simstream);
 			}
@@ -145,8 +145,8 @@ public class ZipRetrievalTest {
 			PlainPBStoragePlugin storagePlugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=ZipTest&rootFolder=" + rootFolder + "&partitionGranularity=PARTITION_DAY&compress=ZIP_PER_PV", configService);
 			logger.info(storagePlugin.getURLRepresentation());
 			int phasediffindegrees = 10;
-            short currentYear = TimeUtils.getCurrentYear();
-            SimulationEventStream simstream = new SimulationEventStream(dbrType, new SineGenerator(phasediffindegrees), TimeUtils.getStartOfYear(currentYear), TimeUtils.getEndOfYear(currentYear), 1);
+			short currentYear = TimeUtils.getCurrentYear();
+			SimulationEventStream simstream = new SimulationEventStream(dbrType, new SineGenerator(phasediffindegrees), TimeUtils.getStartOfYear(currentYear), TimeUtils.getEndOfYear(currentYear), 1);
 			try(BasicContext context = new BasicContext()) {
 				storagePlugin.appendData(context, pvName, simstream);
 			}
