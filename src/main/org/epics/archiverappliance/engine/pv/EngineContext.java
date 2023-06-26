@@ -83,7 +83,6 @@ public class EngineContext {
         /**the command thread for all  pvs*/
 	private JCACommandThread[] command_threads = null;
 	private Context[] context2CommandThreadId = null;
-	private PVAClient pvaClient;
 
 	
 	/**the total time consumed by the writer*/
@@ -222,10 +221,6 @@ public class EngineContext {
 					}
 
 					controlingPVList.clear();
-					
-			        if (pvaClient != null) {
-						pvaClient.close();
-			        }
 
 
 					scheduler = null;
@@ -288,9 +283,7 @@ public class EngineContext {
 				this.context2CommandThreadId[threadNum] = context;
 			}
 		}
-		
-		this.iniV4ChannelProvidert();
-		
+
 		this.sampleBufferCapacityAdjustment = Double.parseDouble(configService.getInstallationProperties().getProperty("org.epics.archiverappliance.config.PVTypeInfo.sampleBufferCapacityAdjustment", "1.0"));
 		logger.debug("Buffer capacity adjustment is " + this.sampleBufferCapacityAdjustment);
 	}
@@ -750,23 +743,7 @@ public class EngineContext {
 		return totalCAJChannelCount;
 	}
 	
-	
-    private void iniV4ChannelProvidert() {
-        if (pvaClient == null) {
-                logger.info("Registered the pvAccess client factory.");
-                try {
-					pvaClient = new PVAClient();
-				} catch (Exception e) {
-					logger.error(
-							"Exception when initializing PVA Client",
-							e);
-				}
-        }
-    }
-	public PVAClient getPVAClient() {
-		return pvaClient;
-	}
-	
+
 	public ScheduledThreadPoolExecutor getMiscTasksScheduler() {
 		return miscTasksScheduler;
 	}

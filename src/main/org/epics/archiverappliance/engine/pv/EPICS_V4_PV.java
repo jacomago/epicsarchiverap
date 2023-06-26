@@ -19,6 +19,7 @@ import org.epics.pva.client.ClientChannelListener;
 import org.epics.pva.client.ClientChannelState;
 import org.epics.pva.client.MonitorListener;
 import org.epics.pva.client.PVAChannel;
+import org.epics.pva.client.PVAClient;
 import org.epics.pva.data.PVAData;
 import org.epics.pva.data.PVAStructure;
 
@@ -34,6 +35,7 @@ public class EPICS_V4_PV implements PV,  ClientChannelListener, MonitorListener 
 	private PVConnectionState state = PVConnectionState.Idle;
 
 	private PVAChannel pvaChannel;
+	private PVAClient pvaClient;
 
 	/**configservice used by this pv*/
 	private final ConfigService configservice;
@@ -338,8 +340,12 @@ public class EPICS_V4_PV implements PV,  ClientChannelListener, MonitorListener 
 				try {
 					state = PVConnectionState.Connecting;
 					synchronized (this) {
+						if (pvaClient == null) {
+							pvaClient = new PVAClient();
+						}
+
 						if (pvaChannel == null) {
-							pvaChannel = configservice.getEngineContext().getPVAClient().getChannel(name,
+							pvaChannel = pvaClient.getChannel(name,
 									EPICS_V4_PV.this);
 						}
 
@@ -397,6 +403,19 @@ public class EPICS_V4_PV implements PV,  ClientChannelListener, MonitorListener 
 
 		try {
 			channelCopy.close();
+		} catch (final Exception e) {
+			logger.error("exception when disconnecting pv", e);
+		}
+
+		PVAClient clientCopy;
+		synchronized (this) {
+			if (pvaClient == null)
+				return;
+			clientCopy = pvaClient;
+			pvaClient = null;
+		}
+		try {
+			clientCopy.close();
 		} catch (final Exception e) {
 			logger.error("exception when disconnecting pv", e);
 		}
