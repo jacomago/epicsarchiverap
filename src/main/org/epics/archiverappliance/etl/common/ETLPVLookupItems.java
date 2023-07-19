@@ -7,11 +7,11 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl.common;
 
-import java.util.concurrent.ScheduledFuture;
-
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.etl.ETLDest;
 import org.epics.archiverappliance.etl.ETLSource;
+
+import java.util.concurrent.ScheduledFuture;
 
 /**
  * A POJO for PV name, ETLSource, and ETLDest items,
@@ -129,14 +129,21 @@ public class ETLPVLookupItems {
 	public void setCancellingFuture(ScheduledFuture<?> cancellingFuture) {
 		this.cancellingFuture = cancellingFuture;
 	}
-	
-	public String toString() { 
-		return pvName + "(" + lifetimeorder + ")";
+
+	@Override
+	public String toString() {
+		return "ETLPVLookupItems{" +
+				"pvName='" + pvName + '\'' +
+				", dbrType=" + dbrType +
+				", source=" + source +
+				", dest=" + dest +
+				", lifetimeorder=" + lifetimeorder +
+				'}';
 	}
 
 	public void addInfoAboutDetailedTime(long time4getETLStreams, long time4checkSizes, long time4prepareForNewPartition, long time4appendToETLAppendData,
-			long time4commitETLAppendData, long time4markForDeletion, long time4runPostProcessors, long time4executePostETLTasks,
-			long totalSrcBytes) {
+										 long time4commitETLAppendData, long time4markForDeletion, long time4runPostProcessors, long time4executePostETLTasks,
+										 long totalSrcBytes) {
 		this.time4getETLStreams += time4getETLStreams;
 		this.time4checkSizes += time4checkSizes;
 		this.time4prepareForNewPartition += time4prepareForNewPartition;

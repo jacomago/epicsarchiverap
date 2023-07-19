@@ -93,7 +93,7 @@ public class FailoverUpgradeTest {
 		try(BasicContext context = new BasicContext()) {
 			ArrayListEventStream strm = new ArrayListEventStream(0, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, TimeUtils.convertToYearSecondTimestamp(sampleStart).getYear()));
 			for(int i = 0; i < 3; i++) {
-				long sampleTime = sampleStart + i*86400 + 10*3600; // 10AM into the day
+				long sampleTime = sampleStart + i*PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() + 10*3600; // 10AM into the day
 				POJOEvent pojoEvent = new POJOEvent(ArchDBRTypes.DBR_SCALAR_DOUBLE, TimeUtils.convertFromEpochSeconds(sampleTime, 0), new ScalarValue<Double>((double)i), 0, 0);
 				logger.debug("Generating event at " + TimeUtils.convertToHumanReadableString(pojoEvent.getEventTimeStamp()));
 				strm.add(pojoEvent);
@@ -107,7 +107,7 @@ public class FailoverUpgradeTest {
 			ArrayListEventStream strm = new ArrayListEventStream(0, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, TimeUtils.convertToYearSecondTimestamp(sampleStart).getYear()));
 			for(int i = 3; i <= 10; i++) {
 				if(applianceName.equals("dest_appliance") && (i >= 4 && i <= 7)) { continue; }
-				long sampleTime = sampleStart + i*86400 + 10*3600; // 10AM into the day
+				long sampleTime = sampleStart + i*PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() + 10*3600; // 10AM into the day
 				POJOEvent pojoEvent = new POJOEvent(ArchDBRTypes.DBR_SCALAR_DOUBLE, TimeUtils.convertFromEpochSeconds(sampleTime, 0), new ScalarValue<Double>((double)i), 0, 0);
 				logger.debug("Generating event at " + TimeUtils.convertToHumanReadableString(pojoEvent.getEventTimeStamp()));
 				strm.add(pojoEvent);
@@ -228,11 +228,11 @@ public class FailoverUpgradeTest {
 		changeMTSForDest();
 		
 		for(int i = 0; i <=10; i++) {
-			testDataForRange(sampleStart, sampleStart+i*86400, i);
+			testDataForRange(sampleStart, sampleStart+i*PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), i);
 		}
 		changeSTSForDest();
 		for(int i = 0; i <=10; i++) {
-			testDataForRange(sampleStart+i*86400, sampleStart+11*86400, (i == 0 ? 11 : 12-i));
+			testDataForRange(sampleStart+i*PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), sampleStart+11*PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), (i == 0 ? 11 : 12-i));
 		}
 	}	
 }

@@ -56,9 +56,9 @@ public class NCount implements PostProcessor, PostProcessorWithConsolidatedEvent
 	}
 
 	@Override
-    public long estimateMemoryConsumption(String pvName, PVTypeInfo typeInfo, Instant start, Instant end, HttpServletRequest req) {
-        this.startTime = start.toEpochMilli();
-        this.endTime = end.toEpochMilli();
+	public long estimateMemoryConsumption(String pvName, PVTypeInfo typeInfo, Instant start, Instant end, HttpServletRequest req) {
+		this.startTime = start.toEpochMilli();
+		this.endTime = end.toEpochMilli();
 		return (long) typeInfo.getComputedStorageRate();
 	}
 
@@ -67,7 +67,7 @@ public class NCount implements PostProcessor, PostProcessorWithConsolidatedEvent
 		return new Callable<EventStream>() {
 			@Override
 			public EventStream call() throws Exception {
-                Instant previousEventTimestamp = Instant.ofEpochMilli(1);
+				Instant previousEventTimestamp = Instant.ofEpochMilli(1);
 				try(EventStream strm = callable.call()) {
 					RemotableEventStreamDesc org = (RemotableEventStreamDesc)strm.getDescription();
 					RemotableEventStreamDesc desc = new RemotableEventStreamDesc(org);
@@ -84,7 +84,7 @@ public class NCount implements PostProcessor, PostProcessorWithConsolidatedEvent
 							}
 							continue;
 						}
-                        long s = e.getEventTimeStamp().toEpochMilli();
+						long s = e.getEventTimeStamp().toEpochMilli();
 						if (s < startTime || s > endTime) {
 							logger.debug("Skipping event that is out of selected boundaries. Time: " + TimeUtils.convertToHumanReadableString(s));
 						} else {
@@ -122,11 +122,11 @@ public class NCount implements PostProcessor, PostProcessorWithConsolidatedEvent
 	
 	@Override
 	public long getEndBinEpochSeconds() {
-        return TimeUtils.convertToEpochSeconds(Instant.ofEpochMilli(endTime));
+		return TimeUtils.convertToEpochSeconds(Instant.ofEpochMilli(endTime));
 	}
 	
 	@Override
 	public long getStartBinEpochSeconds() {
-        return TimeUtils.convertToEpochSeconds(Instant.ofEpochMilli(startTime));
+		return TimeUtils.convertToEpochSeconds(Instant.ofEpochMilli(startTime));
 	}
 }

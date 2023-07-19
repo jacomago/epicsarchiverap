@@ -51,8 +51,8 @@ public class PBOverHTTPStoragePlugin implements StoragePlugin {
 	private boolean skipExternalServers = false;
 
 	@Override
-    public List<Callable<EventStream>> getDataForPV(BasicContext context, String pvName, Instant startTime,
-                                                    Instant endTime, PostProcessor postProcessor) throws IOException {
+	public List<Callable<EventStream>> getDataForPV(BasicContext context, String pvName, Instant startTime,
+			Instant endTime, PostProcessor postProcessor)  throws IOException {
 		String getURL = accessURL + "?pv=" + pvName 
 				+ "&from=" + TimeUtils.convertToISO8601String(startTime) 
 				+ "&to=" + TimeUtils.convertToISO8601String(endTime) 
@@ -62,12 +62,14 @@ public class PBOverHTTPStoragePlugin implements StoragePlugin {
 		return getDataBehindURL(getURL, startTime, postProcessor);
 	}
 
-    public List<Callable<EventStream>> getDataForMultiPVs(BasicContext context, List<String> pvNames, Instant startTime,
-                                                          Instant endTime, PostProcessor postProcessor) throws IOException {
+	public List<Callable<EventStream>> getDataForMultiPVs(BasicContext context, List<String> pvNames, Instant startTime,
+			Instant endTime, PostProcessor postProcessor) throws IOException {
 		String getURL = accessURL;
 		for (int i = 0; i < pvNames.size(); i++)
-			if (i == 0) getURL += "?pv=" + pvNames.get(i);
-			else 		getURL += "&pv=" + pvNames.get(i);
+			if (i == 0)
+				getURL += "?pv=" + pvNames.get(i);
+			else
+				getURL += "&pv=" + pvNames.get(i);
 		getURL += "&from=" + TimeUtils.convertToISO8601String(startTime) 
 				+ "&to=" + TimeUtils.convertToISO8601String(endTime) 
 				+ (postProcessor != null ? "&pp="+postProcessor.getExtension() : "")
@@ -76,7 +78,7 @@ public class PBOverHTTPStoragePlugin implements StoragePlugin {
 		return getDataBehindURL(getURL, startTime, postProcessor);
 	}
 
-    private List<Callable<EventStream>> getDataBehindURL(String getURL, Instant startTime, PostProcessor postProcessor) {
+	private List<Callable<EventStream>> getDataBehindURL(String getURL, Instant startTime, PostProcessor postProcessor) {
 		try {
 			CloseableHttpClient httpclient = HttpClients.createDefault();
 			HttpGet getMethod = new HttpGet(getURL);
@@ -122,7 +124,7 @@ public class PBOverHTTPStoragePlugin implements StoragePlugin {
 	
 
 	@Override
-    public int appendData(BasicContext context, String pvName, EventStream stream) {
+	public int appendData(BasicContext context, String pvName, EventStream stream) {
 		throw new RuntimeException("Append Data is not available for HTTP streams");
 	}
 

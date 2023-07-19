@@ -9,6 +9,7 @@ import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.TomcatSetup;
 import org.epics.archiverappliance.common.BasicContext;
+import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
@@ -40,7 +41,8 @@ import java.util.HashMap;
  * @author mshankar
  *
  */
-@Tag("integration")@Tag("localEpics")
+@Tag("integration")
+@Tag("localEpics")
 public class Mean600Test {
 	private static Logger logger = LogManager.getLogger(Mean600Test.class.getName());
 	TomcatSetup tomcatSetup = new TomcatSetup();
@@ -72,9 +74,9 @@ public class Mean600Test {
 			for(short y = 3; y >= 0; y--) { 
 				short year = (short)(currentYear - y);
 				for(int day = 0; day < 366; day++) {
-					ArrayListEventStream testData = new ArrayListEventStream(24*60*60, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, currentYear));
-					int startofdayinseconds = day*24*60*60;
-					for(int secondintoday = 0; secondintoday < 24*60*60; secondintoday++) {
+					ArrayListEventStream testData = new ArrayListEventStream(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, currentYear));
+					int startofdayinseconds = day*PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
+					for(int secondintoday = 0; secondintoday < PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(); secondintoday++) {
 						// The value should be the secondsIntoYear integer divided by 600.
 						testData.add(new SimulationEvent(startofdayinseconds + secondintoday, year, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<Double>((double) (((int)(startofdayinseconds + secondintoday)/600)))));
 					}
@@ -118,16 +120,16 @@ public class Mean600Test {
 		 Thread.sleep(1*60*1000);
 		 
 		 // We have now archived this PV, get some data and validate we got the expected number of events
-		 checkRetrieval(pvName, 366*86400);
+		 checkRetrieval(pvName, 366*PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk());
 		 checkRetrieval("mean_600(" + pvName + ")", 366*24*6);
 	}
 
 	private void checkRetrieval(String retrievalPVName, int expectedAtLeastEvents) throws IOException {
 		long startTimeMillis = System.currentTimeMillis();
 		RawDataRetrieval rawDataRetrieval = new RawDataRetrieval("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
-        Instant now = TimeUtils.now();
-        Instant start = TimeUtils.minusDays(now, 366);
-        Instant end = now;
+		 Instant now = TimeUtils.now();
+		 Instant start = TimeUtils.minusDays(now, 366);
+		 Instant end = now;
 		 int eventCount = 0;
 
 		 final HashMap<String, String> metaFields = new HashMap<String, String>(); 

@@ -204,9 +204,9 @@ public class CnxLostTest {
 	
 	private void checkRetrieval(String retrievalPVName, ExpectedEventType[] expectedEvents) throws IOException {
 		RawDataRetrieval rawDataRetrieval = new RawDataRetrieval("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
-        Instant now = TimeUtils.now();
-        Instant start = TimeUtils.minusDays(now, 366);
-        Instant end = now;
+		Instant now = TimeUtils.now();
+		Instant start = TimeUtils.minusDays(now, 366);
+		Instant end = now;
 
 		LinkedList<EpicsMessage> retrievedData = new LinkedList<EpicsMessage>();
         try (GenMsgIterator strm = rawDataRetrieval.getDataForPV(retrievalPVName, TimeUtils.toSQLTimeStamp(start), TimeUtils.toSQLTimeStamp(end), false, null)) {
@@ -214,7 +214,7 @@ public class CnxLostTest {
 			Assertions.assertTrue(strm != null, "We should get some data, we are getting a null stream back");
 				for(EpicsMessage dbrevent : strm) {
 					logger.info("Adding event with value " + dbrevent.getNumberValue().doubleValue()
-                            + " at time " + TimeUtils.convertToHumanReadableString(TimeUtils.fromSQLTimeStamp(dbrevent.getTimestamp())));
+							+ " at time " + TimeUtils.convertToHumanReadableString(TimeUtils.fromSQLTimeStamp(dbrevent.getTimestamp())));
 					retrievedData.add(dbrevent);
 					eventCount++;
 				}

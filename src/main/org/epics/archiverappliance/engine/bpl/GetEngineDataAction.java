@@ -46,11 +46,11 @@ public class GetEngineDataAction implements BPLAction {
 		String startTimeStr = req.getParameter("from"); 
 		String endTimeStr = req.getParameter("to");
 		// ISO datetimes are of the form "2011-02-02T08:00:00.000Z" 
-        Instant start = null;
+		Instant start = null;
 		if(startTimeStr != null) { 
 			start = TimeUtils.convertFromISO8601String(startTimeStr);
 		}
-        Instant end = null;
+		Instant end = null;
 		if(endTimeStr != null) { 
 			end = TimeUtils.convertFromISO8601String(endTimeStr);
 		}

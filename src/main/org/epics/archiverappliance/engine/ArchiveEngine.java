@@ -69,7 +69,7 @@ public class ArchiveEngine {
 	 * @param writer  First destination  
 	 * @param enablement Enablement 
 	 * @param sample_mode SampleMode 
-     * @param last_sampleTimestamp Instant
+	 * @param last_sampleTimestamp Instant
 	 * @param configservice ConfigService 
 	 * @param archdbrtype   ArchDBRTypes
 	 * @param controlPVname  &emsp; 
@@ -130,7 +130,7 @@ public class ArchiveEngine {
 			final float samplingPeriod, final SamplingMethod mode,
 													   final Writer writer,
 			final ConfigService configservice, final ArchDBRTypes archdbrtype,
-                                                       final Instant lastKnownEventTimeStamp, final boolean start, final String controlPVname, final String[] metaFields, final String iocHostName, final boolean usePVAccess, final boolean useDBEProperties) throws Exception {
+			final Instant lastKnownEventTimeStamp, final boolean start, final String controlPVname, final String[] metaFields, final String iocHostName, final boolean usePVAccess, final boolean useDBEProperties) throws Exception {
 		EngineContext engineContext = configservice.getEngineContext();
 
 		if (!engineContext.isWriteThreadStarted()) {
@@ -413,6 +413,7 @@ public class ArchiveEngine {
 		ArchDBRTypes dbrType = typeInfo.getDBRType();
 		float samplingPeriod = typeInfo.getSamplingPeriod();
 		SamplingMethod samplingMethod = typeInfo.getSamplingMethod();
+		StoragePlugin firstDest = StoragePluginURLParser.parseStoragePlugin(typeInfo.getDataStores()[0], configservice);
         Instant lastKnownTimestamp = typeInfo.determineLastKnownEventFromStores(configservice);
 		if(logger.isDebugEnabled()) logger.debug("Last known timestamp from ETL stores is for pv " + pvName + " is "+ TimeUtils.convertToHumanReadableString(lastKnownTimestamp));
 

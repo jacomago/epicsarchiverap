@@ -16,6 +16,7 @@ import gov.aps.jca.dbr.DBR_TIME_Int;
 import gov.aps.jca.dbr.DBR_TIME_Short;
 import gov.aps.jca.dbr.DBR_TIME_String;
 import org.apache.commons.lang3.ArrayUtils;
+import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.data.ByteBufSampleValue;
@@ -165,8 +166,8 @@ public class BoundaryConditionsSimulationValueGenerator implements SimulationVal
             }
             default -> throw new RuntimeException("We seemed to have missed a DBR type when generating sample data");
         }
-    }
-	
+	}
+
 	private static gov.aps.jca.dbr.TimeStamp convertSecondsIntoYear2JCATimeStamp(int secondsintoYear) {
 		return new gov.aps.jca.dbr.TimeStamp(TimeUtils.getStartOfCurrentYearInSeconds() + secondsintoYear);
 	}

@@ -187,7 +187,7 @@ public class SampleBuffer {
 		}
 		
 		@SuppressWarnings("deprecation")
-        short yearTemp = (short) (ZonedDateTime.ofInstant(value.getEventTimeStamp(), ZoneId.of("UTC")).getYear());
+		short yearTemp = (short) (ZonedDateTime.ofInstant(value.getEventTimeStamp(), ZoneId.of("UTC")).getYear());
 		// value.getEventTimeStamp().
 		if (currentSamples.getYear() == 0) {
 			currentSamples.setYear(yearTemp);

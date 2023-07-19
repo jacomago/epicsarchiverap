@@ -41,8 +41,8 @@ public class CountEventsForURL {
 		String url = args[0];
 		storagePlugin.initialize("pbraw://localhost?rawURL=" + URLEncoder.encode(url, "UTF-8"), configService);
 		String pvName = args[1];
-        Instant start = TimeUtils.convertFromISO8601String(args[2]);
-        Instant end = TimeUtils.convertFromISO8601String(args[3]);
+		Instant start = TimeUtils.convertFromISO8601String(args[2]);
+		Instant end = TimeUtils.convertFromISO8601String(args[3]);
 		
 		
 		long s = System.currentTimeMillis();

@@ -18,6 +18,7 @@ import gov.aps.jca.Context;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
+import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ArchDBRTypes;
@@ -43,7 +44,6 @@ import org.json.simple.JSONValue;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -77,23 +77,23 @@ public class EngineContext {
 	private double write_period;
 	/**the channel list of channels for  all pvs,but  without the channels created for the meta fields*/
 	private final ConcurrentHashMap<String, ArchiveChannel> channelList;
-	
+
         /**the command thread for all  pvs*/
 	private JCACommandThread[] command_threads = null;
 	private Context[] context2CommandThreadId = null;
 	private PVAClient pvaClient;
 
-	
+
 	/**the total time consumed by the writer*/
 	private double totalTimeConsumedByWriter;
 	/**the total times of writer executed*/
 	private long countOfWrittingByWriter = 0;
 	/**the list of pvs controlling other pvs*/
 	private ConcurrentHashMap<String, ControllingPV> controlingPVList = new ConcurrentHashMap<String, ControllingPV>();
-	
+
 	private ConfigService configService;
 	private String myIdentity;
-	
+
 	/** A scheduler for all the SCAN PV's in the archiver. */
 	private ScheduledThreadPoolExecutor scanScheduler;
 	/** A scheduled thread pool executor misc tasks - these tasks can take an unspecified amount of time. */
@@ -102,47 +102,20 @@ public class EngineContext {
 	/**
 	 * On disconnects, we add tasks that wait for this timeout to convert reconnects into ca searches into pause resumes.
 	 * Ideally, Channel Access is supposed to take care of this but occasionally, we do see connections not reconnecting for a long time.
-	 * This tries to address that problem. 
+     * This tries to address that problem.
 	 */
 	private int disconnectCheckTimeoutInSeconds = 20 * 60;
-	
+
 	/**
 	 * The disconnectChecker thread runs in this time frame.
 	 * Note this controls both the connect/disconnect checks and the metafields connection initiations.
 	 */
 	private int disconnectCheckerPeriodInSeconds = 20 * 60;
-	
-	private ScheduledFuture<?> disconnectFuture = null;
-	
-	private double sampleBufferCapacityAdjustment = 1.0;
-	
 
-	/***
-	 * 
-	 * @return the list of pvs controlling other pvs
-	 */
-	public ConcurrentHashMap<String, ControllingPV> getControlingPVList() {
-		return controlingPVList;
-	}
-        /**
-	 * set the time consumed by writer to write the sample buffer once
-	 * @param secondsConsumedByWriter  the time in second consumed by writer to write the sample buffer once
-	 *  
-	 */
-	public void setSecondsConsumedByWriter(double secondsConsumedByWriter) {
-		countOfWrittingByWriter++;
-		totalTimeConsumedByWriter = totalTimeConsumedByWriter
-				+ secondsConsumedByWriter;
-	}
-        /**
-	 * 
-	 * @return the average time in second consumed by writer
-	 */
-        public double getAverageSecondsConsumedByWriter() {
-		if (countOfWrittingByWriter == 0)
-			return 0;
-		return totalTimeConsumedByWriter / (double) countOfWrittingByWriter;
-	}
+	private ScheduledFuture<?> disconnectFuture = null;
+
+	private double sampleBufferCapacityAdjustment = 1.0;
+
 
         /**
 	 * This EngineContext should always be singleton
@@ -154,110 +127,90 @@ public class EngineContext {
 		configlogger.info("Creating " + commandThreadCountStr + " command threads as specified by " + commandThreadCountVarName + " in archappl.properties");
 		int commandThreadCount = Integer.parseInt(commandThreadCountStr);
 		command_threads = new JCACommandThread[commandThreadCount];
-		for(int threadNum = 0; threadNum < command_threads.length; threadNum++) { 
+        for (int threadNum = 0; threadNum < command_threads.length; threadNum++) {
 			command_threads[threadNum] = new JCACommandThread(configService);
-			command_threads[threadNum].start();			
+            command_threads[threadNum].start();
 		}
-		
+
 		MAXIMUM_DISCONNECTED_CHANNEL_PERCENTAGE_BEFORE_STARTING_METACHANNELS = Double.valueOf(configService.getInstallationProperties().getProperty("org.epics.archiverappliance.engine.maximum_disconnected_channel_percentage_before_starting_metachannels", Double.toString(MAXIMUM_DISCONNECTED_CHANNEL_PERCENTAGE_BEFORE_STARTING_METACHANNELS)));
 		METACHANNELS_TO_START_AT_A_TIME = Integer.valueOf(configService.getInstallationProperties().getProperty("org.epics.archiverappliance.engine.metachannels_to_start_at_a_time", Integer.toString(METACHANNELS_TO_START_AT_A_TIME)));
 		configlogger.info("Starting metachannels after " + (100.0 - MAXIMUM_DISCONNECTED_CHANNEL_PERCENTAGE_BEFORE_STARTING_METACHANNELS) + "% of channels have connected. We'll start metachannels " + METACHANNELS_TO_START_AT_A_TIME + " at a time");
 
-		
+
 		writer = new WriterRunnable(configService);
 		channelList = new ConcurrentHashMap<String, ArchiveChannel>();
 		logger.debug("Registering EngineContext for events");
 		this.configService = configService;
 		this.myIdentity = configService.getMyApplianceInfo().getIdentity();
 		this.configService.getEventBus().register(this);
-		
+
 		String scanThreadCountName = "org.epics.archiverappliance.engine.epics.scanThreadCount";
 		String scanThreadCountStr = configService.getInstallationProperties().getProperty(scanThreadCountName, "1");
 		configlogger.info("Creating " + scanThreadCountStr + " scan threads as specified by " + scanThreadCountName + " in archappl.properties");
 		int scanThreadCount = Integer.parseInt(scanThreadCountStr);
 
-		
+
 		// Start the scan thread
-		scanScheduler = new ScheduledThreadPoolExecutor(scanThreadCount, new ThreadFactory() {
-			@Override
-			public Thread newThread(Runnable r) {
-				Thread ret = new Thread(r, "The SCAN scheduler.");
-				return ret;
-			}
-		});
+        scanScheduler = new ScheduledThreadPoolExecutor(scanThreadCount, r -> new Thread(r, "The SCAN scheduler."));
 
+        configService.addShutdownHook(() -> {
+            logger.info("the archive engine will shutdown");
+            try {
 
-		configService.addShutdownHook(new Runnable() {
+                if (scheduler != null) {
+                    scheduler.shutdown();
+                }
 
-			@Override
-			public void run() {
+                scanScheduler = null;
 
-				logger.info("the archive engine will shutdown");
-				try {
+                for (Entry<String, ArchiveChannel> channelentry : channelList.entrySet()) {
+                    ArchiveChannel channelTemp = channelentry.getValue();
+                    channelTemp.shutdownMetaChannels();
+                    channelTemp.stop();
+                }
 
-					if (scheduler != null) {
-						scheduler.shutdown();
-					}
-					
-					scanScheduler.shutdown();
-					scanScheduler = null;
-					
-					Iterator<Entry<String, ArchiveChannel>> itChannel = channelList.entrySet().iterator();
-					while (itChannel.hasNext()) {
-						Entry<String, ArchiveChannel> channelentry = (Entry<String, ArchiveChannel>) itChannel.next();
-						ArchiveChannel channeltemp = channelentry.getValue();
-						channeltemp.shutdownMetaChannels();
-						channeltemp.stop();
-					}
-					
-					writer.flushBuffer();
-					channelList.clear();
-					
-					// stop the controlling pv
+                writer.flushBuffer();
+                channelList.clear();
 
-					for (String pvName : controlingPVList.keySet()) {
-						controlingPVList.get(pvName).stop();
-					}
+                // stop the controlling pv
 
-					controlingPVList.clear();
-					
-			        if (pvaClient != null) {
-						pvaClient.close();
-			        }
+                for (String pvName : controlingPVList.keySet()) {
+                    controlingPVList.get(pvName).stop();
+                }
 
+                controlingPVList.clear();
 
-					scheduler = null;
-					isWriteThreadStarted = false;
-					for(int threadNum = 0; threadNum < command_threads.length; threadNum++) { 
-						command_threads[threadNum].shutdown();
-					}
+                if (pvaClient != null) {
+                    pvaClient.close();
+                }
 
-				} catch (Exception e) {
-					logger.error(
-							"Exception when execuing ShutdownHook inconfigservice",
-							e);
-				}
+                scheduler = null;
+                isWriteThreadStarted = false;
+                for (JCACommandThread commandThread : command_threads) {
+                    commandThread.shutdown();
+                }
 
-				logger.info("the archive engine has been shutdown");
+            } catch (Exception e) {
+                logger.error("Exception when execuing ShutdownHook inconfigservice", e);
+            }
 
-			}
+            logger.info("the archive engine has been shutdown");
+        });
 
-		});
-		
-		if(configService.getInstallationProperties() != null) { 
+        if (configService.getInstallationProperties() != null) {
 			try {
 				String disConnStr = configService.getInstallationProperties().getProperty("org.epics.archiverappliance.engine.util.EngineContext.disconnectCheckTimeoutInMinutes", "10");
 				if(disConnStr != null) {
 					this.disconnectCheckTimeoutInSeconds = Integer.parseInt(disConnStr);
 					logger.debug("Setting disconnectCheckTimeoutInMinutes to " + this.disconnectCheckTimeoutInSeconds);
 				}
-			} catch(Throwable t) { 
+            } catch (Throwable t) {
 				logger.error("Exception initializing disconnectCheckTimeoutInMinutes", t);
 			}
 		}
-		
+
 		startMiscTasksScheduler(configService);
-		
+
 		boolean allContextsHaveBeenInitialized = false;
 		for(int loopcount = 0; loopcount < 60 && !allContextsHaveBeenInitialized; loopcount++) {
 			allContextsHaveBeenInitialized = true;
@@ -269,7 +222,7 @@ public class EngineContext {
 						allContextsHaveBeenInitialized = false;
 						Thread.sleep(1000);
 						break;
-					} catch(Exception ex) { 
+                    } catch (Exception ex) {
 						// Ifnore
 					}
 				}
@@ -279,22 +232,51 @@ public class EngineContext {
 		context2CommandThreadId = new Context[command_threads.length];
 		for(int threadNum = 0; threadNum < command_threads.length; threadNum++) {
 			Context context = this.command_threads[threadNum].getContext();
-			if(context == null) { 
+            if (context == null) {
 				// We should have had enough time for all the contexts to have initialized...
 				logger.error("JCA Context not initialized for thread" + threadNum + ". If you see this, we should a sleep() ahead of this message.");
-			} else { 
+            } else {
 				this.context2CommandThreadId[threadNum] = context;
 			}
 		}
-		
+
 		this.iniV4ChannelProvidert();
-		
+
 		this.sampleBufferCapacityAdjustment = Double.parseDouble(configService.getInstallationProperties().getProperty("org.epics.archiverappliance.config.PVTypeInfo.sampleBufferCapacityAdjustment", "1.0"));
 		logger.debug("Buffer capacity adjustment is " + this.sampleBufferCapacityAdjustment);
 	}
 
+	/***
+     *
+	 * @return the list of pvs controlling other pvs
+	 */
+	public ConcurrentHashMap<String, ControllingPV> getControlingPVList() {
+		return controlingPVList;
+	}
+
+        /**
+	 * set the time consumed by writer to write the sample buffer once
+	 * @param secondsConsumedByWriter  the time in second consumed by writer to write the sample buffer once
+         *
+	 */
+	public void setSecondsConsumedByWriter(double secondsConsumedByWriter) {
+		countOfWrittingByWriter++;
+		totalTimeConsumedByWriter = totalTimeConsumedByWriter
+				+ secondsConsumedByWriter;
+	}
+
+        /**
+         *
+	 * @return the average time in second consumed by writer
+	 */
+        public double getAverageSecondsConsumedByWriter() {
+		if (countOfWrittingByWriter == 0)
+			return 0;
+		return totalTimeConsumedByWriter / (double) countOfWrittingByWriter;
+	}
+
 	/**
-	 * Start up the scheduler for misc tasks. 
+     * Start up the scheduler for misc tasks.
 	 * @param configService
 	 */
 	private void startMiscTasksScheduler(final ConfigService configService) {
@@ -317,17 +299,17 @@ public class EngineContext {
 		// Add an assertion in case we accidentally set this to 0 from the props file.
 		assert (disconnectCheckerPeriodInSeconds > 0);
 		disconnectFuture = miscTasksScheduler.scheduleAtFixedRate(new DisconnectChecker(configService), disconnectCheckerPeriodInSeconds, disconnectCheckerPeriodInSeconds, TimeUnit.SECONDS);
-		
+
 		// Add a task to update the metadata fields for each PV
 		// We start this at a well known time; this code was previously suspected of a small memory leak.
 		// Need to make sure this leak is no more.
 		long currentEpochSeconds = TimeUtils.getCurrentEpochSeconds();
 		// Start the metadata updates tomorrow afternoon; doesn't really matter what time; minimze impact with ETL etc
-		long tomorrowAfternoon = ((currentEpochSeconds/(24*60*60)) + 1)*24*60*60 + 22*60*60;
+		long tomorrowAfternoon = ((currentEpochSeconds/(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk())) + 1)*PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() + 22*60*60;
 		logger.info("Starting the metadata updater from " + TimeUtils.convertToHumanReadableString(tomorrowAfternoon));
-		miscTasksScheduler.scheduleAtFixedRate(new MetadataUpdater(), tomorrowAfternoon-currentEpochSeconds, 24*60*60, TimeUnit.SECONDS);
+		miscTasksScheduler.scheduleAtFixedRate(new MetadataUpdater(), tomorrowAfternoon-currentEpochSeconds, PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), TimeUnit.SECONDS);
 	}
-	
+
 	public JCACommandThread getJCACommandThread(int jcaCommandThreadId) {
 		return this.command_threads[jcaCommandThreadId];
 	}
@@ -339,34 +321,34 @@ public class EngineContext {
 	 * @param iocHostName Note this can and will often be null.
 	 * @return threadId  &emsp;
 	 */
-	public int assignJCACommandThread(String pvName, String iocHostName) { 
+    public int assignJCACommandThread(String pvName, String iocHostName) {
 		String pvNameOnly = pvName.split("\\.")[0];
 		ArchiveChannel channel = this.channelList.get(pvNameOnly);
 		if(channel != null) {
 			// Note this is expected for metachannels but not for main channels.
-			if(pvName.equals(pvNameOnly)) { 
+            if (pvName.equals(pvNameOnly)) {
 				logger.debug("We seem to have a channel already for " + pvName + ". Returning its JCA Command thread id.");
 			}
-			return channel.getJCACommandThreadID();			
+            return channel.getJCACommandThreadID();
 		}
 		int threadId =  Math.abs(pvNameOnly.hashCode()) % command_threads.length;
 		return threadId;
 	}
-	
-	
-	public boolean doesContextMatchThread(Context context, int jcaCommandThreadId) { 
+
+
+    public boolean doesContextMatchThread(Context context, int jcaCommandThreadId) {
 		Context contextForThreadId = this.context2CommandThreadId[jcaCommandThreadId];
-		if(contextForThreadId != null) { 
+        if (contextForThreadId != null) {
 			return contextForThreadId == context;
-		} else { 
+        } else {
 			logger.error("Null context for thread id " + jcaCommandThreadId);
 			// We should never get here; but in the case we do failing in this assertion is less harmful than spewing the message with logs...
 			return true;
 		}
 	}
-	
+
 /**
- * 
+ *
  * @return the channel list of pvs, without the pvs for meta fields
  */
 	public ConcurrentHashMap<String, ArchiveChannel> getChannelList() {
@@ -374,7 +356,7 @@ public class EngineContext {
 	}
 
 /**
- * 
+ *
  * @return  the scheduler for the whole engine
  */
 	public ScheduledThreadPoolExecutor getScheduler() {
@@ -391,18 +373,18 @@ public class EngineContext {
 		return scheduler;
 
 	}
-	
-	
-	/**
+
+
+    /**
 	 * Get the scheduler used for SCAN PV's
 	 * @return scanScheduler  &emsp;
 	 */
-	public ScheduledThreadPoolExecutor getScanScheduler() { 
+    public ScheduledThreadPoolExecutor getScanScheduler() {
 		return scanScheduler;
 	}
-	
+
 /**
- * 
+ *
  * @return the WriterRunnable for the engines
  */
 	public WriterRunnable getWriteThead() {
@@ -413,39 +395,39 @@ public class EngineContext {
 /**
  * start the write thread of the engine and this is actually called by the first pv when creating channel
  * @param configservice  configservice used by this writer
- */ 
+ */
 	public void startWriteThread(ConfigService configservice) {
 		int defaultWritePeriod = PVTypeInfo.getSecondsToBuffer(configservice);
 		double actualWrite_period=writer.setWritingPeriod(defaultWritePeriod);
 		this.write_period = actualWrite_period;
-		if (scheduler == null) { 
+        if (scheduler == null) {
 			scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(1);
 		}
 		scheduler.scheduleAtFixedRate(writer, 0, (long) (this.write_period * 1000), TimeUnit.MILLISECONDS);
 		isWriteThreadStarted = true;
 	}
 /**
- * 
+ *
  * @return the writing period in second
  */
 	public double getWritePeriod() {
 		return write_period;
 	}
 /**
- * 
+ *
  * @return the status of the writing thread. return true, if it is started.Otherwise, return false;
  */
 	public boolean isWriteThreadStarted() {
 
 		return isWriteThreadStarted;
 	}
-	
+
 	@Subscribe public void computeMetaInfo(PubSubEvent pubSubEvent) {
-		if(pubSubEvent.getDestination().equals("ALL") 
+        if (pubSubEvent.getDestination().equals("ALL")
 				|| (pubSubEvent.getDestination().startsWith(myIdentity) && pubSubEvent.getDestination().endsWith(ConfigService.WAR_FILE.ENGINE.toString()))) {
 			if(pubSubEvent.getType().equals("ComputeMetaInfo")) {
 				String pvName = pubSubEvent.getPvName();
-				try { 
+                try {
 					logger.debug("ComputeMetaInfo called for " + pvName);
 					String fieldName = PVNames.getFieldName(pvName);
 					String[] extraFields = configService.getExtraFields();
@@ -466,7 +448,7 @@ public class EngineContext {
 				}
 			} else if(pubSubEvent.getType().equals("StartArchivingPV")) {
 				String pvName = pubSubEvent.getPvName();
-				try { 
+                try {
 					this.startArchivingPV(pvName);
 					PubSubEvent confirmationEvent = new PubSubEvent("StartedArchivingPV", pubSubEvent.getSource() + "_" + ConfigService.WAR_FILE.MGMT, pvName);
 					configService.getEventBus().post(confirmationEvent);
@@ -475,22 +457,22 @@ public class EngineContext {
 				}
 			} else if(pubSubEvent.getType().equals("AbortComputeMetaInfo")) {
 				String pvName = pubSubEvent.getPvName();
-				try { 
+                try {
 					logger.warn("AbortComputeMetaInfo called for " + pvName);
 					this.abortComputeMetaInfo(pvName);
 					// PubSubEvent confirmationEvent = new PubSubEvent("MetaInfoAborted", pubSubEvent.getSource() + "_" + ConfigService.WAR_FILE.MGMT, pvName);
 					// configService.getEventBus().post(confirmationEvent);
-				} catch(Exception ex) { 
+                } catch (Exception ex) {
 					logger.error("Exception aborting metainfo for PV " + pvName, ex);
 				}
 			}
 		} else {
 			logger.debug("Skipping processing event meant for " + pubSubEvent.getDestination());
 		}
-		
-	}
-	
-	/**
+
+    }
+
+    /**
 	 * @param newDisconnectCheckTimeoutSeconds
 	 * This is to be used only for unit testing purposes...
 	 * There are no guarantees that using this on a running server will be benign.
@@ -702,37 +684,15 @@ public class EngineContext {
 			return false;
 		}
 	}
-	
-	
-	/**
-	 * Go thru all the contexts and return channels whose names match this
-	 * This is to be used for for testing purposes only.
-	 * This may not work in running servers; so, please avoid use outside unit tests.
-	 */
-	public class CommandThreadChannel { 
-		JCACommandThread commandThread;
-		Channel channel;
-		public CommandThreadChannel(JCACommandThread commandThread, Channel channel) {
-			this.commandThread = commandThread;
-			this.channel = channel;
-		}
-		public JCACommandThread getCommandThread() {
-			return commandThread;
-		}
-		public Channel getChannel() {
-			return channel;
-		}
-	}
-	
-	
-	public List<CommandThreadChannel> getAllChannelsForPV(String pvName) {
+
+    public List<CommandThreadChannel> getAllChannelsForPV(String pvName) {
 		LinkedList<CommandThreadChannel> retval = new LinkedList<CommandThreadChannel>();
 		String pvNameOnly = pvName.split("\\.")[0];
-		for(JCACommandThread command_thread : this.command_threads) { 
+        for (JCACommandThread command_thread : this.command_threads) {
 			Context context = command_thread.getContext();
-			for(Channel channel : context.getChannels()) { 
+            for (Channel channel : context.getChannels()) {
 				String channelNameOnly = channel.getName().split("\\.")[0];
-				if(channelNameOnly.equals(pvNameOnly)) { 
+                if (channelNameOnly.equals(pvNameOnly)) {
 					retval.add(new CommandThreadChannel(command_thread, channel));
 				}
 			}
@@ -743,44 +703,18 @@ public class EngineContext {
 	/**
 	 * Per FRIB/PSI, we have a configuration knob to increase/decrease the sample buffer size used by the engine for all PV's.
 	 * This comes from archappl.properties and is a double - by default 1.0 which means we leave the buffer size computation as is.
-	 * If you want to increase buffer size globally to 150% of what is normally computed, set this to 1.5  
+     * If you want to increase buffer size globally to 150% of what is normally computed, set this to 1.5
 	 * @return sampleBufferCapacityAdjustment  &emsp;
 	 */
 	public double getSampleBufferCapacityAdjustment() {
 		return sampleBufferCapacityAdjustment;
 	}
-	
-	
-	/**
-	 * Use EPICS_V3_PV's updateTotalMetaInfo to update the metadata once every 24 hours.  
-	 * @author mshankar
-	 *
-	 */
-	private class MetadataUpdater implements Runnable { 
-		public void run() {
-			logger.info("Starting the daily update of metadata information");
-			int pvCount = 0;
-			for(ArchiveChannel channel : EngineContext.this.channelList.values()) {
-				if(channel.isConnected()) {
-					logger.debug("Updating metadata for " + channel.getName());
-					channel.updateMetadataOnceADay(EngineContext.this);
-					pvCount++;
-					// 100,000 PVs should complete in 100,000/(100*(1000/250)) seconds approx 5 minutes
-					if(pvCount %100 == 0) { 
-						try {Thread.sleep(250); } catch(Throwable t) {}
-					}
-				}
-			}
-			logger.info("Completed scheduling the daily update of metadata information");
-		}
-	}
-	
-	
-	/**
+
+    /**
 	 * Get the total channel count as CAJ sees it.
 	 * @return totalCAJChannelCount  &emsp;
 	 */
-	public int getCAJChannelCount() { 
+    public int getCAJChannelCount() {
 		int totalCAJChannelCount = 0;
 		for(int threadNum = 0; threadNum < command_threads.length; threadNum++) {
 			Context context = this.command_threads[threadNum].getContext();
@@ -788,43 +722,21 @@ public class EngineContext {
 		}
 		return totalCAJChannelCount;
 	}
-	
-	
-    private void iniV4ChannelProvidert() {
-        if (pvaClient == null) {
-                logger.info("Registered the pvAccess client factory.");
-                try {
-					pvaClient = new PVAClient();
-				} catch (Exception e) {
-					logger.error(
-							"Exception when initializing PVA Client",
-							e);
-				}
-        }
-    }
-	public PVAClient getPVAClient() {
-		return pvaClient;
-	}
 
-	public ScheduledThreadPoolExecutor getMiscTasksScheduler() {
-		return miscTasksScheduler;
-	}
-	
-	/**
-	 * Get the number of tasks pending in the main scheduler. 
+    /**
+     * Get the number of tasks pending in the main scheduler.
 	 * This is the one that powers the write thread.
 	 * @return
 	 */
 	public int getMainSchedulerPendingTasks() {
-		if(scheduler != null) { 
+        if (scheduler != null) {
 			return scheduler.getQueue().size();
 		} else {
 			return -1;
 		}
 	}
-	
-	
-	/**
+
+    /**
 	 * Return some details on the CAJ contexts for the metrics page.
 	 * @return
 	 */
@@ -851,5 +763,70 @@ public class EngineContext {
 		obj.put("source", "engine");
 		ret.add(obj);
 		return ret;
+	}
+
+
+    private void iniV4ChannelProvidert() {
+        if (pvaClient == null) {
+                logger.info("Registered the pvAccess client factory.");
+                try {
+					pvaClient = new PVAClient();
+				} catch (Exception e) {
+					logger.error(
+							"Exception when initializing PVA Client",
+							e);
+				}
+        }
+    }
+	public PVAClient getPVAClient() {
+		return pvaClient;
+	}
+
+	public ScheduledThreadPoolExecutor getMiscTasksScheduler() {
+		return miscTasksScheduler;
+	}
+
+    /**
+	 * Go thru all the contexts and return channels whose names match this
+	 * This is to be used for for testing purposes only.
+	 * This may not work in running servers; so, please avoid use outside unit tests.
+	 */
+    public class CommandThreadChannel {
+		JCACommandThread commandThread;
+		Channel channel;
+		public CommandThreadChannel(JCACommandThread commandThread, Channel channel) {
+			this.commandThread = commandThread;
+			this.channel = channel;
+		}
+		public JCACommandThread getCommandThread() {
+			return commandThread;
+		}
+		public Channel getChannel() {
+			return channel;
+		}
+	}
+
+    /**
+     * Use EPICS_V3_PV's updateTotalMetaInfo to update the metadata once every 24 hours.
+	 * @author mshankar
+	 *
+	 */
+    private class MetadataUpdater implements Runnable {
+		public void run() {
+			logger.info("Starting the daily update of metadata information");
+			int pvCount = 0;
+			for(ArchiveChannel channel : EngineContext.this.channelList.values()) {
+				if(channel.isConnected()) {
+					logger.debug("Updating metadata for " + channel.getName());
+					channel.updateMetadataOnceADay(EngineContext.this);
+					pvCount++;
+					// 100,000 PVs should complete in 100,000/(100*(1000/250)) seconds approx 5 minutes
+                    if (pvCount % 100 == 0) {
+						try {Thread.sleep(250); } catch(Throwable t) {}
+					}
+				}
+			}
+			logger.info("Completed scheduling the daily update of metadata information");
+		}
 	}
 }

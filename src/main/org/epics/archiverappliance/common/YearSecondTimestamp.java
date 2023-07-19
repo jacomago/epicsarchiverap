@@ -47,38 +47,38 @@ public class YearSecondTimestamp implements Comparable<YearSecondTimestamp> {
         return nanos;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
 
-        YearSecondTimestamp that = (YearSecondTimestamp) o;
+		YearSecondTimestamp that = (YearSecondTimestamp) o;
 
-        if (year != that.year) return false;
-        if (secondsintoyear != that.secondsintoyear) return false;
-        return nanos == that.nanos;
-    }
+		if (year != that.year) return false;
+		if (secondsintoyear != that.secondsintoyear) return false;
+		return nanos == that.nanos;
+	}
 
-    @Override
-    public int hashCode() {
-        int result = year;
-        result = 31 * result + secondsintoyear;
-        result = 31 * result + nanos;
-        return result;
-    }
+	@Override
+	public int hashCode() {
+		int result = year;
+		result = 31 * result + secondsintoyear;
+		result = 31 * result + nanos;
+		return result;
+	}
 
 	public void setNanos(int nanos) {
         this.nanos = nanos;
     }
 
-    @Override
-    public String toString() {
-        return "YearSecondTimestamp{" +
-                "year=" + year +
-                ", secondsintoyear=" + secondsintoyear +
-                ", nanos=" + nanos +
-                '}';
-    }
+	@Override
+	public String toString() {
+		return "YearSecondTimestamp{" +
+				"year=" + year +
+				", secondsintoyear=" + secondsintoyear +
+				", nanos=" + nanos +
+				'}';
+	}
 
 	@Override
     public int compareTo(YearSecondTimestamp other) {

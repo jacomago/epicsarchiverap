@@ -146,7 +146,13 @@ public class FailoverScoreAPITest {
                 for (Event e : stream) {
                     long evEpoch = TimeUtils.convertToEpochSeconds(e.getEventTimeStamp());
                     if (lastEvEpoch != 0) {
-                        Assertions.assertTrue((evEpoch - lastEvEpoch) == PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), "We got events more than " + PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() + " seconds apart " + TimeUtils.convertToHumanReadableString(lastEvEpoch) + " and  " + TimeUtils.convertToHumanReadableString(evEpoch));
+                        Assertions.assertEquals(
+                                (evEpoch - lastEvEpoch),
+                                PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(),
+                                "We got events more than "
+                                        + PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk()
+                                        + " seconds apart " + TimeUtils.convertToHumanReadableString(lastEvEpoch)
+                                        + " and  " + TimeUtils.convertToHumanReadableString(evEpoch));
                     }
                     lastEvEpoch = evEpoch;
                     rtvlEventCount++;
@@ -220,12 +226,12 @@ public class FailoverScoreAPITest {
 
         for (int i = 0; i < 20; i++) {
             long startOfDay = (TimeUtils.convertToEpochSeconds(TimeUtils.minusDays(TimeUtils.now(), -1 * (i - 25)))
-                    / PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk())
+                            / PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk())
                     * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
             for (int h = 0; h < 24; h++) {
                 logger.info("Looking for value of PV at  "
                         + TimeUtils.convertToHumanReadableString(startOfDay
-                        + (long) h * PartitionGranularity.PARTITION_HOUR.getApproxSecondsPerChunk()));
+                                + (long) h * PartitionGranularity.PARTITION_HOUR.getApproxSecondsPerChunk()));
                 testDataAtTime(
                         startOfDay + (long) h * PartitionGranularity.PARTITION_HOUR.getApproxSecondsPerChunk(),
                         (h >= 10 && h < 20));

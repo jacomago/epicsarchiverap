@@ -38,15 +38,6 @@ import java.io.InputStreamReader;
 import java.net.URLEncoder;
 import java.time.Instant;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.net.URLEncoder;
-import java.sql.Timestamp;
-
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 /**
  * Test basic failover - just the retrieval side of things.
  * @author mshankar
@@ -76,7 +67,7 @@ public class FailoverRetrievalTest {
 	 * @param startingOffset - Use 0 for even seconds; 1 for odd seconds. When merged, we test to make sure; we get data one second apart.
 	 * @throws Exception
 	 */
-    private long generateMTSData(String applURL, String applianceName, Instant lastMonth, int startingOffset)
+	private long generateMTSData(String applURL, String applianceName, Instant lastMonth, int startingOffset)
 			throws Exception {
 		int genEventCount = 0;
 		StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=LTS&rootFolder=" + "build/tomcats/tomcat_"+ this.getClass().getSimpleName() + "/" + applianceName + "/mts" + "&partitionGranularity=PARTITION_DAY", configService);

@@ -74,7 +74,7 @@ public class FQDNApplianceXMLTest {
 		
 		driver.get("http://localhost:17665/mgmt/ui/index.html");
 		WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
-		Assertions.assertTrue(pvstextarea != null, "Cannot get to the home page...");
+		Assertions.assertNotNull(pvstextarea, "Cannot get to the home page...");
 
 		driver.quit();
 		tomcatSetup.tearDown();

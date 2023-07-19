@@ -111,7 +111,7 @@ public class CAPlotBinning implements PostProcessor, PostProcessorWithConsolidat
 			logger.debug("Using the default interval of  " + intervalSecs + " as the user has not specified the interval argument.");
 		}
 	}
-	
+
 	@Override
 	public Callable<EventStream> wrap(final Callable<EventStream> callable) {
 		return new Callable<EventStream>() {

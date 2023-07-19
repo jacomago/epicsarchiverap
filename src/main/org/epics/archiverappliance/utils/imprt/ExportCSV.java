@@ -7,8 +7,8 @@
  *******************************************************************************/
 package org.epics.archiverappliance.utils.imprt;
 
-import edu.stanford.slac.archiverappliance.PlainPB.FileBackedPBEventStream;
-import edu.stanford.slac.archiverappliance.PlainPB.PBFileInfo;
+import edu.stanford.slac.archiverappliance.plain.pb.FileBackedPBEventStream;
+import edu.stanford.slac.archiverappliance.plain.pb.PBFileInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -49,11 +49,11 @@ public class ExportCSV {
 			strm = new FileBackedPBEventStream(info.getPVName(), path, info.getType());
 			for(Event e : strm) {
 				DBRTimeEvent evnt = (DBRTimeEvent) e;
-                Instant ts = evnt.getEventTimeStamp();
+				Instant ts = evnt.getEventTimeStamp();
 				long epicsEpochSeconds = e.getEpochSeconds() - TimeUtils.EPICS_EPOCH_2_JAVA_EPOCH_OFFSET;
 
 				System.out.println(epicsEpochSeconds + "," +
-                                ts.getNano() + "," +
+						ts.getNano() + "," +
 						evnt.getSampleValue().toString() + "," +
 						evnt.getStatus() + "," +
 						evnt.getSeverity()

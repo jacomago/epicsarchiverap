@@ -38,11 +38,11 @@ public interface MimeResponse extends EventConsumer {
 	/**
 	 * Called when we swich to a new PV. 
 	 * @param pv The name of PV 
-     * @param start Instant
-     * @param end Instant
+	 * @param start Instant
+	 * @param end Instant
 	 * @param streamDesc  Could be null if we have no data in first store we hit.
 	 */
-    public void processingPV(BasicContext retrievalContext, String pv, Instant start, Instant end, EventStreamDesc streamDesc);
+	public void processingPV(BasicContext retrievalContext, String pv, Instant start, Instant end, EventStreamDesc streamDesc);
 	public void swicthingToStream(EventStream strm);
 	public void close();
 	

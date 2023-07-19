@@ -1,15 +1,18 @@
 package org.epics.archiverappliance.zipfs;
 
-import edu.stanford.slac.archiverappliance.PlainPB.FileBackedPBEventStream;
-import edu.stanford.slac.archiverappliance.PlainPB.MultiFilePBEventStream;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.pb.FileBackedPBEventStream;
+import edu.stanford.slac.archiverappliance.plain.pb.MultiFilePBEventStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.BasicContext;
+import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigService;
@@ -46,7 +49,7 @@ public class ZipCachedFetchTest {
     private static final Logger logger = LogManager.getLogger(ZipCachedFetchTest.class.getName());
     String rootFolderName = ConfigServiceForTests.getDefaultPBTestFolder() + "/" + "ZipCachedFetchTest/";
     String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "ZipCachedFetchTest";
-    PlainPBStoragePlugin pbplugin;
+    PlainStoragePlugin pbplugin;
     short currentYear = TimeUtils.getCurrentYear();
     private ConfigService configService;
 
@@ -66,7 +69,7 @@ public class ZipCachedFetchTest {
             long previousEpochSeconds = 0L;
             for (Event e : srcStream) {
                 long currEpochSeconds = e.getEpochSeconds();
-                if (currEpochSeconds - previousEpochSeconds > 60 * 60) {
+                if (currEpochSeconds - previousEpochSeconds > PartitionGranularity.PARTITION_HOUR.getApproxSecondsPerChunk()) {
                     this.add(e);
                     previousEpochSeconds = currEpochSeconds;
                 }
@@ -82,7 +85,7 @@ public class ZipCachedFetchTest {
     @BeforeEach
     public void setUp() throws Exception {
         configService = new ConfigServiceForTests(-1);
-        pbplugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        pbplugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 "pb://localhost?name=STS&rootFolder=" + rootFolderName
                         + "&partitionGranularity=PARTITION_DAY&compress=ZIP_PER_PV",
                 configService);
@@ -93,9 +96,9 @@ public class ZipCachedFetchTest {
         try (BasicContext context = new BasicContext()) {
             for (int day = 0; day < 365; day++) {
                 ArrayListEventStream testData =
-                        new ArrayListEventStream(24 * 60 * 60, new RemotableEventStreamDesc(type, pvName, currentYear));
-                int startofdayinseconds = day * 24 * 60 * 60;
-                for (int secondintoday = 0; secondintoday < 24 * 60 * 60; secondintoday++) {
+                        new ArrayListEventStream(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), new RemotableEventStreamDesc(type, pvName, currentYear));
+                int startofdayinseconds = day * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
+                for (int secondintoday = 0; secondintoday < PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(); secondintoday++) {
                     testData.add(new SimulationEvent(
                             startofdayinseconds + secondintoday, currentYear, type, new ScalarValue<Double>((double)
                                     secondintoday)));
@@ -128,13 +131,13 @@ public class ZipCachedFetchTest {
     private void testSerialFetch(Instant startTime, Instant endTime, int months) throws Exception {
         try (BasicContext context = new BasicContext()) {
             long st0 = System.currentTimeMillis();
-            Path[] paths = PlainPBPathNameUtility.getPathsWithData(
+            Path[] paths = PathNameUtility.getPathsWithData(
                     context.getPaths(),
                     pbplugin.getRootFolder(),
                     pvName,
                     startTime,
                     endTime,
-                    PlainPBStoragePlugin.pbFileExtension,
+                    FileExtension.PB.getExtensionString(),
                     pbplugin.getPartitionGranularity(),
                     pbplugin.getCompressionMode(),
                     configService.getPVNameToKeyConverter());
@@ -144,7 +147,7 @@ public class ZipCachedFetchTest {
                     new MultiFilePBEventStream(paths, pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, startTime, endTime)) {
                 for (Event e : st) {
                     long currEpochSeconds = e.getEpochSeconds();
-                    if (currEpochSeconds - previousEpochSeconds > 60 * 60) {
+                    if (currEpochSeconds - previousEpochSeconds > PartitionGranularity.PARTITION_HOUR.getApproxSecondsPerChunk()) {
                         eventCount++;
                         previousEpochSeconds = currEpochSeconds;
                     }
@@ -161,15 +164,15 @@ public class ZipCachedFetchTest {
         logger.info("The parallelism in the pool is " + forkJoinPool.getParallelism());
         try (BasicContext context = new BasicContext()) {
             long st0 = System.currentTimeMillis();
-            Path[] paths = PlainPBPathNameUtility.getPathsWithData(
+            Path[] paths = PathNameUtility.getPathsWithData(
                     context.getPaths(),
                     pbplugin.getRootFolder(),
                     pvName,
                     startTime,
                     endTime,
-                    PlainPBStoragePlugin.pbFileExtension,
+                    FileExtension.PB.getExtensionString(),
                     pbplugin.getPartitionGranularity(),
-                    pbplugin.getCompressionMode(),
+                    CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());
 
             List<Future<EventStream>> futures = new LinkedList<Future<EventStream>>();

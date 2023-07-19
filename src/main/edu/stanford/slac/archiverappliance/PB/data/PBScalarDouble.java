@@ -7,6 +7,7 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PB.data;
 
+import com.google.protobuf.Message;
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent;
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.FieldValue;
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.ScalarDouble.Builder;
@@ -45,15 +46,22 @@ public class PBScalarDouble implements DBRTimeEvent {
 		this.bar = bar;
 	}
 
+	public PBScalarDouble(short year, Message.Builder message) {
+		this.dbevent = (EPICSEvent.ScalarDouble) message.build();
+		this.bar = new ByteArray(LineEscaper.escapeNewLines(dbevent.toByteArray()));
+		this.year = year;
+	}
 	public PBScalarDouble(DBRTimeEvent ev) {
 		YearSecondTimestamp yst = TimeUtils.convertToYearSecondTimestamp(ev.getEventTimeStamp());
 		year = yst.getYear();
 		Builder builder = EPICSEvent.ScalarDouble.newBuilder()
 				.setSecondsintoyear(yst.getSecondsintoyear())
-                .setNano(yst.getNano())
+				.setNano(yst.getNano())
 				.setVal(ev.getSampleValue().getValue().doubleValue());
-		if(ev.getSeverity() != 0) builder.setSeverity(ev.getSeverity());
-		if(ev.getStatus() != 0) builder.setStatus(ev.getStatus());
+		if(ev.getSeverity() != 0)
+			builder.setSeverity(ev.getSeverity());
+		if(ev.getStatus() != 0)
+			builder.setStatus(ev.getStatus());
 		if(ev.hasFieldValues()) {
 			HashMap<String, String> fields = ev.getFields();
 			for(String fieldName : fields.keySet()) {
@@ -72,10 +80,12 @@ public class PBScalarDouble implements DBRTimeEvent {
 		year = yst.getYear();
 		Builder builder = EPICSEvent.ScalarDouble.newBuilder()
 				.setSecondsintoyear(yst.getSecondsintoyear())
-                .setNano(yst.getNano())
+				.setNano(yst.getNano())
 				.setVal(realtype.getDoubleValue()[0]);
-		if(realtype.getSeverity().getValue() != 0) builder.setSeverity(realtype.getSeverity().getValue());
-		if(realtype.getStatus().getValue() != 0) builder.setStatus(realtype.getStatus().getValue());
+		if(realtype.getSeverity().getValue() != 0)
+			builder.setSeverity(realtype.getSeverity().getValue());
+		if(realtype.getStatus().getValue() != 0)
+			builder.setStatus(realtype.getStatus().getValue());
 		dbevent = builder.build();
 		bar = new ByteArray(LineEscaper.escapeNewLines(dbevent.toByteArray()));
 	}
@@ -96,8 +106,18 @@ public class PBScalarDouble implements DBRTimeEvent {
         dbevent = builder.build();
         bar = new ByteArray(LineEscaper.escapeNewLines(dbevent.toByteArray()));
     }
-	
-	
+
+	@Override
+	public Message getMessage() {
+		unmarshallEventIfNull();
+		return dbevent;
+	}
+
+	@Override
+	public Class<? extends Message> getMessageClass() {
+		return EPICSEvent.ScalarDouble.class;
+	}
+
 	@Override
 	public Event makeClone() {
 		return new PBScalarDouble(this);
@@ -105,11 +125,17 @@ public class PBScalarDouble implements DBRTimeEvent {
 
 	
 	@Override
-    public Instant getEventTimeStamp() {
+	public Instant getEventTimeStamp() {
 		unmarshallEventIfNull();
 		return TimeUtils.convertFromYearSecondTimestamp(new YearSecondTimestamp(year, dbevent.getSecondsintoyear(), dbevent.getNano()));
 	}
 
+
+	@Override
+	public YearSecondTimestamp getYearSecondTimestamp() {
+		unmarshallEventIfNull();
+		return new YearSecondTimestamp(this.year, dbevent.getSecondsintoyear(), dbevent.getNano());
+	}
 	@Override
 	public long getEpochSeconds() {
 		unmarshallEventIfNull();

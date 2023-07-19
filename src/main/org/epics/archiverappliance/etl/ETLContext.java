@@ -7,12 +7,12 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BasicContext;
+
+import java.util.HashMap;
+import java.util.LinkedList;
 
 /**
  * A class to hold state for one run of ETL. 
@@ -22,10 +22,10 @@ import org.epics.archiverappliance.common.BasicContext;
  *
  */
 public class ETLContext extends BasicContext {
-	private static Logger logger = LogManager.getLogger(ETLContext.class.getName());
+	private static final Logger logger = LogManager.getLogger(ETLContext.class.getName());
 	
-	private HashMap<String, Object> state = new HashMap<String, Object>();
-	private LinkedList<Runnable> postETLTasks = new LinkedList<Runnable>(); 
+	private final HashMap<String, Object> state = new HashMap<String, Object>();
+	private final LinkedList<Runnable> postETLTasks = new LinkedList<Runnable>();
 	
 	public void put(String key, Object value) {
 		state.put(key, value);
@@ -34,19 +34,7 @@ public class ETLContext extends BasicContext {
 	public Object get(String key) {
 		return state.get(key);
 	}
-	
-	public void putString(String key, String value) {
-		state.put(key, value);
-	}
-	
-	public String getString(String key) {
-		return (String) state.get(key);
-	}
-	
-	public void addPostETLTask(Runnable runnable) {
-		postETLTasks.add(runnable);
-	}
-	
+
 	public void executePostETLTasks() {
 		for(Runnable runnable : postETLTasks) {
 			try {

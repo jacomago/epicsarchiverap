@@ -43,7 +43,7 @@ public class StreamPBIntoOutput {
 	 * @return totalEvents  &emsp; 
 	 * @throws IOException  &emsp; 
 	 */
-    public static int streamPBIntoOutputStream(EventStream st, OutputStream os, Instant start, Instant end) throws IOException {
+	public static int streamPBIntoOutputStream(EventStream st, OutputStream os, Instant start, Instant end) throws IOException {
 		long startTimeInEpochSeconds = 0;
 		if(start != null)
 			startTimeInEpochSeconds = TimeUtils.convertToEpochSeconds(start);

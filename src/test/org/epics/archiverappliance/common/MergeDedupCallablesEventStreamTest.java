@@ -19,6 +19,10 @@ import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.retrieval.CallableEventStream;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +42,7 @@ public class MergeDedupCallablesEventStreamTest {
 	String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + ":MergeDedupEventStreamTest";
 	ArchDBRTypes dbrType = ArchDBRTypes.DBR_SCALAR_DOUBLE;
 	short currentYear = TimeUtils.getCurrentYear();
-	
+
 	
 	private List<Callable<EventStream>> breakStreamIntoChunks(int chunks, ArrayListEventStream strm) {
 		List<Callable<EventStream>> ret = new LinkedList<Callable<EventStream>>();
@@ -90,8 +94,8 @@ public class MergeDedupCallablesEventStreamTest {
 		}
 		List<Callable<EventStream>> firstthreequartersc = breakStreamIntoChunks(3, firstthreequarters);
 		
-		ArrayListEventStream combn = new ArrayListEventStream(60*60*24, new RemotableEventStreamDesc(dbrType, pvName, currentYear));
-		for(int s = 0; s < 60*60*24; s++) {
+		ArrayListEventStream combn = new ArrayListEventStream(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), new RemotableEventStreamDesc(dbrType, pvName, currentYear));
+		for(int s = 0; s < PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(); s++) {
 			combn.add(new SimulationEvent(s, currentYear, dbrType, new ScalarValue<Double>((double) s)));
 		}
 

@@ -51,12 +51,7 @@ public interface PV
      */
     public void addListener(PVListener listener);
 
-    /** Remove a listener. 
-     * @param listener PVListener
-     */
-    public void removeListener(PVListener listener);
-
-    /** Start the PV: connect, get meta data, subscribe to updates,
+	/** Start the PV: connect, get meta data, subscribe to updates,
      *  invoke {@link PVListener} for incoming values, ...
      *  @throws Exception  &emsp;
      *  @see #addListener(PVListener)

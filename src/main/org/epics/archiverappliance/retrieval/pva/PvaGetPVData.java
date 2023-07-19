@@ -161,7 +161,7 @@ public class PvaGetPVData implements PvaAction {
 		}
 
 		// ISO datetimes are of the form "2011-02-02T08:00:00.000Z"
-        Instant end = TimeUtils.plusHours(TimeUtils.now(), 1);
+		Instant end = TimeUtils.plusHours(TimeUtils.now(), 1);
 		if (endTimeStr != null) {
 			try {
 				end = TimeUtils.convertFromISO8601String(endTimeStr);
@@ -177,7 +177,7 @@ public class PvaGetPVData implements PvaAction {
 		}
 
 		// We get one day by default
-        Instant start = TimeUtils.minusDays(end, 1);
+		Instant start = TimeUtils.minusDays(end, 1);
 		if (startTimeStr != null) {
 			try {
 				start = TimeUtils.convertFromISO8601String(startTimeStr);
@@ -193,7 +193,7 @@ public class PvaGetPVData implements PvaAction {
 			}
 		}
 
-        if (end.isBefore(start)) {
+		if (end.isBefore(start)) {
 			String msg = "For request, end " + end.toString() + " is before start " + start.toString() + " for pv "
 					+ pvName;
 			logger.error(msg);
@@ -529,7 +529,7 @@ public class PvaGetPVData implements PvaAction {
 			}
 
 		// ISO datetimes are of the form "2011-02-02T08:00:00.000Z"
-        Instant end = TimeUtils.plusHours(TimeUtils.now(), 1);
+		Instant end = TimeUtils.plusHours(TimeUtils.now(), 1);
 		if (endTimeStr != null) {
 			try {
 				end = TimeUtils.convertFromISO8601String(endTimeStr);
@@ -546,7 +546,7 @@ public class PvaGetPVData implements PvaAction {
 		}
 
 		// We get one day by default
-        Instant start = TimeUtils.minusDays(end, 1);
+		Instant start = TimeUtils.minusDays(end, 1);
 		if (startTimeStr != null) {
 			try {
 				start = TimeUtils.convertFromISO8601String(startTimeStr);
@@ -562,7 +562,7 @@ public class PvaGetPVData implements PvaAction {
 			}
 		}
 
-        if (end.isBefore(start)) {
+		if (end.isBefore(start)) {
 			String msg = "For request, end " + end.toString() + " is before start " + start.toString() + " for pvs "
 					+ StringUtils.join(pvNames, ", ");
 			logger.error(msg);
@@ -1016,14 +1016,14 @@ public class PvaGetPVData implements PvaAction {
 			throw new PvaActionException(msg);
 		}
 
-        LinkedList<Instant> timeRangesList = new LinkedList<Instant>();
+		LinkedList<Instant> timeRangesList = new LinkedList<Instant>();
 		for (String timeRangesStrItem : timeRangesStrList) {
 			try {
-                Instant ts = TimeUtils.convertFromISO8601String(timeRangesStrItem);
+				Instant ts = TimeUtils.convertFromISO8601String(timeRangesStrItem);
 				timeRangesList.add(ts);
 			} catch (IllegalArgumentException ex) {
 				try {
-                    Instant ts = TimeUtils.convertFromDateTimeStringWithOffset(timeRangesStrItem);
+					Instant ts = TimeUtils.convertFromDateTimeStringWithOffset(timeRangesStrItem);
 					timeRangesList.add(ts);
 				} catch (IllegalArgumentException ex2) {
 					String msg = "Cannot parse time " + timeRangesStrItem;
@@ -1034,12 +1034,12 @@ public class PvaGetPVData implements PvaAction {
 		}
 
 		assert (timeRangesList.size() % 2 == 0);
-        Instant prevEnd = null;
+		Instant prevEnd = null;
 		while (!timeRangesList.isEmpty()) {
-            Instant t0 = timeRangesList.pop();
-            Instant t1 = timeRangesList.pop();
+			Instant t0 = timeRangesList.pop();
+			Instant t1 = timeRangesList.pop();
 
-            if (t1.isBefore(t0)) {
+			if (t1.isBefore(t0)) {
 				String msg = "For request, end " + t1.toString() + " is before start " + t0.toString() + " for pv "
 						+ pvName;
 				logger.error(msg);
@@ -1047,7 +1047,7 @@ public class PvaGetPVData implements PvaAction {
 			}
 
 			if (prevEnd != null) {
-                if (t0.isBefore(prevEnd)) {
+				if (t0.isBefore(prevEnd)) {
 					String msg = "For request, start time " + t0.toString() + " is before previous end time "
 							+ prevEnd.toString() + " for pv " + pvName;
 					logger.error(msg);

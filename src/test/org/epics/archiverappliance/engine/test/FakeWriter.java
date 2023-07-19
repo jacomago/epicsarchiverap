@@ -22,10 +22,10 @@ public class FakeWriter implements Writer {
 
 
 	@Override
-    public int appendData(BasicContext context, String arg0,
+	public int appendData(BasicContext context, String arg0,
 			EventStream arg1) throws IOException {
 		//
-        return 0;
+		return 0;
 	}
 
 	@Override

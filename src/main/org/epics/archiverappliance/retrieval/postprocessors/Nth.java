@@ -37,7 +37,7 @@ public class Nth implements PostProcessor, PostProcessorWithConsolidatedEventStr
 	private long startTime;
 	private long endTime;
 	private ArrayListEventStream data;
-    private Instant previousEventTimestamp = Instant.ofEpochMilli(1);
+	private Instant previousEventTimestamp = Instant.ofEpochMilli(1);
 	private int i = 0;
 	
 	@Override
@@ -69,9 +69,9 @@ public class Nth implements PostProcessor, PostProcessorWithConsolidatedEventStr
 	}
 
 	@Override
-    public long estimateMemoryConsumption(String pvName, PVTypeInfo typeInfo, Instant start, Instant end, HttpServletRequest req) {
-        this.startTime = start.toEpochMilli();
-        this.endTime = end.toEpochMilli();
+	public long estimateMemoryConsumption(String pvName, PVTypeInfo typeInfo, Instant start, Instant end, HttpServletRequest req) {
+		this.startTime = start.toEpochMilli();
+		this.endTime = end.toEpochMilli();
 		long startTime = TimeUtils.convertToEpochSeconds(start);
 		long endTime = TimeUtils.convertToEpochSeconds(end);
 		count = (int)((endTime - startTime)/typeInfo.getSamplingPeriod())/everyNth;
@@ -106,7 +106,7 @@ public class Nth implements PostProcessor, PostProcessorWithConsolidatedEventStr
 							}
 							continue;
 						}
-                        long s = e.getEventTimeStamp().toEpochMilli();
+						long s = e.getEventTimeStamp().toEpochMilli();
 						if (s < startTime || s > endTime) {
 							logger.debug("Skipping event that is out of selected boundaries. Time: " + TimeUtils.convertToHumanReadableString(s));
 						} else {
@@ -149,11 +149,11 @@ public class Nth implements PostProcessor, PostProcessorWithConsolidatedEventStr
 	
 	@Override
 	public long getEndBinEpochSeconds() {
-        return TimeUtils.convertToEpochSeconds(Instant.ofEpochMilli(endTime));
+		return TimeUtils.convertToEpochSeconds(Instant.ofEpochMilli(endTime));
 	}
 	
 	@Override
 	public long getStartBinEpochSeconds() {
-        return TimeUtils.convertToEpochSeconds(Instant.ofEpochMilli(startTime));
+		return TimeUtils.convertToEpochSeconds(Instant.ofEpochMilli(startTime));
 	}
 }

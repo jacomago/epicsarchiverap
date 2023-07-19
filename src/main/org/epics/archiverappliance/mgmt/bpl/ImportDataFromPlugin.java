@@ -51,8 +51,8 @@ public class ImportDataFromPlugin implements BPLAction {
 			return;
 		}
 
-        Instant startTime = TimeUtils.convertFromISO8601String(startTimeStr);
-        Instant endTime = TimeUtils.convertFromISO8601String(endTimeStr);
+		Instant startTime = TimeUtils.convertFromISO8601String(startTimeStr);
+		Instant endTime = TimeUtils.convertFromISO8601String(endTimeStr);
 		
 		String srcStoragePluginURL = req.getParameter("src");
 		if(srcStoragePluginURL == null || srcStoragePluginURL.equals("")) {

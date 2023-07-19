@@ -109,9 +109,9 @@ public class EGUChangeTest {
 
 	private void checkEGU(String expectedEGUValue) throws IOException {
 		RawDataRetrieval rawDataRetrieval = new RawDataRetrieval("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
-        Instant now = TimeUtils.now();
-        Instant start = TimeUtils.minusDays(now, 100);
-        Instant end = TimeUtils.plusDays(now, 10);
+		 Instant now = TimeUtils.now();
+		 Instant start = TimeUtils.minusDays(now, 100);
+		 Instant end = TimeUtils.plusDays(now, 10);
 		 int eventCount = 0;
 
 		 final HashMap<String, String> metaFields = new HashMap<String, String>(); 

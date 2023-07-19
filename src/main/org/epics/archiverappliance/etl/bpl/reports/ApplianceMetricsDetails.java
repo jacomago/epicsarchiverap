@@ -7,6 +7,14 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl.bpl.reports;
 
+import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.TimeUtils;
+import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.etl.common.ETLMetricsForLifetime;
+import org.json.simple.JSONValue;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.DecimalFormat;
@@ -14,15 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.etl.common.ETLMetricsForLifetime;
-import org.json.simple.JSONValue;
 
 /**
  * Get the metrics details for an appliance for ETL. 
@@ -42,7 +41,7 @@ public class ApplianceMetricsDetails implements BPLAction {
 		DecimalFormat twoSignificantDigits = new DecimalFormat("###,###,###,###,###,###.##");
 		LinkedList<Map<String, String>> details = new LinkedList<Map<String, String>>();
 		List<ETLMetricsForLifetime> metricsForLifetime = configService.getETLLookup().getApplianceMetrics();
-		if(metricsForLifetime == null || metricsForLifetime.size() < 1) {
+        if (metricsForLifetime == null || metricsForLifetime.isEmpty()) {
 			addDetailedStatus(details, "Startup", "In Progress");
 		} else { 
 			for(ETLMetricsForLifetime metricForLifetime : metricsForLifetime) {

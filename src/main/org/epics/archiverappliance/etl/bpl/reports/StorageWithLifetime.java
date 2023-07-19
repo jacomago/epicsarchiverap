@@ -11,6 +11,7 @@ import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.etl.ETLDest;
 import org.epics.archiverappliance.etl.ETLSource;
@@ -25,7 +26,7 @@ public class StorageWithLifetime {
 	int lifetimeid;
 	double totalETLTimeIntoThisDestInMillis;
 	int maxTotalETLRunsIntoThisDest;
-	int minPartitionSourceGranularityInSecs = 366*24*60*60; // Init to a large value; below we use Math.min to pick the correct value.
+	int minPartitionSourceGranularityInSecs = 366* PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(); // Init to a large value; below we use Math.min to pick the correct value.
 	public StorageWithLifetime(StorageMetrics storageMetricsAPI, int lifetimeid) {
 		this.storageMetricsAPI = storageMetricsAPI;
 		this.lifetimeid = lifetimeid;

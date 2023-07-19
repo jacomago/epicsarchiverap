@@ -49,8 +49,8 @@ public class BlackholeStoragePlugin implements StoragePlugin, ETLDest {
 	}
 
 	@Override
-    public int appendData(BasicContext context, String pvName, EventStream stream) {
-        return 1;
+	public int appendData(BasicContext context, String pvName, EventStream stream) {
+		return 1;
 	}
 
 	@Override
@@ -62,11 +62,6 @@ public class BlackholeStoragePlugin implements StoragePlugin, ETLDest {
 	@Override
 	public Event getFirstKnownEvent(BasicContext context, String pvName) throws IOException {
 		return null;
-	}
-
-	@Override
-	public boolean prepareForNewPartition(String pvName, Event ev, ArchDBRTypes archDBRType, ETLContext context) throws IOException {
-		return true;
 	}
 
 	@Override

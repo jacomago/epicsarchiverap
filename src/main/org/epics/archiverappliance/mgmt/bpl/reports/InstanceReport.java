@@ -23,7 +23,7 @@ import java.util.LinkedList;
 import java.util.Map;
 
 public class InstanceReport implements BPLAction {
-    private static final Logger logger = LogManager.getLogger(InstanceReport.class.getName());
+	private static final Logger logger = LogManager.getLogger(InstanceReport.class.getName());
 
 	@Override
 	public void execute(HttpServletRequest req, HttpServletResponse resp,ConfigService configService) throws IOException {
@@ -63,9 +63,9 @@ public class InstanceReport implements BPLAction {
 				GetUrlContent.combineJSONObjects(applianceInfo, retrievalMetrics);
 				
 				long vmStartTime = ManagementFactory.getRuntimeMXBean().getStartTime();
-                Duration vmInterval = Duration.between(Instant.ofEpochMilli(vmStartTime), Instant.ofEpochMilli(System.currentTimeMillis()));
+				Duration vmInterval = Duration.between(Instant.ofEpochMilli(vmStartTime), Instant.ofEpochMilli(System.currentTimeMillis()));
 
-                applianceInfo.put("MGMT_uptime", vmInterval.toString());
+				applianceInfo.put("MGMT_uptime", vmInterval.toString());
 
 				applianceInfo.put("errors", Integer.toString(0));
 				applianceInfo.put("capacityUtilized", "N/A");

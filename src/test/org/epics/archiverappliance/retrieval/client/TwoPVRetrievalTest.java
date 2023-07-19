@@ -8,6 +8,7 @@
 package org.epics.archiverappliance.retrieval.client;
 
 
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -38,8 +39,8 @@ public class TwoPVRetrievalTest {
 
 	@BeforeEach
 	public void setUp() throws Exception {
-		GenerateData.generateSineForPV(ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "Sine1", 0, ArchDBRTypes.DBR_SCALAR_DOUBLE);
-		GenerateData.generateSineForPV(ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "Sine2", 45, ArchDBRTypes.DBR_SCALAR_DOUBLE);
+		GenerateData.generateSineForPV(ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "Sine1", 0, ArchDBRTypes.DBR_SCALAR_DOUBLE, FileExtension.PB);
+		GenerateData.generateSineForPV(ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "Sine2", 45, ArchDBRTypes.DBR_SCALAR_DOUBLE, FileExtension.PB);
 		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
 	}
 
@@ -52,8 +53,8 @@ public class TwoPVRetrievalTest {
 	@Test
 	public void testGetDataForTwoPVs() {
 		RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
-        Instant start = TimeUtils.convertFromISO8601String("2011-02-01T08:00:00.000Z");
-        Instant end = TimeUtils.convertFromISO8601String("2011-02-02T08:00:00.000Z");
+		Instant start = TimeUtils.convertFromISO8601String("2011-02-01T08:00:00.000Z");
+		Instant end = TimeUtils.convertFromISO8601String("2011-02-02T08:00:00.000Z");
 		EventStream stream = null;
 		try {
 			stream = rawDataRetrieval.getDataForPVS(new String[] { ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "Sine1", ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "Sine2" }, start, end, new RetrievalEventProcessor() {

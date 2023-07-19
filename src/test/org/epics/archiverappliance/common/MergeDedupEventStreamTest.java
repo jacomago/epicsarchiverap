@@ -34,7 +34,7 @@ public class MergeDedupEventStreamTest {
 	String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + ":MergeDedupEventStreamTest";
 	ArchDBRTypes dbrType = ArchDBRTypes.DBR_SCALAR_DOUBLE;
 	short currentYear = TimeUtils.getCurrentYear();
-	
+
 
 	@Test
 	public void testMergeDedup() throws Exception {
@@ -59,8 +59,8 @@ public class MergeDedupEventStreamTest {
 			firstthreequarters.add(new SimulationEvent(s, currentYear, dbrType, new ScalarValue<Double>((double) s)));
 		}
 		
-		ArrayListEventStream combn = new ArrayListEventStream(60*60*24, new RemotableEventStreamDesc(dbrType, pvName, currentYear));
-		for(int s = 0; s < 60*60*24; s++) {
+		ArrayListEventStream combn = new ArrayListEventStream(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), new RemotableEventStreamDesc(dbrType, pvName, currentYear));
+		for(int s = 0; s < PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(); s++) {
 			combn.add(new SimulationEvent(s, currentYear, dbrType, new ScalarValue<Double>((double) s)));
 		}
 

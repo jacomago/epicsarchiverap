@@ -8,6 +8,7 @@
 package org.epics.archiverappliance.retrieval.client;
 
 
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -45,7 +46,7 @@ public class MultiplePVSimpleRetrievalTest {
 		int phasediff = 360/TOTAL_NUMBER_OF_PVS;
 		for(int i = 0; i < TOTAL_NUMBER_OF_PVS; i++) {
 			pvs[i] = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "Sine" + i;
-			GenerateData.generateSineForPV(pvs[i], i*phasediff, ArchDBRTypes.DBR_SCALAR_DOUBLE);
+			GenerateData.generateSineForPV(pvs[i], i*phasediff, ArchDBRTypes.DBR_SCALAR_DOUBLE, FileExtension.PB);
 		}
 		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
 	}
@@ -58,8 +59,8 @@ public class MultiplePVSimpleRetrievalTest {
 	@Test
 	public void testGetDataForMultiplePVs() {
 		RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
-        Instant start = TimeUtils.convertFromISO8601String("2011-02-01T08:00:00.000Z");
-        Instant end = TimeUtils.convertFromISO8601String("2011-02-02T08:00:00.000Z");
+		Instant start = TimeUtils.convertFromISO8601String("2011-02-01T08:00:00.000Z");
+		Instant end = TimeUtils.convertFromISO8601String("2011-02-02T08:00:00.000Z");
 		EventStream stream = null;
 		try {
 			stream = rawDataRetrieval.getDataForPVS(pvs, start, end, new RetrievalEventProcessor() {

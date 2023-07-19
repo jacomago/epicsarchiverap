@@ -7,29 +7,19 @@ import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.data.DBRTimeEvent;
-import org.epics.archiverappliance.data.SampleValue;
-import org.epics.archiverappliance.data.ScalarStringSampleValue;
-import org.epics.archiverappliance.data.ScalarValue;
-import org.epics.archiverappliance.data.VectorStringSampleValue;
-import org.epics.archiverappliance.data.VectorValue;
+import org.epics.archiverappliance.data.*;
 import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.etl.conversion.ThruNumberAndStringConversion;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.utils.simulation.SimulationEventStream;
 import org.epics.archiverappliance.utils.simulation.SimulationValueGenerator;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-
-import static org.junit.Assert.assertTrue;
 
 /**
  * Test various type conversion functions. 
@@ -39,7 +29,7 @@ import static org.junit.Assert.assertTrue;
  *
  */
 public class ThruNumberAndStringConversionFunctionTest {
-	private static Logger logger = LogManager.getLogger(ThruNumberAndStringConversionFunctionTest.class.getName());
+    private static final Logger logger = LogManager.getLogger(ThruNumberAndStringConversionFunctionTest.class.getName());
 
 
 	@Test
@@ -63,8 +53,8 @@ public class ThruNumberAndStringConversionFunctionTest {
 
 	private EventStream generateDataForArchDBRType(ArchDBRTypes dbrType) throws Exception { 
 		int numEvents = 500;
-        short currentYear = TimeUtils.getCurrentYear();
-        ArrayListEventStream ret = new ArrayListEventStream(numEvents, new RemotableEventStreamDesc(dbrType, "test", currentYear));
+		short currentYear = TimeUtils.getCurrentYear();
+		ArrayListEventStream ret = new ArrayListEventStream(numEvents, new RemotableEventStreamDesc(dbrType, "test", currentYear));
 		int eventsAdded = 0;
 		Constructor<? extends DBRTimeEvent> serializingConstructor = DBR2PBTypeMapping.getPBClassFor(dbrType).getSerializingConstructor();
 
@@ -97,16 +87,15 @@ public class ThruNumberAndStringConversionFunctionTest {
 		while(srcIt.hasNext() || destIt.hasNext()) { 
 			DBRTimeEvent srcEvent = (DBRTimeEvent) srcIt.next();
 			DBRTimeEvent destEvent = (DBRTimeEvent) destIt.next();
-			assertTrue("Compare timestamps failed at event " + eventCount, srcEvent.getEventTimeStamp().equals(destEvent.getEventTimeStamp()));
-			assertTrue("Compare status failed at event " + eventCount, srcEvent.getStatus() == destEvent.getStatus());
-			assertTrue("Compare severity failed at event " + eventCount, srcEvent.getSeverity() == destEvent.getSeverity());
-			assertTrue("Compare value failed at event " + eventCount 
+			Assertions.assertTrue(srcEvent.getEventTimeStamp().equals(destEvent.getEventTimeStamp()), "Compare timestamps failed at event " + eventCount);
+			Assertions.assertTrue(srcEvent.getStatus() == destEvent.getStatus(), "Compare status failed at event " + eventCount);
+			Assertions.assertTrue(srcEvent.getSeverity() == destEvent.getSeverity(), "Compare severity failed at event " + eventCount);
+			Assertions.assertTrue(Math.abs(srcEvent.getSampleValue().getValue().doubleValue() - destEvent.getSampleValue().getValue().doubleValue()) < 0.0005, "Compare value failed at event " + eventCount
 					+ " " + srcEvent.getSampleValue().getValue().doubleValue()
 					+ " " + destEvent.getSampleValue().getValue().doubleValue()
-					+ " " + Math.abs(srcEvent.getSampleValue().getValue().doubleValue() - destEvent.getSampleValue().getValue().doubleValue()), 
-					Math.abs(srcEvent.getSampleValue().getValue().doubleValue() - destEvent.getSampleValue().getValue().doubleValue()) < 0.0005);
-			assertTrue("Compare fields failed at event " + eventCount, compareMaps(srcEvent.getFields(), destEvent.getFields()));
-			assertTrue("Compare fields changed failed at event " + eventCount, srcEvent.isActualChange() == destEvent.isActualChange());
+					+ " " + Math.abs(srcEvent.getSampleValue().getValue().doubleValue() - destEvent.getSampleValue().getValue().doubleValue()));
+			Assertions.assertTrue(compareMaps(srcEvent.getFields(), destEvent.getFields()), "Compare fields failed at event " + eventCount);
+			Assertions.assertTrue(srcEvent.isActualChange() == destEvent.isActualChange(), "Compare fields changed failed at event " + eventCount);
 			eventCount++;
 		}
 	}

@@ -9,6 +9,7 @@ import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.TomcatSetup;
 import org.epics.archiverappliance.common.BasicContext;
+import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
@@ -84,9 +85,9 @@ public class RenamePVBPLTest {
 			for(short y = 3; y >= 0; y--) { 
 				short year = (short)(currentYear - y);
 				for(int day = 0; day < 366; day++) {
-					ArrayListEventStream testData = new ArrayListEventStream(24*60*60, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, currentYear));
-					int startofdayinseconds = day*24*60*60;
-					for(int secondintoday = 0; secondintoday < 24*60*60; secondintoday++) {
+					ArrayListEventStream testData = new ArrayListEventStream(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, currentYear));
+					int startofdayinseconds = day*PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
+					for(int secondintoday = 0; secondintoday < PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(); secondintoday++) {
 						// The value should be the secondsIntoYear integer divided by 600.
 						testData.add(new SimulationEvent(startofdayinseconds + secondintoday, year, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<Double>((double) (((int)(startofdayinseconds + secondintoday)/600)))));
 					}
@@ -133,7 +134,7 @@ public class RenamePVBPLTest {
 		 Thread.sleep(1*60*1000);
 		 
 		 // We have now archived this PV, get some data and validate we got the expected number of events
-		 long beforeRenameCount = checkRetrieval(pvName, 3*365*86400);
+		 long beforeRenameCount = checkRetrieval(pvName, 3*365*PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk());
 		 logger.info("Before renaming, we had this many events from retrieval" +  beforeRenameCount);
 		 
 		 // Let's pause the PV.
@@ -150,7 +151,7 @@ public class RenamePVBPLTest {
 		 Assertions.assertTrue(renameStatus.containsKey("status") && renameStatus.get("status").equals("ok"), "Cannot rename PV");
 		 Thread.sleep(5000);
 
-		 long afterRenameCount = checkRetrieval(newPVName, 3*365*86400);
+		 long afterRenameCount = checkRetrieval(newPVName, 3*365*PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk());
 		 logger.info("After renaming, we had this many events from retrieval" +  beforeRenameCount);
 		 // The  Math.abs(beforeRenameCount-afterRenameCount) < 2 is to cater to the engine not sending data after rename as the PV is still paused.
 		 Assertions.assertTrue(Math.abs(beforeRenameCount-afterRenameCount) < 2, "Different event counts before and after renaming. Before " + beforeRenameCount + " and after " + afterRenameCount);
@@ -172,7 +173,7 @@ public class RenamePVBPLTest {
 		 Assertions.assertTrue(renameBackStatus.containsKey("status") && renameBackStatus.get("status").equals("ok"), "Cannot rename PV");
 		 Thread.sleep(5000);
 
-		 long afterRenamingBackCount = checkRetrieval(pvName, 3*365*86400);
+		 long afterRenamingBackCount = checkRetrieval(pvName, 3*365*PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk());
 		 logger.info("After renaming back to original, we had this many events from retrieval" +  afterRenamingBackCount);
 		 Assertions.assertTrue(Math.abs(beforeRenameCount-afterRenamingBackCount) < 2, "Different event counts before and after renaming back. Before " + beforeRenameCount + " and after " + afterRenamingBackCount);
 		 

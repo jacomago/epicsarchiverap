@@ -7,7 +7,7 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval.client;
 
-
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -46,11 +46,11 @@ public class DBRRetrievalTest {
 			dataDBRs.add(new DataDBR(ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + (type.isWaveForm() ? "V_" : "S_") + type.getPrimitiveName(), type));
 		}
 
-        for (DataDBR dataDBR : dataDBRs) {
-            GenerateData.generateSineForPV(dataDBR.pvName, 0, dataDBR.type);
-        }
-        tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
-    }
+		for (DataDBR dataDBR : dataDBRs) {
+			GenerateData.generateSineForPV(dataDBR.pvName, 0, dataDBR.type, FileExtension.PB);
+		}
+		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());	
+	}
 
 	@AfterEach
 	public void tearDown() throws Exception {
@@ -60,8 +60,8 @@ public class DBRRetrievalTest {
 	@Test
 	public void testGetDataForDBRs() {
 		RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
-        Instant start = TimeUtils.convertFromISO8601String(TimeUtils.getCurrentYear() + "-02-01T08:00:00.000Z");
-        Instant end = TimeUtils.convertFromISO8601String(TimeUtils.getCurrentYear() + "-02-02T08:00:00.000Z");
+		Instant start = TimeUtils.convertFromISO8601String(TimeUtils.getCurrentYear() + "-02-01T08:00:00.000Z");
+		Instant end = TimeUtils.convertFromISO8601String(TimeUtils.getCurrentYear() + "-02-02T08:00:00.000Z");
 		
 		for(DataDBR dataDBR : dataDBRs) {
 			EventStream stream = null;

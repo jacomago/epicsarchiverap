@@ -36,13 +36,13 @@ public class RetrievalState {
 	 * @param context BasicContext
 	 * @param pvName The name of PV.
 	 * @param typeInfo  PVTypeInfo
-     * @param start Instant
-     * @param end Instant
+	 * @param start Instant
+	 * @param end Instant
 	 * @param req HttpServletRequest
 	 * @return the data source for a PV
 	 * @throws IOException  &emsp; 
 	 */
-    public List<DataSourceforPV> getDataSources(BasicContext context, String pvName, PVTypeInfo typeInfo, Instant start, Instant end, HttpServletRequest req) throws IOException {
+	public List<DataSourceforPV> getDataSources(BasicContext context, String pvName, PVTypeInfo typeInfo, Instant start, Instant end, HttpServletRequest req) throws IOException {
 		if(typeInfo == null) {
 			List<ChannelArchiverDataServerPVInfo> caServers = this.configService.getChannelArchiverDataServers(pvName);
 			if(caServers != null) {
@@ -94,7 +94,7 @@ public class RetrievalState {
 			}
 			
 			// Add any external servers if any only if the creation time for this type info is after the start time of the request.
-            Instant creationTime = typeInfo.getCreationTime();
+			Instant creationTime = typeInfo.getCreationTime();
 			if(includeExternalServers(req)) {
                 if (creationTime == null || start.isBefore(creationTime)) {
 					List<ChannelArchiverDataServerPVInfo> caServers = this.configService.getChannelArchiverDataServers(pvName);

@@ -13,9 +13,10 @@ import java.util.Arrays;
 import java.util.Random;
 
 import org.epics.archiverappliance.ByteArray;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test the LineEscaper.
@@ -40,10 +41,10 @@ public class LineEscaperTest {
 				long end = System.currentTimeMillis();
 				exectime += (end-start);
 				if(!Arrays.equals(randombytes, unescapedbytes)) { 
-					fail("Test failed");
+					Assertions.fail("Test failed");
 				}
 			} catch(Exception ex) {
-				fail("Test failed with exception " + ex.getMessage());
+				Assertions.fail("Test failed with exception " + ex.getMessage());
 			}
 		}
 		System.out.println("Time to escape/unescape " + total + " byte sequences is " + (exectime)/1000 + "(s) yielding " + (((float)total)/((exectime)/1000)) + " sequences per second");
@@ -66,10 +67,10 @@ public class LineEscaperTest {
 				long end = System.currentTimeMillis();
 				exectime += (end-start);
 				if(!Arrays.equals(randombytes, unescapedbytes)) { 
-					fail("Test failed");
+					Assertions.fail("Test failed");
 				}
 			} catch(Exception ex) {
-				fail("Test failed with exception " + ex.getMessage());
+				Assertions.fail("Test failed with exception " + ex.getMessage());
 			}
 		}
 		System.out.println("Time to escape/unescape " + total + " byte sequences is " + (exectime)/1000 + "(s) yielding " + (((float)total)/((exectime)/1000)) + " sequences per second");

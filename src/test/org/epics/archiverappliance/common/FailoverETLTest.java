@@ -75,7 +75,7 @@ public class FailoverETLTest {
 	 * @param startingOffset - Use 0 for even seconds; 1 for odd seconds. When merged, we test to make sure; we get data one second apart.
 	 * @throws Exception
 	 */
-    private long generateDataAndRegisterPV(String applURL, String applianceName, Instant lastMonth, int startingOffset)
+	private long generateDataAndRegisterPV(String applURL, String applianceName, Instant lastMonth, int startingOffset)
 			throws Exception {
 		JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream(new File("src/test/org/epics/archiverappliance/retrieval/postprocessor/data/PVTypeInfoPrototype.json"))));
 		PVTypeInfo destPVTypeInfo = new PVTypeInfo();
@@ -163,7 +163,7 @@ public class FailoverETLTest {
 
 	}
 
-    private long testMergedRetrieval(String applianceName, Instant startTime, Instant endTime) throws Exception {
+	private long testMergedRetrieval(String applianceName, Instant startTime, Instant endTime) throws Exception {
 		long rtvlEventCount = 0;
 		long lastEvEpoch = 0;
 		StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=LTS&rootFolder=" + "build/tomcats/tomcat_"+ this.getClass().getSimpleName() + "/" + applianceName + "/lts" + "&partitionGranularity=PARTITION_YEAR", configService);
@@ -205,7 +205,7 @@ public class FailoverETLTest {
 		tCount = dCount + oCount;
 		
 		changeMTSForDest();
-        Instant timeETLruns = TimeUtils.plusDays(TimeUtils.now(), 365 * 10);
+		Instant timeETLruns = TimeUtils.plusDays(TimeUtils.now(), 365*10);
     	logger.info("Running ETL now as if it is " + TimeUtils.convertToHumanReadableString(timeETLruns));
     	ETLExecutor.runETLs(configService, timeETLruns);
     	

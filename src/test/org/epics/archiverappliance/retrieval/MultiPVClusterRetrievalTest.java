@@ -1,6 +1,6 @@
 package org.epics.archiverappliance.retrieval;
 
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,7 +49,7 @@ import java.util.NoSuchElementException;
 public class MultiPVClusterRetrievalTest {
 	private static final Logger logger = LogManager.getLogger(MultiPVClusterRetrievalTest.class.getName());
 	private final TomcatSetup tomcatSetup = new TomcatSetup();
-	private final PlainPBStoragePlugin pbplugin = new PlainPBStoragePlugin();
+    private final PlainStoragePlugin pbplugin = new PlainStoragePlugin();
 	short year = TimeUtils.getCurrentYear();
 
 	private final String pvName = "MultiPVClusterRetrievalTest:dataretrieval";
@@ -87,7 +87,7 @@ public class MultiPVClusterRetrievalTest {
 		pbplugin.initialize("pb://localhost?name=LTS&rootFolder=" + ltsFolder + "&partitionGranularity=PARTITION_YEAR", configService);
 				
 		// Generate an event stream to populate the PB files
-        SimulationEventStream simstream = new SimulationEventStream(ArchDBRTypes.DBR_SCALAR_DOUBLE, new SineGenerator(0), TimeUtils.getStartOfYear(year), TimeUtils.getEndOfYear(year), 1);
+		SimulationEventStream simstream = new SimulationEventStream(ArchDBRTypes.DBR_SCALAR_DOUBLE, new SineGenerator(0), TimeUtils.getStartOfYear(year), TimeUtils.getEndOfYear(year), 1);
 		try(BasicContext context = new BasicContext()) {
 			pbplugin.appendData(context, pvName, simstream);
 			pbplugin.appendData(context, pvName2, simstream);
@@ -136,14 +136,14 @@ public class MultiPVClusterRetrievalTest {
 		String startString = currentYear + "-11-17T16:00:00.000Z";
 		String endString = currentYear + "-11-17T16:01:00.000Z";
 
-        Instant start = TimeUtils.convertFromISO8601String(startString);
-        Instant end = TimeUtils.convertFromISO8601String(endString);
+		Instant start = TimeUtils.convertFromISO8601String(startString);
+		Instant end = TimeUtils.convertFromISO8601String(endString);
 
         Map<String, List<JSONObject>> pvToData = retrieveJsonResults(startString, endString);
 		
 		logger.info("Received response from server; now retrieving data using PBStoragePlugin Start: " + TimeUtils.convertToISO8601String(start) + " End: " + TimeUtils.convertToISO8601String(end));
-
-        try (BasicContext context = new BasicContext();
+		
+		try (BasicContext context = new BasicContext();
              EventStream pv1ResultsStream = new CurrentThreadWorkerEventStream(pvName, pbplugin.getDataForPV(context, pvName, start, end));
              EventStream pv2ResultsStream = new CurrentThreadWorkerEventStream(pvName2, pbplugin.getDataForPV(context, pvName2, start, end))) {
 			assert pvToData != null;
@@ -231,7 +231,7 @@ public class MultiPVClusterRetrievalTest {
 				
 				// Get seconds and nanoseconds for plugin event
 				String pluginSecondsPart = Long.toString(pluginEvent.getEpochSeconds());
-                String pluginNanosPart = Integer.toString(pluginEvent.getEventTimeStamp().getNano());
+				String pluginNanosPart = Integer.toString(pluginEvent.getEventTimeStamp().getNano());
 				String pluginTimestamp = pluginSecondsPart + ("000000000" + pluginNanosPart).substring(pluginNanosPart.length());
 
 				Assertions.assertEquals(jsonTimestamp, pluginTimestamp, "JSON timestamp, " + jsonTimestamp + ", and plugin event timestamp, " + pluginTimestamp + ", are unequal.");

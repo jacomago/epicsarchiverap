@@ -90,7 +90,7 @@ public class AppendAndAliasPVTest {
 		FileUtils.deleteDirectory(new File(folderLTS));
 	}
 
-    private void addPVToCluster(String pvName, String appliance, Instant creationTime) throws Exception {
+	private void addPVToCluster(String pvName, String appliance, Instant creationTime) throws Exception {
 		// Load a sample PVTypeInfo from a prototype file.
 		JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream(new File("src/test/org/epics/archiverappliance/retrieval/postprocessor/data/PVTypeInfoPrototype.json"))));
 		PVTypeInfo srcPVTypeInfo = new PVTypeInfo();
@@ -106,7 +106,7 @@ public class AppendAndAliasPVTest {
 		GetUrlContent.postObjectAndGetContentAsJSONObject("http://localhost:17665/mgmt/bpl/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, "UTF-8") + "&createnew=true", encoder.encode(newPVTypeInfo));
 	}
 
-    private void generateData(String pvName, Instant startTime, Instant endTime) throws IOException {
+	private void generateData(String pvName, Instant startTime, Instant endTime) throws IOException {
 		StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=LTS&rootFolder=${ARCHAPPL_LONG_TERM_FOLDER}&partitionGranularity=PARTITION_YEAR", configService);
 		try(BasicContext context = new BasicContext()) {
             for (long epoch = startTime.toEpochMilli() / 1000; epoch < endTime.toEpochMilli() / 1000; epoch += 60) {
@@ -117,7 +117,7 @@ public class AppendAndAliasPVTest {
 		}
 	}
 
-    private long getEventCountBetween(String pvName, Instant startTime, Instant endTime) throws IOException {
+	private long getEventCountBetween(String pvName, Instant startTime, Instant endTime) throws IOException {
 		logger.info("Looking for data for pv " + pvName + " between " + TimeUtils.convertToHumanReadableString(startTime) + " and " + TimeUtils.convertToHumanReadableString(endTime));
 		RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
 		long totalEvents = 0;

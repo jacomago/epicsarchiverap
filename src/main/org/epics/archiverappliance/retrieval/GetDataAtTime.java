@@ -67,7 +67,7 @@ public class GetDataAtTime {
 		return gatherer;
 	}
 
-    private static Appliance2PVs getDataFromEngine(Appliance2PVs gatherer, Instant atTime) {
+	private static Appliance2PVs getDataFromEngine(Appliance2PVs gatherer, Instant atTime) {
 		try {
 			if(gatherer.remainingPVs.size() <= 0) return gatherer;
 			HashMap<String, HashMap<String, Object>> resp = GetUrlContent.postStringListAndGetJSON(gatherer.applianceInfo.getEngineURL() + "/getDataAtTime?at="+TimeUtils.convertToISO8601String(atTime), "pv", gatherer.remainingPVs);
@@ -85,7 +85,7 @@ public class GetDataAtTime {
 		return gatherer;
 	}
 
-    private static Appliance2PVs getDataFromRetrieval(Appliance2PVs gatherer, Instant atTime) {
+	private static Appliance2PVs getDataFromRetrieval(Appliance2PVs gatherer, Instant atTime) {
 		try {
 			if(gatherer.remainingPVs.size() <= 0) return gatherer;
 			HashMap<String, HashMap<String, Object>> resp = GetUrlContent.postStringListAndGetJSON(gatherer.applianceInfo.getRetrievalURL() + "/../data/getDataAtTimeForAppliance?at="+TimeUtils.convertToISO8601String(atTime), "pv", gatherer.remainingPVs);
@@ -144,7 +144,7 @@ public class GetDataAtTime {
 		if(timeStr == null) {
 			timeStr = TimeUtils.convertToISO8601String(TimeUtils.getCurrentEpochSeconds());
 		}
-        Instant atTime = TimeUtils.convertFromISO8601String(timeStr);
+		Instant atTime = TimeUtils.convertFromISO8601String(timeStr);
 		
 		boolean fetchFromExternalAppliances = req.getParameter("includeProxies") != null && Boolean.parseBoolean(req.getParameter("includeProxies"));		
 
@@ -256,9 +256,9 @@ public class GetDataAtTime {
 	 * @param configService
 	 * @return
 	 */
-    private static PVWithData getDataAtTimeForPVFromStores(String pvName, Instant atTime, ConfigService configService) {
+	private static PVWithData getDataAtTimeForPVFromStores(String pvName, Instant atTime, ConfigService configService) {
 		String nameFromUser = pvName;
-        Instant startTime = atTime;
+		Instant startTime = atTime;
 		String fieldName = PVNames.getFieldName(pvName);
 		
 		PVTypeInfo typeInfo = PVNames.determineAppropriatePVTypeInfo(pvName, configService);
@@ -299,7 +299,7 @@ public class GetDataAtTime {
 										if(potentialEvent != null) {
 											HashMap<String, Object> evnt = new HashMap<String, Object>();
 											evnt.put("secs", potentialEvent.getEpochSeconds());
-                                            evnt.put("nanos", potentialEvent.getEventTimeStamp().getNano());
+											evnt.put("nanos", potentialEvent.getEventTimeStamp().getNano());
 											evnt.put("severity", potentialEvent.getSeverity());
 											evnt.put("status", potentialEvent.getStatus());
 											evnt.put("val", JSONValue.parse(potentialEvent.getSampleValue().toJSONString()));
@@ -317,7 +317,7 @@ public class GetDataAtTime {
 			if(potentialEvent != null) {
 				HashMap<String, Object> evnt = new HashMap<String, Object>();
 				evnt.put("secs", potentialEvent.getEpochSeconds());
-                evnt.put("nanos", potentialEvent.getEventTimeStamp().getNano());
+				evnt.put("nanos", potentialEvent.getEventTimeStamp().getNano());
 				evnt.put("severity", potentialEvent.getSeverity());
 				evnt.put("status", potentialEvent.getStatus());
 				evnt.put("val", JSONValue.parse(potentialEvent.getSampleValue().toJSONString()));
@@ -340,7 +340,7 @@ public class GetDataAtTime {
 		if(timeStr == null) {
 			timeStr = TimeUtils.convertToISO8601String(TimeUtils.getCurrentEpochSeconds());
 		}
-        Instant atTime = TimeUtils.convertFromISO8601String(timeStr);
+		Instant atTime = TimeUtils.convertFromISO8601String(timeStr);
 		
 		logger.debug("Getting data from instance for " + pvNames.size() + " PVs at " + TimeUtils.convertToHumanReadableString(atTime));
 

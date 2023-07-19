@@ -40,7 +40,7 @@ public class InputStreamBackedEventStreamIterator implements Iterator<Event> {
 	private RemotableEventStreamDesc currentEventStreamDesc;
 
 
-    InputStreamBackedEventStreamIterator(InputStream is, Instant startTime) {
+	InputStreamBackedEventStreamIterator(InputStream is, Instant startTime) {
 		this.is = is;
 		buf = new byte[BUFFER_SIZE];
 		readNextBatch();

@@ -16,6 +16,7 @@ package org.epics.archiverappliance.engine.pv;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
@@ -113,7 +114,7 @@ public class PVMetrics {
 	 * This is the timestamp of the last event from the IOC regardless of whether the timestamp is accurate or not 
 	 * Note this may not be what's written out into the archive that we used to compare against to enforce monotonically increasing eventstreams
 	 */
-    private Instant lastEventFromIOCTimeStamp = null;
+	private Instant lastEventFromIOCTimeStamp = null;
 
 	/**
 	 * The state of the connection at the last connectionChangedEvent.
@@ -153,7 +154,7 @@ public class PVMetrics {
     * @param incorrectTimeStamp  &emsp;
     */
 
-   public void addTimestampWrongEventCount(Instant incorrectTimeStamp) {
+	public void addTimestampWrongEventCount(Instant incorrectTimeStamp) {
 		if(lastEventFromIOCTimeStamp != null && incorrectTimeStamp != null && incorrectTimeStamp.equals(lastEventFromIOCTimeStamp)) { 
 			return;
 		}
@@ -519,7 +520,7 @@ public class PVMetrics {
 		addDetailedStatus(statuses, "How many events so far?", Long.toString(this.eventCounts));
 		addDetailedStatus(statuses, "How many raw scan events so far?", Long.toString(this.scanRawEventCount));
 		addDetailedStatus(statuses, "How many events lost because the timestamp is in the far future or past so far?", Long.toString(this.timestampWrongEventCount));
-        addDetailedStatus(statuses, "Instant of last event from the IOC - correct or not.", this.getLastEventFromIOCTimeStampStr());
+		addDetailedStatus(statuses, "Instant of last event from the IOC - correct or not.", this.getLastEventFromIOCTimeStampStr());
 		addDetailedStatus(statuses, "How many events lost because the sample buffer is full so far?", Long.toString(this.sampleBufferFullLostEventCount));
 		addDetailedStatus(statuses, "How many events lost because the DBR_Type of the PV has changed from what it used to be?", Long.toString(this.invalidTypeLostEventCount));
 		addDetailedStatus(statuses, "How many events lost totally so far?", Long.toString(this.timestampWrongEventCount + this.sampleBufferFullLostEventCount + this.invalidTypeLostEventCount));
@@ -529,11 +530,11 @@ public class PVMetrics {
 		double estimatedEventRate = this.getEventRate();
 		addDetailedStatus(statuses, "Estimated event rate (events/sec)", (estimatedEventRate <= 0.0) ? "Not enough info" : twoSignificantDigits.format(estimatedEventRate));
 		double estimatedStorageRateInBytesPerSec = this.getStorageRate();
-		double estimatedStorageRateInKiloBytesPerHour = this.getStorageRate() * 60 * 60 / 1024;
+		double estimatedStorageRateInKiloBytesPerHour = this.getStorageRate() * PartitionGranularity.PARTITION_HOUR.getApproxSecondsPerChunk() / 1024;
 		addDetailedStatus(statuses, "Estimated storage rate (KB/hour)", (estimatedStorageRateInBytesPerSec <= 0.0) ? "Not enough info" : twoSignificantDigits.format(estimatedStorageRateInKiloBytesPerHour));
-		double estimatedStorageRateInMegaBytesPerDay = this.getStorageRate() * 60 * 60 * 24 / (1024 * 1024);
+		double estimatedStorageRateInMegaBytesPerDay = this.getStorageRate() * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() / (1024 * 1024);
 		addDetailedStatus(statuses, "Estimated storage rate (MB/day)", (estimatedStorageRateInBytesPerSec <= 0.0) ? "Not enough info" : twoSignificantDigits.format(estimatedStorageRateInMegaBytesPerDay));
-		double estimatedStorageRateInGigaBytesPerYear = this.getStorageRate() * 60 * 60 * 24 * 365 / (1024 * 1024 * 1024);
+		double estimatedStorageRateInGigaBytesPerYear = this.getStorageRate() * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() * 365 / (1024 * 1024 * 1024);
 		addDetailedStatus(statuses, "Estimated storage rate (GB/year)", (estimatedStorageRateInBytesPerSec <= 0.0) ? "Not enough info" : twoSignificantDigits.format(estimatedStorageRateInGigaBytesPerYear));
 		return statuses;
 	}
@@ -573,7 +574,7 @@ public class PVMetrics {
 	}
 
 
-    public void setLastEventFromIOCTimeStamp(Instant lastEventFromIOCTimeStamp) {
+	public void setLastEventFromIOCTimeStamp(Instant lastEventFromIOCTimeStamp) {
 		this.lastEventFromIOCTimeStamp = lastEventFromIOCTimeStamp;
 	}
 

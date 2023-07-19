@@ -35,9 +35,9 @@ public class RecentlyChangedPVsforThisInstance implements BPLAction {
 		final String identity = configService.getMyApplianceInfo().getIdentity();
 		final class RecentlyChangedPVInfo implements JSONAware {
 			String pvName;
-            Instant modificationTimeStamp;
+			Instant modificationTimeStamp;
 
-            RecentlyChangedPVInfo(String pvName, Instant creationTimeStamp) {
+			RecentlyChangedPVInfo(String pvName, Instant creationTimeStamp) {
 				this.pvName = pvName;
 				this.modificationTimeStamp = creationTimeStamp;
 			}

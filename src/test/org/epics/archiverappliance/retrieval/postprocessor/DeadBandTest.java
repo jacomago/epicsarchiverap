@@ -1,7 +1,7 @@
 package org.epics.archiverappliance.retrieval.postprocessor;
 
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
-import edu.stanford.slac.archiverappliance.PlainPB.FileBackedPBEventStream;
+import edu.stanford.slac.archiverappliance.plain.pb.FileBackedPBEventStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -105,7 +105,7 @@ public class DeadBandTest {
 		}
 	}
 
-    private int checkRetrieval(String retrievalPVName, Instant start, Instant end, int expectedAtLeastEvents, boolean exactMatch) throws IOException {
+	private int checkRetrieval(String retrievalPVName, Instant start, Instant end, int expectedAtLeastEvents, boolean exactMatch) throws IOException {
 		long startTimeMillis = System.currentTimeMillis();
 		RawDataRetrieval rawDataRetrieval = new RawDataRetrieval("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
 		int eventCount = 0;
@@ -153,7 +153,7 @@ public class DeadBandTest {
 		 }
 	}
 
-    private void compareStreams(String retrievalPVName, Instant start, Instant end, FileBackedPBEventStream compareStream) throws IOException {
+	private void compareStreams(String retrievalPVName, Instant start, Instant end, FileBackedPBEventStream compareStream) throws IOException {
 		long startTimeMillis = System.currentTimeMillis();
 		RawDataRetrieval rawDataRetrieval = new RawDataRetrieval("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
 		int eventCount = 0;
@@ -181,7 +181,7 @@ public class DeadBandTest {
 				Assertions.assertTrue(compareIt.hasNext(), "We seem to have run out of events at " + eventCount);
 				Event compareEvent = compareIt.next();
 				Assertions.assertTrue(dbrEvent.getTimestamp().equals(compareEvent.getEventTimeStamp()), "At event " + eventCount + ", from the operator we have an event at "
-                        + TimeUtils.convertToISO8601String(TimeUtils.fromSQLTimeStamp(dbrEvent.getTimestamp()))
+						+ TimeUtils.convertToISO8601String(TimeUtils.fromSQLTimeStamp(dbrEvent.getTimestamp()))
 						+ " and from the compare stream, we have an event at "
 						+ TimeUtils.convertToISO8601String(compareEvent.getEventTimeStamp()));
 				

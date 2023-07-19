@@ -208,14 +208,14 @@ public class LineByteStream implements Closeable {
 		}
 		readLine();
 	}
-	
-	/**
-	 * Seeks and positions the pointer to to the last line in the file.
-	 * The file pointer is located just before the last line so that readLine gets a valid line.
-	 * About the only thing once can do after this is to read a line and stop...	 
-	 * @throws IOException  &emsp;
-	 */
-	public void seekToBeforeLastLine() throws IOException {
+
+    /**
+     * Seeks and positions the pointer to to the last line in the file.
+     * The file pointer is located just before the last line so that readLine gets a valid line.
+     * About the only thing once can do after this is to read a line and stop...
+     * @throws IOException  &emsp;
+     */
+    public void seekToBeforeLastLine() throws IOException {
 		buf = new byte[MAX_LINE_SIZE];
 		long seekPos = this.byteChannel.size() - MAX_LINE_SIZE;
 		int loopcount = 0;

@@ -10,6 +10,7 @@ import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.TomcatSetup;
 import org.epics.archiverappliance.common.BasicContext;
+import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
@@ -144,7 +145,7 @@ public class BasicReshardingTest {
 		String updatePVTypeInfoURL = "http://localhost:17665/mgmt/bpl/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, "UTF-8") + "&override=true";
 		GetUrlContent.postObjectAndGetContentAsJSONObject(updatePVTypeInfoURL, JSONEncoder.getEncoder(PVTypeInfo.class).encode(typeInfoBeforePausing));
 
-        Instant beforeReshardingCreationTimedstamp = typeInfoBeforePausing.getCreationTime();
+		Instant beforeReshardingCreationTimedstamp = typeInfoBeforePausing.getCreationTime();
 
 		// Generate some data into the MTS and LTS
 		String[] dataStores = typeInfoBeforePausing.getDataStores();
@@ -155,10 +156,10 @@ public class BasicReshardingTest {
 			String name = plugin.getName();
 			if(name.equals("MTS")) {
 				// For the MTS we generate a couple of days worth of data
-                Instant startOfMtsData = TimeUtils.minusDays(TimeUtils.now(), 3);
+				Instant startOfMtsData = TimeUtils.minusDays(TimeUtils.now(), 3);
 				long startOfMtsDataSecs = TimeUtils.convertToEpochSeconds(startOfMtsData);
 				ArrayListEventStream strm = new ArrayListEventStream(0, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, TimeUtils.convertToYearSecondTimestamp(startOfMtsDataSecs).getYear()));
-				for(long offsetSecs = 0; offsetSecs < 2*24*60*60; offsetSecs += 60) { 
+				for(long offsetSecs = 0; offsetSecs < 2*PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(); offsetSecs += 60) {
 					strm.add(new SimulationEvent(TimeUtils.convertToYearSecondTimestamp(startOfMtsDataSecs + offsetSecs), ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<Double>((double)offsetSecs)));
 				}
 				try(BasicContext context = new BasicContext()) {
@@ -168,7 +169,7 @@ public class BasicReshardingTest {
 				// For the LTS we generate a couple of years worth of data
 				long startofLtsDataSecs = TimeUtils.getStartOfYearInSeconds(TimeUtils.getCurrentYear() - 2);
 				ArrayListEventStream strm = new ArrayListEventStream(0, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, TimeUtils.convertToYearSecondTimestamp(startofLtsDataSecs).getYear()));
-				for(long offsetSecs = 0; offsetSecs < 2*365*24*60*60; offsetSecs += 24*60*60) { 
+				for(long offsetSecs = 0; offsetSecs < 2*365* PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(); offsetSecs += PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk()) {
 					strm.add(new SimulationEvent(TimeUtils.convertToYearSecondTimestamp(startofLtsDataSecs + offsetSecs), ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<Double>((double)offsetSecs)));
 				}
 				try(BasicContext context = new BasicContext()) {
@@ -224,7 +225,7 @@ public class BasicReshardingTest {
 		PVTypeInfo typeInfoAfterResharding = getPVTypeInfo();
 		String afterReshardingAppliance = typeInfoAfterResharding.getApplianceIdentity();
 		Assertions.assertTrue(afterReshardingAppliance != null && afterReshardingAppliance.equals(otherAppliance), "Invalid appliance identity after resharding " + afterReshardingAppliance);
-        Instant afterReshardingCreationTimedstamp = typeInfoAfterResharding.getCreationTime();
+		Instant afterReshardingCreationTimedstamp = typeInfoAfterResharding.getCreationTime();
 		
 		// Let's resume the PV.
 		String resumePVURL = "http://localhost:17665/mgmt/bpl/resumeArchivingPV?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8);

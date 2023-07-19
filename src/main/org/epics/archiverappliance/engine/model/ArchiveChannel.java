@@ -1,15 +1,15 @@
 /*******************************************************************************
-
+ *
  * Copyright (c) 2010 Oak Ridge National Laboratory.
-
+ *
  * All rights reserved. This program and the accompanying materials
-
+ *
  * are made available under the terms of the Eclipse Public License v1.0
-
+ *
  * which accompanies this distribution, and is available at
-
+ *
  * http://www.eclipse.org/legal/epl-v10.html
-
+ *
  ******************************************************************************/
 package org.epics.archiverappliance.engine.model;
 
@@ -53,7 +53,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version Initial version:CSS
  * @version 4-Jun-2012, Luofeng Li:added codes to support for the new archiver
  */
-
 @SuppressWarnings("nls")
 public abstract class ArchiveChannel {
     private static final Logger logger = LogManager.getLogger(ArchiveChannel.class);

@@ -8,7 +8,7 @@
 package edu.stanford.slac.archiverappliance.PB.search;
 
 import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
-import edu.stanford.slac.archiverappliance.PlainPB.ComparePBEvent;
+import edu.stanford.slac.archiverappliance.plain.CompareEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.YearSecondTimestamp;
@@ -97,10 +97,10 @@ public class FileEventStreamSearch {
 	 * @param dbrtype ArchDBRType the enumeration type
 	 * @param yearSecondTimestamp Search seconds into year
 	 * @throws IOException  &emsp;
-	 * @see edu.stanford.slac.archiverappliance.PlainPB.ComparePBEvent
+	 * @see CompareEvent
 	 */
 	public boolean seekToTime(ArchDBRTypes dbrtype, YearSecondTimestamp yearSecondTimestamp) throws IOException {
-		ComparePBEvent comparefunction = new ComparePBEvent(dbrtype, yearSecondTimestamp);
+		CompareEvent comparefunction = new CompareEvent(dbrtype, yearSecondTimestamp);
 		return seekToTime(comparefunction);
 	}
 	
@@ -174,19 +174,17 @@ public class FileEventStreamSearch {
 					byte[] line2 = lis.readLine();
 
 					CompareEventLine.NextStep nextStep = comparefunction.compare(line1, line2);
-					switch(nextStep) {
-					case GO_LEFT:
-						max = mid - 1;
-						break;
-					case GO_RIGHT:
-						lastgoright = mid;
-						min = mid + 1;
-						break;
-					case STAY_WHERE_YOU_ARE:
-						foundPosition = mid;
-						return true;
-					default:
-						logger.error("Compare function returned something unexpeected " + nextStep);
+					switch (nextStep) {
+						case GO_LEFT -> max = mid - 1;
+						case GO_RIGHT -> {
+							lastgoright = mid;
+							min = mid + 1;
+						}
+						case STAY_WHERE_YOU_ARE -> {
+							foundPosition = mid;
+							return true;
+						}
+						default -> logger.error("Compare function returned something unexpeected " + nextStep);
 					}
 
 					maxIterations--;

@@ -1,11 +1,11 @@
 package org.epics.archiverappliance.config;
 
-import java.io.File;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.exception.ConfigException;
+
+import java.io.File;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Most labs use a standard character (typically the ":" or the "-" character) in their naming conventions to separate out the components of a name.
@@ -35,7 +35,7 @@ import org.epics.archiverappliance.config.exception.ConfigException;
  * @author mshankar
  */
 public class ConvertPVNameToKey implements PVNameToKeyMapping {
-	private static Logger configlogger = LogManager.getLogger("config." + ConvertPVNameToKey.class.getName());
+	private static final Logger configlogger = LogManager.getLogger("config." + ConvertPVNameToKey.class.getName());
 	private static final String SITE_NAME_SPACE_SEPARATORS = "org.epics.archiverappliance.config.ConvertPVNameToKey.siteNameSpaceSeparators";
 	private static final String SITE_NAME_SPACE_TERMINATOR = "org.epics.archiverappliance.config.ConvertPVNameToKey.siteNameSpaceTerminator";
 	private String siteNameSpaceSeparators;
@@ -53,7 +53,8 @@ public class ConvertPVNameToKey implements PVNameToKeyMapping {
 	public String convertPVNameToKey(String pvName) {
 		// First check the local cache for the mapping.
 		String chunkKey = chunkKeys.get(pvName);
-		if(chunkKey != null) return chunkKey;
+		if(chunkKey != null)
+			return chunkKey;
 		PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
 		if(typeInfo == null) { 
 			return generateChunkKey(pvName);
@@ -78,11 +79,12 @@ public class ConvertPVNameToKey implements PVNameToKeyMapping {
 	public void initialize(ConfigService configService) throws ConfigException {
 		this.configService = configService;
 		this.siteNameSpaceSeparators = configService.getInstallationProperties().getProperty(SITE_NAME_SPACE_SEPARATORS);
-		if(this.siteNameSpaceSeparators == null || this.siteNameSpaceSeparators.equals("") || this.siteNameSpaceSeparators.length() < 1) {
+		if (this.siteNameSpaceSeparators == null ||
+				this.siteNameSpaceSeparators.isEmpty()) {
 			throw new ConfigException("The appliance archiver cannot function without knowning the characters that separate the components of a PV name ");
 		}
 		String terminatorStr = configService.getInstallationProperties().getProperty(SITE_NAME_SPACE_TERMINATOR);
-		if(terminatorStr == null || terminatorStr.equals("") || terminatorStr.length() < 1) {
+		if (terminatorStr == null || terminatorStr.isEmpty()) {
 			throw new ConfigException("The appliance archiver cannot function without knowning the character that terminates the translated path name ");
 		}
 		this.terminatorChar = terminatorStr.charAt(0);
@@ -116,5 +118,15 @@ public class ConvertPVNameToKey implements PVNameToKeyMapping {
 	@Override
 	public String[] breakIntoParts(String pvName) {
 		return pvName.split(siteNameSpaceSeparators);
+	}
+
+	@Override
+	public String toString() {
+		return "ConvertPVNameToKey{" +
+				"siteNameSpaceSeparators='" + siteNameSpaceSeparators + '\'' +
+				", terminatorChar=" + terminatorChar +
+				", configService=" + configService +
+				", chunkKeys=" + chunkKeys +
+				'}';
 	}
 }

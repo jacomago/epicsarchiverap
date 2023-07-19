@@ -17,7 +17,7 @@ import java.io.IOException;
  *
  */
 public interface Writer {
-    int appendData(BasicContext context, String pvName, EventStream stream) throws IOException;
+	int appendData(BasicContext context, String pvName, EventStream stream) throws IOException;
 
 	/**
 	 * Gets the last known event in this destination. 

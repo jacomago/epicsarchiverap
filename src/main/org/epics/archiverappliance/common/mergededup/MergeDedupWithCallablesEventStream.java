@@ -76,7 +76,7 @@ public class MergeDedupWithCallablesEventStream implements EventStream, Remotabl
                 if (s1next.getEventTimeStamp().isBefore(s2next.getEventTimeStamp())) {
 					ret = s1next.makeClone();
 					moveIt1();
-                } else if (s1next.getEventTimeStamp().isAfter(s2next.getEventTimeStamp())) {
+				} else if (s1next.getEventTimeStamp().isAfter(s2next.getEventTimeStamp())) {
 					ret = s2next.makeClone();
 					moveIt2();
 				} else {

@@ -1,13 +1,5 @@
 package org.epics.archiverappliance.engine.pv;
 
-import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.TimeUtils;
@@ -21,6 +13,14 @@ import org.epics.pva.client.MonitorListener;
 import org.epics.pva.client.PVAChannel;
 import org.epics.pva.data.PVAData;
 import org.epics.pva.data.PVAStructure;
+
+import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class EPICS_V4_PV implements PV,  ClientChannelListener, MonitorListener {
     private static final Logger logger = LogManager.getLogger(EPICS_V4_PV.class.getName());
@@ -117,11 +117,6 @@ public class EPICS_V4_PV implements PV,  ClientChannelListener, MonitorListener 
     @Override
     public void addListener(PVListener listener) {
         listeners.add(listener);
-    }
-
-    @Override
-    public void removeListener(PVListener listener) {
-        listeners.remove(listener);
     }
 
     /** Notify all listeners. */

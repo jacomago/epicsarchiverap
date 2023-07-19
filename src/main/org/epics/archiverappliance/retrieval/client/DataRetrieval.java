@@ -29,34 +29,34 @@ public interface DataRetrieval {
 	 * Pass out-of-band events into the supplied retrievalEventProcessor
 	 * We default to getting raw data
 	 * @param pvNames The name of PVs
-     * @param startTime  Instant
-     * @param endTime  Instant
+	 * @param startTime  Instant
+	 * @param endTime  Instant
 	 * @param retrievalEventProcessor RetrievalEventProcessor
 	 * @return EventStream  Data for PVs &emsp; 
 	 */
-    public EventStream getDataForPVS(String[] pvNames, Instant startTime, Instant endTime, RetrievalEventProcessor retrievalEventProcessor);
+	public EventStream getDataForPVS(String[] pvNames, Instant startTime, Instant endTime, RetrievalEventProcessor retrievalEventProcessor);
 	/**
 	 * Get data for multiple PVs from starttime to endtime.
 	 * Pass out-of-band events into the supplied retrievalEventProcessor
 	 * @param pvNames The name of PVs
-     * @param startTime  Instant
-     * @param endTime  Instant
+	 * @param startTime  Instant
+	 * @param endTime  Instant
 	 * @param retrievalEventProcessor RetrievalEventProcessor
 	 * @param useReducedDataSet Is it ok to use a reduced data set?
 	 * @return EventStream Data for PVs
 	 */
-    public EventStream getDataForPVS(String[] pvNames, Instant startTime, Instant endTime, RetrievalEventProcessor retrievalEventProcessor, boolean useReducedDataSet);
+	public EventStream getDataForPVS(String[] pvNames, Instant startTime, Instant endTime, RetrievalEventProcessor retrievalEventProcessor, boolean useReducedDataSet);
 
 	/**
 	 * Get data for multiple PVs from starttime to endtime.
 	 * Pass out-of-band events into the supplied retrievalEventProcessor
 	 * @param pvNames The name of PVs
-     * @param startTime  Instant
-     * @param endTime  Instant
+	 * @param startTime  Instant
+	 * @param endTime  Instant
 	 * @param retrievalEventProcessor RetrievalEventProcessor
 	 * @param useReducedDataSet Is it ok to use a reduced data set?
 	 * @param otherParams Any other name/value pairs that are passed onto the server. 
 	 * @return EventStream Data for PVs
 	 */
-    public EventStream getDataForPVS(String[] pvNames, Instant startTime, Instant endTime, RetrievalEventProcessor retrievalEventProcessor, boolean useReducedDataSet, HashMap<String, String> otherParams);
+	public EventStream getDataForPVS(String[] pvNames, Instant startTime, Instant endTime, RetrievalEventProcessor retrievalEventProcessor, boolean useReducedDataSet, HashMap<String, String> otherParams);
 }

@@ -78,7 +78,7 @@ public class GetDataAtTimeEngine implements BPLAction {
 		}
 		return alreadyExistingEvent;
 	}
-	
+
 	@Override
 	public void execute(HttpServletRequest req, HttpServletResponse resp,
 			ConfigService configService) throws IOException {
@@ -86,7 +86,7 @@ public class GetDataAtTimeEngine implements BPLAction {
 		logger.debug("Getting data at time for PVs " + pvNames.size());
 
 		String timeStr = req.getParameter("at");
-        Instant atTime = TimeUtils.now();
+		Instant atTime = TimeUtils.now();
 		if(timeStr != null) {
 			atTime = TimeUtils.convertFromISO8601String(timeStr);
 		}
@@ -120,7 +120,7 @@ public class GetDataAtTimeEngine implements BPLAction {
 				if(potentialEvent != null) {
 					HashMap<String, Object> evnt = new HashMap<String, Object>();
 					evnt.put("secs", potentialEvent.getEpochSeconds());
-                    evnt.put("nanos", potentialEvent.getEventTimeStamp().getNano());
+					evnt.put("nanos", potentialEvent.getEventTimeStamp().getNano());
 					evnt.put("severity", potentialEvent.getSeverity());
 					evnt.put("status", potentialEvent.getStatus());
 					if(fieldIsEmbeddedInStream) {

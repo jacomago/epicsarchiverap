@@ -42,7 +42,7 @@ public class ConsolidatePBFilesForOnePV implements BPLAction {
 			return;
 		}
 
-		Instant oneYearLaterTimeStamp = TimeUtils.convertFromEpochSeconds(TimeUtils.getCurrentEpochSeconds() + 365 * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), 0);
+		Instant oneYearLaterTimeStamp = TimeUtils.convertFromEpochSeconds(TimeUtils.getCurrentEpochSeconds() + 365L * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), 0);
 		try {
 			ETLExecutor.runPvETLsBeforeOneStorage(configService, oneYearLaterTimeStamp, pvName, storageName);
 			resp.setContentType(MimeTypeConstants.APPLICATION_JSON);

@@ -84,7 +84,7 @@ public class ChannelArchiverReadOnlyPlugin implements StoragePlugin {
 
 
 	@Override
-    public List<Callable<EventStream>> getDataForPV(BasicContext context, String pvName, Instant startTime, Instant endTime, PostProcessor postProcessor) throws IOException {
+	public List<Callable<EventStream>> getDataForPV(BasicContext context, String pvName, Instant startTime, Instant endTime, PostProcessor postProcessor) throws IOException {
 		if(reducedArchiveKey != -1) {
 			return getDataForPV(context, pvName, startTime, endTime, reducedArchiveKey, postProcessor);
 		} else {
@@ -92,7 +92,7 @@ public class ChannelArchiverReadOnlyPlugin implements StoragePlugin {
 		}
 	}
 
-    private List<Callable<EventStream>> getDataForPV(BasicContext context, String pvName, Instant startTime, Instant endTime, int archiveKey, PostProcessor postProcessor) throws IOException {
+	private List<Callable<EventStream>> getDataForPV(BasicContext context, String pvName, Instant startTime, Instant endTime, int archiveKey, PostProcessor postProcessor) throws IOException {
 		try {
 			String pvNameForCall = pvName;
 			if(context.getPvNameFromRequest() != null) { 
@@ -108,9 +108,9 @@ public class ChannelArchiverReadOnlyPlugin implements StoragePlugin {
 							+ "<param><value><i4>" + archiveKey + "</i4></value></param>\n"
 							+ "<param><value><array><data><value><string>" + pvNameForCall + "</string></value></data></array></value></param>\n"
 							+ "<param><value><i4>" + TimeUtils.convertToEpochSeconds(startTime)+ "</i4></value></param>\n"
-                    + "<param><value><i4>" + startTime.getNano() + "</i4></value></param>\n"
+							+ "<param><value><i4>" + startTime.getNano() + "</i4></value></param>\n"
 							+ "<param><value><i4>" + TimeUtils.convertToEpochSeconds(endTime) + "</i4></value></param>\n"
-                    + "<param><value><i4>" + endTime.getNano() + "</i4></value></param>\n"
+							+ "<param><value><i4>" + endTime.getNano() + "</i4></value></param>\n"
 							+ "<param><value><i4>" + valuesRequested + "</i4></value></param>\n"
 							+ "<param><value><i4>" + howStr + "</i4></value></param>\n"
 							+ "</params>\n"
@@ -170,7 +170,7 @@ public class ChannelArchiverReadOnlyPlugin implements StoragePlugin {
 	}
 
 	@Override
-    public int appendData(BasicContext context, String pvName, EventStream stream) throws IOException {
+	public int appendData(BasicContext context, String pvName, EventStream stream) throws IOException {
 		throw new IOException("The ChannelArchiverReadOnlyPlugin does not support the Writer interface");
 	}
 

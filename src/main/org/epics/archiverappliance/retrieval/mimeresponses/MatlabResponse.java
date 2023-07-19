@@ -73,7 +73,7 @@ public class MatlabResponse implements MimeResponse {
 	}
 
 	@Override
-    public void processingPV(BasicContext retrievalContext, String pv, Instant start, Instant end, EventStreamDesc streamDesc) {
+	public void processingPV(BasicContext retrievalContext, String pv, Instant start, Instant end, EventStreamDesc streamDesc) {
 		headerStruct.setField("source", new MLChar("source", "Archiver appliance"));
 		headerStruct.setField("pvName", new MLChar("pvName", pv));
 		headerStruct.setField("from", new MLChar("from", TimeUtils.convertToISO8601String(start)));
@@ -168,7 +168,7 @@ public class MatlabResponse implements MimeResponse {
 			MLUInt64 ret = new MLUInt64("nanos", new int[] {dest.size(), 1} );
 			int i = 0;
 			for(Event e : dest) {
-                ret.set((long) e.getEventTimeStamp().getNano(), i++);
+				ret.set((long) e.getEventTimeStamp().getNano(), i++);
 			}
 			return ret;
 		}

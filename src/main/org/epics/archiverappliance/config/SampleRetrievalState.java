@@ -1,7 +1,7 @@
 package org.epics.archiverappliance.config;
 
 
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SampleRetrievalState extends RetrievalState {
-	private static Logger logger = LogManager.getLogger(SampleRetrievalState.class.getName());
+	private static final Logger logger = LogManager.getLogger(SampleRetrievalState.class.getName());
 	ConfigServiceForTests configService;
 	public SampleRetrievalState(ConfigServiceForTests parentConfigService) {
 		super(parentConfigService);
@@ -26,7 +26,7 @@ public class SampleRetrievalState extends RetrievalState {
 	}
 	
 	@Override
-    public List<DataSourceforPV> getDataSources(BasicContext context, String pvName, PVTypeInfo typeInfo, Instant start, Instant end, HttpServletRequest req) throws IOException {
+	public List<DataSourceforPV> getDataSources(BasicContext context, String pvName, PVTypeInfo typeInfo, Instant start, Instant end, HttpServletRequest req)  throws IOException {
 		if(pvName.startsWith(ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX)) {
 			logger.info("Returnng unit test data sources");
 			return getUnitTestDataSources(pvName);
@@ -58,11 +58,11 @@ public class SampleRetrievalState extends RetrievalState {
 				return null;
 			}
 		}
-		
-		PlainPBStoragePlugin mediumTermStore = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=MTS&rootFolder=" + configService.rootFolder + "&partitionGranularity=PARTITION_YEAR", configService);
+
+        PlainStoragePlugin mediumTermStore = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=MTS&rootFolder=" + configService.rootFolder + "&partitionGranularity=PARTITION_YEAR", configService);
 		datasources.add(new DataSourceforPV(pvName, mediumTermStore, 1, null, null));
 
-		PlainPBStoragePlugin shortTermStore = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=STS&rootFolder=" + ConfigServiceForTests.DEFAULT_PB_SHORT_TERM_TEST_DATA_FOLDER + "&partitionGranularity=PARTITION_YEAR", configService);
+        PlainStoragePlugin shortTermStore = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=STS&rootFolder=" + ConfigServiceForTests.DEFAULT_PB_SHORT_TERM_TEST_DATA_FOLDER + "&partitionGranularity=PARTITION_YEAR", configService);
 		datasources.add(new DataSourceforPV(pvName, shortTermStore, 0, null, null));
 		
 		return datasources;

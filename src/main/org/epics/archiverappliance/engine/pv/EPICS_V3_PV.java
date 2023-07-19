@@ -28,6 +28,7 @@ import gov.aps.jca.event.MonitorListener;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.POJOEvent;
+import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigService;
@@ -339,13 +340,7 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
 	public void addListener(final PVListener listener) {
 		listeners.add(listener);
 	}
-	
-	/** {@inheritDoc} */
-	@Override
-	public void removeListener(final PVListener listener) {
-		listeners.remove(listener);
-	}
-	
+
 	/**
 	 * Try to connect to the PV. OK to call more than once.
 	 */
@@ -1007,7 +1002,7 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
 			}
 			if (!allarchiveFieldsData.isEmpty()) {
 				long nowES = TimeUtils.getCurrentEpochSeconds();
-				if ((nowES - archiveFieldsSavedAtEpSec) >= 86400) {
+				if ((nowES - archiveFieldsSavedAtEpSec) >= PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk()) {
 					saveMetaDataOnceEveryDay(lastEvent);
 				}
 			}
