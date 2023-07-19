@@ -25,6 +25,9 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 
 import java.io.File;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_INDEX_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_UI_URL;
+
 /**
  * Create a paused PV in persistence; start the appserver and make sure we can delete
  * @author mshankar
@@ -74,7 +77,7 @@ public class DeletePVAfterRestartTest {
 
 	@Test
 	public void testSimpleDeletePV() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
+		 driver.get(MGMT_INDEX_URL);
 		 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
 		 pvstextarea.sendKeys(pvNameToArchive);
 		 WebElement checkStatusButton = driver.findElement(By.id("archstatCheckStatus"));
@@ -89,7 +92,7 @@ public class DeletePVAfterRestartTest {
 		 Assertions.assertTrue(expectedPVStatus.equals(pvArchiveStatusObtainedFromTable), "Expecting PV archive status to be " + expectedPVStatus + "; instead it is " + pvArchiveStatusObtainedFromTable);
 
 		 logger.info("Let's go to the details page and resume the PV");
-		 driver.get("http://localhost:17665/mgmt/ui/pvdetails.html?pv=" + pvNameToArchive);
+		 driver.get(MGMT_UI_URL + "/pvdetails.html?pv=" + pvNameToArchive);
 		 { 
 			 Thread.sleep(2 * 1000);
 			 WebElement deletePVButn = driver.findElement(By.id("pvDetailsStopArchiving"));
@@ -102,7 +105,7 @@ public class DeletePVAfterRestartTest {
 			 Thread.sleep(10 * 1000);
 		 }
 		 { 
-			 driver.get("http://localhost:17665/mgmt/ui/index.html");
+			 driver.get(MGMT_INDEX_URL);
 			 checkStatusButton = driver.findElement(By.id("archstatCheckStatus"));
 			 checkStatusButton.click();
 			 Thread.sleep(2 * 1000);

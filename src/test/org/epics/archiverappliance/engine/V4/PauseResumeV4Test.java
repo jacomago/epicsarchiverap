@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
 import static org.epics.archiverappliance.engine.V4.PVAccessUtil.waitForStatusChange;
 
 /**
@@ -50,8 +51,8 @@ public class PauseResumeV4Test {
         String pvURLName = URLEncoder.encode(pvName, StandardCharsets.UTF_8);
 
         // Archive PV
-        String mgmtUrl = "http://localhost:17665/mgmt/bpl/";
-        String archivePVURL = mgmtUrl + "archivePV?pv=pva://";
+        String mgmtUrl = MGMT_URL;
+        String archivePVURL = mgmtUrl + "/archivePV?pv=pva://";
 
         GetUrlContent
                 .getURLContentAsJSONArray(archivePVURL + pvURLName);

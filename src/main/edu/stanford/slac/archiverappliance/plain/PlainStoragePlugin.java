@@ -23,7 +23,14 @@ import org.epics.archiverappliance.common.mergededup.TimeSpanLimitEventStream;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNameToKeyMapping;
-import org.epics.archiverappliance.etl.*;
+import org.epics.archiverappliance.etl.ConversionFunction;
+import org.epics.archiverappliance.etl.ETLBulkStream;
+import org.epics.archiverappliance.etl.ETLContext;
+import org.epics.archiverappliance.etl.ETLDest;
+import org.epics.archiverappliance.etl.ETLInfo;
+import org.epics.archiverappliance.etl.ETLSource;
+import org.epics.archiverappliance.etl.StorageMetrics;
+import org.epics.archiverappliance.etl.StorageMetricsContext;
 import org.epics.archiverappliance.retrieval.CallableEventStream;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.retrieval.postprocessors.DefaultRawPostProcessor;
@@ -44,7 +51,13 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -162,11 +175,6 @@ public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, St
     private String etlIntoStoreIf;
 
     private String etlOutofStoreIf;
-
-    public PlainStoragePlugin() {
-        this.fileExtension = FileExtension.PB;
-        this.append_extension = FileExtension.PB.getExtensionString() + "append";
-    }
 
     public PlainStoragePlugin(FileExtension fileExtension) {
         this.fileExtension = fileExtension;

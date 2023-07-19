@@ -17,18 +17,23 @@ import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.ENGINE_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.ETL_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.RETRIEVAL_URL;
 import static org.epics.archiverappliance.mgmt.pva.PvaMgmtService.PVA_MGMT_SERVICE;
 
 /**
  * Test the pvAccess mgmt service's ability to start archiving a pv
- * 
+ *
  * @author Kunal Shroff
  *
  */
-@Tag("integration")@Tag("localEpics")
-public class PvaSuiteTstGetApplianceInfo {
+@Tag("integration")
+@Tag("localEpics")
+public class PvaSuiteTstGetApplianceInfoTest {
 
-	private static final Logger logger = LogManager.getLogger(PvaSuiteTstGetApplianceInfo.class.getName());
+	private static final Logger logger = LogManager.getLogger(PvaSuiteTstGetApplianceInfoTest.class.getName());
 
 	private static PVAClient pvaClient;
 	private static PVAChannel pvaChannel;
@@ -68,10 +73,10 @@ public class PvaSuiteTstGetApplianceInfo {
 			String[] expextedKeys = new String[] {"identity","mgmtURL","engineURL","retrievalURL","etlURL"};
 			String[] expectedValues = new String[] {
 					"appliance0",
-					"http://localhost:17665/mgmt/bpl",
-					"http://localhost:17665/engine/bpl",
-					"http://localhost:17665/retrieval/bpl",
-					"http://localhost:17665/etl/bpl"};
+					MGMT_URL,
+					ENGINE_URL,
+					RETRIEVAL_URL,
+					ETL_URL};
 			logger.info("results" + result.toString());
             Assertions.assertArrayEquals(expextedKeys, NTUtil.extractStringArray(PVATable.fromStructure(result).getColumn("Key")));
             Assertions.assertArrayEquals(expectedValues, NTUtil.extractStringArray(PVATable.fromStructure(result).getColumn("Value")));

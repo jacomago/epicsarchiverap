@@ -37,6 +37,8 @@ import java.io.InputStreamReader;
 import java.net.URLEncoder;
 import java.time.Instant;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
+
 /**
  * Simple test to test appending data from an older PV to a newer one.
  * <ul>
@@ -103,7 +105,7 @@ public class AppendAndAliasPVTest {
 		newPVTypeInfo.setCreationTime(creationTime);
 		Assertions.assertTrue(newPVTypeInfo.getPvName().equals(pvName), "Expecting PV typeInfo for " + pvName + "; instead it is " + srcPVTypeInfo.getPvName());
 		JSONEncoder<PVTypeInfo> encoder = JSONEncoder.getEncoder(PVTypeInfo.class);
-		GetUrlContent.postObjectAndGetContentAsJSONObject("http://localhost:17665/mgmt/bpl/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, "UTF-8") + "&createnew=true", encoder.encode(newPVTypeInfo));
+		GetUrlContent.postObjectAndGetContentAsJSONObject(MGMT_URL + "/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, "UTF-8") + "&createnew=true", encoder.encode(newPVTypeInfo));
 	}
 
 	private void generateData(String pvName, Instant startTime, Instant endTime) throws IOException {
@@ -147,7 +149,7 @@ public class AppendAndAliasPVTest {
 			long eventCountBefore = getEventCountBetween("test_1", TimeUtils.minusDays(TimeUtils.now(), 2*365), TimeUtils.minusDays(TimeUtils.now(), 7))
 					+ getEventCountBetween("test_2", TimeUtils.minusDays(TimeUtils.now(), 5), TimeUtils.now());
 			
-			String appendAliasPVURL = "http://localhost:17665/mgmt/bpl/appendAndAliasPV?olderpv=test_1&newerpv=test_2&storage=LTS";
+			String appendAliasPVURL = MGMT_URL + "/appendAndAliasPV?olderpv=test_1&newerpv=test_2&storage=LTS";
 			JSONObject appendAliasStatus = GetUrlContent.getURLContentAsJSONObject(appendAliasPVURL);
 			logger.info("Append alias response " + appendAliasStatus.toJSONString());
 			Assertions.assertTrue(appendAliasStatus.containsKey("status") && appendAliasStatus.get("status").equals("ok"), "Cannot append and alias PV test_1 to test_2");
@@ -168,7 +170,7 @@ public class AppendAndAliasPVTest {
 			long eventCountBefore = getEventCountBetween("test_3", TimeUtils.minusDays(TimeUtils.now(), 2*365), TimeUtils.minusDays(TimeUtils.now(), 7))
 					+ getEventCountBetween("test_4", TimeUtils.minusDays(TimeUtils.now(), 7), TimeUtils.now());
 			
-			String appendAliasPVURL = "http://localhost:17665/mgmt/bpl/appendAndAliasPV?olderpv=test_3&newerpv=test_4&storage=LTS";
+			String appendAliasPVURL = MGMT_URL + "/appendAndAliasPV?olderpv=test_3&newerpv=test_4&storage=LTS";
 			JSONObject appendAliasStatus = GetUrlContent.getURLContentAsJSONObject(appendAliasPVURL);
 			logger.info("Append alias response " + appendAliasStatus.toJSONString());
 			Assertions.assertTrue(appendAliasStatus.containsKey("status") && appendAliasStatus.get("status").equals("ok"), "Cannot append and alias PV test_3 to test_4");

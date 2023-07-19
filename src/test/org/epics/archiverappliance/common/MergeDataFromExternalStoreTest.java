@@ -38,6 +38,12 @@ import java.io.InputStreamReader;
 import java.net.URLEncoder;
 import java.time.Instant;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.DEFAULT_MGMT_PORT;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.HTTP_LOCALHOST;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.DATA_RETRIEVAL_URL;
+
+
 /**
  * Test merging in data from an external store. 
  * @author mshankar
@@ -132,12 +138,12 @@ public class MergeDataFromExternalStoreTest {
 	}
 	
 	private void mergeInDataFromRemoteServer() throws Exception {
-		JSONObject cresp = GetUrlContent.getURLContentAsJSONObject("http://localhost:17665/mgmt/bpl/consolidateDataForPV" 
+		JSONObject cresp = GetUrlContent.getURLContentAsJSONObject(MGMT_URL + "/consolidateDataForPV"
 				+ "?pv=" + URLEncoder.encode(pvName, "UTF-8") 
 				+ "&storage=LTS");
 		Assertions.assertTrue(cresp.get("status").equals("ok"), "Invalid response for consolidate data");
 		String otherClientURL = "http://localhost:17669/retrieval";
-		JSONObject resp = GetUrlContent.getURLContentAsJSONObject("http://localhost:17665/mgmt/bpl/mergeInData" 
+		JSONObject resp = GetUrlContent.getURLContentAsJSONObject(MGMT_URL + "/mergeInData"
 				+ "?pv=" + URLEncoder.encode(pvName, "UTF-8") 
 				+ "&other=" + URLEncoder.encode(otherClientURL, "UTF-8") 
 				+ "&storage=LTS"
@@ -147,7 +153,7 @@ public class MergeDataFromExternalStoreTest {
 	}
 	
 	private void testMergedRetrieval() throws Exception {
-		RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:17665/retrieval/data/getData.raw");
+		RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream(DATA_RETRIEVAL_URL + "/data/getData.raw");
 		long rtvlEventCount = 0;
 		try(EventStream stream = rawDataRetrieval.getDataForPVS(new String[] { pvName }, TimeUtils.minusDays(TimeUtils.now(), 90), TimeUtils.plusDays(TimeUtils.now(), 31), null)) {
 			long lastEvEpoch = 0;
@@ -171,9 +177,9 @@ public class MergeDataFromExternalStoreTest {
 
 	@Test
 	public void testRetrieval() throws Exception {
-        // Register the PV with both appliances and generate data.
-        Instant lastMonth = TimeUtils.minusDays(TimeUtils.now(), 2 * 31);
-		long dCount = generateMTSData("http://localhost:17665", "dest_appliance", lastMonth, 0);
+		// Register the PV with both appliances and generate data.
+		Instant lastMonth = TimeUtils.minusDays(TimeUtils.now(), 31);
+		long dCount = generateMTSData(HTTP_LOCALHOST + DEFAULT_MGMT_PORT, "dest_appliance", lastMonth, 0);
 		long oCount = generateMTSData("http://localhost:17669", "other_appliance", lastMonth, 1);
 		tCount = dCount + oCount;
 		

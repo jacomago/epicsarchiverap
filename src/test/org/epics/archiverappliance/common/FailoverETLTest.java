@@ -43,6 +43,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.DEFAULT_MGMT_PORT;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.HTTP_LOCALHOST;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.DATA_RETRIEVAL_URL;
+
 /**
  * Test basic failover - test the ETL side of things.
  * @author mshankar
@@ -153,7 +157,7 @@ public class FailoverETLTest {
 		destPVTypeInfo.setChunkKey(configService.getPVNameToKeyConverter().convertPVNameToKey(pvName));
 		destPVTypeInfo.setCreationTime(TimeUtils.convertFromISO8601String("2020-11-11T14:49:58.523Z"));
 		destPVTypeInfo.setModificationTime(TimeUtils.now());
-		String otherURL = "pbraw://localhost?name=MTS&rawURL=" + URLEncoder.encode("http://localhost:17665/retrieval/data/getData.raw", "UTF-8");
+		String otherURL = "pbraw://localhost?name=MTS&rawURL=" + URLEncoder.encode(DATA_RETRIEVAL_URL + "/data/getData.raw", "UTF-8");
 		destPVTypeInfo.getDataStores()[1] = "merge://localhost?name=MTS&dest="
 				+ URLEncoder.encode(destPVTypeInfo.getDataStores()[1], "UTF-8") 
 				+ "&other=" + URLEncoder.encode(otherURL, "UTF-8");
@@ -194,8 +198,8 @@ public class FailoverETLTest {
 		configService.getETLLookup().manualControlForUnitTests();
 
 		// Register the PV with both appliances and generate data.
-        Instant lastMonth = TimeUtils.minusDays(TimeUtils.now(), 2*31);
-		long oCount = generateDataAndRegisterPV("http://localhost:17665", ConfigServiceForTests.TESTAPPLIANCE0, lastMonth, 0);
+		Instant lastMonth = TimeUtils.minusDays(TimeUtils.now(), 2*31);
+		long oCount = generateDataAndRegisterPV(HTTP_LOCALHOST + DEFAULT_MGMT_PORT, ConfigServiceForTests.TESTAPPLIANCE0, lastMonth, 0);
 
 		System.getProperties().put("ARCHAPPL_SHORT_TERM_FOLDER",  "build/tomcats/tomcat_"+ this.getClass().getSimpleName() + "/" + "dest_appliance" + "/sts");
 		System.getProperties().put("ARCHAPPL_MEDIUM_TERM_FOLDER", "build/tomcats/tomcat_"+ this.getClass().getSimpleName() + "/" + "dest_appliance" + "/mts");

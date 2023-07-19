@@ -1,5 +1,7 @@
 package org.epics.archiverappliance.retrieval.pva;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.pva.server.PVAServer;
 import org.epics.pva.server.ServerPV;
@@ -9,21 +11,15 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-
 import java.io.IOException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import static org.epics.archiverappliance.retrieval.pva.PvaDataRetrievalService.PVA_DATA_SERVICE;
 
 public class PvaDataRetrievalServlet extends GenericServlet {
 
-	private static Logger logger = LogManager.getLogger(PvaDataRetrievalServlet.class.getName());
+	private static final Logger logger = LogManager.getLogger(PvaDataRetrievalServlet.class.getName());
 
 	/**
 	 * 
@@ -54,8 +50,8 @@ public class PvaDataRetrievalServlet extends GenericServlet {
 	@Override
 	public void destroy() {
 		logger.info("Shutting down service " + PVA_DATA_SERVICE);
-		server.close();
 		serverPV.close();
+		server.close();
 		logger.info(PVA_DATA_SERVICE + " Shutdown complete.");
 		super.destroy();
 	}

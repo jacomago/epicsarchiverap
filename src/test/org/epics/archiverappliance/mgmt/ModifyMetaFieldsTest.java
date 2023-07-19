@@ -1,5 +1,13 @@
 package org.epics.archiverappliance.mgmt;
 
+import static org.junit.Assert.assertTrue;
+
+import java.io.File;
+import java.io.StringWriter;
+import java.net.URLEncoder;
+import java.util.Arrays;
+import java.util.List;
+
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -16,13 +24,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
 import java.io.File;
 import java.io.StringWriter;
 import java.net.URLEncoder;
@@ -95,7 +104,7 @@ public class ModifyMetaFieldsTest {
 		 Assertions.assertTrue(aapl0.equals(aapl1), "Expecting the same appliance identity in both typeinfos, instead it is " + aapl0 + " in cluster member 0 and " + aapl1 + " in cluster member 1");
 		 
 		 // Let's pause the PV.
-		 String pausePVURL = "http://localhost:17665/mgmt/bpl/pauseArchivingPV?pv=" + URLEncoder.encode(pvName, "UTF-8");
+		 String pausePVURL = MGMT_URL + "/pauseArchivingPV?pv=" + URLEncoder.encode(pvName, "UTF-8");
 		 JSONObject pauseStatus = GetUrlContent.getURLContentAsJSONObject(pausePVURL);
 		 Assertions.assertTrue(pauseStatus.containsKey("status") && pauseStatus.get("status").equals("ok"), "Cannot pause PV");
 		 Thread.sleep(5000);

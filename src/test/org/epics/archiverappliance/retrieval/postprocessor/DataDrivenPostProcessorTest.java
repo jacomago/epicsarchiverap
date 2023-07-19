@@ -31,6 +31,8 @@ import java.net.URLEncoder;
 import java.time.Instant;
 import java.util.HashMap;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
+
 /**
  * This is a framework for various data driven post processor tests from Michael.
  * Some variation of getting raw PB files, loading it into the system and then running retrieval on it to check the results.
@@ -83,7 +85,7 @@ public class DataDrivenPostProcessorTest {
 		newPVTypeInfo.setPaused(true);
 		newPVTypeInfo.setChunkKey("LN/AM/RadMon/2/DoseRate/I:");
 		JSONEncoder<PVTypeInfo> encoder = JSONEncoder.getEncoder(PVTypeInfo.class);
-		GetUrlContent.postObjectAndGetContentAsJSONObject("http://localhost:17665/mgmt/bpl/putPVTypeInfo?pv=" + URLEncoder.encode(newPVName, "UTF-8") + "&createnew=true", encoder.encode(newPVTypeInfo));
+		GetUrlContent.postObjectAndGetContentAsJSONObject(MGMT_URL + "/putPVTypeInfo?pv=" + URLEncoder.encode(newPVName, "UTF-8") + "&createnew=true", encoder.encode(newPVTypeInfo));
 
 		logger.info("Sample file copied to " + destFile.getAbsolutePath());
 

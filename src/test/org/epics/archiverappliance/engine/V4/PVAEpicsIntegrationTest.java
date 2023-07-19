@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
 import static org.epics.archiverappliance.engine.V4.PVAccessUtil.waitForStatusChange;
 
 @Tag("integration")
@@ -58,8 +59,8 @@ public class PVAEpicsIntegrationTest {
         String pvURLName = URLEncoder.encode(pvName, StandardCharsets.UTF_8);
 
         // Archive PV
-        String mgmtUrl = "http://localhost:17665/mgmt/bpl/";
-        String archivePVURL = mgmtUrl + "archivePV?pv=pva://";
+        String mgmtUrl = MGMT_URL;
+        String archivePVURL = mgmtUrl + "/archivePV?pv=pva://";
 
         GetUrlContent.getURLContentAsJSONArray(archivePVURL + pvURLName);
         waitForStatusChange(pvName, "Being archived", 60, mgmtUrl, 10);

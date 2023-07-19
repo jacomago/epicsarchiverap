@@ -43,6 +43,8 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Random;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_INDEX_URL;
+
 /**
  * Generate known amount of data for a PV; corrupt known number of the values.
  * Retrieve data using mean_600 and raw and make sure we do not drop the stream entirely.
@@ -112,7 +114,7 @@ public class PostProcessorWithPBErrorDailyTest {
 
 	@Test
 	public void testRetrievalWithPostprocessingAndCorruption() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
+		 driver.get(MGMT_INDEX_URL);
 		 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
 		 pvstextarea.sendKeys(pvName);
 		 WebElement archiveButton = driver.findElement(By.id("archstatArchive"));

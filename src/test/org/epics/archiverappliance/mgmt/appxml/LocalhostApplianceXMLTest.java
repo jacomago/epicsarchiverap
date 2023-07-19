@@ -1,5 +1,6 @@
 package org.epics.archiverappliance.mgmt.appxml;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_INDEX_URL;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -59,11 +60,11 @@ public class LocalhostApplianceXMLTest {
 		String localhost = "localhost";
 		logger.info("Testing appliances.xml with localhost using " + localhost);
 		String appliancesFilename = testFolder.getAbsolutePath() + File.separator + "localhostaddress_appliances.xml";
-		try(PrintWriter out = new PrintWriter(new File(appliancesFilename))) { 
-			out.println("<appliances>\n\t<appliance>\n\t\t<identity>appliance0</identity>\n\t\t" + 
-					"<cluster_inetport>" + localhost + ":16670</cluster_inetport>\n\t\t<mgmt_url>http://" + localhost + ":17665/mgmt/bpl</mgmt_url>\n\t\t" + 
-					"<engine_url>http://" + localhost + ":17665/engine/bpl</engine_url>\n\t\t<etl_url>http://" + localhost + ":17665/etl/bpl</etl_url>" + 
-					"<retrieval_url>http://" + localhost + ":17665/retrieval/bpl</retrieval_url>\n\t\t<data_retrieval_url>http://" + localhost + ":17665/retrieval</data_retrieval_url>\n\t" +  
+		try(PrintWriter out = new PrintWriter(new File(appliancesFilename))) {
+			out.println("<appliances>\n\t<appliance>\n\t\t<identity>appliance0</identity>\n\t\t" +
+					"<cluster_inetport>" + localhost + ":16670</cluster_inetport>\n\t\t<mgmt_url>http://" + localhost + ":17665/mgmt/bpl</mgmt_url>\n\t\t" +
+					"<engine_url>http://" + localhost + ":17665/engine/bpl</engine_url>\n\t\t<etl_url>http://" + localhost + ":17665/etl/bpl</etl_url>" +
+					"<retrieval_url>http://" + localhost + ":17665/retrieval/bpl</retrieval_url>\n\t\t<data_retrieval_url>http://" + localhost + ":17665/retrieval</data_retrieval_url>\n\t" +
 					"</appliance>\n\t</appliances>");
 		}
 		System.getProperties().put(ConfigService.ARCHAPPL_APPLIANCES, appliancesFilename);
@@ -72,7 +73,7 @@ public class LocalhostApplianceXMLTest {
 		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
 		driver = new FirefoxDriver();
 
-		driver.get("http://localhost:17665/mgmt/ui/index.html");
+		driver.get(MGMT_INDEX_URL);
 		WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
 		Assertions.assertTrue(pvstextarea != null, "Cannot get to the home page...");
 		

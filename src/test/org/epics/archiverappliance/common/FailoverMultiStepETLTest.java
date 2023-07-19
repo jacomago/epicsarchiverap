@@ -34,6 +34,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.DEFAULT_MGMT_PORT;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.HTTP_LOCALHOST;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.DATA_RETRIEVAL_URL;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -234,7 +237,7 @@ public class FailoverMultiStepETLTest {
             oCount = oCount + generateData(ConfigServiceForTests.TESTAPPLIANCE0, ts, 0);
         }
         registerPVForOther(
-                "http://localhost:17665",
+                HTTP_LOCALHOST + DEFAULT_MGMT_PORT,
                 ConfigServiceForTests.TESTAPPLIANCE0,
                 TimeUtils.minusDays(TimeUtils.now(), 5 * 365),
                 TimeUtils.plusDays(TimeUtils.now(), 10),

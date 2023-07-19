@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_INDEX_URL;
+
 /**
  * Testing mean_600 and making sure we get expected results in the client.
  * Generate a few years worth of data for a PV and then get the results using mean_600 and raw results.
@@ -99,7 +101,7 @@ public class Mean600Test {
 
 	@Test
 	public void testSimpleArchivePV() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
+		 driver.get(MGMT_INDEX_URL);
 		 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
 		 pvstextarea.sendKeys(pvName);
 		 WebElement archiveButton = driver.findElement(By.id("archstatArchive"));

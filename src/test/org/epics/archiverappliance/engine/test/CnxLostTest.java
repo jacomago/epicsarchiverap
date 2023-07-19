@@ -32,6 +32,9 @@ import java.util.Map;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_INDEX_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_UI_URL;
+
 /**
  * Start an appserver with persistence; start archiving a PV; then start and restart the SIOC and make sure we get the expected cnxlost headers.
  * @author mshankar
@@ -97,7 +100,7 @@ public class CnxLostTest {
 
 	@Test
 	public void testConnectionLossHeaders() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
+		 driver.get(MGMT_INDEX_URL);
 		 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
 		 String pvNameToArchive = "UnitTestNoNamingConvention:inactive1";
 		 pvstextarea.sendKeys(pvNameToArchive);
@@ -129,7 +132,7 @@ public class CnxLostTest {
 		 });
 
 		 logger.info("We are now archiving the PV; let's go into the details page; pause and resume");
-		 driver.get("http://localhost:17665/mgmt/ui/pvdetails.html?pv=" + pvNameToArchive);
+		 driver.get(MGMT_UI_URL + "/pvdetails.html?pv=" + pvNameToArchive);
 		 { 
 			 Thread.sleep(20*1000);
 			 WebElement pauseArchivingButn = driver.findElement(By.id("pvDetailsPauseArchiving"));

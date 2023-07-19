@@ -9,6 +9,7 @@ package org.epics.archiverappliance.retrieval.client;
 
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -26,7 +27,11 @@ import org.epics.archiverappliance.data.ScalarValue;
 import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,20 +53,24 @@ import java.util.LinkedList;
  */
 @Tag("integration")
 public class MissingDataYearSpanRetrievalTest {
-	private static Logger logger = LogManager.getLogger(MissingDataYearSpanRetrievalTest.class.getName());
+    private static final Logger logger = LogManager.getLogger(MissingDataYearSpanRetrievalTest.class.getName());
 	String testSpecificFolder = "MissingDataYearSpanRetrieval";
-	String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + ":" + testSpecificFolder + ":mdata_yspan";
+	String pvNamePB = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + FileExtension.PB + ":" + testSpecificFolder + ":mdata_yspan";
+	String pvNameParquet = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + FileExtension.PARQUET + ":" + testSpecificFolder + ":mdata_yspan";
 	File dataFolder = new File(ConfigServiceForTests.getDefaultPBTestFolder() + File.separator +  "ArchUnitTest" + File.separator + testSpecificFolder);
 
-	PBCommonSetup pbSetup = new PBCommonSetup();
-    PlainStoragePlugin pbplugin = new PlainStoragePlugin();
+    PBCommonSetup PBSetup = new PBCommonSetup();
+    PBCommonSetup parquetSetup = new PBCommonSetup();
+    PlainStoragePlugin pbPlugin = new PlainStoragePlugin(FileExtension.PB);
+    PlainStoragePlugin parquetPlugin = new PlainStoragePlugin(FileExtension.PARQUET);
 	TomcatSetup tomcatSetup = new TomcatSetup();
 
 	private final LinkedList<Instant> generatedTimeStamps = new LinkedList<Instant>();
 
 	@BeforeEach
 	public void setUp() throws Exception {
-		pbSetup.setUpRootFolder(pbplugin);
+        PBSetup.setUpRootFolder(pbPlugin);
+        parquetSetup.setUpRootFolder(parquetPlugin);
 		logger.info("Data folder is " + dataFolder.getAbsolutePath());
 		FileUtils.deleteDirectory(dataFolder);
 		generateData();
@@ -74,17 +83,7 @@ public class MissingDataYearSpanRetrievalTest {
 			Instant sep2011 = TimeUtils.convertFromISO8601String("2011-09-01T00:00:00.000Z");
 			int sep201101secsIntoYear = TimeUtils.getSecondsIntoYear(TimeUtils.convertToEpochSeconds(sep2011));
 			short year = 2011;
-			ArrayListEventStream strm = new ArrayListEventStream(0, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, year));
-			for(int day = 0; day < 30; day++) { 
-				// Set the nanos to 111000000 so that we don't always get the sample with the same timestamp
-				// This unit test is supposed to test the fact that we get the last known timestamp for various cases.
-				YearSecondTimestamp yts = new YearSecondTimestamp(year, sep201101secsIntoYear + day* PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), 111000000);
-				strm.add(new SimulationEvent(yts, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<Double>(0.0)));
-				generatedTimeStamps.add(TimeUtils.convertFromYearSecondTimestamp(yts));
-			}
-			try(BasicContext context = new BasicContext()) {
-				pbplugin.appendData(context, pvName, strm);
-			}
+            generateDate(year, sep201101secsIntoYear);
 		}
 		
 		{
@@ -92,17 +91,26 @@ public class MissingDataYearSpanRetrievalTest {
 			Instant jun2012 = TimeUtils.convertFromISO8601String("2012-06-01T00:00:00.000Z");
 			int jun201201secsIntoYear = TimeUtils.getSecondsIntoYear(TimeUtils.convertToEpochSeconds(jun2012));
 			short year = 2012;
-			ArrayListEventStream strm = new ArrayListEventStream(0, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, year));
-			for(int day = 0; day < 30; day++) { 
-				YearSecondTimestamp yts = new YearSecondTimestamp(year, jun201201secsIntoYear + day*PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), 111000000);
-				strm.add(new SimulationEvent(yts, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<Double>(0.0)));
-				generatedTimeStamps.add(TimeUtils.convertFromYearSecondTimestamp(yts));
-			}
-			try(BasicContext context = new BasicContext()) {
-				pbplugin.appendData(context, pvName, strm);
-			}
+            generateDate(year, jun201201secsIntoYear);
+        }
+
+    }
+
+    private void generateDate(short year, int jun201201secsIntoYear) throws IOException {
+        ArrayListEventStream strmPB = new ArrayListEventStream(0, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvNamePB, year));
+        ArrayListEventStream strmParquet = new ArrayListEventStream(0, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvNameParquet, year));
+        for (int day = 0; day < 30; day++) {
+            YearSecondTimestamp yts = new YearSecondTimestamp(year, jun201201secsIntoYear + day * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), 111000000);
+            strmPB.add(new SimulationEvent(yts, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<Double>(0.0)));
+            strmParquet.add(new SimulationEvent(yts, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<Double>(0.0)));
+            generatedTimeStamps.add(TimeUtils.convertFromYearSecondTimestamp(yts));
+        }
+        try (BasicContext context = new BasicContext()) {
+            pbPlugin.appendData(context, pvNamePB, strmPB);
+        }
+        try (BasicContext context = new BasicContext()) {
+            parquetPlugin.appendData(context, pvNameParquet, strmParquet);
 		}
-		
 	}
 
 	@AfterEach
@@ -126,25 +134,24 @@ public class MissingDataYearSpanRetrievalTest {
 	 * ..........................................................................................[..] should return one sample for the last day of Jun, 2012
 	 * ...........................................................................................................................[..] should return one sample for the last day of Jun, 2012
 	 * <pre>
-	 * @throws IOException
 	 */
 	@Test
 	public void testMissingDataYearSpan()  throws Exception  {
-		testRetrieval("2011-06-01T00:00:00.000Z", "2011-07-01T00:00:00.000Z", 0, null, -1, "Before all data");
-		testRetrieval("2011-08-10T00:00:00.000Z", "2011-09-15T10:00:00.000Z", 15, "2011-09-01T00:00:00.111Z",  0,  "Aug/10/2011 - Sep/15/2011");
-		testRetrieval("2011-09-10T00:00:00.000Z", "2011-09-15T10:00:00.000Z", 6,  "2011-09-09T00:00:00.111Z",  8,  "Sep/10/2011 - Sep/15/2011");
-		testRetrieval("2011-09-10T00:00:00.000Z", "2011-10-15T10:00:00.000Z", 22, "2011-09-09T00:00:00.111Z",  8,  "Sep/10/2011 - Oct/15/2011");
-		testRetrieval("2011-10-10T00:00:00.000Z", "2011-10-15T10:00:00.000Z", 1,  "2011-09-30T00:00:00.111Z",  29, "Oct/10/2011 - Oct/15/2011");
-		testRetrieval("2011-10-10T00:00:00.000Z", "2012-01-15T10:00:00.000Z", 1,  "2011-09-30T00:00:00.111Z",  29, "Oct/10/2011 - Jan/15/2012");
-		testRetrieval("2012-01-10T00:00:00.000Z", "2012-01-15T10:00:00.000Z", 1,  "2011-09-30T00:00:00.111Z",  29, "Jan/10/2012 - Jan/15/2012");
-		testRetrieval("2012-01-10T00:00:00.000Z", "2012-06-15T10:00:00.000Z", 16, "2011-09-30T00:00:00.111Z",  29, "Jan/10/2012 - Jun/15/2012");
-		testRetrieval("2012-06-10T00:00:00.000Z", "2012-06-15T10:00:00.000Z", 6,  "2012-06-09T00:00:00.111Z",  38, "Jun/10/2012 - Jun/15/2012");
-		testRetrieval("2012-09-10T00:00:00.000Z", "2012-09-15T10:00:00.000Z", 1,  "2012-06-30T00:00:00.111Z",  59, "Sep/10/2012 - Sep/15/2012");
-		testRetrieval("2013-01-10T00:00:00.000Z", "2013-01-15T10:00:00.000Z", 1,  "2012-06-30T00:00:00.111Z",  59, "Jan/10/2013 - Jan/15/2013");
-		
-//		logger.info("Try now...");
-//		try { Thread.sleep(300*1000); } catch(Throwable t) {} 
-//		logRetrieval("2011-10-10T00:00:00.000Z", "2011-10-15T10:00:00.000Z", new File("/tmp/Oct10.dat"));
+
+        for (String pvName : new String[]{pvNamePB, pvNameParquet}) {
+            testRetrieval("2011-06-01T00:00:00.000Z", "2011-07-01T00:00:00.000Z", 0, null, -1, "Before all data", pvName);
+            testRetrieval("2011-08-10T00:00:00.000Z", "2011-09-15T10:00:00.000Z", 15, "2011-09-01T00:00:00.111Z", 0, "Aug/10/2011 - Sep/15/2011", pvName);
+            testRetrieval("2011-09-10T00:00:00.000Z", "2011-09-15T10:00:00.000Z", 6, "2011-09-09T00:00:00.111Z", 8, "Sep/10/2011 - Sep/15/2011", pvName);
+            testRetrieval("2011-09-10T00:00:00.000Z", "2011-10-15T10:00:00.000Z", 22, "2011-09-09T00:00:00.111Z", 8, "Sep/10/2011 - Oct/15/2011", pvName);
+            testRetrieval("2011-10-10T00:00:00.000Z", "2011-10-15T10:00:00.000Z", 1, "2011-09-30T00:00:00.111Z", 29, "Oct/10/2011 - Oct/15/2011", pvName);
+            testRetrieval("2011-10-10T00:00:00.000Z", "2012-01-15T10:00:00.000Z", 1, "2011-09-30T00:00:00.111Z", 29, "Oct/10/2011 - Jan/15/2012", pvName);
+            testRetrieval("2012-01-10T00:00:00.000Z", "2012-01-15T10:00:00.000Z", 1, "2011-09-30T00:00:00.111Z", 29, "Jan/10/2012 - Jan/15/2012", pvName);
+            testRetrieval("2012-01-10T00:00:00.000Z", "2012-06-15T10:00:00.000Z", 16, "2011-09-30T00:00:00.111Z", 29, "Jan/10/2012 - Jun/15/2012", pvName);
+            testRetrieval("2012-06-10T00:00:00.000Z", "2012-06-15T10:00:00.000Z", 6, "2012-06-09T00:00:00.111Z", 38, "Jun/10/2012 - Jun/15/2012", pvName);
+            testRetrieval("2012-09-10T00:00:00.000Z", "2012-09-15T10:00:00.000Z", 1, "2012-06-30T00:00:00.111Z", 59, "Sep/10/2012 - Sep/15/2012", pvName);
+            testRetrieval("2013-01-10T00:00:00.000Z", "2013-01-15T10:00:00.000Z", 1, "2012-06-30T00:00:00.111Z", 59, "Jan/10/2013 - Jan/15/2013", pvName);
+        }
+
 	} 
 	
 	/**
@@ -154,17 +161,17 @@ public class MissingDataYearSpanRetrievalTest {
 	 * @param firstTimeStampExpectedStr - The time stamp of the first event
 	 * @param firstTSIndex - If present, the index into generatedTimeStamps for the first event. Set to -1 if you want to skip this check.
 	 * @param msg - msg to add to log msgs and the like
-	 * @throws IOException
 	 */
-	private void testRetrieval(String startStr, String endStr, int expectedMinEventCount, String firstTimeStampExpectedStr, int firstTSIndex, String msg) throws IOException {
+    private void testRetrieval(String startStr, String endStr, int expectedMinEventCount, String firstTimeStampExpectedStr, int firstTSIndex, String msg, String pvName) throws IOException {
+		logger.info("testRerieval for " + pvName);
 		Instant start = TimeUtils.convertFromISO8601String(startStr);
 		Instant end = TimeUtils.convertFromISO8601String(endStr);
 		Instant firstTimeStampExpected = null;
 		if(firstTimeStampExpectedStr != null) { 
 			firstTimeStampExpected = TimeUtils.convertFromISO8601String(firstTimeStampExpectedStr);
 		}
-		if(firstTSIndex != -1) { 
-			Assertions.assertTrue(firstTimeStampExpected.equals(generatedTimeStamps.get(firstTSIndex)), "Incorrect specification - Str is " + firstTimeStampExpectedStr + " and from array " + TimeUtils.convertToISO8601String(generatedTimeStamps.get(firstTSIndex)) + " for " + msg);
+        if (firstTSIndex != -1) {
+            Assertions.assertEquals(firstTimeStampExpected, generatedTimeStamps.get(firstTSIndex), "Incorrect specification - Str is " + firstTimeStampExpectedStr + " and from array " + TimeUtils.convertToISO8601String(generatedTimeStamps.get(firstTSIndex)) + " for " + msg);
 		}
 		RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
 		Instant obtainedFirstSample = null;
@@ -175,11 +182,11 @@ public class MissingDataYearSpanRetrievalTest {
 					if(obtainedFirstSample == null) { 
 						obtainedFirstSample = e.getEventTimeStamp();
 					}
-					Assertions.assertTrue(e.getEventTimeStamp().equals(generatedTimeStamps.get(firstTSIndex + eventCount)), "Expecting sample with timestamp "
-							+ TimeUtils.convertToISO8601String(generatedTimeStamps.get(firstTSIndex + eventCount))
-							+ " got "
-							+ TimeUtils.convertToISO8601String(e.getEventTimeStamp())
-							+ " for " + msg);
+                    Assertions.assertEquals(e.getEventTimeStamp(), generatedTimeStamps.get(firstTSIndex + eventCount), "Expecting sample with timestamp "
+                            + TimeUtils.convertToISO8601String(generatedTimeStamps.get(firstTSIndex + eventCount))
+                            + " got "
+                            + TimeUtils.convertToISO8601String(e.getEventTimeStamp())
+                            + " for " + msg);
 					eventCount++;
 				}
 			} else { 
@@ -191,12 +198,12 @@ public class MissingDataYearSpanRetrievalTest {
 		if(firstTimeStampExpected != null) { 
 			if(obtainedFirstSample == null) { 
 				Assertions.fail("Expecting at least one value for " + msg);
-			} else { 
-				Assertions.assertTrue(firstTimeStampExpected.equals(obtainedFirstSample), "Expecting first sample to be "
-						+ TimeUtils.convertToISO8601String(firstTimeStampExpected)
-						+ " got "
-						+ TimeUtils.convertToISO8601String(obtainedFirstSample)
-						+ " for " + msg);
+            } else {
+                Assertions.assertEquals(firstTimeStampExpected, obtainedFirstSample, "Expecting first sample to be "
+                        + TimeUtils.convertToISO8601String(firstTimeStampExpected)
+                        + " got "
+                        + TimeUtils.convertToISO8601String(obtainedFirstSample)
+                        + " for " + msg);
 			}
 		} else { 
 			if(obtainedFirstSample != null) { 
@@ -204,28 +211,4 @@ public class MissingDataYearSpanRetrievalTest {
 			}
 		}
 	}
-	
-//	private void logRetrieval(String startStr, String endStr, File dataFile) throws Exception { 
-//		StringWriter buf = new StringWriter();
-//		buf.append("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw")
-//		.append("?pv=").append(pvName)
-//		.append("&from=").append(startStr)
-//		.append("&to=").append(endStr);
-//		String getURL = buf.toString();
-//		logger.info("URL to fetch data is " + getURL);
-//		URL url = new URL(getURL);
-//		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-//		connection.connect();
-//		if(connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-//			try(InputStream is = new BufferedInputStream(connection.getInputStream()); OutputStream os = new FileOutputStream(dataFile)) { 
-//				if(is.available() <= 0) { logger.error("Available <= 0"); }
-//				byte[] databuf= new byte[1024];
-//				int bytesRead = is.read(databuf);
-//				while(bytesRead > 0) { 
-//					os.write(databuf, 0, bytesRead);
-//					bytesRead = is.read(databuf);
-//				}
-//			}
-//		}
-//	}
 }

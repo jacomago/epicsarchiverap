@@ -1,5 +1,7 @@
 package org.epics.archiverappliance.mgmt;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_INDEX_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_UI_URL;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
@@ -48,7 +50,7 @@ public class ChangeArchivalParamsTest {
 
 	@Test
 	public void testChangeArchivalParams() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
+		 driver.get(MGMT_INDEX_URL);
 		 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
 		 String pvNameToArchive = "UnitTestNoNamingConvention:sine";
 		 pvstextarea.sendKeys(pvNameToArchive);
@@ -60,7 +62,7 @@ public class ChangeArchivalParamsTest {
 		 checkStatusButton.click();
 		 // We have to wait for a few minutes here as it does take a while for the workflow to complete.
 		 Thread.sleep(5*60*1000);
-		 driver.get("http://localhost:17665/mgmt/ui/pvdetails.html?pv=" + pvNameToArchive);
+		 driver.get(MGMT_UI_URL + "/pvdetails.html?pv=" + pvNameToArchive);
 		 Thread.sleep(2*1000);
 		 WebElement changePVParams = driver.findElement(By.id("pvDetailsParamChange"));
 		 logger.info("About to start dialog");

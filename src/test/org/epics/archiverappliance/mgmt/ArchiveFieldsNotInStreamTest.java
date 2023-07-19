@@ -28,6 +28,9 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_INDEX_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
+
 /**
  * This relates to issue - https://github.com/slacmshankar/epicsarchiverap/issues/69
  * We want to create a policy that has extra fields that are not in getFieldsArchivedAsPartOfStream
@@ -102,7 +105,7 @@ public class ArchiveFieldsNotInStreamTest {
 
 	@Test
 	public void testArchiveFieldsPV() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
+		 driver.get(MGMT_INDEX_URL);
 		 ((JavascriptExecutor)driver).executeScript("window.skipAutoRefresh = true;");
 		 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
 		 String[] fieldsToArchive = new String[] {
@@ -129,7 +132,7 @@ public class ArchiveFieldsNotInStreamTest {
 		 }
 		 
 		 // Check that we have PVTypeInfo's for the main PV. Also check the archiveFields.
-		 JSONObject valInfo = GetUrlContent.getURLContentAsJSONObject("http://localhost:17665/mgmt/bpl/getPVTypeInfo?pv=ArchUnitTest:fieldtst", true);
+		 JSONObject valInfo = GetUrlContent.getURLContentAsJSONObject(MGMT_URL + "/getPVTypeInfo?pv=ArchUnitTest:fieldtst", true);
 		 logger.debug(valInfo.toJSONString());
 		 @SuppressWarnings("unchecked")
 		 List<String> archiveFields = (List<String>) valInfo.get("archiveFields");
@@ -138,7 +141,7 @@ public class ArchiveFieldsNotInStreamTest {
 		 Assertions.assertTrue(!archiveFields.contains("DESC"), "TypeInfo should not contain the DESC field but it does");
 		 Assertions.assertTrue(!archiveFields.contains("C"), "TypeInfo should not contain the C field but it does");
 
-		 JSONObject C_Info = GetUrlContent.getURLContentAsJSONObject("http://localhost:17665/mgmt/bpl/getPVTypeInfo?pv=ArchUnitTest:fieldtst.C", true);
+		 JSONObject C_Info = GetUrlContent.getURLContentAsJSONObject(MGMT_URL + "/getPVTypeInfo?pv=ArchUnitTest:fieldtst.C", true);
 		 Assertions.assertTrue(C_Info != null, "Did not find a typeinfo for ArchUnitTest:fieldtst.C");
 		 logger.debug(C_Info.toJSONString());
 		 

@@ -1,5 +1,6 @@
 package org.epics.archiverappliance.retrieval.cluster;
 
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -26,7 +27,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,6 +45,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.DATA_RETRIEVAL_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
 import static org.epics.archiverappliance.utils.ui.GetUrlContent.getURLContentAsJSONArray;
 
 @Tag("integration")
@@ -50,7 +54,6 @@ public class ClusterSinglePVTest {
     private static final Logger logger = LogManager.getLogger(ClusterSinglePVTest.class.getName());
     private final TomcatSetup tomcatSetup = new TomcatSetup();
     private final String ltsFolder = System.getenv("ARCHAPPL_LONG_TERM_FOLDER");
-    private final PlainStoragePlugin pbplugin = new PlainStoragePlugin();
     private final String prefixPvName = ClusterSinglePVTest.class.getSimpleName();
     private final String pvName = prefixPvName + ":dataretrieval";
     private final File ltsPVFolder = new File(ltsFolder + File.separator + prefixPvName);
@@ -79,12 +82,15 @@ public class ClusterSinglePVTest {
      * @throws Exception
      * @throws UnsupportedEncodingException
      */
-    @Test
-    public void singlePvsAcrossCluster() throws Exception {
+    @ParameterizedTest
+    @EnumSource(FileExtension.class)
+    public void singlePvsAcrossCluster(FileExtension fileExtension) throws Exception {
+        PlainStoragePlugin pbplugin = new PlainStoragePlugin(fileExtension);
+
         ConfigService configService = new ConfigServiceForTests(-1);
 
         // Set up pbplugin so that data can be retrieved using the instance
-        pbplugin.initialize("pb://localhost?name=LTS&rootFolder=" + ltsFolder + "&partitionGranularity=PARTITION_YEAR", configService);
+        pbplugin.initialize(fileExtension.getSuffix() + "://localhost?name=LTS&rootFolder=" + ltsFolder + "&partitionGranularity=PARTITION_YEAR", configService);
 
         short currentYear = TimeUtils.getCurrentYear();
         String startString = currentYear + "-11-17T16:00:00.000Z";
@@ -122,7 +128,7 @@ public class ClusterSinglePVTest {
         pvTypeInfo1.setCreationTime(TimeUtils.convertFromISO8601String("2013-11-11T14:49:58.523Z"));
         pvTypeInfo1.setModificationTime(TimeUtils.now());
         pvTypeInfo1.setApplianceIdentity("appliance1");
-        GetUrlContent.postObjectAndGetContentAsJSONObject("http://localhost:17665/mgmt/bpl/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8) + "&override=false&createnew=true", encoder.encode(pvTypeInfo1));
+        GetUrlContent.postObjectAndGetContentAsJSONObject(MGMT_URL + "/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8) + "&override=false&createnew=true", encoder.encode(pvTypeInfo1));
 
         logger.info("Added " + pvName + " to appliance0");
 
@@ -155,7 +161,7 @@ public class ClusterSinglePVTest {
         logger.info("Retrieving data using JSON/HTTP and comparing it to retrieval over PBStoragePlugin with redirect:{}", redirect);
 
         // Establish a connection with appliance0
-        URL obj = new URL("http://localhost:17665/retrieval/data/getData.json?pv="
+        URL obj = new URL(DATA_RETRIEVAL_URL + "/data/getData.json?pv="
                 + URLEncoder.encode(pvName, StandardCharsets.UTF_8) + "&from=" + URLEncoder.encode(startString, StandardCharsets.UTF_8)
                 + "&to=" + URLEncoder.encode(endString, StandardCharsets.UTF_8));
         logger.info("Opening this URL: " + obj);

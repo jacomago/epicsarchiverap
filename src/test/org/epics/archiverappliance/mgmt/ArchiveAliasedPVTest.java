@@ -24,6 +24,8 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import java.io.IOException;
 import java.time.Instant;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_INDEX_URL;
+
 /**
  * Use the firefox driver to test operator's adding a PV to the system.
  * @author mshankar
@@ -58,7 +60,7 @@ public class ArchiveAliasedPVTest {
 
 	@Test
 	public void testSimpleArchivePV() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
+		 driver.get(MGMT_INDEX_URL);
 		 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
 		 String pvNameToArchive = "UnitTestNoNamingConvention:sinealias";
 		 pvstextarea.sendKeys(pvNameToArchive);

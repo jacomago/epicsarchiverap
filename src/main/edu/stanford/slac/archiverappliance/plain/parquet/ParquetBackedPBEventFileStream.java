@@ -15,6 +15,7 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.YearSecondTimestamp;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
+import org.epics.archiverappliance.retrieval.RemotableOverRaw;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -23,12 +24,18 @@ import java.util.Iterator;
 import java.util.List;
 
 import static edu.stanford.slac.archiverappliance.plain.parquet.ParquetInfo.fetchFileInfo;
-import static org.apache.parquet.filter2.predicate.FilterApi.*;
+import static org.apache.parquet.filter2.predicate.FilterApi.and;
+import static org.apache.parquet.filter2.predicate.FilterApi.eq;
+import static org.apache.parquet.filter2.predicate.FilterApi.gtEq;
+import static org.apache.parquet.filter2.predicate.FilterApi.intColumn;
+import static org.apache.parquet.filter2.predicate.FilterApi.lt;
+import static org.apache.parquet.filter2.predicate.FilterApi.ltEq;
+import static org.apache.parquet.filter2.predicate.FilterApi.or;
 
 /**
  * ETL Parquet files stream, provides access to the list of parquet files for combination or streaming events.
  */
-public class ParquetBackedPBEventFileStream implements ETLParquetFilesStream {
+public class ParquetBackedPBEventFileStream implements ETLParquetFilesStream, RemotableOverRaw {
     private static final Logger logger = LogManager.getLogger(ParquetBackedPBEventFileStream.class.getName());
     private final String pvName;
     private final ArchDBRTypes type;

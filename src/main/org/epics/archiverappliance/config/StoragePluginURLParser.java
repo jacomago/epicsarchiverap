@@ -73,7 +73,7 @@ public class StoragePluginURLParser {
 				}
 			}
 		} catch(URISyntaxException ex) {
-			throw new IOException(ex);
+			throw new IOException("Could not parse " + srcURIStr, ex);
 		}
 			
 		return null;
