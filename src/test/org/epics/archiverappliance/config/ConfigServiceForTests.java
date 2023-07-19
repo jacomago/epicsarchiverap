@@ -54,7 +54,7 @@ public class ConfigServiceForTests extends DefaultConfigService {
     }
 
     String rootFolder = ConfigServiceForTests.DEFAULT_PB_TEST_DATA_FOLDER;
-    public static final int defaultMinutesDisconnect = 1;
+    public static final int defaultSecondsDisconnect = 10;
 
 
     public ConfigServiceForTests(File WebInfClassesFolder) throws ConfigException {
@@ -125,7 +125,7 @@ public class ConfigServiceForTests extends DefaultConfigService {
         });
 
         this.engineContext = new EngineContext(this);
-        this.engineContext.setDisconnectCheckTimeoutInMinutesForTestingPurposesOnly(1);
+        this.engineContext.setDisconnectCheckTimeoutInSecondsForTestingPurposesOnly(defaultSecondsDisconnect);
         this.etlPVLookup = new PBThreeTierETLPVLookup(this);
         this.retrievalState = new SampleRetrievalState(this);
         this.mgmtRuntime = new MgmtRuntimeState(this);
@@ -166,7 +166,7 @@ public class ConfigServiceForTests extends DefaultConfigService {
 
         this.retrievalState = new SampleRetrievalState(this);
         if (this.engineContext != null) {
-            this.engineContext.setDisconnectCheckTimeoutInMinutesForTestingPurposesOnly(1);
+            this.engineContext.setDisconnectCheckTimeoutInSecondsForTestingPurposesOnly(defaultSecondsDisconnect);
         }
     }
 
