@@ -1,9 +1,9 @@
 package org.epics.archiverappliance.retrieval.postprocessors;
 
-import java.util.LinkedList;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.LinkedList;
 
 /**
  * Factory class for post processors.
@@ -80,6 +80,7 @@ public class PostProcessors {
 		registerPostProcessor(new CAPlotBinning().getIdentity(), CAPlotBinning.class);
 		registerPostProcessor(new DeadBand().getIdentity(), DeadBand.class);
 		registerPostProcessor(new ErrorBars().getIdentity(), ErrorBars.class);
+		registerPostProcessor(new AlarmFilterPostProcessor().getIdentity(), AlarmFilterPostProcessor.class);
     
 
 	}

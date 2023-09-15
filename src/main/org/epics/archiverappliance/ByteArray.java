@@ -4,6 +4,8 @@ import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
 import edu.stanford.slac.archiverappliance.PB.utils.LineEscaper;
 import edu.stanford.slac.archiverappliance.PB.utils.LineTooLongException;
 
+import java.util.Arrays;
+
 /**
  * A version of byte[] that is used to provide some optimization for data retrieval and the like.
  * This is very similar to NIO's ByteBuffer but has all its internal's exposed and is meant to pass a byte[]+offset+length around within the appliance archiver.
@@ -30,6 +32,29 @@ import edu.stanford.slac.archiverappliance.PB.utils.LineTooLongException;
 public class ByteArray {
 	public byte[] data = null;
 	public int off = 0;
+
+	@Override
+	public String toString() {
+		return "ByteArray{" +
+				"data=" + Arrays.toString(data) +
+				'}';
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		ByteArray byteArray = (ByteArray) o;
+
+		return Arrays.equals(data, byteArray.data);
+	}
+
+	@Override
+	public int hashCode() {
+		return Arrays.hashCode(data);
+	}
+
 	public int len = 0;
 	public byte[] unescapedData = null;
 	public int unescapedLen = 0;

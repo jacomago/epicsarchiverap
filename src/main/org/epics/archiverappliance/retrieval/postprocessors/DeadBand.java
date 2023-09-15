@@ -1,11 +1,6 @@
 package org.epics.archiverappliance.retrieval.postprocessors;
 
-import java.io.IOException;
-import java.sql.Timestamp;
-import java.util.concurrent.Callable;
-
-import javax.servlet.http.HttpServletRequest;
-
+import edu.stanford.slac.archiverappliance.PB.data.PBParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -16,7 +11,10 @@ import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBParseException;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.concurrent.Callable;
 
 /**
  * The intent is to mimic ADEL; this is principally targeted at decimation
@@ -67,82 +65,78 @@ public class DeadBand implements PostProcessor {
 
 	@Override
 	public Callable<EventStream> wrap(final Callable<EventStream> callable) {
-		return new Callable<EventStream>() {
-			@Override
-			public EventStream call() throws Exception {
-				try(EventStream strm = callable.call()) {
-					ArrayListEventStream buf = new ArrayListEventStream(0, (RemotableEventStreamDesc) strm.getDescription());
-					for(Event e : strm) {
-						try { 
-							// The very first sample we get we write out and that becomes the "last" value.
-							if(lastEventWrittenOut == null) {
-								Event clone = e.makeClone();
-								lastEventWrittenOut = clone;
-								buf.add(clone);
-								logger.debug("Writing the very first sample out at " + TimeUtils.convertToISO8601String(clone.getEventTimeStamp()));
-								continue;
-							}
-							
-							double currentVALue = e.getSampleValue().getValue().doubleValue();
-							double lastVALueWrittenOut = lastEventWrittenOut.getSampleValue().getValue().doubleValue();
-							
-							if(Double.isInfinite(currentVALue) || Double.isNaN(currentVALue) 
-									|| Double.isInfinite(lastVALueWrittenOut) || Double.isNaN(lastVALueWrittenOut)
-									) {
-								// If either current value or previous value is NAN/INF, unconditionally write out current value and update last known value 
-								Event clone = e.makeClone();
-								lastEventWrittenOut = clone;
-								buf.add(clone);
-								logger.debug("Writing out from infinity/NAN at " + TimeUtils.convertToISO8601String(clone.getEventTimeStamp()));
-								continue;
-							}
-							
-							DBRTimeEvent currDBRTimeEvent = (DBRTimeEvent)e;
-							int currentSeverity = currDBRTimeEvent.getSeverity();
-							DBRTimeEvent previousDBRTimeEvent = (DBRTimeEvent)lastEventWrittenOut;
-							int previousSeverity = previousDBRTimeEvent.getSeverity();
-							if(currentSeverity != previousSeverity) {
-								// If alarm severity changes, write out current value and update last known value 
-								Event clone = e.makeClone();
-								lastEventWrittenOut = clone;
-								buf.add(clone);
-								logger.debug("Writing out from severity change at " + TimeUtils.convertToISO8601String(clone.getEventTimeStamp()));
-								continue;								
-							}
-							
-							boolean currentConnectionChangeStatus = currDBRTimeEvent.hasFieldValues() && currDBRTimeEvent.getFields().containsKey("cnxlostepsecs"); 
-							boolean previousConnectionChangeStatus = previousDBRTimeEvent.hasFieldValues() && previousDBRTimeEvent.getFields().containsKey("cnxlostepsecs");
-							if(currentConnectionChangeStatus != previousConnectionChangeStatus) {
-								// If connection state changes changes, write out current value and update last known value 
-								Event clone = e.makeClone();
-								lastEventWrittenOut = clone;
-								buf.add(clone);
-								logger.debug("Writing out from connection state change at " + TimeUtils.convertToISO8601String(clone.getEventTimeStamp()));
-								continue;								
-							}
+        return () -> {
+            try (EventStream strm = callable.call()) {
+                ArrayListEventStream buf = new ArrayListEventStream(0, (RemotableEventStreamDesc) strm.getDescription());
+                for (Event e : strm) {
+                    try {
+                        // The very first sample we get we write out and that becomes the "last" value.
+                        if (lastEventWrittenOut == null) {
+                            Event clone = e.makeClone();
+                            lastEventWrittenOut = clone;
+                            buf.add(clone);
+                            logger.debug("Writing the very first sample out at " + TimeUtils.convertToISO8601String(clone.getEventTimeStamp()));
+                            continue;
+                        }
+
+                        double currentVALue = e.getSampleValue().getValue().doubleValue();
+                        double lastVALueWrittenOut = lastEventWrittenOut.getSampleValue().getValue().doubleValue();
+
+                        if (Double.isInfinite(currentVALue) || Double.isNaN(currentVALue)
+                                || Double.isInfinite(lastVALueWrittenOut) || Double.isNaN(lastVALueWrittenOut)
+                        ) {
+                            // If either current value or previous value is NAN/INF, unconditionally write out current value and update last known value
+                            Event clone = e.makeClone();
+                            lastEventWrittenOut = clone;
+                            buf.add(clone);
+                            logger.debug("Writing out from infinity/NAN at " + TimeUtils.convertToISO8601String(clone.getEventTimeStamp()));
+                            continue;
+                        }
+
+                        DBRTimeEvent currDBRTimeEvent = (DBRTimeEvent) e;
+                        int currentSeverity = currDBRTimeEvent.getSeverity();
+                        DBRTimeEvent previousDBRTimeEvent = (DBRTimeEvent) lastEventWrittenOut;
+                        int previousSeverity = previousDBRTimeEvent.getSeverity();
+                        if (currentSeverity != previousSeverity) {
+                            // If alarm severity changes, write out current value and update last known value
+                            Event clone = e.makeClone();
+                            lastEventWrittenOut = clone;
+                            buf.add(clone);
+                            logger.debug("Writing out from severity change at " + TimeUtils.convertToISO8601String(clone.getEventTimeStamp()));
+                            continue;
+                        }
+
+                        boolean currentConnectionChangeStatus = currDBRTimeEvent.hasFieldValues() && currDBRTimeEvent.getFields().containsKey("cnxlostepsecs");
+                        boolean previousConnectionChangeStatus = previousDBRTimeEvent.hasFieldValues() && previousDBRTimeEvent.getFields().containsKey("cnxlostepsecs");
+                        if (currentConnectionChangeStatus != previousConnectionChangeStatus) {
+                            // If connection state changes changes, write out current value and update last known value
+                            Event clone = e.makeClone();
+                            lastEventWrittenOut = clone;
+                            buf.add(clone);
+                            logger.debug("Writing out from connection state change at " + TimeUtils.convertToISO8601String(clone.getEventTimeStamp()));
+                            continue;
+                        }
 
 
-							// If Diff >= ADEL
-							//    Write out value
-							//    Update last known value
-							double diff = Math.abs(currentVALue - lastVALueWrittenOut);
-							if (diff > adelValue) { 
-								Event clone = e.makeClone();
-								lastEventWrittenOut = clone;
-								buf.add(clone);
-								logger.debug("Writing out from magnitude change at " + TimeUtils.convertToISO8601String(clone.getEventTimeStamp()));
-								continue;
-							}
-						} catch(PBParseException ex) { 
-							logger.error("Skipping possible corrupted event for pv " + strm.getDescription());
-						}
-					}
+                        // If Diff >= ADEL
+                        //    Write out value
+                        //    Update last known value
+                        double diff = Math.abs(currentVALue - lastVALueWrittenOut);
+                        if (diff > adelValue) {
+                            Event clone = e.makeClone();
+                            lastEventWrittenOut = clone;
+                            buf.add(clone);
+                            logger.debug("Writing out from magnitude change at " + TimeUtils.convertToISO8601String(clone.getEventTimeStamp()));
+                            continue;
+                        }
+                    } catch (PBParseException ex) {
+                        logger.error("Skipping possible corrupted event for pv " + strm.getDescription());
+                    }
+                }
 
-					return buf;
-				}
-			}
-
-		};
+                return buf;
+            }
+        };
 	}
 
 	@Override

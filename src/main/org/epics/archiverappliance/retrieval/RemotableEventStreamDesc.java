@@ -8,11 +8,9 @@
 package org.epics.archiverappliance.retrieval;
 
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
-
+import edu.stanford.slac.archiverappliance.PB.EPICSEvent;
+import edu.stanford.slac.archiverappliance.PB.EPICSEvent.FieldValue;
+import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.EventStreamDesc;
@@ -20,9 +18,11 @@ import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
 
-import edu.stanford.slac.archiverappliance.PB.EPICSEvent;
-import edu.stanford.slac.archiverappliance.PB.EPICSEvent.FieldValue;
-import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Information about the whole stream that is often used in generating headers etc...
@@ -108,6 +108,27 @@ public class RemotableEventStreamDesc extends EventStreamDesc {
 	public void setArchDBRType(ArchDBRTypes archDBRType) {
 		this.archDBRType = archDBRType;
 	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		RemotableEventStreamDesc that = (RemotableEventStreamDesc) o;
+
+		if (year != that.year) return false;
+		if (elementCount != that.elementCount) return false;
+		return Objects.equals(headers, that.headers);
+	}
+
+	@Override
+	public int hashCode() {
+		int result = year;
+		result = 31 * result + elementCount;
+		result = 31 * result + (headers != null ? headers.hashCode() : 0);
+		return result;
+	}
+
 	public String getPvName() {
 		return pvName;
 	}

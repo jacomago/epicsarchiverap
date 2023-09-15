@@ -7,11 +7,12 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PB.data;
 
-import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-
+import edu.stanford.slac.archiverappliance.PB.EPICSEvent;
+import edu.stanford.slac.archiverappliance.PB.EPICSEvent.FieldValue;
+import edu.stanford.slac.archiverappliance.PB.EPICSEvent.ScalarDouble.Builder;
+import edu.stanford.slac.archiverappliance.PB.utils.LineEscaper;
+import gov.aps.jca.dbr.DBR;
+import gov.aps.jca.dbr.DBR_TIME_Double;
 import org.epics.archiverappliance.ByteArray;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.common.TimeUtils;
@@ -24,12 +25,11 @@ import org.epics.archiverappliance.data.ScalarValue;
 import org.epics.pva.data.PVADouble;
 import org.epics.pva.data.PVAStructure;
 
-import edu.stanford.slac.archiverappliance.PB.EPICSEvent;
-import edu.stanford.slac.archiverappliance.PB.EPICSEvent.FieldValue;
-import edu.stanford.slac.archiverappliance.PB.EPICSEvent.ScalarDouble.Builder;
-import edu.stanford.slac.archiverappliance.PB.utils.LineEscaper;
-import gov.aps.jca.dbr.DBR;
-import gov.aps.jca.dbr.DBR_TIME_Double;
+import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
 
 /**
  *  * A DBRTimeEvent for a scalar double.
@@ -40,6 +40,36 @@ public class PBScalarDouble implements DBRTimeEvent, PartionedTime {
 	ByteArray bar = null;
 	short year = 0;
 	EPICSEvent.ScalarDouble dbevent = null;
+
+	@Override
+	public String toString() {
+		unmarshallEventIfNull();
+		return "PBScalarDouble{" +
+				"bar=" + bar +
+				", year=" + year +
+				", dbevent=" + dbevent +
+				'}';
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		PBScalarDouble that = (PBScalarDouble) o;
+
+		if (getYear() != that.getYear()) return false;
+
+		// If either bar or db
+		return Objects.equals(bar, that.bar);
+	}
+
+	@Override
+	public int hashCode() {
+		int result = bar != null ? bar.hashCode() : 0;
+		result = 31 * result + (int) getYear();
+		return result;
+	}
 
 	public PBScalarDouble(short year, ByteArray bar) {
 		this.year = year;
