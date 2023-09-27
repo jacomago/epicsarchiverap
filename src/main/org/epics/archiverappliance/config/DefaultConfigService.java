@@ -259,9 +259,32 @@ public class DefaultConfigService implements ConfigService {
 		myApplianceInfo = appliances.get(myIdentity);
 		if(myApplianceInfo == null) throw new ConfigException("Unable to determine applianceinfo using identity " + myIdentity);
 		configlogger.info("My identity is " + myApplianceInfo.getIdentity() + " and my mgmt URL is " + myApplianceInfo.getMgmtURL());
-		
+
+		switch (contextPath) {
+			case "/mgmt":
+				warFile = WAR_FILE.MGMT;
+				this.mgmtRuntime = new MgmtRuntimeState(this);
+				break;
+			case "/engine":
+				warFile = WAR_FILE.ENGINE;
+				this.engineContext = new EngineContext(this);
+				break;
+			case "/retrieval":
+				warFile = WAR_FILE.RETRIEVAL;
+				this.retrievalState = new RetrievalState(this);
+				break;
+			case "/etl":
+				this.etlPVLookup = new PBThreeTierETLPVLookup(this);
+				warFile = WAR_FILE.ETL;
+				break;
+			default:
+				logger.error("We seem to have introduced a new component into the system " + contextPath);
+		}
+
+
 		// To make sure we are not starting multiple appliance with the same identity, we make sure that the hostnames match
-		try { 
+		if (this.warFile == WAR_FILE.MGMT) {
+		try {
 			String machineHostName = InetAddress.getLocalHost().getCanonicalHostName();
 			String[] myAddrParts = myApplianceInfo.getClusterInetPort().split(":");
 			String myHostNameFromInfo = myAddrParts[0];
@@ -279,6 +302,7 @@ public class DefaultConfigService implements ConfigService {
 			}
 		} catch(UnknownHostException ex) { 
 			configlogger.error("Got an UnknownHostException when trying to determine the hostname. This happens when DNS is not set correctly on this machine (for example, when using VM's. See the documentation for InetAddress.getLocalHost().getCanonicalHostName()");
+		}
 		}
 
 		try { 
@@ -303,29 +327,7 @@ public class DefaultConfigService implements ConfigService {
 		} catch(Exception ex) { 
 			configlogger.fatal("Exception loading the appliance properties file", ex);
 		}
-		
-		switch(contextPath) {
-		case "/mgmt":
-			warFile = WAR_FILE.MGMT;
-			this.mgmtRuntime = new MgmtRuntimeState(this);
-			break;
-		case "/engine":
-			warFile = WAR_FILE.ENGINE;
-			this.engineContext=new EngineContext(this);
-			break;
-		case "/retrieval":
-			warFile = WAR_FILE.RETRIEVAL;
-			this.retrievalState = new RetrievalState(this);
-			break;
-		case "/etl":
-			this.etlPVLookup = new PBThreeTierETLPVLookup(this);
-			warFile = WAR_FILE.ETL;
-			break;
-		default:
-			logger.error("We seem to have introduced a new component into the system " + contextPath);
-		}
-		
-		
+
 
 		String pvName2KeyMappingClass = this.getInstallationProperties().getProperty(ARCHAPPL_PVNAME_TO_KEY_MAPPING_CLASSNAME);
 		if(pvName2KeyMappingClass == null || pvName2KeyMappingClass.equals("") || pvName2KeyMappingClass.length() < 1) {
