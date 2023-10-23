@@ -7,12 +7,11 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PB.data;
 
-import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
-import edu.stanford.slac.archiverappliance.PlainPB.FileInfo;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
-import edu.stanford.slac.archiverappliance.PlainPB.utils.ValidatePBFile;
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.plain.FileInfo;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.utils.ValidatePBFile;
 import gov.aps.jca.dbr.DBR_TIME_Double;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
@@ -59,7 +58,7 @@ public class LargePBLineTest {
     @ParameterizedTest
     @EnumSource(FileExtension.class)
     public void testLargeLines(FileExtension fileExtension) throws Exception {
-        PlainPBStoragePlugin storagePlugin = new PlainPBStoragePlugin(fileExtension);
+        PlainStoragePlugin storagePlugin = new PlainStoragePlugin(fileExtension);
         largeLineSetup.setUpRootFolder(storagePlugin, "largeLineTest", PartitionGranularity.PARTITION_HOUR, fileExtension);
 
         // We create vector doubles with a large number of elements; write it out and then test the read.
@@ -83,13 +82,12 @@ public class LargePBLineTest {
             Assertions.fail(ex.getMessage());
         }
 
-        Path[] allPaths = PlainPBPathNameUtility.getAllPathsForPV(
+        Path[] allPaths = PathNameUtility.getAllPathsForPV(
                 new ArchPaths(),
                 storagePlugin.getRootFolder(),
                 pvName,
                 fileExtension.getExtensionString(),
-                storagePlugin.getPartitionGranularity(),
-                CompressionMode.NONE,
+                PlainStoragePlugin.CompressionMode.NONE,
                 configService.getPVNameToKeyConverter());
         Assertions.assertNotNull(allPaths, "testLargeLines returns null for getAllFilesForPV for " + pvName);
         Assertions.assertTrue(

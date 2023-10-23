@@ -7,11 +7,10 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
-import edu.stanford.slac.archiverappliance.PlainPB.utils.ValidatePBFile;
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.utils.ValidatePBFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -97,11 +96,11 @@ public class ZeroByteFilesTest {
     @EnumSource(FileExtension.class)
     public void testZeroByteFileInDest(FileExtension fileExtension) throws Exception {
 
-        PlainPBStoragePlugin etlSrc = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        PlainStoragePlugin etlSrc = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 fileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + shortTermFolderName
                         + "/&partitionGranularity=PARTITION_DAY",
                 configService);
-        PlainPBStoragePlugin etlDest = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        PlainStoragePlugin etlDest = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 fileExtension.getSuffix() + "://localhost?name=MTS&rootFolder=" + mediumTermFolderName
                         + "/&partitionGranularity=PARTITION_YEAR",
                 configService);
@@ -122,11 +121,11 @@ public class ZeroByteFilesTest {
     @EnumSource(FileExtension.class)
     public void testZeroByteFilesInSource(FileExtension fileExtension) throws Exception {
 
-        PlainPBStoragePlugin etlSrc = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        PlainStoragePlugin etlSrc = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 fileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + shortTermFolderName
                         + "/&partitionGranularity=PARTITION_DAY",
                 configService);
-        PlainPBStoragePlugin etlDest = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        PlainStoragePlugin etlDest = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 fileExtension.getSuffix() + "://localhost?name=MTS&rootFolder=" + mediumTermFolderName
                         + "/&partitionGranularity=PARTITION_YEAR",
                 configService);
@@ -156,8 +155,8 @@ public class ZeroByteFilesTest {
     public void runETLAndValidate(
             String pvName,
             VoidFunction zeroByteGenerationFunction,
-            PlainPBStoragePlugin etlSrc,
-            PlainPBStoragePlugin etlDest,
+            PlainStoragePlugin etlSrc,
+            PlainStoragePlugin etlDest,
             FileExtension fileExtension)
             throws Exception {
 
@@ -216,13 +215,12 @@ public class ZeroByteFilesTest {
         Instant endOfRequest = TimeUtils.plusDays(TimeUtils.now(), 366);
 
         // Check that all the files in the destination store are valid files.
-        Path[] allPaths = PlainPBPathNameUtility.getAllPathsForPV(
+        Path[] allPaths = PathNameUtility.getAllPathsForPV(
                 new ArchPaths(),
                 etlDest.getRootFolder(),
                 pvName,
                 fileExtension.getExtensionString(),
-                etlDest.getPartitionGranularity(),
-                CompressionMode.NONE,
+                PlainStoragePlugin.CompressionMode.NONE,
                 pvNameToKeyConverter);
         Assertions.assertNotNull(allPaths, "PlainPBFileNameUtility returns null for getAllFilesForPV for " + pvName);
         Assertions.assertTrue(

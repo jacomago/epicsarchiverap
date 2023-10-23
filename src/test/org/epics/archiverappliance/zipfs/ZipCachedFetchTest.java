@@ -1,10 +1,10 @@
 package org.epics.archiverappliance.zipfs;
 
-import edu.stanford.slac.archiverappliance.PlainPB.FileBackedPBEventStream;
-import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
-import edu.stanford.slac.archiverappliance.PlainPB.MultiFilePBEventStream;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.pb.FileBackedPBEventStream;
+import edu.stanford.slac.archiverappliance.plain.pb.MultiFilePBEventStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,7 +48,7 @@ public class ZipCachedFetchTest {
     private static final Logger logger = LogManager.getLogger(ZipCachedFetchTest.class.getName());
     String rootFolderName = ConfigServiceForTests.getDefaultPBTestFolder() + "/" + "ZipCachedFetchTest/";
     String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "ZipCachedFetchTest";
-    PlainPBStoragePlugin pbplugin;
+    PlainStoragePlugin pbplugin;
     short currentYear = TimeUtils.getCurrentYear();
     private ConfigService configService;
 
@@ -84,7 +84,7 @@ public class ZipCachedFetchTest {
     @BeforeEach
     public void setUp() throws Exception {
         configService = new ConfigServiceForTests(new File("./bin"));
-        pbplugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        pbplugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 "pb://localhost?name=STS&rootFolder=" + rootFolderName
                         + "&partitionGranularity=PARTITION_DAY&compress=ZIP_PER_PV",
                 configService);
@@ -130,7 +130,7 @@ public class ZipCachedFetchTest {
     private void testSerialFetch(Instant startTime, Instant endTime, int months) throws Exception {
         try (BasicContext context = new BasicContext()) {
             long st0 = System.currentTimeMillis();
-            Path[] paths = PlainPBPathNameUtility.getPathsWithData(
+            Path[] paths = PathNameUtility.getPathsWithData(
                     context.getPaths(),
                     pbplugin.getRootFolder(),
                     pvName,
@@ -138,7 +138,7 @@ public class ZipCachedFetchTest {
                     endTime,
                     FileExtension.PB.getExtensionString(),
                     pbplugin.getPartitionGranularity(),
-                    pbplugin.getCompressionMode(),
+                    PlainStoragePlugin.CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());
             long previousEpochSeconds = 0L;
             long eventCount = 0;
@@ -163,7 +163,7 @@ public class ZipCachedFetchTest {
         logger.info("The parallelism in the pool is " + forkJoinPool.getParallelism());
         try (BasicContext context = new BasicContext()) {
             long st0 = System.currentTimeMillis();
-            Path[] paths = PlainPBPathNameUtility.getPathsWithData(
+            Path[] paths = PathNameUtility.getPathsWithData(
                     context.getPaths(),
                     pbplugin.getRootFolder(),
                     pvName,
@@ -171,7 +171,7 @@ public class ZipCachedFetchTest {
                     endTime,
                     FileExtension.PB.getExtensionString(),
                     pbplugin.getPartitionGranularity(),
-                    pbplugin.getCompressionMode(),
+                    PlainStoragePlugin.CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());
 
             List<Future<EventStream>> futures = new LinkedList<Future<EventStream>>();

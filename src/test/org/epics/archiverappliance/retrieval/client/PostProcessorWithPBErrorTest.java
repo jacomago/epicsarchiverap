@@ -1,9 +1,9 @@
 package org.epics.archiverappliance.retrieval.client;
 
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
-import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -195,14 +195,13 @@ public class PostProcessorWithPBErrorTest {
 	
 	private void corruptSomeData() throws Exception { 
 		try(BasicContext context = new BasicContext()) {
-            Path[] paths = PlainPBPathNameUtility.getAllPathsForPV(
+			Path[] paths = PathNameUtility.getAllPathsForPV(
                     context.getPaths(),
                     ltsFolderName,
                     pvName,
                     FileExtension.PB.getExtensionString(),
-                    PartitionGranularity.PARTITION_YEAR,
-                    CompressionMode.NONE,
-                    configService.getPVNameToKeyConverter());
+					PlainStoragePlugin.CompressionMode.NONE,
+					configService.getPVNameToKeyConverter());
 			Assertions.assertTrue(true);
 			Assertions.assertTrue(paths.length > 0);
 			// Corrupt each file

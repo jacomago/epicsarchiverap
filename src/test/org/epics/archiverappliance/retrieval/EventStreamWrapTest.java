@@ -1,7 +1,7 @@
 package org.epics.archiverappliance.retrieval;
 
-import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,8 +49,8 @@ public class EventStreamWrapTest {
     private static final String pvName =
             ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "S_" + type.getPrimitiveName();
     static ConfigService configService;
-    static PlainPBStoragePlugin storagePluginPB;
-    static PlainPBStoragePlugin storagePluginParquet;
+    static PlainStoragePlugin storagePluginPB;
+    static PlainStoragePlugin storagePluginParquet;
 
     @BeforeAll
     public static void setUp() throws Exception {
@@ -60,12 +60,12 @@ public class EventStreamWrapTest {
             FileUtils.deleteDirectory(new File(shortTermFolderName));
         }
         assert new File(shortTermFolderName).mkdirs();
-        storagePluginPB = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        storagePluginPB = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 FileExtension.PB.getSuffix() + "://localhost?name=STS&rootFolder=" + shortTermFolderName
                         + "/&partitionGranularity=PARTITION_MONTH",
                 configService);
 
-        storagePluginParquet = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        storagePluginParquet = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 FileExtension.PARQUET.getSuffix() + "://localhost?name=STS&rootFolder=" + shortTermFolderName
                         + "/&partitionGranularity=PARTITION_MONTH",
                 configService);
@@ -85,7 +85,7 @@ public class EventStreamWrapTest {
         configService.shutdownNow();
     }
 
-    static void insertData(PlainPBStoragePlugin storagePlugin) throws IOException {
+    static void insertData(PlainStoragePlugin storagePlugin) throws IOException {
         short currentYear = TimeUtils.getCurrentYear();
         try (BasicContext context = new BasicContext()) {
             storagePlugin.appendData(
@@ -101,7 +101,7 @@ public class EventStreamWrapTest {
         }
     }
 
-    static PlainPBStoragePlugin storagePlugin(FileExtension fileExtension) {
+    static PlainStoragePlugin storagePlugin(FileExtension fileExtension) {
         return switch (fileExtension) {
             case PARQUET -> storagePluginParquet;
             case PB -> storagePluginPB;
@@ -111,7 +111,7 @@ public class EventStreamWrapTest {
     @ParameterizedTest
     @EnumSource(FileExtension.class)
     public void testSimpleWrapper(FileExtension fileExtension) throws Exception {
-        PlainPBStoragePlugin storageplugin = storagePlugin(fileExtension);
+        PlainStoragePlugin storageplugin = storagePlugin(fileExtension);
         Instant end = TimeUtils.now();
         Instant start = TimeUtils.minusDays(end, 365);
         Mean mean_86400 = (Mean) PostProcessors.findPostProcessor("mean_86400");
@@ -162,7 +162,7 @@ public class EventStreamWrapTest {
     @ParameterizedTest
     @EnumSource(FileExtension.class)
     public void testMultiThreadWrapper(FileExtension fileExtension) throws Exception {
-        PlainPBStoragePlugin storageplugin = storagePlugin(fileExtension);
+        PlainStoragePlugin storageplugin = storagePlugin(fileExtension);
 
         Instant end = TimeUtils.now();
         Instant start = TimeUtils.minusDays(end, 365);

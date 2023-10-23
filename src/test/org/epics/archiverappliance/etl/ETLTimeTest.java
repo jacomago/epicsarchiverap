@@ -1,7 +1,7 @@
 package org.epics.archiverappliance.etl;
 
-import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -81,11 +81,11 @@ public class ETLTimeTest {
     @EnumSource(FileExtension.class)
     public void testTime(FileExtension fileExtension)
             throws AlreadyRegisteredException, IOException, InterruptedException {
-        PlainPBStoragePlugin storageplugin1 = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        PlainStoragePlugin storageplugin1 = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 fileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + shortTermFolderName
                         + "/&partitionGranularity=PARTITION_HOUR",
                 configService);
-        PlainPBStoragePlugin storageplugin2 = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        PlainStoragePlugin storageplugin2 = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 fileExtension.getSuffix() + "://localhost?name=MTS&rootFolder=" + mediumTermFolderName
                         + "/&partitionGranularity=PARTITION_YEAR",
                 configService);

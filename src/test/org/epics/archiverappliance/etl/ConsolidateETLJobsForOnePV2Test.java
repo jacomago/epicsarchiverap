@@ -7,7 +7,7 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,9 +45,9 @@ public class ConsolidateETLJobsForOnePV2Test {
     String mediumTermFolderName = rootFolderName + "/mediumTerm";
     String longTermFolderName = rootFolderName + "/longTerm";
     String pvName = "ArchUnitTest" + "ConsolidateETLJobsForOnePVTest";
-    PlainPBStoragePlugin storageplugin1;
-    PlainPBStoragePlugin storageplugin2;
-    PlainPBStoragePlugin storageplugin3;
+    PlainStoragePlugin storageplugin1;
+    PlainStoragePlugin storageplugin2;
+    PlainStoragePlugin storageplugin3;
     short currentYear = TimeUtils.getCurrentYear();
     ArchDBRTypes type = ArchDBRTypes.DBR_SCALAR_DOUBLE;
     private ConfigServiceForTests configService;
@@ -59,14 +59,14 @@ public class ConsolidateETLJobsForOnePV2Test {
             FileUtils.deleteDirectory(new File(rootFolderName));
         }
 
-        storageplugin1 = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        storageplugin1 = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 "pb://localhost?name=STS&rootFolder=" + shortTermFolderName + "/&partitionGranularity=PARTITION_HOUR",
                 configService);
-        storageplugin2 = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        storageplugin2 = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 "pb://localhost?name=MTS&rootFolder=" + mediumTermFolderName
                         + "/&partitionGranularity=PARTITION_HOUR&hold=5&gather=3",
                 configService);
-        storageplugin3 = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        storageplugin3 = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 "pb://localhost?name=LTS&rootFolder=" + longTermFolderName
                         + "/&partitionGranularity=PARTITION_HOUR&compress=ZIP_PER_PV",
                 configService);

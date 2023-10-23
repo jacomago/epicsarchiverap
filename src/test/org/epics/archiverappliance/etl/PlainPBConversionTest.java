@@ -2,8 +2,8 @@ package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -40,7 +40,7 @@ import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
 /**
- * Test the conversion implementation in the PlainPBStoragePlugin.
+ * Test the conversion implementation in the PlainStoragePlugin.
  * We generate a standard data set into a PB file, convert and make sure the data is as expected (timestamps remain the same, values are converted appropriately).
  *
  * @author mshankar
@@ -96,7 +96,7 @@ public class PlainPBConversionTest {
             ArchDBRTypes destDBRType,
             FileExtension fileExtension)
             throws Exception {
-        PlainPBStoragePlugin storagePlugin = new PlainPBStoragePlugin(fileExtension);
+        PlainStoragePlugin storagePlugin = new PlainStoragePlugin(fileExtension);
         PBCommonSetup setup = new PBCommonSetup();
         setup.setUpRootFolder(storagePlugin, "PlainPBConversionTest", granularity, fileExtension);
         logger.info("Testing conversion from " + srcDBRType.toString() + " to " + destDBRType.toString());
@@ -119,7 +119,7 @@ public class PlainPBConversionTest {
     @MethodSource("provideFailedConversionForDBRType")
     public void testFailedConversionForDBRType(PartitionGranularity granularity, FileExtension fileExtension)
             throws Exception {
-        PlainPBStoragePlugin storagePlugin = new PlainPBStoragePlugin(fileExtension);
+        PlainStoragePlugin storagePlugin = new PlainStoragePlugin(fileExtension);
         PBCommonSetup setup = new PBCommonSetup();
         setup.setUpRootFolder(storagePlugin, "PlainPBConversionTest", granularity, fileExtension);
         logger.info("Testing failed conversion from " + ArchDBRTypes.DBR_SCALAR_DOUBLE + " to "
@@ -154,7 +154,7 @@ public class PlainPBConversionTest {
             int totalTimePeriodInSeconds,
             int periodInSeconds,
             Instant startTime,
-            PlainPBStoragePlugin storagePlugin)
+            PlainStoragePlugin storagePlugin)
             throws Exception {
         ArrayListEventStream ret = new ArrayListEventStream(
                 100, new RemotableEventStreamDesc(dbrType, pvName, TimeUtils.getCurrentYear()));
@@ -182,7 +182,7 @@ public class PlainPBConversionTest {
         }
     }
 
-    private void convertToType(String pvName, ArchDBRTypes destDBRType, PlainPBStoragePlugin storagePlugin)
+    private void convertToType(String pvName, ArchDBRTypes destDBRType, PlainStoragePlugin storagePlugin)
             throws IOException {
         try (BasicContext context = new BasicContext()) {
             storagePlugin.convert(context, pvName, new ThruNumberAndStringConversion(destDBRType));
@@ -195,7 +195,7 @@ public class PlainPBConversionTest {
             int periodInSeconds,
             Instant expectedStartTime,
             ArchDBRTypes destDBRType,
-            PlainPBStoragePlugin storagePlugin)
+            PlainStoragePlugin storagePlugin)
             throws Exception {
         Instant expectedTime = expectedStartTime;
         int eventCount = 0;

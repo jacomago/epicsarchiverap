@@ -8,8 +8,8 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -48,18 +48,18 @@ import java.util.stream.Stream;
 public class GradualAccumulationETLTest {
     private static final Logger logger = LogManager.getLogger(GradualAccumulationETLTest.class.getName());
     static DefaultConfigService configService;
-    static PlainPBStoragePlugin etlSrcPB;
-    static PlainPBStoragePlugin etlDestPB;
-    static PlainPBStoragePlugin etlSrcParquet;
-    static PlainPBStoragePlugin etlDestParquet;
+    static PlainStoragePlugin etlSrcPB;
+    static PlainStoragePlugin etlDestPB;
+    static PlainStoragePlugin etlSrcParquet;
+    static PlainStoragePlugin etlDestParquet;
     int ratio = 10; // Size of the test
 
     @BeforeAll
     public static void setup() throws ConfigException {
-        etlSrcPB = new PlainPBStoragePlugin(FileExtension.PB);
-        etlDestPB = new PlainPBStoragePlugin(FileExtension.PB);
-        etlSrcParquet = new PlainPBStoragePlugin(FileExtension.PARQUET);
-        etlDestParquet = new PlainPBStoragePlugin(FileExtension.PARQUET);
+        etlSrcPB = new PlainStoragePlugin(FileExtension.PB);
+        etlDestPB = new PlainStoragePlugin(FileExtension.PB);
+        etlSrcParquet = new PlainStoragePlugin(FileExtension.PARQUET);
+        etlDestParquet = new PlainStoragePlugin(FileExtension.PARQUET);
         configService = new ConfigServiceForTests(new File("./bin"), 1);
     }
 
@@ -82,12 +82,12 @@ public class GradualAccumulationETLTest {
         return Arrays.stream(PartitionGranularity.values())
                 .filter(g -> g.getNextLargerGranularity() != null)
                 .flatMap(g -> Arrays.stream(FileExtension.values()).flatMap(f -> {
-                    PlainPBStoragePlugin etlSrc =
+                    PlainStoragePlugin etlSrc =
                             switch (f) {
                                 case PB -> etlSrcPB;
                                 case PARQUET -> etlSrcParquet;
                             };
-                    PlainPBStoragePlugin etlDest =
+                    PlainStoragePlugin etlDest =
                             switch (f) {
                                 case PB -> etlDestPB;
                                 case PARQUET -> etlDestParquet;
@@ -104,8 +104,8 @@ public class GradualAccumulationETLTest {
             PartitionGranularity granularity,
             boolean backUpfiles,
             FileExtension fileExtension,
-            PlainPBStoragePlugin etlSrc,
-            PlainPBStoragePlugin etlDest)
+            PlainStoragePlugin etlSrc,
+            PlainStoragePlugin etlDest)
             throws Exception {
 
         PBCommonSetup srcSetup = new PBCommonSetup();
@@ -171,8 +171,8 @@ public class GradualAccumulationETLTest {
 
     private void checkDataValidity(
             String pvName,
-            PlainPBStoragePlugin etlSrc,
-            PlainPBStoragePlugin etlDest,
+            PlainStoragePlugin etlSrc,
+            PlainStoragePlugin etlDest,
             long startOfYearInEpochSeconds,
             int incrementSeconds,
             int eventsgenerated,

@@ -1,13 +1,10 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
-import edu.stanford.slac.archiverappliance.PlainPB.FileInfo;
-import edu.stanford.slac.archiverappliance.PlainPB.PBFileInfo;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
-import edu.stanford.slac.archiverappliance.parquet.ParquetInfo;
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.plain.FileInfo;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BasicContext;
@@ -32,8 +29,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.stream.Stream;
-
-import static org.junit.Assert.assertTrue;
 
 /**
  * Unit test to test for timezones that are ahead of UTC; use "Australia/Sydney".
@@ -81,9 +76,9 @@ public class TimezoneAheadTest {
             throws Exception {
         logger.debug(TimeUtils.convertToHumanReadableString(TimeUtils.now()));
 
-        PlainPBStoragePlugin etlSrc = new PlainPBStoragePlugin(fileExtension);
+        PlainStoragePlugin etlSrc = new PlainStoragePlugin(fileExtension);
         PBCommonSetup srcSetup = new PBCommonSetup();
-        PlainPBStoragePlugin etlDest = new PlainPBStoragePlugin(fileExtension);
+        PlainStoragePlugin etlDest = new PlainStoragePlugin(fileExtension);
         PBCommonSetup destSetup = new PBCommonSetup();
         DefaultConfigService configService = new ConfigServiceForTests(new File("./bin"), 1);
 
@@ -130,21 +125,19 @@ public class TimezoneAheadTest {
         {
             long eventSeconds = startEpochSeconds + srcGranularity.getApproxSecondsPerChunk();
             while (eventSeconds <= endEpochSeconds) {
-                Path[] srcPathsBefore = PlainPBPathNameUtility.getAllPathsForPV(
+                Path[] srcPathsBefore = PathNameUtility.getAllPathsForPV(
                         new ArchPaths(),
                         etlSrc.getRootFolder(),
                         pvName,
                         fileExtension.getExtensionString(),
-                        etlSrc.getPartitionGranularity(),
-                        CompressionMode.NONE,
+                        PlainStoragePlugin.CompressionMode.NONE,
                         configService.getPVNameToKeyConverter());
-                Path[] destPathsBefore = PlainPBPathNameUtility.getAllPathsForPV(
+                Path[] destPathsBefore = PathNameUtility.getAllPathsForPV(
                         new ArchPaths(),
                         etlDest.getRootFolder(),
                         pvName,
                         fileExtension.getExtensionString(),
-                        etlDest.getPartitionGranularity(),
-                        CompressionMode.NONE,
+                        PlainStoragePlugin.CompressionMode.NONE,
                         configService.getPVNameToKeyConverter());
                 long srcBeforeEpochSeconds = -1;
 
@@ -154,21 +147,19 @@ public class TimezoneAheadTest {
 
                 ETLExecutor.runETLs(configService, TimeUtils.convertFromEpochSeconds(eventSeconds, 0));
 
-                Path[] srcPathsAfter = PlainPBPathNameUtility.getAllPathsForPV(
+                Path[] srcPathsAfter = PathNameUtility.getAllPathsForPV(
                         new ArchPaths(),
                         etlSrc.getRootFolder(),
                         pvName,
                         fileExtension.getExtensionString(),
-                        etlSrc.getPartitionGranularity(),
-                        CompressionMode.NONE,
+                        PlainStoragePlugin.CompressionMode.NONE,
                         configService.getPVNameToKeyConverter());
-                Path[] destPathsAfter = PlainPBPathNameUtility.getAllPathsForPV(
+                Path[] destPathsAfter = PathNameUtility.getAllPathsForPV(
                         new ArchPaths(),
                         etlDest.getRootFolder(),
                         pvName,
                         fileExtension.getExtensionString(),
-                        etlDest.getPartitionGranularity(),
-                        CompressionMode.NONE,
+                        PlainStoragePlugin.CompressionMode.NONE,
                         configService.getPVNameToKeyConverter());
 
                 logger.info("Running ETL at " + TimeUtils.convertToHumanReadableString(eventSeconds)

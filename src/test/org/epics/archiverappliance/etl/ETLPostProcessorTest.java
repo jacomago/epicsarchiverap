@@ -1,8 +1,8 @@
 package org.epics.archiverappliance.etl;
 
 
-import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -77,8 +77,8 @@ public class ETLPostProcessorTest {
 	@EnumSource(FileExtension.class)
 	public void testPostProcessorDuringETL(FileExtension fileExtension) throws Exception {
 
-		PlainPBStoragePlugin srcpbplugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(fileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + rootFolderName + "/src&partitionGranularity=PARTITION_HOUR", configService);
-		PlainPBStoragePlugin destpbplugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(fileExtension.getSuffix() + "://localhost?name=MTS&rootFolder=" + rootFolderName + "/dest&partitionGranularity=PARTITION_DAY&pp=" + testPostProcessor.getExtension(), configService);
+        PlainStoragePlugin srcpbplugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(fileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + rootFolderName + "/src&partitionGranularity=PARTITION_HOUR", configService);
+        PlainStoragePlugin destpbplugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(fileExtension.getSuffix() + "://localhost?name=MTS&rootFolder=" + rootFolderName + "/dest&partitionGranularity=PARTITION_DAY&pp=" + testPostProcessor.getExtension(), configService);
         PVTypeInfo typeInfo = new PVTypeInfo(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
         String[] dataStores = new String[] { srcpbplugin.getURLRepresentation(), destpbplugin.getURLRepresentation() }; 
         typeInfo.setDataStores(dataStores);
