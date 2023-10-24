@@ -64,7 +64,7 @@ public class PathNameUtility {
             Instant ts,
             PartitionGranularity partitionGranularity,
             ArchPaths paths,
-            PlainStoragePlugin.CompressionMode compressionMode,
+            CompressionMode compressionMode,
             PVNameToKeyMapping pv2key,
             FileExtension fileExtension)
             throws IOException {
@@ -110,7 +110,7 @@ public class PathNameUtility {
             final Instant endts,
             final String extension,
             final PartitionGranularity granularity,
-            final PlainStoragePlugin.CompressionMode compressionMode,
+            final CompressionMode compressionMode,
             PVNameToKeyMapping pv2key)
             throws IOException {
         String pvFinalNameComponent = getFinalNameComponent(pvName, pv2key);
@@ -169,7 +169,7 @@ public class PathNameUtility {
             final Instant currentTime,
             final String extension,
             final PartitionGranularity granularity,
-            final PlainStoragePlugin.CompressionMode compressionMode,
+            final CompressionMode compressionMode,
             PVNameToKeyMapping pv2key)
             throws IOException {
         final long reqStartEpochSeconds = 1;
@@ -206,7 +206,7 @@ public class PathNameUtility {
             String rootFolder,
             final String pvName,
             final String extension,
-            final PlainStoragePlugin.CompressionMode compressionMode,
+            final CompressionMode compressionMode,
             PVNameToKeyMapping pv2key)
             throws IOException {
         ArrayList<Path> retval = new ArrayList<>();
@@ -248,7 +248,7 @@ public class PathNameUtility {
             final Instant startts,
             final String extension,
             final PartitionGranularity granularity,
-            final PlainStoragePlugin.CompressionMode compressionMode,
+            final CompressionMode compressionMode,
             PVNameToKeyMapping pv2key)
             throws Exception {
         if (logger.isDebugEnabled())
@@ -304,7 +304,7 @@ public class PathNameUtility {
             final Instant startts,
             final String extension,
             final PartitionGranularity granularity,
-            final PlainStoragePlugin.CompressionMode compressionMode,
+            final CompressionMode compressionMode,
             PVNameToKeyMapping pv2key)
             throws Exception {
         if (logger.isDebugEnabled())
@@ -356,13 +356,13 @@ public class PathNameUtility {
             PartitionGranularity partitionGranularity,
             boolean createParentFolder,
             ArchPaths paths,
-            PlainStoragePlugin.CompressionMode compressionMode,
+            CompressionMode compressionMode,
             PVNameToKeyMapping pv2key)
             throws IOException {
         String partitionNameComponent = TimeUtils.getPartitionName(ts, partitionGranularity);
         String pvKey = pv2key.convertPVNameToKey(pvName);
         String pvPathComponent = pvKey + partitionNameComponent + extension;
-        switch (compressionMode) {
+        switch (compressionMode.getPbCompression()) {
             case NONE -> {
                 return paths.get(createParentFolder, rootFolder, pvPathComponent);
             }
@@ -402,12 +402,12 @@ public class PathNameUtility {
             ArchPaths paths,
             String rootFolder,
             final String pvName,
-            PlainStoragePlugin.CompressionMode compressionMode,
+            CompressionMode compressionMode,
             PVNameToKeyMapping pv2key)
             throws IOException {
         String pvKey = pv2key.convertPVNameToKey(pvName);
         boolean createParentFolder = false; // should we create parent folder if it does not exist
-        switch (compressionMode) {
+        switch (compressionMode.getPbCompression()) {
             case NONE -> {
                 Path path = paths.get(createParentFolder, rootFolder, pvKey);
                 return path.getParent();
@@ -462,7 +462,7 @@ public class PathNameUtility {
             String rootFolder,
             final String pvName,
             final String extension,
-            PlainStoragePlugin.CompressionMode compressionMode,
+            CompressionMode compressionMode,
             PVNameToKeyMapping pv2key)
             throws IOException {
         try {

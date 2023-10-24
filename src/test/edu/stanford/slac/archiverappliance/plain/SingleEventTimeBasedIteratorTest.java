@@ -71,7 +71,7 @@ public class SingleEventTimeBasedIteratorTest {
                     rootFolderName,
                     pvName,
                     fileExtension.getExtensionString(),
-                    PlainStoragePlugin.CompressionMode.NONE,
+                    CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());
             Assertions.assertEquals(1, paths.length, "We should get only one file, instead we got " + paths.length);
             long eventCount = 0;

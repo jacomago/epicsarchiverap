@@ -64,9 +64,10 @@ public abstract class AppendDataStateData {
             String rootFolder,
             String desc,
             PVNameToKeyMapping pv2key,
-            PlainStoragePlugin.CompressionMode compressionMode) {
+            CompressionMode compressionMode) {
         return switch (fileExtension) {
-            case PARQUET -> new ParquetAppendDataStateData(partitionGranularity, rootFolder, desc, timestamp, pv2key);
+            case PARQUET ->
+                    new ParquetAppendDataStateData(partitionGranularity, rootFolder, desc, timestamp, compressionMode, pv2key);
             case PB -> new PBAppendDataStateData(
                     partitionGranularity, rootFolder, desc, timestamp, compressionMode, pv2key);
         };
@@ -118,7 +119,7 @@ public abstract class AppendDataStateData {
             String pvName,
             String extension,
             Instant ts,
-            PlainStoragePlugin.CompressionMode compressionMode)
+            CompressionMode compressionMode)
             throws IOException {
 
         if (ts.equals(this.nextPartitionFirstSecond) || ts.isAfter(this.nextPartitionFirstSecond)) {
@@ -213,7 +214,7 @@ public abstract class AppendDataStateData {
             String extensionToCopyFrom,
             Instant ts,
             Path pvPath,
-            PlainStoragePlugin.CompressionMode compressionMode)
+            CompressionMode compressionMode)
             throws IOException {
         if (pvPath == null) {
             pvPath = PathNameUtility.getFileName(

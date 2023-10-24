@@ -7,7 +7,6 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.plain;
 
-import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin.CompressionMode;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -119,7 +118,7 @@ public class PlainPBFileNameUtilityTest {
                 startOfYear.plusSeconds(nIntervals * granularity.getApproxSecondsPerChunk() - 1),
                 extension,
                 granularity,
-                PlainStoragePlugin.CompressionMode.NONE,
+                CompressionMode.NONE,
                 configService.getPVNameToKeyConverter());
         Assertions.assertEquals(nIntervals, matchingPaths.length, "File count " + matchingPaths.length);
 
@@ -187,7 +186,7 @@ public class PlainPBFileNameUtilityTest {
                 endYear.minusSeconds(1).toInstant(),
                 extension,
                 partition,
-                PlainStoragePlugin.CompressionMode.NONE,
+                CompressionMode.NONE,
                 configService.getPVNameToKeyConverter());
         Assertions.assertEquals(8, matchingPaths.length, "File count " + matchingPaths.length);
 

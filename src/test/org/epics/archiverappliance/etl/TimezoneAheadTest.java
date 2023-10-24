@@ -1,6 +1,7 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
+import edu.stanford.slac.archiverappliance.plain.CompressionMode;
 import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.FileInfo;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
@@ -130,14 +131,14 @@ public class TimezoneAheadTest {
                         etlSrc.getRootFolder(),
                         pvName,
                         fileExtension.getExtensionString(),
-                        PlainStoragePlugin.CompressionMode.NONE,
+                        CompressionMode.NONE,
                         configService.getPVNameToKeyConverter());
                 Path[] destPathsBefore = PathNameUtility.getAllPathsForPV(
                         new ArchPaths(),
                         etlDest.getRootFolder(),
                         pvName,
                         fileExtension.getExtensionString(),
-                        PlainStoragePlugin.CompressionMode.NONE,
+                        CompressionMode.NONE,
                         configService.getPVNameToKeyConverter());
                 long srcBeforeEpochSeconds = -1;
 
@@ -152,14 +153,14 @@ public class TimezoneAheadTest {
                         etlSrc.getRootFolder(),
                         pvName,
                         fileExtension.getExtensionString(),
-                        PlainStoragePlugin.CompressionMode.NONE,
+                        CompressionMode.NONE,
                         configService.getPVNameToKeyConverter());
                 Path[] destPathsAfter = PathNameUtility.getAllPathsForPV(
                         new ArchPaths(),
                         etlDest.getRootFolder(),
                         pvName,
                         fileExtension.getExtensionString(),
-                        PlainStoragePlugin.CompressionMode.NONE,
+                        CompressionMode.NONE,
                         configService.getPVNameToKeyConverter());
 
                 logger.info("Running ETL at " + TimeUtils.convertToHumanReadableString(eventSeconds)

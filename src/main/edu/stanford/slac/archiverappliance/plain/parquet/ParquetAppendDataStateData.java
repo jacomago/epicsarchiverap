@@ -3,8 +3,8 @@ package edu.stanford.slac.archiverappliance.plain.parquet;
 import com.google.protobuf.Message;
 import edu.stanford.slac.archiverappliance.PB.data.DBR2PBMessageTypeMapping;
 import edu.stanford.slac.archiverappliance.plain.AppendDataStateData;
+import edu.stanford.slac.archiverappliance.plain.CompressionMode;
 import edu.stanford.slac.archiverappliance.plain.FileInfo;
-import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -46,9 +46,10 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
             String rootFolder,
             String desc,
             Instant lastKnownTimestamp,
+            CompressionMode compressionMode,
             PVNameToKeyMapping pv2key) {
         super(partitionGranularity, rootFolder, desc, lastKnownTimestamp, pv2key);
-        this.compressionCodecName = CompressionCodecName.SNAPPY;
+        this.compressionCodecName = compressionMode.getParquetCompressionCodec();
     }
 
     public static ParquetWriter copyKeepingOpen(Path currentPVPath, FileInfo info) throws IOException {
@@ -174,7 +175,7 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
                 if (shouldISkipEventBasedOnTimeStamps(event)) continue;
 
                 Path pvPath = null;
-                shouldISwitchPartitions(context, pvName, extension, ts, PlainStoragePlugin.CompressionMode.NONE);
+                shouldISwitchPartitions(context, pvName, extension, ts, CompressionMode.NONE);
 
                 if (this.writer == null) {
                     preparePartition(
@@ -185,7 +186,7 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
                             extensionToCopyFrom,
                             ts,
                             pvPath,
-                            PlainStoragePlugin.CompressionMode.NONE);
+                            CompressionMode.NONE);
                 }
 
                 // We check for monotonicity in timestamps again as we had some fresh data from an existing file.
@@ -245,7 +246,7 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
                     extensionToCopyFrom,
                     firstEvent.getEventTimeStamp(),
                     pvPath,
-                    PlainStoragePlugin.CompressionMode.NONE);
+                    CompressionMode.NONE);
         }
 
         // The preparePartition should have created the needed file; so we only append

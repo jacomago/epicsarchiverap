@@ -621,9 +621,9 @@ public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, St
                 buf.append(true);
             }
 
-            if (this.compressionMode != null) {
+            if (this.compressionMode != null && this.compressionMode != CompressionMode.NONE) {
                 buf.append("&compress=");
-                buf.append(compressionMode.toString());
+                buf.append(compressionMode.toURLString());
             }
 
             if (this.postProcessorUserArgs != null && !this.postProcessorUserArgs.isEmpty()) {
@@ -1355,15 +1355,6 @@ public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, St
                 }
             }
         }
-    }
-
-    /**
-     * Support for ZIP_PER_PV is still experimental.
-     * @author mshankar
-     */
-    public enum CompressionMode {
-        NONE,
-        ZIP_PER_PV,
     }
 
     private static class PPMissingPaths {

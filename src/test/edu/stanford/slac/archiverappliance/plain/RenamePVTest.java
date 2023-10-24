@@ -109,7 +109,7 @@ public class RenamePVTest {
                             plugin.getRootFolder(),
                     oldPVName,
                             plugin.getFileExtension().getExtensionString(),
-                    PlainStoragePlugin.CompressionMode.NONE,
+                    CompressionMode.NONE,
                     configService.getPVNameToKeyConverter())
                     .length;
         }
@@ -140,7 +140,7 @@ public class RenamePVTest {
                             plugin.getRootFolder(),
                     newPVName,
                             plugin.getFileExtension().getExtensionString(),
-                    PlainStoragePlugin.CompressionMode.NONE,
+                    CompressionMode.NONE,
                     configService.getPVNameToKeyConverter())
                     .length;
             newPathForOldPVNameCount = PathNameUtility.getAllPathsForPV(
@@ -148,7 +148,7 @@ public class RenamePVTest {
                             plugin.getRootFolder(),
                     oldPVName,
                             plugin.getFileExtension().getExtensionString(),
-                    PlainStoragePlugin.CompressionMode.NONE,
+                    CompressionMode.NONE,
                     configService.getPVNameToKeyConverter())
                     .length;
         }

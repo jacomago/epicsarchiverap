@@ -40,6 +40,9 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.zip.ZipEntry;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
 /**
  * test for consolidate all pb files from short term storage and medium term storage to long term storage
  * @author Luofeng Li
@@ -91,6 +94,7 @@ public class ConsolidateETLJobsForOnePVTest {
         try {
             consolidate();
         } catch (AlreadyRegisteredException | IOException | InterruptedException e) {
+            fail();
             logger.error("Exception consolidating storage", e);
         }
     }

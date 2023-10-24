@@ -3,9 +3,9 @@ package edu.stanford.slac.archiverappliance.plain.pb;
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
 import edu.stanford.slac.archiverappliance.PB.utils.LineEscaper;
 import edu.stanford.slac.archiverappliance.plain.AppendDataStateData;
+import edu.stanford.slac.archiverappliance.plain.CompressionMode;
 import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.FileInfo;
-import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.ByteArray;
@@ -37,7 +37,7 @@ import java.time.Instant;
  */
 public class PBAppendDataStateData extends AppendDataStateData {
     private static final Logger logger = LogManager.getLogger(PBAppendDataStateData.class.getName());
-    private final PlainStoragePlugin.CompressionMode compressionMode;
+    private final CompressionMode compressionMode;
     private OutputStream os = null;
 
     /**
@@ -54,7 +54,7 @@ public class PBAppendDataStateData extends AppendDataStateData {
             String rootFolder,
             String desc,
             Instant lastKnownTimestamp,
-            PlainStoragePlugin.CompressionMode compressionMode,
+            CompressionMode compressionMode,
             PVNameToKeyMapping pv2key) {
         super(partitionGranularity, rootFolder, desc, lastKnownTimestamp, pv2key);
         this.compressionMode = compressionMode;

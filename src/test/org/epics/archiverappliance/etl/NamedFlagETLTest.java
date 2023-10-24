@@ -7,6 +7,7 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
+import edu.stanford.slac.archiverappliance.plain.CompressionMode;
 import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
@@ -198,7 +199,7 @@ public class NamedFlagETLTest {
 
         	// Check that all the files in the destination store are valid files.
 	        Path[] allPaths = PathNameUtility.getAllPathsForPV(new ArchPaths(), etlDest.getRootFolder(), pvName, FileExtension.PB.getExtensionString(),
-			        PlainStoragePlugin.CompressionMode.NONE, configService.getPVNameToKeyConverter());
+                    CompressionMode.NONE, configService.getPVNameToKeyConverter());
         	Assertions.assertTrue(allPaths != null, "PlainPBFileNameUtility returns null for getAllFilesForPV for " + pvName);
 
         	for(Path destPath : allPaths) {

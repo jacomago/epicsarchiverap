@@ -125,7 +125,7 @@ public class ZeroedFileEventStreamTest {
                     rootFolderName,
                     pvName,
                     fileExtension.getExtensionString(),
-                    PlainStoragePlugin.CompressionMode.NONE,
+                    CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());
         }
 
@@ -195,7 +195,7 @@ public class ZeroedFileEventStreamTest {
                     rootFolderName,
                     pvName,
                     fileExtension.getExtensionString(),
-                    PlainStoragePlugin.CompressionMode.NONE,
+                    CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());
         }
 
@@ -259,7 +259,7 @@ public class ZeroedFileEventStreamTest {
                     rootFolderName + "Dest",
                     pvName,
                     fileExtension.getExtensionString(),
-                    PlainStoragePlugin.CompressionMode.NONE,
+                    CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());
         }
 
@@ -346,7 +346,7 @@ public class ZeroedFileEventStreamTest {
                     destPlugin.getRootFolder(),
                     pvName,
                     fileExtension.getExtensionString(),
-                    PlainStoragePlugin.CompressionMode.NONE,
+                    CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());
         }
 
@@ -426,7 +426,7 @@ public class ZeroedFileEventStreamTest {
                     destPlugin.getRootFolder(),
                     pvName,
                     fileExtension.getExtensionString(),
-                    PlainStoragePlugin.CompressionMode.NONE,
+                    CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());
         }
 
@@ -484,7 +484,7 @@ public class ZeroedFileEventStreamTest {
                     rootFolderName,
                     pvName,
                     fileExtension.getExtensionString(),
-                    PlainStoragePlugin.CompressionMode.NONE,
+                    CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());
         }
 
@@ -551,7 +551,7 @@ public class ZeroedFileEventStreamTest {
                     rootFolderName,
                     pvName,
                     fileExtension.getExtensionString(),
-                    PlainStoragePlugin.CompressionMode.NONE,
+                    CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());
         }
 

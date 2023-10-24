@@ -68,7 +68,7 @@ public class CleanPartitionsTest {
                     pbPlugin.getRootFolder(),
                     pvName,
                     fileExtension.getExtensionString(),
-                    PlainStoragePlugin.CompressionMode.NONE,
+                    CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());
             Assertions.assertTrue(allPaths.length > 1);
             for (Path pbFile : allPaths) {
