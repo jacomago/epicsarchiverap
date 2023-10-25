@@ -4,11 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.etl.ETLContext;
-import org.epics.archiverappliance.etl.ETLDest;
-import org.epics.archiverappliance.etl.ETLInfo;
-import org.epics.archiverappliance.etl.ETLSource;
-import org.epics.archiverappliance.etl.StorageMetrics;
+import org.epics.archiverappliance.etl.*;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -127,7 +123,7 @@ public class ETLJob implements Runnable {
             time4getETLStreams = time4getETLStreams + System.currentTimeMillis() - time1;
             if (ETLInfoList != null) {
                 List<ETLInfo> movedList = new LinkedList<ETLInfo>();
-                for (ETLInfo infoItem : ETLInfoList) {
+                for (ETLInfo infoItem : ETLInfoList) { // TODO Possible spot to combine files rather than loop through them
                     if (logger.isDebugEnabled()) {
                         logger.debug("Processing ETLInfo with key = " + infoItem.getKey() + " for PV " + pvName
                                 + "itemInfo partitionGranularity = "

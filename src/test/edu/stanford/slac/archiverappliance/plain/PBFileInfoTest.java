@@ -57,7 +57,7 @@ public class PBFileInfoTest {
         FileInfo info = FileInfo.extensionPath(fileExtension, pBfile);
         Assertions.assertEquals(info.getPVName(), pvName, "PVInfo PV name " + info.getPVName());
         Assertions.assertEquals(info.getDataYear(), currentYear, "PVInfo year " + info.getDataYear());
-        Assertions.assertEquals(info.getType(), ArchDBRTypes.DBR_SCALAR_DOUBLE, "PVInfo type " + info.getType());
+        Assertions.assertEquals(ArchDBRTypes.DBR_SCALAR_DOUBLE, info.getType(), "PVInfo type " + info.getType());
         Assertions.assertEquals(start, info.getFirstEvent().getEventTimeStamp());
         Assertions.assertEquals(end.minusSeconds(1), info.getLastEvent().getEventTimeStamp());
     }

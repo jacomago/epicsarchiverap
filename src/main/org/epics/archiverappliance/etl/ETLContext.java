@@ -7,12 +7,12 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BasicContext;
+
+import java.util.HashMap;
+import java.util.LinkedList;
 
 /**
  * A class to hold state for one run of ETL. 
@@ -33,18 +33,6 @@ public class ETLContext extends BasicContext {
 	
 	public Object get(String key) {
 		return state.get(key);
-	}
-
-	public void putString(String key, String value) {
-		state.put(key, value);
-	}
-
-	public String getString(String key) {
-		return (String) state.get(key);
-	}
-
-	public void addPostETLTask(Runnable runnable) {
-		postETLTasks.add(runnable);
 	}
 
 	public void executePostETLTasks() {

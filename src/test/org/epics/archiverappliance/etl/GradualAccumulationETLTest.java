@@ -203,7 +203,7 @@ public class GradualAccumulationETLTest {
                 expectedEpochSeconds += incrementSeconds;
                 afterCount++;
             }
-            Assertions.assertTrue((afterCount != 0), testDesc + "Seems like no events were moved by ETL " + afterCount);
+            Assertions.assertTrue(afterCount != 0, testDesc + "Seems like no events were moved by ETL " + afterCount);
         }
 
         try (BasicContext context = new BasicContext();
@@ -222,9 +222,7 @@ public class GradualAccumulationETLTest {
             }
         }
 
-        Assertions.assertTrue(
-                (eventsgenerated == afterCount),
-                testDesc + "Expected total events " + eventsgenerated + " is not the same as actual events "
-                        + afterCount);
+        Assertions.assertEquals(eventsgenerated, afterCount, testDesc + "Expected total events " + eventsgenerated + " is not the same as actual events "
+                + afterCount);
     }
 }

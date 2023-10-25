@@ -7,13 +7,12 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import java.io.IOException;
-import java.util.HashMap;
-
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.config.ArchDBRTypes;
+
+import java.io.IOException;
 
 /**
  * A POJO that encapsulates all the information needed about a stream from an ETL source
@@ -28,7 +27,6 @@ public class ETLInfo {
 	private ETLStreamCreator strmCreator;
 	private ArchDBRTypes type;
 	private long size = -1;
-	private HashMap<String, String> otherInfo = new HashMap<String, String>();
 	
 	public ETLInfo(String pvName, ArchDBRTypes type, String key, PartitionGranularity granularity, ETLStreamCreator strmCreator, Event firstEvent, long size) {
 		this.pvName = pvName;
@@ -57,16 +55,8 @@ public class ETLInfo {
 	public Event getFirstEvent() {
 		return firstEvent;
 	}
-	
-	
-	public void addOtherInfo(String name, String value) { 
-		otherInfo.put(name, value);
-	}
-	
-	public String getOtherInfo(String name){ 
-		return otherInfo.get(name);
-	}
-	public long getSize() {
+
+    public long getSize() {
 		return size;
 	}
 	

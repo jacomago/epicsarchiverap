@@ -11,6 +11,7 @@ import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.proto.ProtoParquetReader;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
+import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.EmptyEventIterator;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.YearSecondTimestamp;
@@ -22,16 +23,10 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Iterator;
 
-import static org.apache.parquet.filter2.predicate.FilterApi.and;
-import static org.apache.parquet.filter2.predicate.FilterApi.eq;
-import static org.apache.parquet.filter2.predicate.FilterApi.gtEq;
-import static org.apache.parquet.filter2.predicate.FilterApi.intColumn;
-import static org.apache.parquet.filter2.predicate.FilterApi.lt;
-import static org.apache.parquet.filter2.predicate.FilterApi.ltEq;
-import static org.apache.parquet.filter2.predicate.FilterApi.or;
+import static org.apache.parquet.filter2.predicate.FilterApi.*;
 
-public class ParquetBackedPBEventStream implements EventStream {
-    private static final Logger logger = LogManager.getLogger(ParquetBackedPBEventStream.class.getName());
+public class ParquetBackedPBEventFilesStream implements EventStream, ETLParquetFilesStream {
+    private static final Logger logger = LogManager.getLogger(ParquetBackedPBEventFilesStream.class.getName());
     private final String pvName;
     private final ArchDBRTypes type;
     private final Path path;
@@ -40,20 +35,20 @@ public class ParquetBackedPBEventStream implements EventStream {
     private final FileInfo fileInfo;
     private RemotableEventStreamDesc desc;
 
-    public ParquetBackedPBEventStream(String pvName, Path path, ArchDBRTypes type) {
+    public ParquetBackedPBEventFilesStream(String pvName, Path path, ArchDBRTypes type) {
         this(pvName, path, type, getFileInfo(path));
     }
 
-    public ParquetBackedPBEventStream(
+    public ParquetBackedPBEventFilesStream(
             String pvName, Path path, ArchDBRTypes type, Instant startTime, Instant endTime) {
         this(pvName, path, type, startTime, endTime, getFileInfo(path));
     }
 
-    public ParquetBackedPBEventStream(String pvName, Path path, ArchDBRTypes type, FileInfo fileInfo) {
+    public ParquetBackedPBEventFilesStream(String pvName, Path path, ArchDBRTypes type, FileInfo fileInfo) {
         this(pvName, path, type, null, null, fileInfo);
     }
 
-    public ParquetBackedPBEventStream(
+    public ParquetBackedPBEventFilesStream(
             String pvName, Path path, ArchDBRTypes type, Instant startTime, Instant endTime, FileInfo fileInfo) {
         this.pvName = pvName;
         this.path = path;
@@ -151,6 +146,19 @@ public class ParquetBackedPBEventStream implements EventStream {
         }
 
         return desc;
+    }
+
+    @Override
+    public Path getPath() {
+        return this.path;
+    }
+
+    /**
+     * @param context BasicContext
+     */
+    @Override
+    public Event getFirstEvent(BasicContext context) throws IOException {
+        return this.fileInfo.getFirstEvent();
     }
 
     private record TimePeriod(YearSecondTimestamp startYst, YearSecondTimestamp endYst) {
