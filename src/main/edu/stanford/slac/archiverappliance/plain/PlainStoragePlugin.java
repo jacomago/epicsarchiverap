@@ -22,14 +22,7 @@ import org.epics.archiverappliance.common.mergededup.TimeSpanLimitEventStream;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNameToKeyMapping;
-import org.epics.archiverappliance.etl.ConversionFunction;
-import org.epics.archiverappliance.etl.ETLBulkStream;
-import org.epics.archiverappliance.etl.ETLContext;
-import org.epics.archiverappliance.etl.ETLDest;
-import org.epics.archiverappliance.etl.ETLInfo;
-import org.epics.archiverappliance.etl.ETLSource;
-import org.epics.archiverappliance.etl.StorageMetrics;
-import org.epics.archiverappliance.etl.StorageMetricsContext;
+import org.epics.archiverappliance.etl.*;
 import org.epics.archiverappliance.retrieval.CallableEventStream;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.retrieval.postprocessors.DefaultRawPostProcessor;
@@ -50,13 +43,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -332,9 +319,9 @@ public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, St
             if (paths.length == 1) {
                 FileInfo fileInfo = FileInfo.extensionPath(fileExtension, paths[0]);
                 ArchDBRTypes dbrtype = fileInfo.getType();
-                if (fileInfo.getLastEventEpochSeconds() <= TimeUtils.convertToEpochSeconds(startTime)) {
+                if (fileInfo.getLastEventInstant().isBefore(startTime) || fileInfo.getLastEventInstant().equals(startTime)) {
                     logger.debug("All we can get from this store is the last known event at "
-                            + TimeUtils.convertToHumanReadableString(fileInfo.getLastEventEpochSeconds()));
+                            + TimeUtils.convertToHumanReadableString(fileInfo.getLastEventInstant()));
                     ret.add(CallableEventStream.makeOneEventCallable(
                             fileInfo.getLastEvent(),
                             new RemotableEventStreamDesc(dbrtype, pvName, fileInfo.getDataYear()),
@@ -823,7 +810,7 @@ public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, St
                             holdOk = true;
                         } else {
                             logger.debug("Hold not satisfied for first event "
-                                    + TimeUtils.convertToISO8601String(fileinfo.getFirstEventEpochSeconds())
+                                    + TimeUtils.convertToISO8601String(fileinfo.getFirstEventInstant())
                                     + " and hold = " + TimeUtils.convertToISO8601String(holdTime));
                             return etlreadystreams;
                         }
@@ -833,7 +820,7 @@ public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, St
                         etlreadystreams.add(etlInfo);
                     } else {
                         logger.debug("Gather not satisfied for first event "
-                                + TimeUtils.convertToISO8601String(fileinfo.getFirstEventEpochSeconds())
+                                + TimeUtils.convertToISO8601String(fileinfo.getFirstEventInstant())
                                 + " and gather = " + TimeUtils.convertToISO8601String(gatherTime));
                     }
                 }
@@ -852,6 +839,13 @@ public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, St
     public void markForDeletion(ETLInfo info, ETLContext context) {
         try {
             Path path = context.getPaths().get(info.getKey());
+            if (this.fileExtension == FileExtension.PARQUET) {
+                Path checkSumPath =
+                        Path.of(String.valueOf(path.getParent()), "." + path.getFileName() + ".crc");
+                if (Files.exists(checkSumPath)) {
+                    Files.delete(checkSumPath);
+                }
+            }
             long size = Files.size(path);
             long sizeFromInfo = info.getSize();
             if (sizeFromInfo == -1) {
@@ -860,10 +854,6 @@ public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, St
             } else {
                 if (sizeFromInfo == size) {
                     // Only for parquet or other hadoop created files.
-                    Path checkSumPath = Path.of(String.valueOf(path.getParent()), "." + path.getFileName() + ".crc");
-                    if (Files.exists(checkSumPath)) {
-                        Files.delete(checkSumPath);
-                    }
                     Files.delete(path);
                 } else {
                     logger.error("The path " + info.getKey()
@@ -1355,6 +1345,30 @@ public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, St
                 }
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return "PlainStoragePlugin{" +
+                "append_extension='" + append_extension + '\'' +
+                ", fileExtension=" + fileExtension +
+                ", appendDataStates=" + appendDataStates +
+                ", partitionGranularity=" + partitionGranularity +
+                ", rootFolder='" + rootFolder + '\'' +
+                ", name='" + name + '\'' +
+                ", configService=" + configService +
+                ", pv2key=" + pv2key +
+                ", desc='" + desc + '\'' +
+                ", backupFilesBeforeETL=" + backupFilesBeforeETL +
+                ", compressionMode=" + compressionMode +
+                ", postProcessorUserArgs=" + postProcessorUserArgs +
+                ", reducedataPostProcessor='" + reducedataPostProcessor + '\'' +
+                ", holdETLForPartions=" + holdETLForPartions +
+                ", gatherETLinPartitions=" + gatherETLinPartitions +
+                ", consolidateOnShutdown=" + consolidateOnShutdown +
+                ", etlIntoStoreIf='" + etlIntoStoreIf + '\'' +
+                ", etlOutofStoreIf='" + etlOutofStoreIf + '\'' +
+                '}';
     }
 
     private static class PPMissingPaths {

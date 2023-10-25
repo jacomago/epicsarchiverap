@@ -7,6 +7,7 @@ import org.epics.archiverappliance.data.DBRTimeEvent;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Instant;
 
 public abstract class FileInfo {
     protected DBRTimeEvent firstEvent = null;
@@ -28,19 +29,16 @@ public abstract class FileInfo {
 
     public abstract ArchDBRTypes getType();
 
-    public DBRTimeEvent getFirstEvent() {
-        return this.firstEvent;
-    }
-    public DBRTimeEvent getLastEvent() {
-        return this.lastEvent;
+    public abstract DBRTimeEvent getFirstEvent();
+
+    public abstract DBRTimeEvent getLastEvent();
+
+    public Instant getLastEventInstant() {
+        return (getLastEvent() != null) ? getLastEvent().getEventTimeStamp() : Instant.EPOCH;
     }
 
-    public long getLastEventEpochSeconds() {
-        return (lastEvent != null) ? lastEvent.getEpochSeconds() : 0;
-    }
-
-    public long getFirstEventEpochSeconds() {
-        return (firstEvent != null) ? firstEvent.getEpochSeconds() : 0;
+    public Instant getFirstEventInstant() {
+        return (getFirstEvent() != null) ? getFirstEvent().getEventTimeStamp() : Instant.EPOCH;
     }
 
     public static FileInfo extensionPath(FileExtension fileExtension, Path path) throws IOException {

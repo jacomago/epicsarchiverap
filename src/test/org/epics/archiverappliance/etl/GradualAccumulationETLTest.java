@@ -102,7 +102,7 @@ public class GradualAccumulationETLTest {
     @MethodSource("provideGradualAccumulation")
     public void testGradualAccumulation(
             PartitionGranularity granularity,
-            boolean backUpfiles,
+            boolean backupFiles,
             FileExtension fileExtension,
             PlainStoragePlugin etlSrc,
             PlainStoragePlugin etlDest)
@@ -110,7 +110,7 @@ public class GradualAccumulationETLTest {
 
         PBCommonSetup srcSetup = new PBCommonSetup();
         PBCommonSetup destSetup = new PBCommonSetup();
-        etlDest.setBackupFilesBeforeETL(backUpfiles);
+        etlDest.setBackupFilesBeforeETL(backupFiles);
 
         srcSetup.setUpRootFolder(etlSrc, "GradualAccumulationETLTestSrc_" + granularity, granularity, fileExtension);
         destSetup.setUpRootFolder(
@@ -120,7 +120,7 @@ public class GradualAccumulationETLTest {
                 fileExtension);
 
         logger.info("Testing gradual accumulation for " + etlSrc.getPartitionGranularity() + " to "
-                + etlDest.getPartitionGranularity() + " with backup = " + backUpfiles);
+                + etlDest.getPartitionGranularity() + " with backup = " + backupFiles);
 
         short year = TimeUtils.getCurrentYear();
         long startOfYearInEpochSeconds = TimeUtils.getStartOfCurrentYearInSeconds();
@@ -129,7 +129,7 @@ public class GradualAccumulationETLTest {
         int incrementSeconds = granularity.getApproxSecondsPerChunk() / ratio;
         int eventsgenerated = 0;
 
-        String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + fileExtension.getSuffix() + backUpfiles + "ETL_testGradual"
+        String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + fileExtension.getSuffix() + backupFiles + "ETL_testGradual"
                 + etlSrc.getPartitionGranularity();
 
         PVTypeInfo typeInfo = new PVTypeInfo(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
@@ -140,18 +140,18 @@ public class GradualAccumulationETLTest {
         configService.getETLLookup().manualControlForUnitTests();
 
         while (secondsInTestingPeriod < granularity.getApproxSecondsPerChunk() * ratio) {
-            ArrayListEventStream instream = new ArrayListEventStream(
+            ArrayListEventStream inStream = new ArrayListEventStream(
                     incrementSeconds, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, year));
             for (int i = 0; i < ratio; i++) {
-                instream.add(new SimulationEvent(
-                        secondsInTestingPeriod, year, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<Double>((double)
+                inStream.add(new SimulationEvent(
+                        secondsInTestingPeriod, year, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<>((double)
                         secondsInTestingPeriod)));
                 secondsInTestingPeriod += incrementSeconds;
                 curEpochSeconds += incrementSeconds;
                 eventsgenerated++;
             }
             try (BasicContext context = new BasicContext()) {
-                etlSrc.appendData(context, pvName, instream);
+                etlSrc.appendData(context, pvName, inStream);
             }
             ETLExecutor.runETLs(configService, TimeUtils.convertFromEpochSeconds(curEpochSeconds, 0));
             logger.debug("Done performing ETL");
@@ -162,7 +162,7 @@ public class GradualAccumulationETLTest {
                     startOfYearInEpochSeconds,
                     incrementSeconds,
                     eventsgenerated,
-                    granularity + "/" + backUpfiles);
+                    granularity + "/" + backupFiles);
         }
 
         srcSetup.deleteTestFolder();
@@ -203,7 +203,7 @@ public class GradualAccumulationETLTest {
                 expectedEpochSeconds += incrementSeconds;
                 afterCount++;
             }
-            Assertions.assertTrue((afterCount != 0), testDesc + "Seems like no events were moved by ETL " + afterCount);
+            Assertions.assertTrue(afterCount != 0, testDesc + "Seems like no events were moved by ETL " + afterCount);
         }
 
         try (BasicContext context = new BasicContext();
@@ -222,9 +222,7 @@ public class GradualAccumulationETLTest {
             }
         }
 
-        Assertions.assertTrue(
-                (eventsgenerated == afterCount),
-                testDesc + "Expected total events " + eventsgenerated + " is not the same as actual events "
-                        + afterCount);
+        Assertions.assertEquals(eventsgenerated, afterCount, testDesc + "Expected total events " + eventsgenerated + " is not the same as actual events "
+                + afterCount);
     }
 }

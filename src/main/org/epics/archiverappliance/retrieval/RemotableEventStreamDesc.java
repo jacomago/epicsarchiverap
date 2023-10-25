@@ -113,22 +113,6 @@ public class RemotableEventStreamDesc extends EventStreamDesc {
         }
     }
 
-    public ArchDBRTypes getArchDBRType() {
-        return archDBRType;
-    }
-
-    public void setArchDBRType(ArchDBRTypes archDBRType) {
-        this.archDBRType = archDBRType;
-    }
-
-    public String getPvName() {
-        return pvName;
-    }
-
-    public void setPvName(String pvName) {
-        this.pvName = pvName;
-    }
-
     public short getYear() {
         return year;
     }

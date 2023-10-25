@@ -9,7 +9,6 @@ package edu.stanford.slac.archiverappliance.PB.data;
 
 import edu.stanford.slac.archiverappliance.plain.CompressionMode;
 import edu.stanford.slac.archiverappliance.plain.FileExtension;
-import edu.stanford.slac.archiverappliance.plain.FileInfo;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import edu.stanford.slac.archiverappliance.plain.utils.ValidatePBFile;
@@ -96,8 +95,6 @@ public class LargePBLineTest {
 
         for (Path destPath : allPaths) {
             try {
-                FileInfo info =FileInfo.extensionPath(fileExtension, destPath);
-                info.getLastEventEpochSeconds();
                 Assertions.assertTrue(
                         ValidatePBFile.validatePBFile(destPath, false, fileExtension),
                         "File validation failed for " + destPath.toAbsolutePath());

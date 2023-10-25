@@ -30,7 +30,7 @@ import java.util.NoSuchElementException;
  * @author mshankar
  *
  */
-public class FileBackedPBEventStreamTimeBasedIterator implements FileBackedPBEventStreamIterator {
+public class FileBackedPBEventStreamTimeBasedIterator implements EventStreamIterator {
     private static final Logger logger = LogManager.getLogger(FileBackedPBEventStreamTimeBasedIterator.class.getName());
     private final long startTimeEpochSeconds;
     private final long endTimeEpochSeconds;

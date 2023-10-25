@@ -4,15 +4,11 @@ import edu.stanford.slac.archiverappliance.plain.pb.PBCompressionMode;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 
 /**
- * Support for ZIP_PER_PV is still experimental.
- *
- * @author mshankar
+ * Class to wrap the parquet and pb compression options.
  */
 public class CompressionMode {
     public static final CompressionMode NONE =
             new CompressionMode(PBCompressionMode.NONE, CompressionCodecName.UNCOMPRESSED);
-    public static final CompressionMode ZIP_PER_PV =
-            new CompressionMode(PBCompressionMode.ZIP_PER_PV, CompressionCodecName.UNCOMPRESSED);
 
     private final CompressionCodecName parquetCompressionCodec;
     private final PBCompressionMode pbCompressionMode;
@@ -76,4 +72,5 @@ public class CompressionMode {
     public CompressionCodecName getParquetCompressionCodec() {
         return parquetCompressionCodec;
     }
+
 }

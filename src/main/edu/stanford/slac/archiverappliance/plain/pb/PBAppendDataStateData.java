@@ -37,7 +37,6 @@ import java.time.Instant;
  */
 public class PBAppendDataStateData extends AppendDataStateData {
     private static final Logger logger = LogManager.getLogger(PBAppendDataStateData.class.getName());
-    private final CompressionMode compressionMode;
     private OutputStream os = null;
 
     /**
@@ -56,8 +55,7 @@ public class PBAppendDataStateData extends AppendDataStateData {
             Instant lastKnownTimestamp,
             CompressionMode compressionMode,
             PVNameToKeyMapping pv2key) {
-        super(partitionGranularity, rootFolder, desc, lastKnownTimestamp, pv2key);
-        this.compressionMode = compressionMode;
+        super(partitionGranularity, rootFolder, desc, lastKnownTimestamp, pv2key, compressionMode);
     }
 
     /**
@@ -153,7 +151,7 @@ public class PBAppendDataStateData extends AppendDataStateData {
         }
         this.os = new BufferedOutputStream(
                 Files.newOutputStream(pvPath, StandardOpenOption.CREATE, StandardOpenOption.APPEND));
-        this.previousFileName = pvPath.getFileName().toString();
+        this.previousFilePath = pvPath;
     }
 
     /**
@@ -184,7 +182,23 @@ public class PBAppendDataStateData extends AppendDataStateData {
                 .toByteArray());
         this.os.write(headerBytes);
         this.os.write(LineEscaper.NEWLINE_CHAR);
-        this.previousFileName = pvPath.getFileName().toString();
+        this.previousFilePath = pvPath;
+    }
+
+    @Override
+    public String toString() {
+        return "PBAppendDataStateData{" +
+                "os=" + os +
+                ", rootFolder='" + rootFolder + '\'' +
+                ", desc='" + desc + '\'' +
+                ", partitionGranularity=" + partitionGranularity +
+                ", pv2key=" + pv2key +
+                ", compressionMode=" + compressionMode +
+                ", previousFilePath=" + previousFilePath +
+                ", currentEventsYear=" + currentEventsYear +
+                ", previousYear=" + previousYear +
+                ", lastKnownTimeStamp=" + lastKnownTimeStamp +
+                '}';
     }
 
     /**
@@ -201,15 +215,10 @@ public class PBAppendDataStateData extends AppendDataStateData {
     public boolean bulkAppend(
             String pvName, ETLContext context, ETLBulkStream bulkStream, String extension, String extensionToCopyFrom)
             throws IOException {
-        Event firstEvent = bulkStream.getFirstEvent(context);
-        if (this.shouldISkipEventBasedOnTimeStamps(firstEvent)) {
-            logger.error(
-                    "The bulk append functionality works only if we the first event fits cleanly in the current stream for pv "
-                            + pvName + " for stream "
-                            + bulkStream.getDescription().getSource());
-            return false;
-        }
+        Event firstEvent = checkStream(pvName, context, bulkStream, ETLPBByteStream.class);
+        if (firstEvent == null) return false;
 
+        ETLPBByteStream byteStream = (ETLPBByteStream) bulkStream;
         Path pvPath = null;
         if (this.os == null) {
             pvPath = preparePartition(
@@ -228,7 +237,7 @@ public class PBAppendDataStateData extends AppendDataStateData {
         // The preparePartition should have created the needed file; so we only append
         assert pvPath != null;
         try (ByteChannel destChannel = Files.newByteChannel(pvPath, StandardOpenOption.APPEND);
-                ReadableByteChannel srcChannel = bulkStream.getByteChannel(context)) {
+             ReadableByteChannel srcChannel = byteStream.getByteChannel(context)) {
             logger.debug("ETL bulk appends for pv " + pvName);
             ByteBuffer buf = ByteBuffer.allocate(1024 * 1024);
             int bytesRead = srcChannel.read(buf);

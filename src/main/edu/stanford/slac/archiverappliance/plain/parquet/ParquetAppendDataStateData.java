@@ -1,15 +1,14 @@
 package edu.stanford.slac.archiverappliance.plain.parquet;
 
-import com.google.protobuf.Message;
 import edu.stanford.slac.archiverappliance.PB.data.DBR2PBMessageTypeMapping;
 import edu.stanford.slac.archiverappliance.plain.AppendDataStateData;
 import edu.stanford.slac.archiverappliance.plain.CompressionMode;
-import edu.stanford.slac.archiverappliance.plain.FileInfo;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.apache.parquet.hadoop.metadata.CompressionCodecName;
-import org.apache.parquet.proto.ProtoParquetReader;
+import org.apache.parquet.hadoop.rewrite.ParquetRewriter;
+import org.apache.parquet.hadoop.rewrite.RewriteOptions;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.BasicContext;
@@ -18,20 +17,26 @@ import org.epics.archiverappliance.config.PVNameToKeyMapping;
 import org.epics.archiverappliance.etl.ETLBulkStream;
 import org.epics.archiverappliance.etl.ETLContext;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
+/**
+ * ParquetAppendDataStateData extends AppendDataStateData to support writing data to Parquet files.
+ */
 public class ParquetAppendDataStateData extends AppendDataStateData {
     private static final Logger logger = LogManager.getLogger(ParquetAppendDataStateData.class.getName());
-
-    private final CompressionCodecName compressionCodecName;
-
-    ParquetWriter writer;
+    private static final String TEMP_FILE_PREFIX = "~";
+    EpicsParquetWriter.Builder<Object> writerBuilder;
+    private Path tempFile;
+    private ParquetWriter<Object> writer;
 
     /**
+     * ParquetAppendDataStateData extends AppendDataStateData to support writing data to Parquet files.
      * @param partitionGranularity partitionGranularity of the PB plugin.
      * @param rootFolder RootFolder of the PB plugin
      * @param desc Desc for logging purposes
@@ -48,49 +53,68 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
             Instant lastKnownTimestamp,
             CompressionMode compressionMode,
             PVNameToKeyMapping pv2key) {
-        super(partitionGranularity, rootFolder, desc, lastKnownTimestamp, pv2key);
-        this.compressionCodecName = compressionMode.getParquetCompressionCodec();
+        super(partitionGranularity, rootFolder, desc, lastKnownTimestamp, pv2key, compressionMode);
     }
 
-    public static ParquetWriter copyKeepingOpen(Path currentPVPath, FileInfo info) throws IOException {
-        logger.debug("parquet copyKeepingOpen  pvPath {} fileInfo {} ", currentPVPath, info);
+    /**
+     * Find the path to the checksum file for the given file.
+     *
+     * @param currentPVPath The path to the file.
+     * @return The path to the checksum file.
+     */
+    private static Path getCheckSumPath(Path currentPVPath) {
+        return Path.of(String.valueOf(currentPVPath.getParent()), "." + currentPVPath.getFileName() + ".crc");
+    }
 
-        // move file
-        File newTempFile = new File(currentPVPath.getParent().toString(), currentPVPath.getFileName() + "parquetTemp");
-        Path checkSumPath = Path.of(String.valueOf(currentPVPath.getParent()), "." + currentPVPath.getFileName() + ".crc");
-        if (Files.exists(checkSumPath)) {
-            Files.delete(checkSumPath);
+    private static void combineFiles(List<Path> inPaths, Path outPath, CompressionMode compressionMode)
+            throws IOException {
+        Path outTempPath = getOutTempPath(outPath);
+        if (inPaths.contains(outTempPath)) {
+            outTempPath = getOutTempPath(outTempPath);
         }
-
-        var fileMoved = currentPVPath.toFile().renameTo(newTempFile);
-        if (!fileMoved) {
-            throw new IOException("Could not make temporary file at" + newTempFile.getAbsolutePath());
-        }
-
-        var currentHadoopPath =
-                new org.apache.hadoop.fs.Path(newTempFile.toPath().toUri());
-        var newHadoopPath = new org.apache.hadoop.fs.Path(currentPVPath.toUri());
-        var messageClass = DBR2PBMessageTypeMapping.getMessageClass(info.getType());
-        EpicsParquetWriter.Builder<Object> builder = EpicsParquetWriter.builder(newHadoopPath)
-                .withMessage(messageClass)
-                .withPVName(info.getPVName())
-                .withYear(info.getDataYear())
-                .withType(info.getType());
-        var writer = builder.build();
-        try (var reader = ProtoParquetReader.builder(currentHadoopPath).build()) {
-
-            while (true) {
-                Message.Builder message = (Message.Builder) reader.read();
-                if (message == null) {
-                    break;
+        List<org.apache.hadoop.fs.Path> rewriteInPaths = new ArrayList<>();
+        if (Files.exists(outPath)) {
+            if (new ParquetInfo(outPath).getFirstEvent() == null) {
+                // if the file is effectively empty, delete it
+                Files.delete(outPath);
+                Path outCheckSumPath = getCheckSumPath(outPath);
+                Files.delete(outCheckSumPath);
+                // if this is the only file, just copy it over
+                if (inPaths.size() == 1) {
+                    Files.copy(inPaths.get(0), outPath);
+                    Files.copy(getCheckSumPath(inPaths.get(0)), outCheckSumPath);
+                    return;
                 }
-                writer.write(message.build());
+            } else {
+                rewriteInPaths.add(new org.apache.hadoop.fs.Path(outPath.toUri()));
             }
         }
-        assert newTempFile.delete();
+        rewriteInPaths.addAll(inPaths.stream()
+                .map(p -> new org.apache.hadoop.fs.Path(p.toUri()))
+                .toList());
+        Configuration conf = new Configuration();
+        RewriteOptions rewriteOptions = new RewriteOptions.Builder(
+                conf, rewriteInPaths, new org.apache.hadoop.fs.Path(outTempPath.toUri()))
+                // .transform(compressionMode.getParquetCompressionCodec()) // TODO only change compression if codecs
+                // don't match
+                .build();
+        try {
+            ParquetRewriter rewriter = new ParquetRewriter(rewriteOptions);
+            rewriter.processBlocks();
+            rewriter.close();
+        } catch (Exception e) {
+            logger.error("Failed to combine files {}", rewriteInPaths, e);
+            throw e;
+        }
+        // Replace the old file with the new file
+        Files.move(outTempPath, outPath, StandardCopyOption.REPLACE_EXISTING);
+        Files.move(getCheckSumPath(outTempPath), getCheckSumPath(outPath), StandardCopyOption.REPLACE_EXISTING);
+    }
 
-        // move and delete old file
-        return writer;
+    private static Path getOutTempPath(Path outPath) {
+        return Path.of(
+                outPath.toAbsolutePath().getParent().toString(),
+                TEMP_FILE_PREFIX + outPath.getFileName().toString());
     }
 
     /**
@@ -100,9 +124,9 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
      * @throws IOException &emsp;
      */
     public void updateStateBasedOnExistingFile(String pvName, Path currentPVFilePath) throws IOException {
-        logger.trace("parquet updateStateBasedOnExistingFile  pv {} pvPath {} ", pvName, currentPVFilePath);
+        logger.debug("parquet updateStateBasedOnExistingFile  pv {} pvPath {} ", pvName, currentPVFilePath);
 
-        FileInfo info = new ParquetInfo(currentPVFilePath);
+        ParquetInfo info = new ParquetInfo(currentPVFilePath);
         if (!info.getPVName().equals(pvName))
             throw new IOException("Trying to append data for " + pvName + " to a file " + currentPVFilePath
                     + " that has data for " + info.getPVName());
@@ -114,8 +138,8 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
                     + currentPVFilePath);
         }
 
-        this.writer = copyKeepingOpen(currentPVFilePath, info);
-        this.previousFileName = currentPVFilePath.getFileName().toString();
+        this.writerBuilder = buildWriterExistingFile(currentPVFilePath, info);
+        this.previousFilePath = currentPVFilePath;
     }
 
     /**
@@ -144,14 +168,13 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
         var messageClass =
                 DBR2PBMessageTypeMapping.getMessageClass(stream.getDescription().getArchDBRType());
         assert messageClass != null;
-        this.writer = EpicsParquetWriter.builder(hadoopPath)
+        this.writerBuilder = EpicsParquetWriter.builder(hadoopPath)
                 .withMessage(messageClass)
                 .withPVName(pvName)
                 .withYear(this.currentEventsYear)
                 .withType(stream.getDescription().getArchDBRType())
-                .withCompressionCodec(this.compressionCodecName)
-                .build();
-        this.previousFileName = pvPath.getFileName().toString();
+                .withCompressionCodec(this.compressionMode.getParquetCompressionCodec());
+        this.previousFilePath = pvPath;
     }
     /**
      *
@@ -160,8 +183,6 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
      * @param stream  &emsp;
      * @param extension   &emsp;
      * @param extensionToCopyFrom &emsp;
-     * @return
-     * @throws IOException
      */
     @Override
     public int partitionBoundaryAwareAppendData(
@@ -174,19 +195,11 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
                 Instant ts = event.getEventTimeStamp();
                 if (shouldISkipEventBasedOnTimeStamps(event)) continue;
 
-                Path pvPath = null;
-                shouldISwitchPartitions(context, pvName, extension, ts, CompressionMode.NONE);
+                shouldISwitchPartitions(context, pvName, extension, ts, this.compressionMode);
 
-                if (this.writer == null) {
+                if (this.writerBuilder == null) {
                     preparePartition(
-                            pvName,
-                            stream,
-                            context,
-                            extension,
-                            extensionToCopyFrom,
-                            ts,
-                            pvPath,
-                            CompressionMode.NONE);
+                            pvName, stream, context, extension, extensionToCopyFrom, ts, null, this.compressionMode);
                 }
 
                 // We check for monotonicity in timestamps again as we had some fresh data from an existing file.
@@ -195,6 +208,9 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
                 if (event.getMessage() == null) {
                     logger.error("event {} is null", event);
                     throw new IOException();
+                }
+                if (this.writer == null) {
+                    this.writer = this.writerBuilder.build();
                 }
                 writer.write(event.getMessage());
 
@@ -211,6 +227,22 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
         }
     }
 
+    public EpicsParquetWriter.Builder<Object> buildWriterExistingFile(Path currentPVPath, ParquetInfo info)
+            throws IOException {
+        logger.debug("parquet buildWriterExistingFile  pvPath {} fileInfo {} ", currentPVPath, info);
+        var tempCurrentPVPath = Path.of(
+                currentPVPath.toAbsolutePath().getParent().toString(), TEMP_FILE_PREFIX + currentPVPath.getFileName());
+        this.tempFile = tempCurrentPVPath;
+        var newHadoopPath = new org.apache.hadoop.fs.Path(tempCurrentPVPath.toUri());
+        var messageClass = DBR2PBMessageTypeMapping.getMessageClass(info.getType());
+
+        return EpicsParquetWriter.builder(newHadoopPath)
+                .withMessage(messageClass)
+                .withPVName(info.getPVName())
+                .withYear(info.getDataYear())
+                .withType(info.getType());
+    }
+
     /**
      *
      * @param pvName The PV name
@@ -218,26 +250,17 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
      * @param bulkStream The ETL bulk stream
      * @param extension  &emsp;
      * @param extensionToCopyFrom &emsp;
-     * @return
-     * @throws IOException
      */
     @Override
     public boolean bulkAppend(
             String pvName, ETLContext context, ETLBulkStream bulkStream, String extension, String extensionToCopyFrom)
             throws IOException {
-        logger.info(
-                "parquet bulkAppend pv {} extension {} extensiontocopyfrom {}", pvName, extension, extensionToCopyFrom);
-        Event firstEvent = bulkStream.getFirstEvent(context);
-        if (this.shouldISkipEventBasedOnTimeStamps(firstEvent)) {
-            logger.error(
-                    "The bulk append functionality works only if we the first event fits cleanly in the current stream for pv "
-                            + pvName + " for stream "
-                            + bulkStream.getDescription().getSource());
-            return false;
-        }
+        Event firstEvent = checkStream(pvName, context, bulkStream, ETLParquetFilesStream.class);
+        if (firstEvent == null) return false;
+        ETLParquetFilesStream etlParquetFilesStream = (ETLParquetFilesStream) bulkStream;
 
         Path pvPath = null;
-        if (this.writer == null) {
+        if (this.writerBuilder == null) {
             pvPath = preparePartition(
                     pvName,
                     bulkStream,
@@ -245,41 +268,78 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
                     extension,
                     extensionToCopyFrom,
                     firstEvent.getEventTimeStamp(),
-                    pvPath,
-                    CompressionMode.NONE);
+                    null,
+                    this.compressionMode);
         }
 
         // The preparePartition should have created the needed file; so we only append
         assert pvPath != null;
-        for (Event event : bulkStream) {
-            if (event.getMessage() == null) {
-                logger.error("event {} is null", event);
-                throw new IOException();
-            }
-            writer.write(event.getMessage());
-
-            this.previousYear = this.currentEventsYear;
-            this.lastKnownTimeStamp = event.getEventTimeStamp();
-        }
 
         this.closeStreams();
+        combineFiles(etlParquetFilesStream.getPaths(), pvPath, this.compressionMode);
 
+        try {
+            // Update the last known timestamp and the like...
+            updateStateBasedOnExistingFile(pvName, pvPath);
+        } finally {
+            this.closeStreams();
+        }
         return true;
     }
 
-    /**
-     *
-     */
+    private void combineWithTempFiles() throws IOException {
+        combineWithTempFiles(this.previousFilePath);
+    }
+
     @Override
-    public void closeStreams() {
+    public void closeStreams() throws IOException {
+        logger.debug("close stream with last time stamp {}", this.lastKnownTimeStamp);
+
+        if (this.writerBuilder != null && this.writer == null) {
+            this.tempFile = null;
+        }
+        this.writerBuilder = null;
+
         if (this.writer != null) {
             try {
-                logger.debug("close stream with last time stamp {}", this.lastKnownTimeStamp);
                 this.writer.close();
+                this.writer = null;
             } catch (IOException ignored) {
 
             }
         }
-        this.writer = null;
+        combineWithTempFiles();
+        this.writerBuilder = null;
+    }
+
+    @Override
+    public String toString() {
+        return "ParquetAppendDataStateData{" + "tempFile="
+                + tempFile + ", writerBuilder="
+                + writerBuilder + ", writer="
+                + writer + ", rootFolder='"
+                + rootFolder + '\'' + ", desc='"
+                + desc + '\'' + ", partitionGranularity="
+                + partitionGranularity + ", pv2key="
+                + pv2key + ", compressionMode="
+                + compressionMode + ", previousFilePath="
+                + previousFilePath + ", currentEventsYear="
+                + currentEventsYear + ", previousYear="
+                + previousYear + ", lastKnownTimeStamp="
+                + lastKnownTimeStamp + '}';
+    }
+
+    private void combineWithTempFiles(Path currentPVPath) throws IOException {
+        if (tempFile != null) {
+            logger.debug("parquet combineWithTempFiles  currentPVPath sizes {} tempFiles {} ", currentPVPath, tempFile);
+
+            combineFiles(List.of(tempFile), currentPVPath, this.compressionMode);
+            // Delete tempFile
+            if (Files.exists(tempFile)) {
+                Files.delete(tempFile);
+                Files.delete(getCheckSumPath(tempFile));
+            }
+            tempFile = null;
+        }
     }
 }

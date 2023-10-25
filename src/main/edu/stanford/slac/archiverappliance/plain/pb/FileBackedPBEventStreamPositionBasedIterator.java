@@ -26,7 +26,7 @@ import java.nio.file.Path;
  * @author mshankar
  *
  */
-public class FileBackedPBEventStreamPositionBasedIterator implements FileBackedPBEventStreamIterator {
+public class FileBackedPBEventStreamPositionBasedIterator implements EventStreamIterator {
 	private static final Logger logger = LogManager.getLogger(FileBackedPBEventStreamPositionBasedIterator.class.getName());
 	private short year = 0;
 	private LineByteStream lbs = null;

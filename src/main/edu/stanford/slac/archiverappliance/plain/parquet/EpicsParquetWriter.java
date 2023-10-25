@@ -11,7 +11,23 @@ import org.epics.archiverappliance.config.ArchDBRTypes;
 
 import java.io.IOException;
 
+/**
+ * A Parquet writer for EPICS Archiver Appliance data.
+ *
+ * @param <T> The type of EPICSMessage to write.
+ * @author Sky Brewer
+ */
 public class EpicsParquetWriter<T extends Message> extends ParquetWriter<T> {
+    /**
+     * The builder for {@link EpicsParquetWriter}.
+     *
+     * @param file                 The file to write to.
+     * @param writeSupport         The write support to use.
+     * @param compressionCodecName The compression codec to use.
+     * @param blockSize            The block size to use.
+     * @param pageSize             The page size to use.
+     * @throws IOException If there is an error accessing the file.
+     */
     public EpicsParquetWriter(
             Path file,
             WriteSupport<T> writeSupport,
@@ -22,6 +38,14 @@ public class EpicsParquetWriter<T extends Message> extends ParquetWriter<T> {
         super(file, writeSupport, compressionCodecName, blockSize, pageSize);
     }
 
+    /**
+     * The builder for {@link EpicsParquetWriter}.
+     *
+     *
+     * @param file The file to write to.
+     * @return The builder.
+     * @param <T> The type of EPICSMessage to write.
+     */
     public static <T> EpicsParquetWriter.Builder<T> builder(Path file) {
         return new EpicsParquetWriter.Builder<T>(file);
     }

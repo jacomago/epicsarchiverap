@@ -35,7 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * Test the ETL source funtionality of PlainStoragePlugin
+ * Test the ETL source functionality of PlainStoragePlugin
  * @author mshankar
  *
  */
@@ -55,15 +55,6 @@ public class ETLSourceGetStreamsTest {
 	public void tearDown() throws Exception {
 		FileUtils.deleteDirectory(testFolder);
 	}
-	
-	class DataForGetETLStreamsTest {
-		long sampleRange;
-		int skipSeconds;
-		public DataForGetETLStreamsTest(long sampleRange, int skipSeconds) {
-			this.sampleRange = sampleRange;
-			this.skipSeconds = skipSeconds;
-		}
-	}
 
 	@Test
 	public void getETLStreams() throws Exception {
@@ -74,15 +65,15 @@ public class ETLSourceGetStreamsTest {
                 .withSecond(0);
 
 		HashMap<PartitionGranularity, DataForGetETLStreamsTest> testParams = new HashMap<PartitionGranularity, DataForGetETLStreamsTest>();
-		testParams.put(PartitionGranularity.PARTITION_5MIN, new DataForGetETLStreamsTest(3600*24, 600)); // One day; sample every 10 mins
-		testParams.put(PartitionGranularity.PARTITION_15MIN, new DataForGetETLStreamsTest(3600*24, 600)); // One day; sample every 10 mins
-		testParams.put(PartitionGranularity.PARTITION_30MIN, new DataForGetETLStreamsTest(3600*24, 600)); // One day; sample every 10 mins
-		testParams.put(PartitionGranularity.PARTITION_HOUR, new DataForGetETLStreamsTest(3600*24, 600)); // One day; sample every 10 mins
-		testParams.put(PartitionGranularity.PARTITION_DAY, new DataForGetETLStreamsTest(3600*24*7, 1800)); // One week; sample every 30 mins
-		testParams.put(PartitionGranularity.PARTITION_MONTH, new DataForGetETLStreamsTest(3600*24*7*365, 3600*12)); // One year; sample every 1/2 day
+        testParams.put(PartitionGranularity.PARTITION_5MIN, new DataForGetETLStreamsTest(3600 * 24, 600)); // One day; sample every 10 mins
+        testParams.put(PartitionGranularity.PARTITION_15MIN, new DataForGetETLStreamsTest(3600 * 24, 600)); // One day; sample every 10 mins
+        testParams.put(PartitionGranularity.PARTITION_30MIN, new DataForGetETLStreamsTest(3600 * 24, 600)); // One day; sample every 10 mins
+        testParams.put(PartitionGranularity.PARTITION_HOUR, new DataForGetETLStreamsTest(3600 * 24, 600)); // One day; sample every 10 mins
+        testParams.put(PartitionGranularity.PARTITION_DAY, new DataForGetETLStreamsTest(3600 * 24 * 7, 1800)); // One week; sample every 30 mins
+        testParams.put(PartitionGranularity.PARTITION_MONTH, new DataForGetETLStreamsTest(3600 * 24 * 7 * 365, 3600 * 12)); // One year; sample every 1/2 day
 		testParams.put(PartitionGranularity.PARTITION_YEAR, new DataForGetETLStreamsTest(3600L * 24 * 7 * 365 * 10, 3600 * 24 * 7)); // 10 years; sample every week
-		
-		
+
+
 		for(PartitionGranularity partitionGranularity : PartitionGranularity.values()) {
 			ETLContext etlContext = new ETLContext();
 			DataForGetETLStreamsTest testParam = testParams.get(partitionGranularity);
@@ -104,7 +95,7 @@ public class ETLSourceGetStreamsTest {
 			}
 			// This should have generated many files; one for each partition.
 			// So we now check the number of files we get as we cruise thru the whole day.
-			
+
 			int expectedFiles = 0;
 			Instant firstSecondOfNextPartition = TimeUtils.getNextPartitionFirstSecond(startOfToday.toInstant(), partitionGranularity);
 			for(long i = 0; i < sampleRange; i+=skipSeconds) {
@@ -119,6 +110,15 @@ public class ETLSourceGetStreamsTest {
 				+ " for partition " + partitionGranularity
 				+ " Expected " + expectedFiles + " got " + (ETLFiles != null ? Integer.toString(ETLFiles.size()) : "null"));
 			}
+		}
+	}
+
+    static class DataForGetETLStreamsTest {
+		long sampleRange;
+		int skipSeconds;
+		public DataForGetETLStreamsTest(long sampleRange, int skipSeconds) {
+			this.sampleRange = sampleRange;
+			this.skipSeconds = skipSeconds;
 		}
 	}
 }

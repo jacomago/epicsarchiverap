@@ -57,7 +57,7 @@ public class ETLExecutor {
     public static void runPvETLsBeforeOneStorage(final ConfigService configService, final Instant timeETLruns, final String pvName, final String storageName) throws IOException {
 		PBThreeTierETLPVLookup etlLookup = configService.getETLLookup();
 		LinkedList<ETLPVLookupItems> lookupItems = etlLookup.getLookupItemsForPV(pvName);
-		if(lookupItems != null && !lookupItems.isEmpty()) { 
+		if (!lookupItems.isEmpty()) {
 			throw new IOException("The pv " + pvName + " has entries in PBThreeTierETLPVLookup. Please remove these first");
 		}
 		PVTypeInfo pvTypeInfo = configService.getTypeInfoForPV(pvName);

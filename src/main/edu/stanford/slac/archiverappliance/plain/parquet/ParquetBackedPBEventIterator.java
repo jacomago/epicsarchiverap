@@ -1,7 +1,7 @@
 package edu.stanford.slac.archiverappliance.plain.parquet;
 
 import com.google.protobuf.MessageOrBuilder;
-import edu.stanford.slac.archiverappliance.plain.pb.FileBackedPBEventStreamIterator;
+import edu.stanford.slac.archiverappliance.plain.pb.EventStreamIterator;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.data.DBRTimeEvent;
@@ -10,7 +10,10 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.NoSuchElementException;
 
-public class ParquetBackedPBEventIterator implements FileBackedPBEventStreamIterator {
+/**
+ * An implementation of {@link EventStreamIterator} that reads from a Parquet reader.
+ */
+public class ParquetBackedPBEventIterator implements EventStreamIterator {
 
     ParquetBackedPBEventIterator(
             ParquetReader<Object> reader, Constructor<? extends DBRTimeEvent> unmarshallingConstructor, short year) {
@@ -28,9 +31,10 @@ public class ParquetBackedPBEventIterator implements FileBackedPBEventStreamIter
     private final short year;
     /** A flag indicating if the iterator has been fully read. */
     private boolean finished = false;
+
     /**
-     *
-     * @return
+     * Caches the next event, and returns if it exists.
+     * @return true if there is a next event, false otherwise.
      */
     @Override
     public boolean hasNext() {
@@ -74,8 +78,8 @@ public class ParquetBackedPBEventIterator implements FileBackedPBEventStreamIter
     }
 
     /**
-     *
-     * @return
+     * Returns the next event in the wrapped <code>Reader</code>.
+     * @return the next event.
      */
     @Override
     public Event next() {

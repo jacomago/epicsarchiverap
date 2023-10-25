@@ -1,11 +1,7 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.plain.CompressionMode;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
-import edu.stanford.slac.archiverappliance.plain.FileInfo;
-import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
-import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BasicContext;
@@ -29,6 +25,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.stream.Stream;
 
 /**
@@ -140,10 +137,10 @@ public class TimezoneAheadTest {
                         fileExtension.getExtensionString(),
                         CompressionMode.NONE,
                         configService.getPVNameToKeyConverter());
-                long srcBeforeEpochSeconds = -1;
+                Instant srcBeforeEpochSeconds = Instant.EPOCH;
 
                 if (srcPathsBefore.length > 0) {
-                    srcBeforeEpochSeconds = FileInfo.extensionPath(fileExtension, srcPathsBefore[0]).getFirstEventEpochSeconds();
+                    srcBeforeEpochSeconds = FileInfo.extensionPath(fileExtension, srcPathsBefore[0]).getFirstEventInstant();
                 }
 
                 ETLExecutor.runETLs(configService, TimeUtils.convertFromEpochSeconds(eventSeconds, 0));
@@ -167,17 +164,17 @@ public class TimezoneAheadTest {
                         + " Before " + srcPathsBefore.length + "/" + destPathsBefore.length
                         + " After " + srcPathsAfter.length + "/" + destPathsAfter.length);
 
-                long srcAfterEpochSeconds = -1;
+                Instant srcAfterEpochSeconds = Instant.EPOCH;
 
                 if (srcPathsAfter.length > 0) {
-                    srcAfterEpochSeconds = FileInfo.extensionPath(fileExtension, srcPathsAfter[0]).getFirstEventEpochSeconds();
+                    srcAfterEpochSeconds = FileInfo.extensionPath(fileExtension, srcPathsAfter[0]).getFirstEventInstant();
                 }
 
-                if (srcAfterEpochSeconds > 0 && srcBeforeEpochSeconds > 0) {
-                    Assertions.assertTrue(srcAfterEpochSeconds > srcBeforeEpochSeconds, "The first event in the source after ETL "
-                            + TimeUtils.convertToHumanReadableString(srcAfterEpochSeconds)
+                if (srcAfterEpochSeconds.isAfter(Instant.EPOCH) && srcBeforeEpochSeconds.isAfter(Instant.EPOCH)) {
+                    Assertions.assertTrue(srcAfterEpochSeconds.isAfter(srcBeforeEpochSeconds), "The first event in the source after ETL "
+                            + srcAfterEpochSeconds
                             + " should be greater then the first event in the source before ETL"
-                            + TimeUtils.convertToHumanReadableString(srcBeforeEpochSeconds));
+                            + srcBeforeEpochSeconds);
                 } else {
                     logger.warn("ETL did not move data at " + TimeUtils.convertToHumanReadableString(eventSeconds));
                 }

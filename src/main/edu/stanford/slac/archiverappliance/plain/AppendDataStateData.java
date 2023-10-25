@@ -24,7 +24,8 @@ public abstract class AppendDataStateData {
     protected final String desc;
     protected final PartitionGranularity partitionGranularity;
     protected final PVNameToKeyMapping pv2key;
-    protected String previousFileName = null;
+    protected final CompressionMode compressionMode;
+    protected Path previousFilePath = null;
     protected short currentEventsYear = -1;
     // These two pieces of information (previousYear and previousEpochSeconds) are from the store using the last known
     // sample when we appending to an existing stream.
@@ -46,11 +47,13 @@ public abstract class AppendDataStateData {
             String rootFolder,
             String desc,
             Instant lastKnownTimestamp,
-            PVNameToKeyMapping pv2key) {
+            PVNameToKeyMapping pv2key,
+            CompressionMode compressionMode) {
         this.partitionGranularity = partitionGranularity;
         this.rootFolder = rootFolder;
         this.desc = desc;
         this.pv2key = pv2key;
+        this.compressionMode = compressionMode;
         if (lastKnownTimestamp != null) {
             this.lastKnownTimeStamp = lastKnownTimestamp;
             this.previousYear = TimeUtils.getYear(lastKnownTimestamp);
@@ -91,6 +94,25 @@ public abstract class AppendDataStateData {
             BasicContext context, String pvName, EventStream stream, String extension, String extensionToCopyFrom)
             throws IOException;
 
+    protected Event checkStream(String pvName, ETLContext context, ETLBulkStream bulkStream, Class<? extends ETLBulkStream> streamType) throws IOException {
+        if (!(streamType.isInstance(bulkStream))) {
+            logger.info(
+                    "Can't use bulk stream between different file formats "
+                            + pvName + " for stream "
+                            + bulkStream.getDescription().getSource());
+            return null;
+        }
+
+        Event firstEvent = bulkStream.getFirstEvent(context);
+        if (this.shouldISkipEventBasedOnTimeStamps(firstEvent)) {
+            logger.error(
+                    "The bulk append functionality works only if we the first event fits cleanly in the current stream for pv "
+                            + pvName + " for stream "
+                            + bulkStream.getDescription().getSource());
+            return null;
+        }
+        return firstEvent;
+    }
     /**
      * Append data in bulk skipping some of the per event checks.
      * @param pvName The PV name
@@ -136,9 +158,9 @@ public abstract class AppendDataStateData {
             this.nextPartitionFirstSecond =
                     TimeUtils.getNextPartitionFirstSecond(ts, this.partitionGranularity);
             if (logger.isDebugEnabled()) {
-                if (this.previousFileName != null) {
+                if (this.previousFilePath != null) {
                     logger.debug(desc + ": Encountering a change in partitions in the event stream. "
-                            + "Closing out " + this.previousFileName
+                            + "Closing out " + this.previousFilePath
                             + " to make way for " + nextPath
                             + " Next partition is to be switched at "
                             + TimeUtils.convertToISO8601String(this.nextPartitionFirstSecond));
@@ -216,8 +238,9 @@ public abstract class AppendDataStateData {
             Path pvPath,
             CompressionMode compressionMode)
             throws IOException {
+        Path preparePath;
         if (pvPath == null) {
-            pvPath = PathNameUtility.getFileName(
+            preparePath = PathNameUtility.getFileName(
                     this.rootFolder,
                     pvName,
                     ts,
@@ -227,9 +250,11 @@ public abstract class AppendDataStateData {
                     context.getPaths(),
                     compressionMode,
                     this.pv2key);
+        } else {
+            preparePath = pvPath;
         }
 
-        if (!Files.exists(pvPath)) {
+        if (!Files.exists(preparePath)) {
             if (extensionToCopyFrom != null && !extensionToCopyFrom.contentEquals("")) {
                 // If the file has not been created yet and if we have an extension to copy from
                 // We check for the file with the extensionToCopyFrom
@@ -238,41 +263,41 @@ public abstract class AppendDataStateData {
                 // We make a copy of the original file if it exists, append to the copy and then do an atomic move.
                 // Should we should use path's resolve here?
                 Path pathToCopyFrom = context.getPaths()
-                        .get(pvPath.toAbsolutePath().toString().replace(extension, extensionToCopyFrom));
+                        .get(preparePath.toAbsolutePath().toString().replace(extension, extensionToCopyFrom));
                 if (Files.exists(pathToCopyFrom)) {
                     logger.debug("Making a backup from "
                             + pathToCopyFrom.toAbsolutePath() + " to file "
-                            + pvPath.toAbsolutePath() + " when appending data for pv " + pvName);
-                    Files.copy(pathToCopyFrom, pvPath);
+                            + preparePath.toAbsolutePath() + " when appending data for pv " + pvName);
+                    Files.copy(pathToCopyFrom, preparePath);
                     // We still have to create an os so that the logic can continue.
-                    updateStateBasedOnExistingFile(pvName, pvPath);
+                    updateStateBasedOnExistingFile(pvName, preparePath);
 
                 } else {
                     logger.debug("File to copy from "
                             + pathToCopyFrom.toAbsolutePath() + " does not exist when appending data for pv "
                             + pvName);
-                    createNewFileAndWriteAHeader(pvName, pvPath, stream);
+                    createNewFileAndWriteAHeader(pvName, preparePath, stream);
                 }
             } else {
-                logger.debug("File to copy from is not specified and the file " + pvPath.toAbsolutePath()
+                logger.debug("File to copy from is not specified and the file " + preparePath.toAbsolutePath()
                         + " does not exist when appending data for pv " + pvName);
-                createNewFileAndWriteAHeader(pvName, pvPath, stream);
+                createNewFileAndWriteAHeader(pvName, preparePath, stream);
             }
         } else {
-            if (Files.size(pvPath) <= 0) {
-                logger.debug("The dest file " + pvPath.toAbsolutePath()
+            if (Files.size(preparePath) <= 0) {
+                logger.debug("The dest file " + preparePath.toAbsolutePath()
                         + " exists but is 0 bytes long. Writing the header for pv " + pvName);
-                createNewFileAndWriteAHeader(pvName, pvPath, stream);
+                createNewFileAndWriteAHeader(pvName, preparePath, stream);
             } else {
                 if (logger.isDebugEnabled()) {
                     logger.debug(this.desc + ": Appending to existing PB file "
-                            + pvPath.toAbsolutePath() + " for PV " + pvName + " for year "
+                            + preparePath.toAbsolutePath() + " for PV " + pvName + " for year "
                             + this.currentEventsYear);
                 }
-                updateStateBasedOnExistingFile(pvName, pvPath);
+                updateStateBasedOnExistingFile(pvName, preparePath);
             }
         }
-        return pvPath;
+        return preparePath;
     }
 
     protected abstract void createNewFileAndWriteAHeader(String pvName, Path pvPath, EventStream stream)
@@ -280,5 +305,5 @@ public abstract class AppendDataStateData {
 
     protected abstract void updateStateBasedOnExistingFile(String pvName, Path pvPath) throws IOException;
 
-    public abstract void closeStreams();
+    public abstract void closeStreams() throws IOException;
 }

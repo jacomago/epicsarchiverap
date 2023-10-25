@@ -2,7 +2,6 @@ package edu.stanford.slac.archiverappliance.plain.parquet;
 
 import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
 import edu.stanford.slac.archiverappliance.PB.data.PartionedTime;
-import edu.stanford.slac.archiverappliance.plain.FileInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.parquet.filter2.compat.FilterCompat;
@@ -11,6 +10,7 @@ import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.proto.ProtoParquetReader;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
+import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.EmptyEventIterator;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.YearSecondTimestamp;
@@ -21,40 +21,41 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Iterator;
+import java.util.List;
 
-import static org.apache.parquet.filter2.predicate.FilterApi.and;
-import static org.apache.parquet.filter2.predicate.FilterApi.eq;
-import static org.apache.parquet.filter2.predicate.FilterApi.gtEq;
-import static org.apache.parquet.filter2.predicate.FilterApi.intColumn;
-import static org.apache.parquet.filter2.predicate.FilterApi.lt;
-import static org.apache.parquet.filter2.predicate.FilterApi.ltEq;
-import static org.apache.parquet.filter2.predicate.FilterApi.or;
+import static edu.stanford.slac.archiverappliance.plain.parquet.ParquetInfo.fetchFileInfo;
+import static org.apache.parquet.filter2.predicate.FilterApi.*;
 
-public class ParquetBackedPBEventStream implements EventStream {
-    private static final Logger logger = LogManager.getLogger(ParquetBackedPBEventStream.class.getName());
+public class ParquetBackedPBEventFileStream implements EventStream, ETLParquetFilesStream {
+    private static final Logger logger = LogManager.getLogger(ParquetBackedPBEventFileStream.class.getName());
     private final String pvName;
     private final ArchDBRTypes type;
     private final Path path;
     private final Instant startTime;
     private final Instant endTime;
-    private final FileInfo fileInfo;
+    private ParquetInfo fileInfo;
     private RemotableEventStreamDesc desc;
 
-    public ParquetBackedPBEventStream(String pvName, Path path, ArchDBRTypes type) {
-        this(pvName, path, type, getFileInfo(path));
+    public ParquetBackedPBEventFileStream(String pvName, Path path, ArchDBRTypes type) {
+        this(pvName, path, type, null, null);
     }
 
-    public ParquetBackedPBEventStream(
-            String pvName, Path path, ArchDBRTypes type, Instant startTime, Instant endTime) {
-        this(pvName, path, type, startTime, endTime, getFileInfo(path));
-    }
-
-    public ParquetBackedPBEventStream(String pvName, Path path, ArchDBRTypes type, FileInfo fileInfo) {
+    public ParquetBackedPBEventFileStream(String pvName, Path path, ArchDBRTypes type, ParquetInfo fileInfo) {
         this(pvName, path, type, null, null, fileInfo);
     }
 
-    public ParquetBackedPBEventStream(
-            String pvName, Path path, ArchDBRTypes type, Instant startTime, Instant endTime, FileInfo fileInfo) {
+    public ParquetBackedPBEventFileStream(
+            String pvName, Path path, ArchDBRTypes type, Instant startTime, Instant endTime) {
+        this.pvName = pvName;
+        this.path = path;
+        this.type = type;
+        this.startTime = startTime;
+        this.endTime = endTime;
+
+    }
+
+    public ParquetBackedPBEventFileStream(
+            String pvName, Path path, ArchDBRTypes type, Instant startTime, Instant endTime, ParquetInfo fileInfo) {
         this.pvName = pvName;
         this.path = path;
         this.type = type;
@@ -64,13 +65,11 @@ public class ParquetBackedPBEventStream implements EventStream {
         this.fileInfo = fileInfo;
     }
 
-    private static FileInfo getFileInfo(Path path) {
-        try {
-            return new ParquetInfo(path);
-        } catch (IOException e) {
-            logger.error("Exception reading payload info from path " + path, e);
+    private ParquetInfo getFileInfo() {
+        if (fileInfo == null) {
+            this.fileInfo = fetchFileInfo(path);
         }
-        return null;
+        return this.fileInfo;
     }
 
     private static TimePeriod trimDates(
@@ -126,8 +125,8 @@ public class ParquetBackedPBEventStream implements EventStream {
             YearSecondTimestamp endYst = TimeUtils.convertToYearSecondTimestamp(endTime);
             // if no overlap in year return empty
             YearSecondTimestamp firstEventTime =
-                    ((PartionedTime) this.fileInfo.getFirstEvent()).getYearSecondTimestamp();
-            YearSecondTimestamp lastEventTime = ((PartionedTime) this.fileInfo.getLastEvent()).getYearSecondTimestamp();
+                    ((PartionedTime) this.getFirstEvent()).getYearSecondTimestamp();
+            YearSecondTimestamp lastEventTime = ((PartionedTime) getFileInfo().getLastEvent()).getYearSecondTimestamp();
             if (endYst.compareTo(firstEventTime) < 0 || startYst.compareTo(lastEventTime) > 0) {
                 return new EmptyEventIterator();
             }
@@ -147,10 +146,27 @@ public class ParquetBackedPBEventStream implements EventStream {
     @Override
     public RemotableEventStreamDesc getDescription() {
         if (desc == null) {
-            desc = new RemotableEventStreamDesc(this.pvName, this.fileInfo);
+            desc = new RemotableEventStreamDesc(this.pvName, getFileInfo());
         }
 
         return desc;
+    }
+
+    @Override
+    public List<Path> getPaths() {
+        return List.of(this.path);
+    }
+
+    /**
+     * @param context BasicContext
+     */
+    @Override
+    public Event getFirstEvent(BasicContext context) throws IOException {
+        return this.getFirstEvent();
+    }
+
+    public Event getFirstEvent() {
+        return getFileInfo().getFirstEvent();
     }
 
     private record TimePeriod(YearSecondTimestamp startYst, YearSecondTimestamp endYst) {
