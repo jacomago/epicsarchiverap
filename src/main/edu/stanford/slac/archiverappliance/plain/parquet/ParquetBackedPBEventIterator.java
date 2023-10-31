@@ -8,6 +8,7 @@ import org.epics.archiverappliance.data.DBRTimeEvent;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
@@ -15,22 +16,38 @@ import java.util.NoSuchElementException;
  */
 public class ParquetBackedPBEventIterator implements EventStreamIterator {
 
-    ParquetBackedPBEventIterator(
-            ParquetReader<Object> reader, Constructor<? extends DBRTimeEvent> unmarshallingConstructor, short year) {
-        this.reader = reader;
-        this.unmarshallingConstructor = unmarshallingConstructor;
-        this.year = year;
-    }
-
-    ParquetReader<Object> reader;
+    List<ParquetReader.Builder<Object>> readerBuilders;
+    /**
+     * The current reader.
+     */
+    private ParquetReader<Object> cachedReader;
 
     /** The current event. */
     private Event cachedEvent;
+    /**
+     * The current reader index.
+     */
+    private int cachedReaderIndex;
+    /**
+     * A flag indicating if the current reader has been fully read.
+     */
+    private boolean cachedReaderFinished = false;
 
     private final Constructor<? extends DBRTimeEvent> unmarshallingConstructor;
     private final short year;
     /** A flag indicating if the iterator has been fully read. */
     private boolean finished = false;
+    ParquetBackedPBEventIterator(
+            List<ParquetReader.Builder<Object>> readerBuilders, Constructor<? extends DBRTimeEvent> unmarshallingConstructor, short year) {
+        this.readerBuilders = readerBuilders;
+        this.unmarshallingConstructor = unmarshallingConstructor;
+        this.year = year;
+        try {
+            this.cachedReader = readerBuilders.get(cachedReaderIndex).build();
+        } catch (IOException ioe) {
+            throw new IllegalStateException(ioe.toString());
+        }
+    }
 
     /**
      * Caches the next event, and returns if it exists.
@@ -42,22 +59,41 @@ public class ParquetBackedPBEventIterator implements EventStreamIterator {
             return true;
         } else if (finished) {
             return false;
-        } else {
-            try {
-
-                MessageOrBuilder readEvent = (MessageOrBuilder) reader.read();
-                if (readEvent == null) {
-                    finished = true;
-                    return false;
-                } else {
-                    cachedEvent = unmarshallingConstructor.newInstance(year, readEvent);
-                    return true;
+        } else if (cachedReaderFinished) {
+            if (cachedReaderIndex + 1 < readerBuilders.size()) {
+                cachedReaderIndex++;
+                try {
+                    cachedReader = readerBuilders.get(cachedReaderIndex).build();
+                } catch (IOException ioe) {
+                    close();
+                    throw new IllegalStateException(ioe.toString());
                 }
-
-            } catch (Exception ioe) {
-                close();
-                throw new IllegalStateException(ioe.toString());
+                cachedReaderFinished = false;
+                return readerHasNext(cachedReader);
+            } else {
+                finished = true;
+                return false;
             }
+        } else {
+            return readerHasNext(cachedReader);
+        }
+    }
+
+    private boolean readerHasNext(ParquetReader<Object> reader) {
+        try {
+
+            MessageOrBuilder readEvent = (MessageOrBuilder) reader.read();
+            if (readEvent == null) {
+                cachedReaderFinished = true;
+                return false;
+            } else {
+                cachedEvent = unmarshallingConstructor.newInstance(year, readEvent);
+                return true;
+            }
+
+        } catch (Exception ioe) {
+            close();
+            throw new IllegalStateException(ioe.toString());
         }
     }
 
@@ -70,7 +106,7 @@ public class ParquetBackedPBEventIterator implements EventStreamIterator {
      */
     public void close() {
         try {
-            reader.close();
+            cachedReader.close();
         } catch (IOException ignored) {
         }
         finished = true;

@@ -17,6 +17,7 @@ import org.epics.archiverappliance.etl.ETLStreamCreator;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.List;
 
 /**
  * A stream creator that is backed by a single file.
@@ -49,7 +50,7 @@ public class FileStreamCreator implements ETLStreamCreator {
         return switch (fileExtension) {
             case PB -> new FileBackedPBEventStream(pvName, path, dbrType, start, end, skipSearch);
 
-            case PARQUET -> new ParquetBackedPBEventFileStream(pvName, path, dbrType, start, end);
+            case PARQUET -> new ParquetBackedPBEventFileStream(pvName, List.of(path), dbrType, start, end);
         };
     }
     public static EventStream getTimeStream(
@@ -64,7 +65,7 @@ public class FileStreamCreator implements ETLStreamCreator {
             case PB -> new FileBackedPBEventStream(pvName, path, fileInfo.getType(), start, end, skipSearch);
 
             case PARQUET ->
-                    new ParquetBackedPBEventFileStream(pvName, path, fileInfo.getType(), start, end, (ParquetInfo) fileInfo);
+                    new ParquetBackedPBEventFileStream(pvName, List.of(path), fileInfo.getType(), start, end, (ParquetInfo) fileInfo);
         };
     }
 

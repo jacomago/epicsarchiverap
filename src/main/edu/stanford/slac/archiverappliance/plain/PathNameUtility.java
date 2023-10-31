@@ -15,12 +15,7 @@ import org.epics.archiverappliance.config.PVNameToKeyMapping;
 import org.epics.archiverappliance.utils.nio.ArchPaths;
 
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.NotDirectoryException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -492,7 +487,7 @@ public class PathNameUtility {
      * The PlainPBStorage plugin has a naming scheme that provides much information.
      * This class encapsulates the potential start and end times of a particular chunk.
      */
-    static class StartEndTimeFromName {
+    public static class StartEndTimeFromName {
         ZonedDateTime pathDataStartTime;
         ZonedDateTime pathDataEndTime;
 

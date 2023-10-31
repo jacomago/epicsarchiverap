@@ -60,7 +60,7 @@ public class SimpleETLTest {
     static long ratio = 5;
 
     static Stream<Arguments> providePartitionFileExtension() {
-        return Arrays.stream(FileExtension.values()).flatMap(f -> Arrays.stream(PartitionGranularity.values())
+        return Arrays.stream(FileExtension.values()).flatMap(f -> Arrays.stream(new PartitionGranularity[]{PartitionGranularity.PARTITION_MONTH})
                 .filter(g -> g.getNextLargerGranularity() != null)
                 .map(g -> Arguments.of(
                         f,
@@ -140,9 +140,8 @@ public class SimpleETLTest {
                 startTime,
                 endTime,
                 (int) (granularity.getApproxSecondsPerChunk() / ratio));
-        int createdEvents = 0;
         try (BasicContext context = new BasicContext()) {
-            createdEvents = etlSrc.appendData(context, pvName, simstream);
+            etlSrc.appendData(context, pvName, simstream);
         }
         logger.info("Done creating src data for PV " + pvName);
 

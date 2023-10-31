@@ -47,11 +47,11 @@ public class EpicsParquetWriter<T extends Message> extends ParquetWriter<T> {
      * @param <T> The type of EPICSMessage to write.
      */
     public static <T> EpicsParquetWriter.Builder<T> builder(Path file) {
-        return new EpicsParquetWriter.Builder<T>(file);
+        return new EpicsParquetWriter.Builder<>(file);
     }
 
     public static <T> EpicsParquetWriter.Builder<T> builder(OutputFile file) {
-        return new EpicsParquetWriter.Builder<T>(file);
+        return new EpicsParquetWriter.Builder<>(file);
     }
 
     private static <T extends Message> EpicsWriteSupport<T> writeSupport(
