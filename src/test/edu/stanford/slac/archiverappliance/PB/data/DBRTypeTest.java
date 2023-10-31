@@ -7,10 +7,10 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PB.data;
 
-import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
-import edu.stanford.slac.archiverappliance.PlainPB.FileStreamCreator;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.plain.FileStreamCreator;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import gov.aps.jca.dbr.DBR;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -52,17 +52,17 @@ import java.util.stream.Stream;
  */
 public class DBRTypeTest {
     private static final Logger logger = LogManager.getLogger(DBRTypeTest.class.getName());
-    static PlainPBStoragePlugin pbpluginPB;
-    static PlainPBStoragePlugin pbpluginParquet;
+    static PlainStoragePlugin pbpluginPB;
+    static PlainStoragePlugin pbpluginParquet;
     static PBCommonSetup pbSetup = new PBCommonSetup();
     static PBCommonSetup parquetSetup = new PBCommonSetup();
     static ConfigService configService;
 
     @BeforeAll
     public static void setUp() throws Exception {
-        pbpluginPB = new PlainPBStoragePlugin(FileExtension.PB);
+        pbpluginPB = new PlainStoragePlugin(FileExtension.PB);
         pbSetup.setUpRootFolder(pbpluginPB, "DBRTypeTestsPB", FileExtension.PB);
-        pbpluginParquet = new PlainPBStoragePlugin(FileExtension.PARQUET);
+        pbpluginParquet = new PlainStoragePlugin(FileExtension.PARQUET);
         parquetSetup.setUpRootFolder(pbpluginParquet, "DBRTypeTestsParquet", FileExtension.PARQUET);
         configService = new ConfigServiceForTests(new File("./bin"));
     }
@@ -117,7 +117,7 @@ public class DBRTypeTest {
 
     @ParameterizedTest
     @MethodSource("provideFileExtensionDBRType")
-    public void testPopulateAndRead(ArchDBRTypes dbrType, FileExtension fileExtension, PlainPBStoragePlugin pbplugin) {
+    public void testPopulateAndRead(ArchDBRTypes dbrType, FileExtension fileExtension, PlainStoragePlugin pbplugin) {
         EventStream retrievedStrm = null;
         try {
             BoundaryConditionsSimulationValueGenerator valuegenerator =
@@ -140,7 +140,7 @@ public class DBRTypeTest {
             }
             logger.info("Done appending data. Now checking the read.");
             // Now test the data.
-            Path path = PlainPBPathNameUtility.getPathNameForTime(
+            Path path = PathNameUtility.getPathNameForTime(
                     pbplugin,
                     pvName,
                     TimeUtils.getStartOfYear(currentYear),
@@ -220,7 +220,7 @@ public class DBRTypeTest {
     @ParameterizedTest
     @MethodSource("provideFileExtensionDBRType")
     public void testMultipleYearDataForDoubles(
-            ArchDBRTypes dbrType, FileExtension fileExtension, PlainPBStoragePlugin pbplugin) {
+            ArchDBRTypes dbrType, FileExtension fileExtension, PlainStoragePlugin pbplugin) {
         for (short year = 1990; year < 3000; year += 10) {
             EventStream retrievedStrm = null;
             try {
@@ -242,7 +242,7 @@ public class DBRTypeTest {
                 // EventStream retrievedStrm = pbplugin.getDataForPV(dbrType.name(),
                 // TimeStamp.time(startOfCurrentYearInSeconds, 0),
                 // TimeStamp.time(startOfCurrentYearInSeconds+SimulationEventStreamIterator.SECONDS_IN_YEAR, 0));
-                Path path = PlainPBPathNameUtility.getPathNameForTime(
+                Path path = PathNameUtility.getPathNameForTime(
                         pbplugin,
                         pvName,
                         startTime,

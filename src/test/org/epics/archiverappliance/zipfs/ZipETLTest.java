@@ -1,6 +1,6 @@
 package org.epics.archiverappliance.zipfs;
 
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,15 +21,10 @@ import org.epics.archiverappliance.utils.simulation.SineGenerator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.time.Instant;
-import java.time.Month;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 
 public class ZipETLTest {
     private static final Logger logger = LogManager.getLogger(ZipETLTest.class.getName());
@@ -55,13 +50,13 @@ public class ZipETLTest {
         String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + ":ETLZipTest";
         ArchDBRTypes dbrType = ArchDBRTypes.DBR_SCALAR_DOUBLE;
         String srcRootFolder = testFolder.getAbsolutePath() + File.separator + "srcFiles";
-        PlainPBStoragePlugin etlSrc = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        PlainStoragePlugin etlSrc = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 "pb://localhost?name=ZipETL&rootFolder=" + srcRootFolder + "&partitionGranularity=PARTITION_DAY",
                 configService);
         logger.info(etlSrc.getURLRepresentation());
 
         String destRootFolder = testFolder.getAbsolutePath() + File.separator + "destFiles";
-        PlainPBStoragePlugin etlDest = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        PlainStoragePlugin etlDest = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 "pb://localhost?name=ZipETL&rootFolder=" + destRootFolder
                         + "&partitionGranularity=PARTITION_DAY&compress=ZIP_PER_PV",
                 configService);

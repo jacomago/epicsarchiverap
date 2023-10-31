@@ -10,8 +10,7 @@ package org.epics.archiverappliance.retrieval;
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent;
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.FieldValue;
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
-import edu.stanford.slac.archiverappliance.PlainPB.FileInfo;
-import edu.stanford.slac.archiverappliance.parquet.ParquetInfo;
+import edu.stanford.slac.archiverappliance.plain.FileInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.EventStreamDesc;
@@ -112,22 +111,6 @@ public class RemotableEventStreamDesc extends EventStreamDesc {
             }
             builder.addAllHeaders(fieldValuesList);
         }
-    }
-
-    public ArchDBRTypes getArchDBRType() {
-        return archDBRType;
-    }
-
-    public void setArchDBRType(ArchDBRTypes archDBRType) {
-        this.archDBRType = archDBRType;
-    }
-
-    public String getPvName() {
-        return pvName;
-    }
-
-    public void setPvName(String pvName) {
-        this.pvName = pvName;
     }
 
     public short getYear() {

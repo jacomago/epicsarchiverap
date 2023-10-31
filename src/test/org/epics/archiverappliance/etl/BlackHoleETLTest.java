@@ -8,10 +8,10 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BasicContext;
@@ -68,7 +68,7 @@ public class BlackHoleETLTest {
     public void testBlackHoleETL(PartitionGranularity granularity, FileExtension fileExtension)
             throws Exception {
 
-        PlainPBStoragePlugin etlSrc = new PlainPBStoragePlugin(fileExtension);
+        PlainStoragePlugin etlSrc = new PlainStoragePlugin(fileExtension);
         PBCommonSetup srcSetup = new PBCommonSetup();
         BlackholeStoragePlugin etlDest = new BlackholeStoragePlugin();
 
@@ -118,14 +118,13 @@ public class BlackHoleETLTest {
         srcSetup.deleteTestFolder();
     }
 
-    private int getFilesWithData(String pvName, PlainPBStoragePlugin etlSrc, FileExtension fileExtension) throws Exception {
+    private int getFilesWithData(String pvName, PlainStoragePlugin etlSrc, FileExtension fileExtension) throws Exception {
         // Check that all the files in the destination store are valid files.
-        Path[] allPaths = PlainPBPathNameUtility.getAllPathsForPV(
+        Path[] allPaths = PathNameUtility.getAllPathsForPV(
                 new ArchPaths(),
                 etlSrc.getRootFolder(),
                 pvName,
                 fileExtension.getExtensionString(),
-                etlSrc.getPartitionGranularity(),
                 CompressionMode.NONE,
                 configService.getPVNameToKeyConverter());
         return allPaths.length;

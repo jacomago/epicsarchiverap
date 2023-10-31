@@ -7,7 +7,7 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.FileUtils;
@@ -40,6 +40,9 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.zip.ZipEntry;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
 /**
  * test for consolidate all pb files from short term storage and medium term storage to long term storage
  * @author Luofeng Li
@@ -53,9 +56,9 @@ public class ConsolidateETLJobsForOnePVTest {
     String mediumTermFolderName = rootFolderName + "/mediumTerm";
     String longTermFolderName = rootFolderName + "/longTerm";
     String pvName = "ArchUnitTest" + "ConsolidateETLJobsForOnePVTest";
-    PlainPBStoragePlugin storageplugin1;
-    PlainPBStoragePlugin storageplugin2;
-    PlainPBStoragePlugin storageplugin3;
+    PlainStoragePlugin storageplugin1;
+    PlainStoragePlugin storageplugin2;
+    PlainStoragePlugin storageplugin3;
     short currentYear = TimeUtils.getCurrentYear();
     ArchDBRTypes type = ArchDBRTypes.DBR_SCALAR_DOUBLE;
     private ConfigServiceForTests configService;
@@ -67,14 +70,14 @@ public class ConsolidateETLJobsForOnePVTest {
             FileUtils.deleteDirectory(new File(rootFolderName));
         }
 
-        storageplugin1 = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        storageplugin1 = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 "pb://localhost?name=STS&rootFolder=" + shortTermFolderName + "/&partitionGranularity=PARTITION_HOUR",
                 configService);
-        storageplugin2 = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        storageplugin2 = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 "pb://localhost?name=MTS&rootFolder=" + mediumTermFolderName
                         + "/&partitionGranularity=PARTITION_DAY&hold=5&gather=3",
                 configService);
-        storageplugin3 = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        storageplugin3 = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 "pb://localhost?name=LTS&rootFolder=" + longTermFolderName
                         + "/&partitionGranularity=PARTITION_DAY&compress=ZIP_PER_PV",
                 configService);
@@ -91,6 +94,7 @@ public class ConsolidateETLJobsForOnePVTest {
         try {
             consolidate();
         } catch (AlreadyRegisteredException | IOException | InterruptedException e) {
+            fail();
             logger.error("Exception consolidating storage", e);
         }
     }

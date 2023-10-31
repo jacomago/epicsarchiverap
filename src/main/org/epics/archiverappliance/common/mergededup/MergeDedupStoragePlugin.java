@@ -12,14 +12,7 @@ import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
-import org.epics.archiverappliance.etl.ConversionFunction;
-import org.epics.archiverappliance.etl.ETLContext;
-import org.epics.archiverappliance.etl.ETLDest;
-import org.epics.archiverappliance.etl.ETLInfo;
-import org.epics.archiverappliance.etl.ETLSource;
-import org.epics.archiverappliance.etl.ETLStreamCreator;
-import org.epics.archiverappliance.etl.StorageMetrics;
-import org.epics.archiverappliance.etl.StorageMetricsContext;
+import org.epics.archiverappliance.etl.*;
 import org.epics.archiverappliance.retrieval.CallableEventStream;
 import org.epics.archiverappliance.retrieval.postprocessors.DefaultRawPostProcessor;
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessor;
@@ -191,12 +184,6 @@ public class MergeDedupStoragePlugin implements StoragePlugin, ETLSource, ETLDes
 	@Override
 	public long spaceConsumedByPV(String pvName) throws IOException {
 		return ((StorageMetrics)dest).spaceConsumedByPV(pvName);
-	}
-
-	@Override
-	public boolean prepareForNewPartition(String pvName, Event ev, ArchDBRTypes archDBRType, ETLContext context)
-			throws IOException {
-		return ((ETLDest)dest).prepareForNewPartition(pvName, ev, archDBRType, context);
 	}
 
 	@Override

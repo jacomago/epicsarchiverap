@@ -1,7 +1,7 @@
 package org.epics.archiverappliance.etl;
 
-import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,7 +13,6 @@ import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
-import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
 import org.epics.archiverappliance.data.ScalarValue;
 import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.etl.bpl.reports.ApplianceMetricsDetails;
@@ -27,11 +26,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.DecimalFormat;
 import java.time.Instant;
@@ -52,9 +47,9 @@ public class ETLTimeTest {
     private static final Logger logger = LogManager.getLogger(ETLTimeTest.class.getName());
     private static final int testSize = 10;
     String shortTermFolderName =
-            ConfigServiceForTests.getDefaultShortTermFolder() + ETLTimeTest.class.getSimpleName() + "/shortTerm";
+            ConfigServiceForTests.getDefaultShortTermFolder() + "/" + ETLTimeTest.class.getSimpleName() + "/shortTerm";
     String mediumTermFolderName =
-            ConfigServiceForTests.getDefaultPBTestFolder() + ETLTimeTest.class.getSimpleName() + "/mediumTerm";
+            ConfigServiceForTests.getDefaultPBTestFolder() + "/" + ETLTimeTest.class.getSimpleName() + "/mediumTerm";
     ArchDBRTypes type = ArchDBRTypes.DBR_SCALAR_DOUBLE;
     private ConfigServiceForTests configService;
 
@@ -80,12 +75,12 @@ public class ETLTimeTest {
     @ParameterizedTest
     @EnumSource(FileExtension.class)
     public void testTime(FileExtension fileExtension)
-            throws AlreadyRegisteredException, IOException, InterruptedException {
-        PlainPBStoragePlugin storageplugin1 = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+            throws Exception {
+        PlainStoragePlugin storageplugin1 = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 fileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + shortTermFolderName
                         + "/&partitionGranularity=PARTITION_HOUR",
                 configService);
-        PlainPBStoragePlugin storageplugin2 = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        PlainStoragePlugin storageplugin2 = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 fileExtension.getSuffix() + "://localhost?name=MTS&rootFolder=" + mediumTermFolderName
                         + "/&partitionGranularity=PARTITION_YEAR",
                 configService);
@@ -189,31 +184,32 @@ public class ETLTimeTest {
 
         logger.info(ApplianceMetricsDetails.getETLMetricsDetails(configService));
     }
-}
 
-class CountFiles implements FileVisitor<Path> {
-    public long filesPresent = 0;
-    public long totalSize = 0;
+    static class CountFiles implements FileVisitor<Path> {
+        public long filesPresent = 0;
+        public long totalSize = 0;
 
-    @Override
-    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-        return FileVisitResult.CONTINUE;
+        @Override
+        public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+            return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+            return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+            filesPresent++;
+            totalSize += Files.size(file);
+            return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+            return FileVisitResult.CONTINUE;
+        }
     }
 
-    @Override
-    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-        return FileVisitResult.CONTINUE;
-    }
-
-    @Override
-    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-        filesPresent++;
-        totalSize += Files.size(file);
-        return FileVisitResult.CONTINUE;
-    }
-
-    @Override
-    public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-        return FileVisitResult.CONTINUE;
-    }
 }

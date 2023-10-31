@@ -8,10 +8,10 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -54,12 +54,12 @@ public class ETLWithRecurringFilesTest {
     private static final Logger logger = LogManager.getLogger(ETLWithRecurringFilesTest.class.getName());
     static ConfigServiceForTests configService;
     static ConfigServiceForTests newConfigService;
-    static PlainPBStoragePlugin etlSrcPB;
-    static PlainPBStoragePlugin etlDestPB;
-    static PlainPBStoragePlugin etlnewDestPB;
-    static PlainPBStoragePlugin etlSrcParquet;
-    static PlainPBStoragePlugin etlDestParquet;
-    static PlainPBStoragePlugin etlnewDestParquet;
+    static PlainStoragePlugin etlSrcPB;
+    static PlainStoragePlugin etlDestPB;
+    static PlainStoragePlugin etlnewDestPB;
+    static PlainStoragePlugin etlSrcParquet;
+    static PlainStoragePlugin etlDestParquet;
+    static PlainStoragePlugin etlnewDestParquet;
     int ratio = 5; // size of test
 
     public static Stream<Arguments> provideRecurringFiles() {
@@ -91,12 +91,12 @@ public class ETLWithRecurringFilesTest {
         configService = new ConfigServiceForTests(new File("./bin"), 1);
         newConfigService = new ConfigServiceForTests(new File("./bin"), 1);
 
-        etlSrcPB = new PlainPBStoragePlugin(FileExtension.PB);
-        etlDestPB = new PlainPBStoragePlugin(FileExtension.PB);
-        etlnewDestPB = new PlainPBStoragePlugin(FileExtension.PB);
-        etlSrcParquet = new PlainPBStoragePlugin(FileExtension.PARQUET);
-        etlDestParquet = new PlainPBStoragePlugin(FileExtension.PARQUET);
-        etlnewDestParquet = new PlainPBStoragePlugin(FileExtension.PARQUET);
+        etlSrcPB = new PlainStoragePlugin(FileExtension.PB);
+        etlDestPB = new PlainStoragePlugin(FileExtension.PB);
+        etlnewDestPB = new PlainStoragePlugin(FileExtension.PB);
+        etlSrcParquet = new PlainStoragePlugin(FileExtension.PARQUET);
+        etlDestParquet = new PlainStoragePlugin(FileExtension.PARQUET);
+        etlnewDestParquet = new PlainStoragePlugin(FileExtension.PARQUET);
     }
 
     @AfterAll
@@ -115,9 +115,9 @@ public class ETLWithRecurringFilesTest {
             boolean backUpFiles,
             boolean useNewDest,
             FileExtension fileExtension,
-            PlainPBStoragePlugin etlSrc,
-            PlainPBStoragePlugin etlDest,
-            PlainPBStoragePlugin etlNewDest)
+            PlainStoragePlugin etlSrc,
+            PlainStoragePlugin etlDest,
+            PlainStoragePlugin etlNewDest)
             throws Exception {
         PBCommonSetup srcSetup = new PBCommonSetup();
         PBCommonSetup destSetup = new PBCommonSetup();
@@ -176,12 +176,11 @@ public class ETLWithRecurringFilesTest {
         String tempFileExtension = ".etltest" + fileExtension.getSuffix();
         // We should now have some data in the src root folder...
         // Make a copy of these files so that we can restore them back later after ETL.
-        Path[] allSrcPaths = PlainPBPathNameUtility.getAllPathsForPV(
+        Path[] allSrcPaths = PathNameUtility.getAllPathsForPV(
                 new ArchPaths(),
                 etlSrc.getRootFolder(),
                 pvName,
                 fileExtension.getExtensionString(),
-                etlSrc.getPartitionGranularity(),
                 CompressionMode.NONE,
                 configService.getPVNameToKeyConverter());
         for (Path srcPath : allSrcPaths) {
@@ -248,8 +247,8 @@ public class ETLWithRecurringFilesTest {
 
     private void checkDataValidity(
             String pvName,
-            PlainPBStoragePlugin etlSrc,
-            PlainPBStoragePlugin etlDest,
+            PlainStoragePlugin etlSrc,
+            PlainStoragePlugin etlDest,
             Instant start,
             int incrementSeconds,
             int eventsGenerated,

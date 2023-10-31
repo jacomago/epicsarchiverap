@@ -7,13 +7,12 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import java.io.IOException;
-
-import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.Writer;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.config.ArchDBRTypes;
+
+import java.io.IOException;
 
 /**
  * An ETL dest is data source that can act as a sink for ETL.
@@ -23,18 +22,6 @@ import org.epics.archiverappliance.config.ArchDBRTypes;
  */
 public interface ETLDest extends Writer {
 
-	/**
-	 * This informs the destination that we are switching to a new partition and this dest needs to execute its pre-processing for a new partition.
-	 * For example, in a PlainPBStorage plugin, this will close the previous fileoutputstreams if any, open a new stream to the file backing the new partition writing a header if needed.  
-	 * @param pvName The name of PV.
-	 * @param ev This is used to determine the partition for the new partition
-	 * @param archDBRType ArchDBRTypes
-	 * @param context ETLContext
-	 * @return boolean True or False
-	 * @throws IOException  &emsp;
-	 */
-	public boolean prepareForNewPartition(String pvName, Event ev, ArchDBRTypes archDBRType, ETLContext context) throws IOException;
-	
 	/**
 	 * This appends an EventStream to the ETL append data for a PV.  
 	 * @param pvName The name of PV.

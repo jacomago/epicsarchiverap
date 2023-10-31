@@ -1,13 +1,7 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.PlainPB.FileExtension;
-import edu.stanford.slac.archiverappliance.PlainPB.FileInfo;
-import edu.stanford.slac.archiverappliance.PlainPB.PBFileInfo;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
-import edu.stanford.slac.archiverappliance.parquet.ParquetInfo;
+import edu.stanford.slac.archiverappliance.plain.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BasicContext;
@@ -31,9 +25,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.stream.Stream;
-
-import static org.junit.Assert.assertTrue;
 
 /**
  * Unit test to test for timezones that are ahead of UTC; use "Australia/Sydney".
@@ -81,9 +74,9 @@ public class TimezoneAheadTest {
             throws Exception {
         logger.debug(TimeUtils.convertToHumanReadableString(TimeUtils.now()));
 
-        PlainPBStoragePlugin etlSrc = new PlainPBStoragePlugin(fileExtension);
+        PlainStoragePlugin etlSrc = new PlainStoragePlugin(fileExtension);
         PBCommonSetup srcSetup = new PBCommonSetup();
-        PlainPBStoragePlugin etlDest = new PlainPBStoragePlugin(fileExtension);
+        PlainStoragePlugin etlDest = new PlainStoragePlugin(fileExtension);
         PBCommonSetup destSetup = new PBCommonSetup();
         DefaultConfigService configService = new ConfigServiceForTests(new File("./bin"), 1);
 
@@ -130,44 +123,40 @@ public class TimezoneAheadTest {
         {
             long eventSeconds = startEpochSeconds + srcGranularity.getApproxSecondsPerChunk();
             while (eventSeconds <= endEpochSeconds) {
-                Path[] srcPathsBefore = PlainPBPathNameUtility.getAllPathsForPV(
+                Path[] srcPathsBefore = PathNameUtility.getAllPathsForPV(
                         new ArchPaths(),
                         etlSrc.getRootFolder(),
                         pvName,
                         fileExtension.getExtensionString(),
-                        etlSrc.getPartitionGranularity(),
                         CompressionMode.NONE,
                         configService.getPVNameToKeyConverter());
-                Path[] destPathsBefore = PlainPBPathNameUtility.getAllPathsForPV(
+                Path[] destPathsBefore = PathNameUtility.getAllPathsForPV(
                         new ArchPaths(),
                         etlDest.getRootFolder(),
                         pvName,
                         fileExtension.getExtensionString(),
-                        etlDest.getPartitionGranularity(),
                         CompressionMode.NONE,
                         configService.getPVNameToKeyConverter());
-                long srcBeforeEpochSeconds = -1;
+                Instant srcBeforeEpochSeconds = Instant.EPOCH;
 
                 if (srcPathsBefore.length > 0) {
-                    srcBeforeEpochSeconds = FileInfo.extensionPath(fileExtension, srcPathsBefore[0]).getFirstEventEpochSeconds();
+                    srcBeforeEpochSeconds = FileInfo.extensionPath(fileExtension, srcPathsBefore[0]).getFirstEventInstant();
                 }
 
                 ETLExecutor.runETLs(configService, TimeUtils.convertFromEpochSeconds(eventSeconds, 0));
 
-                Path[] srcPathsAfter = PlainPBPathNameUtility.getAllPathsForPV(
+                Path[] srcPathsAfter = PathNameUtility.getAllPathsForPV(
                         new ArchPaths(),
                         etlSrc.getRootFolder(),
                         pvName,
                         fileExtension.getExtensionString(),
-                        etlSrc.getPartitionGranularity(),
                         CompressionMode.NONE,
                         configService.getPVNameToKeyConverter());
-                Path[] destPathsAfter = PlainPBPathNameUtility.getAllPathsForPV(
+                Path[] destPathsAfter = PathNameUtility.getAllPathsForPV(
                         new ArchPaths(),
                         etlDest.getRootFolder(),
                         pvName,
                         fileExtension.getExtensionString(),
-                        etlDest.getPartitionGranularity(),
                         CompressionMode.NONE,
                         configService.getPVNameToKeyConverter());
 
@@ -175,17 +164,17 @@ public class TimezoneAheadTest {
                         + " Before " + srcPathsBefore.length + "/" + destPathsBefore.length
                         + " After " + srcPathsAfter.length + "/" + destPathsAfter.length);
 
-                long srcAfterEpochSeconds = -1;
+                Instant srcAfterEpochSeconds = Instant.EPOCH;
 
                 if (srcPathsAfter.length > 0) {
-                    srcAfterEpochSeconds = FileInfo.extensionPath(fileExtension, srcPathsAfter[0]).getFirstEventEpochSeconds();
+                    srcAfterEpochSeconds = FileInfo.extensionPath(fileExtension, srcPathsAfter[0]).getFirstEventInstant();
                 }
 
-                if (srcAfterEpochSeconds > 0 && srcBeforeEpochSeconds > 0) {
-                    Assertions.assertTrue(srcAfterEpochSeconds > srcBeforeEpochSeconds, "The first event in the source after ETL "
-                            + TimeUtils.convertToHumanReadableString(srcAfterEpochSeconds)
+                if (srcAfterEpochSeconds.isAfter(Instant.EPOCH) && srcBeforeEpochSeconds.isAfter(Instant.EPOCH)) {
+                    Assertions.assertTrue(srcAfterEpochSeconds.isAfter(srcBeforeEpochSeconds), "The first event in the source after ETL "
+                            + srcAfterEpochSeconds
                             + " should be greater then the first event in the source before ETL"
-                            + TimeUtils.convertToHumanReadableString(srcBeforeEpochSeconds));
+                            + srcBeforeEpochSeconds);
                 } else {
                     logger.warn("ETL did not move data at " + TimeUtils.convertToHumanReadableString(eventSeconds));
                 }

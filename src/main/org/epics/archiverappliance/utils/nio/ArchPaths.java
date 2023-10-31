@@ -8,12 +8,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.OpenOption;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.HashMap;
 import java.util.Map;
@@ -90,8 +85,8 @@ public class ArchPaths implements Closeable {
             StringBuilder sb = new StringBuilder();
             sb.append(first);
             for (String segment : more) {
-                if (segment.length() > 0) {
-                    if (sb.length() > 0) {
+                if (!segment.isEmpty()) {
+                    if (!sb.isEmpty()) {
                         sb.append('/');
                     }
                     sb.append(segment);
