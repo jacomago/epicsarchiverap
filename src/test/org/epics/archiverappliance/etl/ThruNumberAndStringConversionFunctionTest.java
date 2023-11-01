@@ -7,12 +7,7 @@ import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.data.DBRTimeEvent;
-import org.epics.archiverappliance.data.SampleValue;
-import org.epics.archiverappliance.data.ScalarStringSampleValue;
-import org.epics.archiverappliance.data.ScalarValue;
-import org.epics.archiverappliance.data.VectorStringSampleValue;
-import org.epics.archiverappliance.data.VectorValue;
+import org.epics.archiverappliance.data.*;
 import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.etl.conversion.ThruNumberAndStringConversion;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
@@ -23,14 +18,8 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-
-import static org.junit.Assert.assertTrue;
 
 /**
  * Test various type conversion functions. 
@@ -40,7 +29,7 @@ import static org.junit.Assert.assertTrue;
  *
  */
 public class ThruNumberAndStringConversionFunctionTest {
-	private static Logger logger = LogManager.getLogger(ThruNumberAndStringConversionFunctionTest.class.getName());
+    private static final Logger logger = LogManager.getLogger(ThruNumberAndStringConversionFunctionTest.class.getName());
 
 
 	@Test

@@ -22,7 +22,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +32,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.text.DecimalFormat;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.stream.Stream;
 
 /**
  * An ETL benchmark. Generate some data for PVs and then time the movement to the next store.
@@ -72,16 +74,20 @@ public class ETLTimeTest {
         configService.shutdownNow();
     }
 
+    private static Stream<Arguments> provideTestTime() {
+        return ETLTestPlugins.provideFileExtensionArguments();
+    }
+
     @ParameterizedTest
-    @EnumSource(FileExtension.class)
-    public void testTime(FileExtension fileExtension)
+    @MethodSource("provideTestTime")
+    public void testTime(FileExtension stsFileExtension, FileExtension mtsFileExtension)
             throws Exception {
-        PlainStoragePlugin storageplugin1 = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                fileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + shortTermFolderName
+        PlainStoragePlugin stsStoragePlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+                stsFileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + shortTermFolderName
                         + "/&partitionGranularity=PARTITION_HOUR",
                 configService);
-        PlainStoragePlugin storageplugin2 = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                fileExtension.getSuffix() + "://localhost?name=MTS&rootFolder=" + mediumTermFolderName
+        PlainStoragePlugin mtsStoragePlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+                mtsFileExtension.getSuffix() + "://localhost?name=MTS&rootFolder=" + mediumTermFolderName
                         + "/&partitionGranularity=PARTITION_YEAR",
                 configService);
         short currentYear = TimeUtils.getCurrentYear();
@@ -92,7 +98,7 @@ public class ETLTimeTest {
             String pvName = "ArchUnitTest" + tableName + ":ETLTimeTest" + i;
             PVTypeInfo typeInfo = new PVTypeInfo(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
             String[] dataStores =
-                    new String[] {storageplugin1.getURLRepresentation(), storageplugin2.getURLRepresentation()};
+                    new String[]{stsStoragePlugin.getURLRepresentation(), mtsStoragePlugin.getURLRepresentation()};
             typeInfo.setDataStores(dataStores);
             configService.updateTypeInfoForPV(pvName, typeInfo);
             configService.registerPVToAppliance(pvName, configService.getMyApplianceInfo());
@@ -119,7 +125,7 @@ public class ETLTimeTest {
                     testData.add(
                             new SimulationEvent(s * 10, currentYear, type, new ScalarValue<Double>((double) s * 10)));
                 }
-                storageplugin1.appendData(context, pvnameTemp, testData);
+                stsStoragePlugin.appendData(context, pvnameTemp, testData);
             }
         }
         logger.info("Done generating data for " + pvs.size() + " pvs");
@@ -168,7 +174,7 @@ public class ETLTimeTest {
                 postETLSrcVisitor.filesPresent,
                 "We have some files that have not moved " + postETLSrcVisitor.filesPresent);
         int expectedFiles =
-                switch (fileExtension) {
+                switch (mtsFileExtension) {
                     case PB -> pvs.size();
                     case PARQUET -> pvs.size() * 2; // includes checksum files
                 };

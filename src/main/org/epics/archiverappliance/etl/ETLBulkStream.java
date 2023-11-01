@@ -16,6 +16,6 @@ public interface ETLBulkStream extends EventStream {
      * @return Event return the first event, or null
      * @throws IOException &emsp;
      */
-    public Event getFirstEvent(BasicContext context) throws IOException;
+    Event getFirstEvent(BasicContext context) throws IOException;
 
 }

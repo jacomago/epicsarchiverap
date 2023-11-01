@@ -43,7 +43,7 @@ public class PBFileInfoTest {
     public void testPBInfo(FileExtension fileExtension) throws Exception {
         PlainStoragePlugin storagePlugin = new PlainStoragePlugin(fileExtension);
         short currentYear = TimeUtils.getCurrentYear();
-        setup.setUpRootFolder(storagePlugin, fileExtension);
+        setup.setUpRootFolder(storagePlugin);
         pBfile = PathNameUtility.getPathNameForTime(
                 storagePlugin,
                 pvName,

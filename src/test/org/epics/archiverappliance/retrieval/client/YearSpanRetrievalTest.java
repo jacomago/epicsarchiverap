@@ -8,7 +8,6 @@
 package org.epics.archiverappliance.retrieval.client;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.logging.log4j.LogManager;
@@ -26,11 +25,7 @@ import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.utils.nio.ArchPaths;
 import org.epics.archiverappliance.utils.simulation.SimulationEventStream;
 import org.epics.archiverappliance.utils.simulation.SineGenerator;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -55,7 +50,7 @@ public class YearSpanRetrievalTest {
     @BeforeEach
     public void setUp() throws Exception {
         configService = new ConfigServiceForTests(new File("./bin"));
-        pbSetup.setUpRootFolder(pbplugin, FileExtension.PB);
+        pbSetup.setUpRootFolder(pbplugin);
         tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
         generateDataForYears();
     }

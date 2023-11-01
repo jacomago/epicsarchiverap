@@ -61,9 +61,9 @@ public class DBRTypeTest {
     @BeforeAll
     public static void setUp() throws Exception {
         pbpluginPB = new PlainStoragePlugin(FileExtension.PB);
-        pbSetup.setUpRootFolder(pbpluginPB, "DBRTypeTestsPB", FileExtension.PB);
+        pbSetup.setUpRootFolder(pbpluginPB, "DBRTypeTestsPB");
         pbpluginParquet = new PlainStoragePlugin(FileExtension.PARQUET);
-        parquetSetup.setUpRootFolder(pbpluginParquet, "DBRTypeTestsParquet", FileExtension.PARQUET);
+        parquetSetup.setUpRootFolder(pbpluginParquet, "DBRTypeTestsParquet");
         configService = new ConfigServiceForTests(new File("./bin"));
     }
 

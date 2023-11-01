@@ -86,7 +86,7 @@ public class HoldAndGatherTest {
 
         PlainStoragePlugin etlSrc = new PlainStoragePlugin(fileExtension);
         PBCommonSetup srcSetup = new PBCommonSetup();
-        srcSetup.setUpRootFolder(etlSrc, "ETLHoldGatherTest_" + granularity, granularity, fileExtension);
+        srcSetup.setUpRootFolder(etlSrc, "ETLHoldGatherTest_" + granularity, granularity);
 
         etlSrc.setHoldETLForPartions(hold);
         etlSrc.setGatherETLinPartitions(gather);

@@ -47,13 +47,13 @@ public class PlainPBETLDestTest {
     @EnumSource(FileExtension.class)
     public void testGetLastKnownEvent(FileExtension fileExtension) throws Exception {
         PlainStoragePlugin storagePlugin = new PlainStoragePlugin(fileExtension);
-        setup.setUpRootFolder(storagePlugin, "PVETLDestTests", fileExtension);
+        setup.setUpRootFolder(storagePlugin, "PVETLDestTests");
 
         long epochSeconds = TimeUtils.getStartOfCurrentYearInSeconds();
         ArchDBRTypes type = ArchDBRTypes.DBR_SCALAR_DOUBLE;
         for (PartitionGranularity partitionGranularity : PartitionGranularity.values()) {
             logger.debug("Testing last known event for " + partitionGranularity);
-            setup.setUpRootFolder(storagePlugin, "PVETLDestTests", partitionGranularity, fileExtension);
+            setup.setUpRootFolder(storagePlugin, "PVETLDestTests", partitionGranularity);
             int secondsBetweenEvents = getSecondsBetweenEvents(partitionGranularity);
             String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "PVETLDestTest" + partitionGranularity;
             // getLastKnownEvent for a PV with no data should return null

@@ -59,7 +59,7 @@ public class LargePBLineTest {
     @EnumSource(FileExtension.class)
     public void testLargeLines(FileExtension fileExtension) throws Exception {
         PlainStoragePlugin storagePlugin = new PlainStoragePlugin(fileExtension);
-        largeLineSetup.setUpRootFolder(storagePlugin, "largeLineTest", PartitionGranularity.PARTITION_HOUR, fileExtension);
+        largeLineSetup.setUpRootFolder(storagePlugin, "largeLineTest", PartitionGranularity.PARTITION_HOUR);
 
         // We create vector doubles with a large number of elements; write it out and then test the read.
         String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "LargeLineTest"

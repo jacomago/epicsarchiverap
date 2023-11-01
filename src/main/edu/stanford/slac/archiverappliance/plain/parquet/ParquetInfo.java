@@ -12,6 +12,7 @@ import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.metadata.BlockMetaData;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.hadoop.util.HadoopInputFile;
+import org.apache.parquet.io.InputFile;
 import org.apache.parquet.proto.ProtoParquetReader;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
@@ -34,7 +35,7 @@ public class ParquetInfo extends FileInfo {
     String pvName;
     short dataYear;
     ArchDBRTypes archDBRTypes;
-    final org.apache.hadoop.fs.Path hadoopPath;
+    final InputFile hadoopInputFile;
     ParquetMetadata footer;
     ParquetFileReader fileReader;
     @Override
@@ -66,10 +67,10 @@ public class ParquetInfo extends FileInfo {
 
     public ParquetInfo(Path pvPath) throws IOException {
         super();
-        this.hadoopPath = new org.apache.hadoop.fs.Path(pvPath.toUri());
+        var hadoopPath = new org.apache.hadoop.fs.Path(pvPath.toUri());
         var config = new Configuration();
-        var inputFile = HadoopInputFile.fromPath(hadoopPath, config);
-        fileReader = ParquetFileReader.open(inputFile);
+        hadoopInputFile = HadoopInputFile.fromPath(hadoopPath, config);
+        fileReader = ParquetFileReader.open(hadoopInputFile);
         footer = fileReader.getFooter();
         var metadata = footer.getFileMetaData();
         this.dataYear = Short.parseShort(metadata.getKeyValueMetaData().get(YEAR));
@@ -86,9 +87,9 @@ public class ParquetInfo extends FileInfo {
                 getLastEvent().getEventTimeStamp()));
     }
 
-    private DBRTimeEvent getEventAtSeconds(org.apache.hadoop.fs.Path hadoopPath, Integer max) throws IOException {
+    private DBRTimeEvent getEventAtSeconds(InputFile hadoopInputFile, Integer max) throws IOException {
         Message.Builder lastMessageEvent = null;
-        try (var reader = ProtoParquetReader.builder(hadoopPath)
+        try (var reader = ProtoParquetReader.builder(hadoopInputFile)
                 .withFilter(getSecondsFilter(max))
                 .build()) {
             while (true) {
@@ -133,8 +134,8 @@ public class ParquetInfo extends FileInfo {
         return this.archDBRTypes;
     }
 
-    private void getFirstEvent(org.apache.hadoop.fs.Path hadoopPath) throws IOException {
-        try (var reader = ProtoParquetReader.builder(hadoopPath).build()) {
+    private void getFirstEvent(InputFile hadoopInputFile) throws IOException {
+        try (var reader = ProtoParquetReader.builder(hadoopInputFile).build()) {
 
             var value = reader.read();
 
@@ -145,7 +146,7 @@ public class ParquetInfo extends FileInfo {
         this.fetchedFirstEvent = true;
     }
 
-    private void getLastEvent(org.apache.hadoop.fs.Path hadoopPath, ParquetMetadata footer) throws IOException {
+    private void getLastEvent(InputFile hadoopInputFile, ParquetMetadata footer) throws IOException {
         Integer maxIntoYearSeconds = 0;
         for (BlockMetaData blockMetaData : footer.getBlocks()) {
             var secondsColumn = blockMetaData.getColumns().stream()
@@ -157,7 +158,7 @@ public class ParquetInfo extends FileInfo {
                         (Integer) secondsColumn.get().getStatistics().genericGetMax();
             }
         }
-        this.lastEvent = getEventAtSeconds(hadoopPath, maxIntoYearSeconds);
+        this.lastEvent = getEventAtSeconds(hadoopInputFile, maxIntoYearSeconds);
         this.fetchedLastEvent = true;
     }
 
@@ -168,9 +169,9 @@ public class ParquetInfo extends FileInfo {
     public DBRTimeEvent getFirstEvent() {
         if (!fetchedFirstEvent) {
             try {
-                getFirstEvent(hadoopPath);
+                getFirstEvent(hadoopInputFile);
             } catch (IOException e) {
-                logger.error("Failed to get first event for file {}", hadoopPath, e);
+                logger.error("Failed to get first event for file {}", hadoopInputFile, e);
             }
         }
         return this.firstEvent;
@@ -183,9 +184,9 @@ public class ParquetInfo extends FileInfo {
     public DBRTimeEvent getLastEvent() {
         if (!fetchedLastEvent) {
             try {
-                getLastEvent(hadoopPath, footer);
+                getLastEvent(hadoopInputFile, footer);
             } catch (IOException e) {
-                logger.error("Failed to get last event for file {}", hadoopPath, e);
+                logger.error("Failed to get last event for file {}", hadoopInputFile, e);
             }
         }
         return this.lastEvent;

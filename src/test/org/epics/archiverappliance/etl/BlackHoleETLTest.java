@@ -72,7 +72,7 @@ public class BlackHoleETLTest {
         PBCommonSetup srcSetup = new PBCommonSetup();
         BlackholeStoragePlugin etlDest = new BlackholeStoragePlugin();
 
-        srcSetup.setUpRootFolder(etlSrc, "BlackholeETLTestSrc_" + granularity, granularity, fileExtension);
+        srcSetup.setUpRootFolder(etlSrc, "BlackholeETLTestSrc_" + granularity, granularity);
 
         logger.info("Testing black hole for " + etlSrc.getPartitionGranularity() + " to "
                 + etlDest.getPartitionGranularity());

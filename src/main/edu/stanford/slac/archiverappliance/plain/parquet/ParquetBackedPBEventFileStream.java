@@ -25,6 +25,9 @@ import java.util.List;
 import static edu.stanford.slac.archiverappliance.plain.parquet.ParquetInfo.fetchFileInfo;
 import static org.apache.parquet.filter2.predicate.FilterApi.*;
 
+/**
+ * ETL Parquet files stream, provides access to the list of parquet files for combination or streaming events.
+ */
 public class ParquetBackedPBEventFileStream implements ETLParquetFilesStream {
     private static final Logger logger = LogManager.getLogger(ParquetBackedPBEventFileStream.class.getName());
     private final String pvName;

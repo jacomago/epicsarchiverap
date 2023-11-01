@@ -52,7 +52,7 @@ public class SearchInPBFileTest {
     @Test
     public void testSeekToTime() throws Exception {
         PlainStoragePlugin pbplugin = new PlainStoragePlugin(FileExtension.PB);
-        pbSetup.setUpRootFolder(pbplugin, FileExtension.PB);
+        pbSetup.setUpRootFolder(pbplugin);
 		short year = TimeUtils.getCurrentYear();
 	    Instant start = TimeUtils.getStartOfYear(year);
         long numberOfSamples =

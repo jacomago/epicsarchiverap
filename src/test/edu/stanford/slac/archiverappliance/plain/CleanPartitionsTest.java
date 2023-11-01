@@ -47,7 +47,7 @@ public class CleanPartitionsTest {
             PlainStoragePlugin pbPlugin = new PlainStoragePlugin(fileExtension);
             PBCommonSetup srcSetup = new PBCommonSetup();
 
-            srcSetup.setUpRootFolder(pbPlugin, "TestCleanPartitions_" + granularity, granularity, fileExtension);
+            srcSetup.setUpRootFolder(pbPlugin, "TestCleanPartitions_" + granularity, granularity);
 
             String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "CleanPartition"
                     + pbPlugin.getPartitionGranularity();

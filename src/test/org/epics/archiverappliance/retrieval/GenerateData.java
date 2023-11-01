@@ -66,7 +66,7 @@ public class GenerateData {
             throws Exception {
         PlainStoragePlugin storagePlugin = new PlainStoragePlugin(fileExtension);
         PBCommonSetup setup = new PBCommonSetup();
-        setup.setUpRootFolder(storagePlugin, fileExtension);
+        setup.setUpRootFolder(storagePlugin);
         long numberOfEvents = 0;try (BasicContext context = new BasicContext()) {
             if (!Files.exists(PathNameUtility.getPathNameForTime(
                     storagePlugin,
