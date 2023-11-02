@@ -9,11 +9,7 @@ import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigServiceForTests;
-import org.epics.archiverappliance.config.PVTypeInfo;
-import org.epics.archiverappliance.config.StoragePluginURLParser;
+import org.epics.archiverappliance.config.*;
 import org.epics.archiverappliance.etl.ETLExecutor;
 import org.epics.archiverappliance.retrieval.workers.CurrentThreadWorkerEventStream;
 import org.epics.archiverappliance.utils.simulation.SimulationEventStream;
@@ -21,10 +17,13 @@ import org.epics.archiverappliance.utils.simulation.SineGenerator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.time.Instant;
+import java.util.stream.Stream;
 
 public class ZipETLTest {
     private static final Logger logger = LogManager.getLogger(ZipETLTest.class.getName());
@@ -45,13 +44,22 @@ public class ZipETLTest {
         FileUtils.deleteDirectory(testFolder);
     }
 
-    @Test
-    public void testETLIntoZipPerPV() throws Exception {
+    private static Stream<Arguments> provideSource() {
+        return Stream.of(Arguments.of(true), Arguments.of(false));
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideSource")
+    public void testETLIntoZipPerPV(boolean compressSrc) throws Exception {
         String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + ":ETLZipTest";
         ArchDBRTypes dbrType = ArchDBRTypes.DBR_SCALAR_DOUBLE;
         String srcRootFolder = testFolder.getAbsolutePath() + File.separator + "srcFiles";
+        String srcPluginString = "pb://localhost?name=ZipETL&rootFolder=" + srcRootFolder + "&partitionGranularity=PARTITION_DAY";
+        if (compressSrc) {
+            srcPluginString = srcPluginString + "&compress=ZIP_PER_PV";
+        }
         PlainStoragePlugin etlSrc = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                "pb://localhost?name=ZipETL&rootFolder=" + srcRootFolder + "&partitionGranularity=PARTITION_DAY",
+                srcPluginString,
                 configService);
         logger.info(etlSrc.getURLRepresentation());
 
@@ -122,6 +130,6 @@ public class ZipETLTest {
         logger.info("Got " + srcEventCount + " src events " + destEventCount + " dest events");
         Assertions.assertEquals(
                 (simstream.getNumberOfEvents() - 1), srcEventCount + destEventCount,
-                "Retrieval does not seem to return any events " + srcEventCount + destEventCount);
+                "Retrieval does not seem to return correct number of events " + srcEventCount + destEventCount);
     }
 }

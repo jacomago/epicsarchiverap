@@ -184,13 +184,13 @@ public class ETLJob implements Runnable {
             // PV name being processed.
             long time1 = System.currentTimeMillis();
             long totalSrcBytes = 0;
-            List<ETLInfo> ETLInfoList = curETLSource.getETLStreams(pvName, processingTime, etlContext);
+            List<ETLInfo> etlInfoList = curETLSource.getETLStreams(pvName, processingTime, etlContext);
             time4getETLStreams = time4getETLStreams + System.currentTimeMillis() - time1;
-            if (ETLInfoList != null && !ETLInfoList.isEmpty()) {
+            if (etlInfoList != null && !etlInfoList.isEmpty()) {
                 List<ETLInfo> movedList = new LinkedList<>();
 
                 ProcessInfoListResult processInfoListResult = processETLInfoList(
-                        ETLInfoList,
+                        etlInfoList,
                         pvName,
                         totalSrcBytes,
                         destMetrics,

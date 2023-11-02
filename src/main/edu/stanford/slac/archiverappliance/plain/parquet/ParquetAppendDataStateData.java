@@ -66,8 +66,8 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
         return Path.of(String.valueOf(currentPVPath.getParent()), "." + currentPVPath.getFileName() + ".crc");
     }
 
-    private static void combineFiles(List<Path> inPaths, Path outPath, CompressionMode compressionMode)
-            throws IOException {
+    private static void combineFiles(
+            List<Path> inPaths, Path outPath, CompressionMode compressionMode, boolean recompress) throws IOException {
         Path outTempPath = getOutTempPath(outPath);
         if (inPaths.contains(outTempPath)) {
             outTempPath = getOutTempPath(outTempPath);
@@ -93,11 +93,13 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
                 .map(p -> new org.apache.hadoop.fs.Path(p.toUri()))
                 .toList());
         Configuration conf = new Configuration();
-        RewriteOptions rewriteOptions = new RewriteOptions.Builder(
-                conf, rewriteInPaths, new org.apache.hadoop.fs.Path(outTempPath.toUri()))
-                // .transform(compressionMode.getParquetCompressionCodec()) // TODO only change compression if codecs
-                // don't match
-                .build();
+        RewriteOptions.Builder rewriteOptionsBuilder =
+                new RewriteOptions.Builder(conf, rewriteInPaths, new org.apache.hadoop.fs.Path(outTempPath.toUri()));
+        if (recompress) {
+            rewriteOptionsBuilder = rewriteOptionsBuilder.transform(compressionMode.getParquetCompressionCodec());
+        } // TODO only change compression if codecs
+        // don't match
+        RewriteOptions rewriteOptions = rewriteOptionsBuilder.build();
         try {
             ParquetRewriter rewriter = new ParquetRewriter(rewriteOptions);
             rewriter.processBlocks();
@@ -276,7 +278,7 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
         assert pvPath != null;
 
         this.closeStreams();
-        combineFiles(etlParquetFilesStream.getPaths(), pvPath, this.compressionMode);
+        combineFiles(etlParquetFilesStream.getPaths(), pvPath, this.compressionMode, true);
 
         try {
             // Update the last known timestamp and the like...
@@ -333,7 +335,7 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
         if (tempFile != null) {
             logger.debug("parquet combineWithTempFiles  currentPVPath sizes {} tempFiles {} ", currentPVPath, tempFile);
 
-            combineFiles(List.of(tempFile), currentPVPath, this.compressionMode);
+            combineFiles(List.of(tempFile), currentPVPath, this.compressionMode, false);
             // Delete tempFile
             if (Files.exists(tempFile)) {
                 Files.delete(tempFile);

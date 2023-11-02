@@ -58,7 +58,8 @@ public class SimpleETLTest {
     static Stream<Arguments> providePartitionFileExtension() {
         return Arrays.stream(new PartitionGranularity[]{PartitionGranularity.PARTITION_MONTH})
                 .filter(g -> g.getNextLargerGranularity() != null)
-                .flatMap(g -> etlPlugins.stream().flatMap(plugins -> Stream.of(Arguments.of(g, plugins))));
+                .flatMap(g ->
+                        etlPlugins.stream().flatMap(plugins -> Stream.of(Arguments.of(g, plugins))));
     }
 
     @BeforeAll
