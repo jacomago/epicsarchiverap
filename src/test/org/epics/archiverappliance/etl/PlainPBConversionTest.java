@@ -12,12 +12,7 @@ import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.data.DBRTimeEvent;
-import org.epics.archiverappliance.data.SampleValue;
-import org.epics.archiverappliance.data.ScalarStringSampleValue;
-import org.epics.archiverappliance.data.ScalarValue;
-import org.epics.archiverappliance.data.VectorStringSampleValue;
-import org.epics.archiverappliance.data.VectorValue;
+import org.epics.archiverappliance.data.*;
 import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.etl.conversion.ThruNumberAndStringConversion;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
@@ -98,7 +93,7 @@ public class PlainPBConversionTest {
             throws Exception {
         PlainStoragePlugin storagePlugin = new PlainStoragePlugin(fileExtension);
         PBCommonSetup setup = new PBCommonSetup();
-        setup.setUpRootFolder(storagePlugin, "PlainPBConversionTest", granularity, fileExtension);
+        setup.setUpRootFolder(storagePlugin, "PlainPBConversionTest", granularity);
         logger.info("Testing conversion from " + srcDBRType.toString() + " to " + destDBRType.toString());
         String pvName = "PlainPBConversionTest_" + srcDBRType + "_" + destDBRType;
         int periodInSeconds = granularity.getApproxSecondsPerChunk() / ratio;
@@ -121,7 +116,7 @@ public class PlainPBConversionTest {
             throws Exception {
         PlainStoragePlugin storagePlugin = new PlainStoragePlugin(fileExtension);
         PBCommonSetup setup = new PBCommonSetup();
-        setup.setUpRootFolder(storagePlugin, "PlainPBConversionTest", granularity, fileExtension);
+        setup.setUpRootFolder(storagePlugin, "PlainPBConversionTest", granularity);
         logger.info("Testing failed conversion from " + ArchDBRTypes.DBR_SCALAR_DOUBLE + " to "
                 + ArchDBRTypes.DBR_WAVEFORM_STRING + ". You could see an exception here; ignore it. It is expected");
         String pvName =

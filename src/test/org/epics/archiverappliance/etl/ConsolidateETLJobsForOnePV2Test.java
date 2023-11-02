@@ -81,13 +81,13 @@ public class ConsolidateETLJobsForOnePV2Test {
     @Test
     public void testAll() {
         try {
-            Consolidate();
+            consolidate();
         } catch (AlreadyRegisteredException | IOException | InterruptedException e) {
             logger.error(e);
         }
     }
 
-    private void Consolidate() throws AlreadyRegisteredException, IOException, InterruptedException {
+    private void consolidate() throws AlreadyRegisteredException, IOException, InterruptedException {
         PVTypeInfo typeInfo = new PVTypeInfo(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
         String[] dataStores = new String[]{
                 storageplugin1.getURLRepresentation(),
@@ -152,7 +152,7 @@ public class ConsolidateETLJobsForOnePV2Test {
         String storageName = "MTS";
         Instant oneYearLaterTimeStamp = TimeUtils.convertFromEpochSeconds(
                 TimeUtils.getCurrentEpochSeconds()
-                        + 365 * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(),
+                        + 365L * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(),
                 0);
         ETLExecutor.runPvETLsBeforeOneStorage(configService, oneYearLaterTimeStamp, pvName, storageName);
         // make sure there are no pb files in short term storage , medium term storage and all files in long term

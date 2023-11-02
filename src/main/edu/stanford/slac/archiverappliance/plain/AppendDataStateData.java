@@ -96,7 +96,7 @@ public abstract class AppendDataStateData {
 
     protected Event checkStream(String pvName, ETLContext context, ETLBulkStream bulkStream, Class<? extends ETLBulkStream> streamType) throws IOException {
         if (!(streamType.isInstance(bulkStream))) {
-            logger.info(
+            logger.debug(
                     "Can't use bulk stream between different file formats "
                             + pvName + " for stream "
                             + bulkStream.getDescription().getSource());

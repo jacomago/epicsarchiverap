@@ -27,11 +27,7 @@ import org.epics.archiverappliance.retrieval.workers.CurrentThreadWorkerEventStr
 import org.epics.archiverappliance.utils.nio.ArchPaths;
 import org.epics.archiverappliance.utils.simulation.SimulationEventStream;
 import org.epics.archiverappliance.utils.simulation.SineGenerator;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.File;
 import java.net.URLEncoder;
@@ -59,7 +55,7 @@ public class DataRetrievalServletTest {
 	@BeforeEach
 	public void setUp() throws Exception {
 		configService = new ConfigServiceForTests(new File("./bin"));
-		pbSetup.setUpRootFolder(pbplugin, FileExtension.PB);
+		pbSetup.setUpRootFolder(pbplugin);
 		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
 	}
 

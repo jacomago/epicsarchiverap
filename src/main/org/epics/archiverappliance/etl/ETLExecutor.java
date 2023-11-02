@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
  *
  */
 public class ETLExecutor {
-	private static Logger logger = LogManager.getLogger(ETLExecutor.class.getName());
+	private static final Logger logger = LogManager.getLogger(ETLExecutor.class.getName());
 	
 	/**
 	 * This should only be called from within unit tests...

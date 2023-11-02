@@ -20,7 +20,7 @@ public class PlainPBURLRepresentationTest {
         PBCommonSetup srcSetup = new PBCommonSetup();
 
         srcSetup.setUpRootFolder(
-                etlSrc, "SimpleETLTestSrc_" + PartitionGranularity.PARTITION_HOUR, PartitionGranularity.PARTITION_HOUR, fileExtension);
+                etlSrc, "SimpleETLTestSrc_" + PartitionGranularity.PARTITION_HOUR, PartitionGranularity.PARTITION_HOUR);
         String urlRep = etlSrc.getURLRepresentation();
         ConfigService configService = new ConfigServiceForTests(new File("./bin"));
         PlainStoragePlugin after =

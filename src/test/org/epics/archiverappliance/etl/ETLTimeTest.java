@@ -1,5 +1,6 @@
 package org.epics.archiverappliance.etl;
 
+import edu.stanford.slac.archiverappliance.plain.CompressionMode;
 import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.commons.io.FileUtils;
@@ -22,7 +23,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +33,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.text.DecimalFormat;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.stream.Stream;
 
 /**
  * An ETL benchmark. Generate some data for PVs and then time the movement to the next store.
@@ -53,6 +56,32 @@ public class ETLTimeTest {
     ArchDBRTypes type = ArchDBRTypes.DBR_SCALAR_DOUBLE;
     private ConfigServiceForTests configService;
 
+    private static Stream<Arguments> provideTestTime() {
+        return ETLTestPlugins.generateFileExtensions().stream()
+                .flatMap(fileExtensions -> Stream.of(
+                        Arguments.of(fileExtensions[0], fileExtensions[1], CompressionMode.NONE, CompressionMode.NONE),
+                        Arguments.of(
+                                fileExtensions[0],
+                                fileExtensions[1],
+                                CompressionMode.NONE,
+                                getFileExtensionDefaultCompression(fileExtensions[1])),
+                        Arguments.of(
+                                fileExtensions[0],
+                                fileExtensions[1],
+                                getFileExtensionDefaultCompression(fileExtensions[0]),
+                                getFileExtensionDefaultCompression(fileExtensions[1]))));
+    }
+
+    private static CompressionMode getFileExtensionDefaultCompression(FileExtension fileExtension) {
+        return fileExtension == FileExtension.PARQUET
+                ? CompressionMode.valueOf("ZSTD")
+                : CompressionMode.valueOf("ZIP_PER_PV");
+    }
+
+    private static double getDataSizeInGBPerHour(CountFiles stsSizeVisitor) {
+        return stsSizeVisitor.totalSize / (1024.0 * 1024.0 * 1024.0);
+    }
+
     @BeforeEach
     public void setUp() throws Exception {
         configService = new ConfigServiceForTests(new File("./bin"));
@@ -73,26 +102,31 @@ public class ETLTimeTest {
     }
 
     @ParameterizedTest
-    @EnumSource(FileExtension.class)
-    public void testTime(FileExtension fileExtension)
+    @MethodSource("provideTestTime")
+    public void testTime(
+            FileExtension stsFileExtension,
+            FileExtension mtsFileExtension,
+            CompressionMode srcCompression,
+            CompressionMode destCompression)
             throws Exception {
-        PlainStoragePlugin storageplugin1 = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                fileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + shortTermFolderName
-                        + "/&partitionGranularity=PARTITION_HOUR",
+        PlainStoragePlugin stsStoragePlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+                stsFileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + shortTermFolderName
+                        + "/&partitionGranularity=PARTITION_HOUR&compress=" + srcCompression.toURLString(),
                 configService);
-        PlainStoragePlugin storageplugin2 = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                fileExtension.getSuffix() + "://localhost?name=MTS&rootFolder=" + mediumTermFolderName
-                        + "/&partitionGranularity=PARTITION_YEAR",
+        PlainStoragePlugin mtsStoragePlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+                mtsFileExtension.getSuffix() + "://localhost?name=MTS&rootFolder=" + mediumTermFolderName
+                        + "/&partitionGranularity=PARTITION_YEAR&compress=" + destCompression.toURLString(),
                 configService);
         short currentYear = TimeUtils.getCurrentYear();
 
         ArrayList<String> pvs = new ArrayList<String>();
         for (int i = 0; i < testSize; i++) {
             int tableName = i % 200;
-            String pvName = "ArchUnitTest" + tableName + ":ETLTimeTest" + i;
+            String pvName = "ArchUnitTest" + tableName + stsFileExtension.getSuffix() + mtsFileExtension.getSuffix()
+                    + srcCompression.toURLString() + destCompression.toURLString() + ":ETLTimeTest" + i;
             PVTypeInfo typeInfo = new PVTypeInfo(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
             String[] dataStores =
-                    new String[] {storageplugin1.getURLRepresentation(), storageplugin2.getURLRepresentation()};
+                    new String[]{stsStoragePlugin.getURLRepresentation(), mtsStoragePlugin.getURLRepresentation()};
             typeInfo.setDataStores(dataStores);
             configService.updateTypeInfoForPV(pvName, typeInfo);
             configService.registerPVToAppliance(pvName, configService.getMyApplianceInfo());
@@ -107,9 +141,9 @@ public class ETLTimeTest {
                 // Generate subset of data for one hour. We vary the amount of data we generate to mimic LCLS
                 // distribution...
                 int totalNum = 1;
-                if (m < 500) {
+                if (m < pvs.size() / 4) {
                     totalNum = 10 * PartitionGranularity.PARTITION_HOUR.getApproxSecondsPerChunk();
-                } else if (m < 5000) {
+                } else if (m < pvs.size() / 2) {
                     totalNum = PartitionGranularity.PARTITION_HOUR.getApproxSecondsPerChunk();
                 }
 
@@ -119,12 +153,12 @@ public class ETLTimeTest {
                     testData.add(
                             new SimulationEvent(s * 10, currentYear, type, new ScalarValue<Double>((double) s * 10)));
                 }
-                storageplugin1.appendData(context, pvnameTemp, testData);
+                stsStoragePlugin.appendData(context, pvnameTemp, testData);
             }
         }
         logger.info("Done generating data for " + pvs.size() + " pvs");
-        CountFiles sizeVisitor = new CountFiles();
-        Files.walkFileTree(Paths.get(shortTermFolderName), sizeVisitor);
+        CountFiles stsSizeVisitor = new CountFiles();
+        Files.walkFileTree(Paths.get(shortTermFolderName), stsSizeVisitor);
 
         long time1 = System.currentTimeMillis();
         YearSecondTimestamp yts = new YearSecondTimestamp((short) (currentYear + 1), 6 * 60 * 24 * 10 + 100, 0);
@@ -143,32 +177,22 @@ public class ETLTimeTest {
         long time2 = System.currentTimeMillis();
         DecimalFormat twoSignificantDigits = new DecimalFormat("###,###,###,###,###,###.##");
 
-        double testSizePVEstimateTimeSecs = ((time2 - time1) / 1000.0) * ((double) testSize / pvs.size());
-        double dataSizeInGBPerHour = sizeVisitor.totalSize / (1024.0 * 1024.0 * 1024.0);
-        double fudgeFactor = 5.0; // Inner sectors; read/write; varying event rates etc.
-        logger.info("Time for moving "
-                + pvs.size() + " pvs"
-                + " with data " + twoSignificantDigits.format(dataSizeInGBPerHour) + "(GB/Hr) and "
-                + twoSignificantDigits.format(dataSizeInGBPerHour * 24) + "(GB/day)"
-                + " from " + shortTermFolderName
-                + " to " + mediumTermFolderName
-                + " in " + (time2 - time1) + "(ms)."
-                + " Estimated time for " + testSize + " PVs is "
-                + twoSignificantDigits.format(testSizePVEstimateTimeSecs) + "(s)"
-                + " Estimated capacity consumed = "
-                + twoSignificantDigits.format(testSizePVEstimateTimeSecs * 100 * fudgeFactor / 3600.0));
+        logEstimates(time2, time1, pvs, stsSizeVisitor, twoSignificantDigits);
 
         // No pb files should exist in short term folder...
         CountFiles postETLSrcVisitor = new CountFiles();
         Files.walkFileTree(Paths.get(shortTermFolderName), postETLSrcVisitor);
+        logger.info("File size left in src folder " + getDataSizeInGBPerHour(postETLSrcVisitor));
         CountFiles postETLDestVisitor = new CountFiles();
         Files.walkFileTree(Paths.get(mediumTermFolderName), postETLDestVisitor);
+        logger.info("File size left in dest folder " + getDataSizeInGBPerHour(postETLDestVisitor));
+
         Assertions.assertEquals(
                 0,
                 postETLSrcVisitor.filesPresent,
                 "We have some files that have not moved " + postETLSrcVisitor.filesPresent);
         int expectedFiles =
-                switch (fileExtension) {
+                switch (mtsFileExtension) {
                     case PB -> pvs.size();
                     case PARQUET -> pvs.size() * 2; // includes checksum files
                 };
@@ -183,6 +207,28 @@ public class ETLTimeTest {
         }
 
         logger.info(ApplianceMetricsDetails.getETLMetricsDetails(configService));
+    }
+
+    private void logEstimates(
+            long time2,
+            long time1,
+            ArrayList<String> pvs,
+            CountFiles stsSizeVisitor,
+            DecimalFormat twoSignificantDigits) {
+        double testSizePVEstimateTimeSecs = ((time2 - time1) / 1000.0) * ((double) testSize / pvs.size());
+        double dataSizeInGBPerHour = getDataSizeInGBPerHour(stsSizeVisitor);
+        double fudgeFactor = 5.0; // Inner sectors; read/write; varying event rates etc.
+        logger.info("Time for moving "
+                + pvs.size() + " pvs"
+                + " with data " + twoSignificantDigits.format(dataSizeInGBPerHour) + "(GB/Hr) and "
+                + twoSignificantDigits.format(dataSizeInGBPerHour * 24) + "(GB/day)"
+                + " from " + shortTermFolderName
+                + " to " + mediumTermFolderName
+                + " in " + (time2 - time1) + "(ms)."
+                + " Estimated time for " + testSize + " PVs is "
+                + twoSignificantDigits.format(testSizePVEstimateTimeSecs) + "(s)"
+                + " Estimated capacity consumed = "
+                + twoSignificantDigits.format(testSizePVEstimateTimeSecs * 100 * fudgeFactor / 3600.0));
     }
 
     static class CountFiles implements FileVisitor<Path> {
@@ -211,5 +257,4 @@ public class ETLTimeTest {
             return FileVisitResult.CONTINUE;
         }
     }
-
 }

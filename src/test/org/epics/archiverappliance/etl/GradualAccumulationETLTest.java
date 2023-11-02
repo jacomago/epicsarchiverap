@@ -8,7 +8,6 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,6 +37,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Stream;
 
 /**
@@ -48,18 +48,12 @@ import java.util.stream.Stream;
 public class GradualAccumulationETLTest {
     private static final Logger logger = LogManager.getLogger(GradualAccumulationETLTest.class.getName());
     static DefaultConfigService configService;
-    static PlainStoragePlugin etlSrcPB;
-    static PlainStoragePlugin etlDestPB;
-    static PlainStoragePlugin etlSrcParquet;
-    static PlainStoragePlugin etlDestParquet;
+    static List<ETLTestPlugins> etlPlugins;
     int ratio = 10; // Size of the test
 
     @BeforeAll
     public static void setup() throws ConfigException {
-        etlSrcPB = new PlainStoragePlugin(FileExtension.PB);
-        etlDestPB = new PlainStoragePlugin(FileExtension.PB);
-        etlSrcParquet = new PlainStoragePlugin(FileExtension.PARQUET);
-        etlDestParquet = new PlainStoragePlugin(FileExtension.PARQUET);
+        etlPlugins = ETLTestPlugins.generatePlugins();
         configService = new ConfigServiceForTests(new File("./bin"), 1);
     }
 
@@ -81,46 +75,31 @@ public class GradualAccumulationETLTest {
     public static Stream<Arguments> provideGradualAccumulation() {
         return Arrays.stream(PartitionGranularity.values())
                 .filter(g -> g.getNextLargerGranularity() != null)
-                .flatMap(g -> Arrays.stream(FileExtension.values()).flatMap(f -> {
-                    PlainStoragePlugin etlSrc =
-                            switch (f) {
-                                case PB -> etlSrcPB;
-                                case PARQUET -> etlSrcParquet;
-                            };
-                    PlainStoragePlugin etlDest =
-                            switch (f) {
-                                case PB -> etlDestPB;
-                                case PARQUET -> etlDestParquet;
-                            };
-
-                    return Stream.of(
-                            Arguments.of(g, true, f, etlSrc, etlDest), Arguments.of(g, false, f, etlSrc, etlDest));
-                }));
+                .flatMap(g -> etlPlugins.stream()
+                        .flatMap(
+                                plugins -> Stream.of(Arguments.of(g, true, plugins), Arguments.of(g, false, plugins))));
     }
 
     @ParameterizedTest
     @MethodSource("provideGradualAccumulation")
     public void testGradualAccumulation(
-            PartitionGranularity granularity,
-            boolean backupFiles,
-            FileExtension fileExtension,
-            PlainStoragePlugin etlSrc,
-            PlainStoragePlugin etlDest)
-            throws Exception {
+            PartitionGranularity granularity, boolean backupFiles, ETLTestPlugins testPlugins) throws Exception {
 
         PBCommonSetup srcSetup = new PBCommonSetup();
         PBCommonSetup destSetup = new PBCommonSetup();
-        etlDest.setBackupFilesBeforeETL(backupFiles);
+        testPlugins.dest().setBackupFilesBeforeETL(backupFiles);
 
-        srcSetup.setUpRootFolder(etlSrc, "GradualAccumulationETLTestSrc_" + granularity, granularity, fileExtension);
+        srcSetup.setUpRootFolder(
+                testPlugins.src(),
+                "GradualAccumulationETLTestSrc_" + granularity,
+                granularity);
         destSetup.setUpRootFolder(
-                etlDest,
+                testPlugins.dest(),
                 "GradualAccumulationETLTestDest" + granularity,
-                granularity.getNextLargerGranularity(),
-                fileExtension);
+                granularity.getNextLargerGranularity());
 
-        logger.info("Testing gradual accumulation for " + etlSrc.getPartitionGranularity() + " to "
-                + etlDest.getPartitionGranularity() + " with backup = " + backupFiles);
+        logger.info("Testing gradual accumulation for " + testPlugins.src().getPartitionGranularity() + " to "
+                + testPlugins.dest().getPartitionGranularity() + " with backup = " + backupFiles);
 
         short year = TimeUtils.getCurrentYear();
         long startOfYearInEpochSeconds = TimeUtils.getStartOfCurrentYearInSeconds();
@@ -129,11 +108,13 @@ public class GradualAccumulationETLTest {
         int incrementSeconds = granularity.getApproxSecondsPerChunk() / ratio;
         int eventsgenerated = 0;
 
-        String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + fileExtension.getSuffix() + backupFiles + "ETL_testGradual"
-                + etlSrc.getPartitionGranularity();
+        String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + testPlugins.pvNamePrefix() + backupFiles
+                + "ETL_testGradual" + testPlugins.src().getPartitionGranularity();
 
         PVTypeInfo typeInfo = new PVTypeInfo(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
-        String[] dataStores = new String[] {etlSrc.getURLRepresentation(), etlDest.getURLRepresentation()};
+        String[] dataStores = new String[]{
+                testPlugins.src().getURLRepresentation(), testPlugins.dest().getURLRepresentation()
+        };
         typeInfo.setDataStores(dataStores);
         configService.updateTypeInfoForPV(pvName, typeInfo);
         configService.registerPVToAppliance(pvName, configService.getMyApplianceInfo());
@@ -151,14 +132,14 @@ public class GradualAccumulationETLTest {
                 eventsgenerated++;
             }
             try (BasicContext context = new BasicContext()) {
-                etlSrc.appendData(context, pvName, inStream);
+                testPlugins.src().appendData(context, pvName, inStream);
             }
             ETLExecutor.runETLs(configService, TimeUtils.convertFromEpochSeconds(curEpochSeconds, 0));
             logger.debug("Done performing ETL");
             checkDataValidity(
                     pvName,
-                    etlSrc,
-                    etlDest,
+                    testPlugins.src(),
+                    testPlugins.dest(),
                     startOfYearInEpochSeconds,
                     incrementSeconds,
                     eventsgenerated,
@@ -222,7 +203,10 @@ public class GradualAccumulationETLTest {
             }
         }
 
-        Assertions.assertEquals(eventsgenerated, afterCount, testDesc + "Expected total events " + eventsgenerated + " is not the same as actual events "
-                + afterCount);
+        Assertions.assertEquals(
+                eventsgenerated,
+                afterCount,
+                testDesc + "Expected total events " + eventsgenerated + " is not the same as actual events "
+                        + afterCount);
     }
 }

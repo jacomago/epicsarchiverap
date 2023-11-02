@@ -7,8 +7,7 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PB.data;
 
-
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.plain.CompressionMode;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -28,9 +27,7 @@ import java.util.Set;
  *
  */
 public class PBCommonSetup {
-	private static final Logger logger = LogManager.getLogger(PBCommonSetup.class.getName());
-	private File tempFolderForTests;
-	private String testSpecificFolder;
+    private static final Logger logger = LogManager.getLogger(PBCommonSetup.class.getName());
     static ConfigServiceForTests configService;
 
     static {
@@ -41,81 +38,83 @@ public class PBCommonSetup {
         }
     }
 
+    private File tempFolderForTests;
+    private String testSpecificFolder;
 
     public void setUpRootFolder() throws Exception {
 
-        String rootFolder = System.getProperty("edu.stanford.slac.archiverappliance.PlainPB.PlainStoragePlugin.rootFolder");
-		 
-		if(rootFolder != null)  {
-			logger.info("Setting PB root folder to " + rootFolder);
-			configService.setPBRootFolder(rootFolder);
-		}
+        String rootFolder =
+                System.getProperty("edu.stanford.slac.archiverappliance.PlainPB.PlainStoragePlugin.rootFolder");
 
-	}
+        if (rootFolder != null) {
+            logger.info("Setting PB root folder to " + rootFolder);
+            configService.setPBRootFolder(rootFolder);
+        }
+    }
 
-    public void setUpRootFolder(PlainStoragePlugin pbplugin, FileExtension fileExtension) throws Exception {
-		setUpRootFolder();
-		tempFolderForTests = new File(configService.getPBRootFolder());
-		pbplugin.initialize(fileExtension.getSuffix() + "://localhost?name=UnitTest&rootFolder="+tempFolderForTests+"&partitionGranularity=PARTITION_YEAR", configService);
-		pbplugin.setRootFolder(tempFolderForTests.getAbsolutePath());
-		pbplugin.setName(tempFolderForTests.getAbsolutePath());
-	}
+    public void setUpRootFolder(PlainStoragePlugin plainStoragePlugin) throws Exception {
+        setUpRootFolder();
+        tempFolderForTests = new File(configService.getPBRootFolder());
+        plainStoragePlugin.initialize(
+                plainStoragePlugin.getFileExtension().getSuffix() + "://localhost?name=UnitTest&rootFolder=" + tempFolderForTests
+                        + "&partitionGranularity=PARTITION_YEAR",
+                configService);
+        plainStoragePlugin.setRootFolder(tempFolderForTests.getAbsolutePath());
+        plainStoragePlugin.setName(tempFolderForTests.getAbsolutePath());
+    }
 
-    public void setUpRootFolder(PlainStoragePlugin pbplugin, String testSpecificFolder, FileExtension fileExtension) throws Exception {
-		setUpRootFolder();
-		this.testSpecificFolder = testSpecificFolder;
-		
-		tempFolderForTests = new File(configService.getPBRootFolder() + File.separator + this.testSpecificFolder);
-		if(tempFolderForTests.exists()) {
-			FileUtils.deleteDirectory(tempFolderForTests);
-		}
-		tempFolderForTests.mkdirs();
+    public void setUpRootFolder(PlainStoragePlugin plainStoragePlugin, String testSpecificFolder) throws Exception {
+        setUpRootFolder(plainStoragePlugin, testSpecificFolder, PartitionGranularity.PARTITION_YEAR);
+    }
 
-		pbplugin.initialize(fileExtension.getSuffix() + "://localhost?name=UnitTest&rootFolder="+tempFolderForTests+"&partitionGranularity=PARTITION_YEAR", configService);
+    public void setUpRootFolder(
+            PlainStoragePlugin plainStoragePlugin, String testSpecificFolder, PartitionGranularity partitionGranularity)
+            throws Exception {
+        setUpRootFolder(plainStoragePlugin, testSpecificFolder, partitionGranularity, CompressionMode.NONE);
+    }
 
-		
-		pbplugin.setRootFolder(tempFolderForTests.getAbsolutePath());
-		pbplugin.setName(tempFolderForTests.getAbsolutePath());
-	}
+    public void setUpRootFolder(
+            PlainStoragePlugin plainStoragePlugin, String testSpecificFolder, PartitionGranularity partitionGranularity, CompressionMode compressionMode)
+            throws Exception {
+        setUpRootFolder();
+        this.testSpecificFolder = testSpecificFolder;
 
-    public void setUpRootFolder(PlainStoragePlugin pbplugin, String testSpecificFolder, PartitionGranularity partitionGranularity, FileExtension fileExtension) throws Exception {
-		setUpRootFolder();
-		this.testSpecificFolder = testSpecificFolder;
-		
-		tempFolderForTests = new File(configService.getPBRootFolder() + File.separator + this.testSpecificFolder);
-		if(tempFolderForTests.exists()) {
-			FileUtils.deleteDirectory(tempFolderForTests);
-		}
-		tempFolderForTests.mkdirs();
+        tempFolderForTests = new File(configService.getPBRootFolder() + File.separator + this.testSpecificFolder);
+        if (tempFolderForTests.exists()) {
+            FileUtils.deleteDirectory(tempFolderForTests);
+        }
+        tempFolderForTests.mkdirs();
 
-		pbplugin.initialize(fileExtension.getSuffix() + "://localhost?name=UnitTest&rootFolder="+tempFolderForTests+"&partitionGranularity="+partitionGranularity.toString(), configService);
+        plainStoragePlugin.initialize(
+                plainStoragePlugin.getFileExtension().getSuffix() + "://localhost?name=UnitTest&rootFolder=" + tempFolderForTests
+                        + "&partitionGranularity=" + partitionGranularity.toString(),
+                configService);
 
-		
-		pbplugin.setRootFolder(tempFolderForTests.getAbsolutePath());
-		pbplugin.setPartitionGranularity(partitionGranularity);
-		pbplugin.setName(partitionGranularity.toString());
-	}
+        plainStoragePlugin.setRootFolder(tempFolderForTests.getAbsolutePath());
+        plainStoragePlugin.setPartitionGranularity(partitionGranularity);
+        plainStoragePlugin.setName(partitionGranularity.toString());
+        plainStoragePlugin.setCompressionMode(compressionMode);
+    }
 
+    public void deleteTestFolder() throws IOException {
+        if (this.testSpecificFolder == null) {
+            logger.warn("Not deleting the folder " + tempFolderForTests
+                    + " as the setup did not include a test specific folder..");
+        } else {
+            logger.info("Deleting folder " + tempFolderForTests.toString());
+            FileUtils.deleteDirectory(tempFolderForTests);
+        }
+    }
 
-	public void deleteTestFolder() throws IOException {
-		if(this.testSpecificFolder == null) {
-			logger.warn("Not deleting the folder " + tempFolderForTests + " as the setup did not include a test specific folder..");
-		} else {
-			logger.info("Deleting folder " + tempFolderForTests.toString());
-			FileUtils.deleteDirectory(tempFolderForTests);
-		}
-	}
-	
-	public File getRootFolder() {
-		return tempFolderForTests;
-	}
+    public File getRootFolder() {
+        return tempFolderForTests;
+    }
 
-
-	public Set<String> listTestFolderContents() {
-		HashSet<String> ret = new HashSet<String>();
-		for(File f : FileUtils.listFiles(tempFolderForTests, new String[] { "*" }, true)) {
-			ret.add(f.getAbsolutePath().toString());
-		}
-		return ret;
-	}
+    public Set<String> listTestFolderContents() {
+        HashSet<String> ret = new HashSet<String>();
+        for (File f : FileUtils.listFiles(tempFolderForTests, new String[]{"*"}, true)) {
+            ret.add(f.getAbsolutePath());
+        }
+        return ret;
+    }
 }

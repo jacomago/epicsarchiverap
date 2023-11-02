@@ -9,7 +9,6 @@ package org.epics.archiverappliance.retrieval.client;
 
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -27,11 +26,7 @@ import org.epics.archiverappliance.data.ScalarValue;
 import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -66,7 +61,7 @@ public class MissingDataYearSpanRetrievalTest {
 
 	@BeforeEach
 	public void setUp() throws Exception {
-		pbSetup.setUpRootFolder(pbplugin, FileExtension.PB);
+		pbSetup.setUpRootFolder(pbplugin);
 		logger.info("Data folder is " + dataFolder.getAbsolutePath());
 		FileUtils.deleteDirectory(dataFolder);
 		generateData();
