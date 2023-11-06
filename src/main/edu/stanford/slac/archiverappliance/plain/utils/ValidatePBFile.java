@@ -16,11 +16,7 @@ import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.LinkedList;
@@ -65,7 +61,8 @@ public class ValidatePBFile {
 
             if (verboseMode) {
                 assert firstEvent != null;
-                logger.info("File " + path.getFileName().toString() + " appears to be valid. It has data ranging from "
+                logger.info("File " + path.getFileName().toString() + " appears to be valid. It has " + eventnum
+                        + " events ranging from "
                         + firstEvent.getEventTimeStamp()
                         + " to "
                         + lastEvent.getEventTimeStamp());
