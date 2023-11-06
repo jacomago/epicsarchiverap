@@ -51,7 +51,7 @@ public class ZipETLTest {
     @ParameterizedTest
     @MethodSource("provideSource")
     public void testETLIntoZipPerPV(boolean compressSrc) throws Exception {
-        String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + ":ETLZipTest";
+        String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + ":ZipETLTest" + compressSrc;
         ArchDBRTypes dbrType = ArchDBRTypes.DBR_SCALAR_DOUBLE;
         String srcRootFolder = testFolder.getAbsolutePath() + File.separator + "srcFiles";
         String srcPluginString = "pb://localhost?name=ZipETL&rootFolder=" + srcRootFolder + "&partitionGranularity=PARTITION_DAY";

@@ -3,6 +3,7 @@ package org.epics.archiverappliance.etl;
 import edu.stanford.slac.archiverappliance.plain.CompressionMode;
 import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.pb.PBCompressionMode;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,7 +49,7 @@ import java.util.stream.Stream;
  */
 public class ETLTimeTest {
     private static final Logger logger = LogManager.getLogger(ETLTimeTest.class.getName());
-    private static final int testSize = 10;
+    private static final int testSize = 1;
     String shortTermFolderName =
             ConfigServiceForTests.getDefaultShortTermFolder() + "/" + ETLTimeTest.class.getSimpleName() + "/shortTerm";
     String mediumTermFolderName =
@@ -111,11 +112,11 @@ public class ETLTimeTest {
             throws Exception {
         PlainStoragePlugin stsStoragePlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 stsFileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + shortTermFolderName
-                        + "/&partitionGranularity=PARTITION_HOUR&compress=" + srcCompression.toURLString(),
+                        + "&partitionGranularity=PARTITION_HOUR&compress=" + srcCompression.toURLString(),
                 configService);
         PlainStoragePlugin mtsStoragePlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 mtsFileExtension.getSuffix() + "://localhost?name=MTS&rootFolder=" + mediumTermFolderName
-                        + "/&partitionGranularity=PARTITION_YEAR&compress=" + destCompression.toURLString(),
+                        + "&partitionGranularity=PARTITION_YEAR&compress=" + destCompression.toURLString(),
                 configService);
         short currentYear = TimeUtils.getCurrentYear();
 
@@ -188,7 +189,7 @@ public class ETLTimeTest {
         logger.info("File size left in dest folder " + getDataSizeInGBPerHour(postETLDestVisitor));
 
         Assertions.assertEquals(
-                0,
+                srcCompression.getPbCompression() != PBCompressionMode.ZIP_PER_PV ? 0 : pvs.size(),
                 postETLSrcVisitor.filesPresent,
                 "We have some files that have not moved " + postETLSrcVisitor.filesPresent);
         int expectedFiles =

@@ -86,7 +86,7 @@ public class ArchPaths implements Closeable {
             sb.append(first);
             for (String segment : more) {
                 if (!segment.isEmpty()) {
-                    if (!sb.isEmpty()) {
+                    if (!sb.isEmpty() && sb.charAt(sb.length() - 1) != '/') {
                         sb.append('/');
                     }
                     sb.append(segment);
