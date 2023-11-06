@@ -10,6 +10,7 @@ import org.apache.parquet.filter2.compat.FilterCompat;
 import org.apache.parquet.filter2.predicate.FilterPredicate;
 import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.metadata.BlockMetaData;
+import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.hadoop.util.HadoopInputFile;
 import org.apache.parquet.io.InputFile;
@@ -192,7 +193,7 @@ public class ParquetInfo extends FileInfo {
         return this.lastEvent;
     }
 
-    public ParquetFileReader getFileReader() {
-        return this.fileReader;
+    public CompressionCodecName getCompressionCodecName() {
+        return this.footer.getBlocks().get(0).getColumns().get(0).getCodec();
     }
 }

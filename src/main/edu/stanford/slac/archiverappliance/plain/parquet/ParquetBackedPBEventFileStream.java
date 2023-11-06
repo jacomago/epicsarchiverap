@@ -68,7 +68,8 @@ public class ParquetBackedPBEventFileStream implements ETLParquetFilesStream {
         this.firstFileInfo = fileInfo;
     }
 
-    private ParquetInfo getFirstFileInfo() {
+    @Override
+    public ParquetInfo getFirstFileInfo() {
         if (firstFileInfo == null) {
             this.firstFileInfo = fetchFileInfo(paths.get(0));
         }

@@ -9,6 +9,7 @@ package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
 import edu.stanford.slac.archiverappliance.plain.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.utils.ValidatePBFile;
 import org.apache.logging.log4j.LogManager;
@@ -58,8 +59,7 @@ public class SimpleETLTest {
     static Stream<Arguments> providePartitionFileExtension() {
         return Arrays.stream(new PartitionGranularity[]{PartitionGranularity.PARTITION_MONTH})
                 .filter(g -> g.getNextLargerGranularity() != null)
-                .flatMap(g ->
-                        etlPlugins.stream().flatMap(plugins -> Stream.of(Arguments.of(g, plugins))));
+                .flatMap(g -> etlPlugins.stream().flatMap(plugins -> Stream.of(Arguments.of(g, plugins))));
     }
 
     @BeforeAll
@@ -95,7 +95,10 @@ public class SimpleETLTest {
         destSetup.setUpRootFolder(
                 testPlugins.dest(),
                 "SimpleETLTestDest" + granularity + testPlugins.dest().getFileExtension(),
-                granularity.getNextLargerGranularity());
+                granularity.getNextLargerGranularity(),
+                testPlugins.dest().getFileExtension() == FileExtension.PARQUET
+                        ? CompressionMode.valueOf("ZSTD")
+                        : CompressionMode.NONE);
 
         logger.info("Testing simple ETL testMove for " + testPlugins.src().getPartitionGranularity() + " to "
                 + testPlugins.dest().getPartitionGranularity());

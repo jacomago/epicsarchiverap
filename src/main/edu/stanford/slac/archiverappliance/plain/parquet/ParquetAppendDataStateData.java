@@ -97,8 +97,7 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
                 new RewriteOptions.Builder(conf, rewriteInPaths, new org.apache.hadoop.fs.Path(outTempPath.toUri()));
         if (recompress) {
             rewriteOptionsBuilder = rewriteOptionsBuilder.transform(compressionMode.getParquetCompressionCodec());
-        } // TODO only change compression if codecs
-        // don't match
+        }
         RewriteOptions rewriteOptions = rewriteOptionsBuilder.build();
         try {
             ParquetRewriter rewriter = new ParquetRewriter(rewriteOptions);
@@ -278,7 +277,12 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
         assert pvPath != null;
 
         this.closeStreams();
-        combineFiles(etlParquetFilesStream.getPaths(), pvPath, this.compressionMode, true);
+        combineFiles(
+                etlParquetFilesStream.getPaths(),
+                pvPath,
+                this.compressionMode,
+                etlParquetFilesStream.getFirstFileInfo().getCompressionCodecName()
+                        != this.compressionMode.getParquetCompressionCodec());
 
         try {
             // Update the last known timestamp and the like...

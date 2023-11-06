@@ -95,7 +95,7 @@ public class GradualAccumulationETLTest {
                 granularity);
         destSetup.setUpRootFolder(
                 testPlugins.dest(),
-                "GradualAccumulationETLTestDest" + granularity,
+                "GradualAccumulationETLTestDest_" + granularity,
                 granularity.getNextLargerGranularity());
 
         logger.info("Testing gradual accumulation for " + testPlugins.src().getPartitionGranularity() + " to "
@@ -109,7 +109,7 @@ public class GradualAccumulationETLTest {
         int eventsgenerated = 0;
 
         String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + testPlugins.pvNamePrefix() + backupFiles
-                + "ETL_testGradual" + testPlugins.src().getPartitionGranularity();
+                + "ETL_testGradual" + granularity;
 
         PVTypeInfo typeInfo = new PVTypeInfo(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
         String[] dataStores = new String[]{

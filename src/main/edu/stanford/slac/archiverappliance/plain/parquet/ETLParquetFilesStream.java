@@ -16,4 +16,12 @@ public interface ETLParquetFilesStream extends ETLBulkStream {
      * @return List of paths to parquet files
      */
     List<Path> getPaths();
+
+
+    /**
+     * Get parquet first file info
+     *
+     * @return First parquet file info
+     */
+    ParquetInfo getFirstFileInfo();
 }
