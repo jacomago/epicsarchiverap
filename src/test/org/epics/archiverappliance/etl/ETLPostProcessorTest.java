@@ -2,7 +2,6 @@ package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -11,7 +10,11 @@ import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.YearSecondTimestamp;
-import org.epics.archiverappliance.config.*;
+import org.epics.archiverappliance.config.ArchDBRTypes;
+import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ConfigServiceForTests;
+import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.data.ScalarValue;
 import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
@@ -21,9 +24,9 @@ import org.epics.archiverappliance.retrieval.postprocessors.PostProcessor;
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessors;
 import org.epics.archiverappliance.retrieval.workers.CurrentThreadWorkerEventStream;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -48,26 +51,43 @@ public class ETLPostProcessorTest {
     private static final Logger logger = LogManager.getLogger(ETLPostProcessorTest.class.getName());
     final PostProcessor testPostProcessor = new FirstSamplePP();
     String rootFolderName = ConfigServiceForTests.getDefaultPBTestFolder() + "/" + "ETLPostProcessorTest";
-    String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "ETLPostProcessorTest";
     short currentYear = TimeUtils.getCurrentYear();
     ArchDBRTypes type = ArchDBRTypes.DBR_SCALAR_DOUBLE;
-    private ConfigService configService;
+    private static ConfigService configService;
 
     private static Stream<Arguments> provideArguments() {
         return ETLTestPlugins.provideFileExtensionArguments();
     }
 
-    @BeforeEach
-    public void setUp() throws Exception {
+    @BeforeAll
+    public static void setUp() throws Exception {
         configService = new ConfigServiceForTests(new File("./bin"));
-        if (new File(rootFolderName).exists()) {
-            FileUtils.deleteDirectory(new File(rootFolderName));
-        }
     }
 
-    @AfterEach
-    public void tearDown() throws Exception {
+    @AfterAll
+    public static void tearDown() throws Exception {
         configService.shutdownNow();
+    }
+
+    private static int countAndValidateEvents(List<Callable<EventStream>> callables, String pvName) {
+        int eventCount = 0;
+        long previousEventEpochSeconds = 0;
+        try (EventStream stream = new CurrentThreadWorkerEventStream(pvName, callables)) {
+            for (Event e : stream) {
+                long currentEpochSeconds = e.getEpochSeconds();
+                Assertions.assertTrue(
+                        currentEpochSeconds > previousEventEpochSeconds,
+                        "Timestamps are not sequential current = "
+                                + TimeUtils.convertToHumanReadableString(currentEpochSeconds)
+                                + " previous = "
+                                + TimeUtils.convertToHumanReadableString(previousEventEpochSeconds));
+                previousEventEpochSeconds = currentEpochSeconds;
+                eventCount++;
+            }
+        } catch (IOException e) {
+            Assertions.fail("Error reading stream files", e);
+        }
+        return eventCount;
     }
 
     @ParameterizedTest
@@ -75,6 +95,7 @@ public class ETLPostProcessorTest {
     public void testPostProcessorDuringETL(FileExtension stsFileExtension, FileExtension mtsFileExtension)
             throws Exception {
 
+        String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "ETLPostProcessorTest" + stsFileExtension + mtsFileExtension;
         PlainStoragePlugin srcPlainPlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 stsFileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + rootFolderName
                         + "/src&partitionGranularity=PARTITION_HOUR",
@@ -129,7 +150,7 @@ public class ETLPostProcessorTest {
                         TimeUtils.getStartOfYear(currentYear),
                         TimeUtils.getStartOfYear(currentYear + 1),
                         new DefaultRawPostProcessor());
-                int eventCountRaw = countAndValidateEvents(callablesRaw);
+                int eventCountRaw = countAndValidateEvents(callablesRaw, pvName);
                 // Here's where we use a DefaultRawPostProcessor like post processor that pretends to be the same post
                 // processor as that used during ETL.
                 List<Callable<EventStream>> callablesReduced = destPlainPlugin.getDataForPV(
@@ -144,7 +165,7 @@ public class ETLPostProcessorTest {
                             }
 
                             @Override
-                            public void initialize(String userarg, String pvName) throws IOException {
+                            public void initialize(String userarg, String pvName) {
                             }
 
                             @Override
@@ -167,7 +188,7 @@ public class ETLPostProcessorTest {
                                 return 0;
                             }
                         });
-                int eventCountReduced = countAndValidateEvents(callablesReduced);
+                int eventCountReduced = countAndValidateEvents(callablesReduced, pvName);
                 int expectedReducedCount = eventCountRaw / PostProcessors.DEFAULT_SUMMARIZING_INTERVAL;
                 logger.info("On day " + day + " we got " + eventCountRaw + " raw events and " + eventCountReduced
                         + " reduced events and an expected reduced event count of " + expectedReducedCount);
@@ -182,22 +203,5 @@ public class ETLPostProcessorTest {
                                 + eventCountReduced);
             }
         }
-    }
-
-    private int countAndValidateEvents(List<Callable<EventStream>> callables) {
-        int eventCount = 0;
-        long previousEventEpochSeconds = 0;
-        for (Event e : new CurrentThreadWorkerEventStream(pvName, callables)) {
-            long currentEpochSeconds = e.getEpochSeconds();
-            Assertions.assertTrue(
-                    currentEpochSeconds > previousEventEpochSeconds,
-                    "Timestamps are not sequential current = "
-                            + TimeUtils.convertToHumanReadableString(currentEpochSeconds)
-                            + " previous = "
-                            + TimeUtils.convertToHumanReadableString(previousEventEpochSeconds));
-            previousEventEpochSeconds = currentEpochSeconds;
-            eventCount++;
-        }
-        return eventCount;
     }
 }
