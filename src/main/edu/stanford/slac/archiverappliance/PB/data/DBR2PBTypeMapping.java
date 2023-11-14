@@ -8,14 +8,14 @@
 package edu.stanford.slac.archiverappliance.PB.data;
 
 
-import java.lang.reflect.Constructor;
-import java.util.HashMap;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.ByteArray;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
+
+import java.lang.reflect.Constructor;
+import java.util.HashMap;
 
 
 /**
@@ -25,8 +25,8 @@ import org.epics.archiverappliance.data.DBRTimeEvent;
  *
  */
 public class DBR2PBTypeMapping {
-	private static Logger logger = LogManager.getLogger(DBR2PBTypeMapping.class.getName());
-	private static HashMap<ArchDBRTypes, DBR2PBTypeMapping> typemap = new HashMap<ArchDBRTypes, DBR2PBTypeMapping>();
+	private static final Logger logger = LogManager.getLogger(DBR2PBTypeMapping.class.getName());
+	private static final HashMap<ArchDBRTypes, DBR2PBTypeMapping> typemap = new HashMap<ArchDBRTypes, DBR2PBTypeMapping>();
 	static {
 		typemap.put(ArchDBRTypes.DBR_SCALAR_STRING, new DBR2PBTypeMapping(PBScalarString.class));      
 		typemap.put(ArchDBRTypes.DBR_SCALAR_SHORT, new DBR2PBTypeMapping(PBScalarShort.class));        
@@ -58,8 +58,8 @@ public class DBR2PBTypeMapping {
 	
 
 	Class<? extends DBRTimeEvent> pbclass;
-	private Constructor<? extends DBRTimeEvent> unmarshallingFromByteArrayConstructor;
-	private Constructor<? extends DBRTimeEvent> serializingConstructor;
+	private final Constructor<? extends DBRTimeEvent> unmarshallingFromByteArrayConstructor;
+	private final Constructor<? extends DBRTimeEvent> serializingConstructor;
 	
 	private DBR2PBTypeMapping(Class<? extends DBRTimeEvent> pblass) {
 		this.pbclass = pblass;
@@ -78,9 +78,7 @@ public class DBR2PBTypeMapping {
 			throw new RuntimeException("Cannot get serializing constructor for PB event for class " + pbclass.getName());
 		}
 
-		
-		assert(unmarshallingFromByteArrayConstructor != null);
-		assert(serializingConstructor != null);
+
 	}
 
 

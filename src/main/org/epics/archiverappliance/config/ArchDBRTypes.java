@@ -7,9 +7,7 @@
  *******************************************************************************/
 package org.epics.archiverappliance.config;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-
+import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadType;
 import org.epics.archiverappliance.data.SampleValue;
 import org.epics.archiverappliance.data.ScalarStringSampleValue;
 import org.epics.archiverappliance.data.ScalarValue;
@@ -18,7 +16,8 @@ import org.epics.archiverappliance.data.VectorValue;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONValue;
 
-import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadType;
+import java.util.HashMap;
+import java.util.LinkedList;
 
 
 /**
@@ -44,8 +43,8 @@ public enum ArchDBRTypes {
 	DBR_WAVEFORM_INT(12, true, "int", PayloadType.WAVEFORM_INT, true),
 	DBR_WAVEFORM_DOUBLE(13, true, "double", PayloadType.WAVEFORM_DOUBLE, true),
 	DBR_V4_GENERIC_BYTES(14, true, "v4generic", PayloadType.V4_GENERIC_BYTES, false);
-	
-	private static HashMap<PayloadType, ArchDBRTypes> PBTypeReverseMapping = new HashMap<PayloadType, ArchDBRTypes>();
+
+	private static final HashMap<PayloadType, ArchDBRTypes> PBTypeReverseMapping = new HashMap<PayloadType, ArchDBRTypes>();
 
 	static {
 		// Compute reverse lookups;
@@ -54,11 +53,11 @@ public enum ArchDBRTypes {
 		}
 	}
 
-	
-	private int integerMap;
-	private String primitiveName;
+
+	private final int integerMap;
+	private final String primitiveName;
 	private boolean isWaveForm = false;
-	private PayloadType PBPayloadType;
+	private final PayloadType PBPayloadType;
 	private boolean isV3Type = true;
 	
 	/**

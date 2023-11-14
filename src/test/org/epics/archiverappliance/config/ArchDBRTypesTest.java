@@ -7,7 +7,7 @@
  *******************************************************************************/
 package org.epics.archiverappliance.config;
 
-import static org.junit.Assert.assertSame;
+import gov.aps.jca.dbr.DBRType;
 import gov.aps.jca.dbr.DBR_TIME_Byte;
 import gov.aps.jca.dbr.DBR_TIME_Double;
 import gov.aps.jca.dbr.DBR_TIME_Enum;
@@ -15,10 +15,10 @@ import gov.aps.jca.dbr.DBR_TIME_Float;
 import gov.aps.jca.dbr.DBR_TIME_Int;
 import gov.aps.jca.dbr.DBR_TIME_Short;
 import gov.aps.jca.dbr.DBR_TIME_String;
-
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertSame;
 
 /**
  * Test the mapping for ArchDBRTypes
@@ -27,6 +27,10 @@ import org.junit.Test;
  */
 public class ArchDBRTypesTest {
 
+	@Before
+	public void setUp() {
+		DBRType.initialize(); // Initialize the enum?
+	}
 
 	@Test
 	public void testValueOf() {
