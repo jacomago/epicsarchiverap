@@ -8,6 +8,16 @@
 package org.epics.archiverappliance;
 
 
+import org.apache.commons.io.FileUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ConfigServiceForTests;
+import org.epics.archiverappliance.config.DefaultConfigService;
+import org.epics.archiverappliance.config.persistence.InMemoryPersistence;
+import org.epics.archiverappliance.config.persistence.JDBM2Persistence;
+import org.junit.Assert;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -17,19 +27,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigServiceForTests;
-import org.epics.archiverappliance.config.DefaultConfigService;
-import org.epics.archiverappliance.config.persistence.InMemoryPersistence;
-import org.epics.archiverappliance.config.persistence.JDBM2Persistence;
 
 /**
  * Setup Tomcat without having to import all the tomcat jars into your project.
@@ -52,7 +59,31 @@ public class TomcatSetup {
 		cleanupFolders.add(testFolder);
 		
 	}
-	
+
+
+	private static void catchApplianceLog(String applianceName, Process p, CountDownLatch latch, BufferedReader li, boolean checkExceptions) {
+		Logger applianceLogger = LogManager.getLogger("APP" + applianceName);
+		try {
+			String msg;
+			List<String> exceptions = new ArrayList<>();
+			while((msg = li.readLine()) != null && p.isAlive()) {
+				applianceLogger.info(applianceName + " | " + msg);
+				if(msg.contains("All components in this appliance have started up")) {
+					logger.info(applianceName + " has started up.");
+					latch.countDown();
+				}
+				if (checkExceptions && msg.contains("Exception")) {
+					exceptions.add(msg);
+				}
+			}
+			if (checkExceptions) {
+				Assert.assertTrue("Appliance " + applianceName + " threw exceptions " + exceptions, exceptions.isEmpty());
+			}
+
+		} catch(Exception ex) {
+			logger.error("Exception starting Tomcat", ex);
+		}
+	}
 
 	/**
 	 * Set up an individual tomcat with the webapps loaded.
@@ -60,13 +91,9 @@ public class TomcatSetup {
 	 * @throws Exception
 	 */
 	public void setUpWebApps(String testName) throws Exception {
-		initialSetup(testName);
-		AppliancesXMLGenerator.ApplianceXMLConfig applianceXMLConfig = new AppliancesXMLGenerator.ApplianceXMLConfig(testName, 1);
-		Path xml = applianceXMLConfig.writeAppliancesXML();
-		AppliancesXMLGenerator.AppliancePorts ports = applianceXMLConfig.appliancePortsList().get(0);
-		createAndStartTomcatInstance(testName, ports.identity(), ports.retrievalPort(), ports.serverStartUpPort(), xml);
+		setUpWebApps(testName, false);
 	}
-	
+
 	/**
 	 * Set up a cluster of tomcat instances.
 	 * Note that these are NOT clustered using tomcat's clustering technology (which is geared towards session replication and the such).
@@ -132,9 +159,27 @@ public class TomcatSetup {
 		}
 	}
 
+	/**
+	 * Set up an individual tomcat with the webapps loaded.
+	 * We create a work folder appropriate for the test; create the webapps/logs/conf folders and then call catalina.sh run.
+	 *
+	 * @throws Exception
+	 */
+	public Future<?> setUpWebApps(String testName, boolean checkExceptions) throws Exception {
+		initialSetup(testName);
+		AppliancesXMLGenerator.ApplianceXMLConfig applianceXMLConfig = new AppliancesXMLGenerator.ApplianceXMLConfig(testName, 1);
+		Path xml = applianceXMLConfig.writeAppliancesXML();
+		AppliancesXMLGenerator.AppliancePorts ports = applianceXMLConfig.appliancePortsList().get(0);
+		return createAndStartTomcatInstance(testName, ports.identity(), ports.retrievalPort(), ports.serverStartUpPort(), xml, checkExceptions);
+	}
 
-	private void createAndStartTomcatInstance(String testName, final String applianceName,
-											  int port, int startupPort, Path appliancesXML) throws IOException {
+	private Future<?> createAndStartTomcatInstance(String testName, final String applianceName,
+												   int port, int startupPort, Path appliancesXML) throws IOException, InterruptedException, ExecutionException {
+		return createAndStartTomcatInstance(testName, applianceName, port, startupPort, appliancesXML, false);
+	}
+
+	private Future<?> createAndStartTomcatInstance(String testName, final String applianceName,
+												   int port, int startupPort, Path appliancesXML, boolean checkExceptions) throws IOException, InterruptedException, ExecutionException {
 		File workFolder = makeTomcatFolders(testName, applianceName, port, startupPort);
 		File logsFolder = new File(workFolder, "logs");
 		assert (logsFolder.exists());
@@ -150,30 +195,20 @@ public class TomcatSetup {
 		final CountDownLatch latch = new CountDownLatch(1);
 
 		final BufferedReader li = new BufferedReader(new InputStreamReader(p.getInputStream()));
-		Thread t = new Thread(() -> {
-			catchApplianceLog(applianceName, p, latch, li);
+
+		ExecutorService es = Executors.newSingleThreadExecutor();
+		Future<?> future = es.submit(() -> {
+			catchApplianceLog(applianceName, p, latch, li, checkExceptions);
+			return null;
 		});
-		t.start();
 
 		// We wait for some time to make sure the server started up
-		try { latch.await(2, TimeUnit.MINUTES); } catch(InterruptedException ignored) {}
-		logger.info("Done starting " + applianceName + " Releasing latch");
-	}
-
-	private static void catchApplianceLog(String applianceName, Process p, CountDownLatch latch, BufferedReader li) {
-		Logger applianceLogger = LogManager.getLogger("APP" + applianceName);
 		try {
-			String msg;
-			while((msg = li.readLine()) != null && p.isAlive()) {
-				applianceLogger.info(applianceName + " | " + msg);
-				if(msg.contains("All components in this appliance have started up")) {
-					logger.info(applianceName + " has started up.");
-					latch.countDown();
-				}
-			}
-		} catch(Exception ex) {
-			logger.error("Exception starting Tomcat", ex);
+			latch.await(2, TimeUnit.MINUTES);
+		} catch (InterruptedException ignored) {
 		}
+		logger.info("Done starting " + applianceName + " Releasing latch");
+		return future;
 	}
 
 

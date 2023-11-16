@@ -1,23 +1,20 @@
 package org.epics.archiverappliance;
 
 import org.epics.archiverappliance.retrieval.pva.PvaGetPVDataTest;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.concurrent.Future;
+
 @Category(IntegrationTests.class)
 
-public class TomcatShutdownTest {
+public class TomcatSetupTest {
     static TomcatSetup tomcatSetup = new TomcatSetup();
-
-    @BeforeClass
-    public static void setup() throws Exception {
-
-        tomcatSetup.setUpWebApps(PvaGetPVDataTest.class.getSimpleName());
-    }
 
     @Test
     public void testTomcatShutdown() throws Exception {
+        Future<?> future = tomcatSetup.setUpWebApps(PvaGetPVDataTest.class.getSimpleName(), true);
         tomcatSetup.tearDown();
+        future.get();
     }
 }
