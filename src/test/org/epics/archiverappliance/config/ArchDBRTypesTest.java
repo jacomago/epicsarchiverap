@@ -15,8 +15,10 @@ import gov.aps.jca.dbr.DBR_TIME_Float;
 import gov.aps.jca.dbr.DBR_TIME_Int;
 import gov.aps.jca.dbr.DBR_TIME_Short;
 import gov.aps.jca.dbr.DBR_TIME_String;
+import org.epics.archiverappliance.SingleForkTests;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import static org.junit.Assert.assertSame;
 
@@ -25,6 +27,7 @@ import static org.junit.Assert.assertSame;
  * @author mshankar
  *
  */
+@Category(SingleForkTests.class)
 public class ArchDBRTypesTest {
 
 	@Before
