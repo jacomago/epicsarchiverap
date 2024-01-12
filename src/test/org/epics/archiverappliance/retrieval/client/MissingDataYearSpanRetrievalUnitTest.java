@@ -36,8 +36,6 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.Callable;
 
 /**
  * Test retrieval across year spans when some of the data is missing.
@@ -51,7 +49,7 @@ import java.util.concurrent.Callable;
  *
  * @author mshankar
  */
-public class MissingDataYearSpanRetrievalUnitTest {
+class MissingDataYearSpanRetrievalUnitTest {
     private static final Logger logger = LogManager.getLogger(MissingDataYearSpanRetrievalUnitTest.class.getName());
     private final LinkedList<Instant> generatedTimeStamps = new LinkedList<Instant>();
     String testSpecificFolder = "MissingDataYearSpanRetrieval";
@@ -137,7 +135,7 @@ public class MissingDataYearSpanRetrievalUnitTest {
      * <pre>
      */
     @Test
-    public void testMissingDataYearSpan() {
+    void testMissingDataYearSpan() {
 
         for (String pvName : new String[]{pvNamePB, pvNameParquet}) {
             testRetrieval(
