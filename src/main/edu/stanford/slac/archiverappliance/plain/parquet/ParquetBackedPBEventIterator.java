@@ -19,6 +19,9 @@ import java.util.NoSuchElementException;
 public class ParquetBackedPBEventIterator implements EventStreamIterator {
     private static final Logger logger = LogManager.getLogger(ParquetBackedPBEventIterator.class.getName());
 
+    /**
+     * Collection of readers of parquet files, built when needed.
+     */
     List<ParquetReader.Builder<Object>> readerBuilders;
     /**
      * The current reader.

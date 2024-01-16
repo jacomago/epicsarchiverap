@@ -1216,6 +1216,49 @@ public class DefaultConfigService implements ConfigService {
 		}
 	}
 
+    @Override
+    public String toString() {
+        return "DefaultConfigService{" + "myIdentity='"
+                + myIdentity + '\'' + ", myApplianceInfo="
+                + myApplianceInfo + ", appliances="
+                + appliances + ", typeInfos="
+                + typeInfos + ", archivePVRequests="
+                + archivePVRequests + ", channelArchiverDataServers="
+                + channelArchiverDataServers + ", aliasNamesToRealNames="
+                + aliasNamesToRealNames + ", pv2appliancemapping="
+                + pv2appliancemapping + ", clusterInet2ApplianceIdentity="
+                + clusterInet2ApplianceIdentity + ", appliancesConfigLoaded="
+                + appliancesConfigLoaded + ", pv2ChannelArchiverDataServer="
+                + pv2ChannelArchiverDataServer + ", pubSub="
+                + pubSub + ", namedFlags="
+                + namedFlags + ", shutdownHooks="
+                + shutdownHooks + ", etlPVLookup="
+                + etlPVLookup + ", retrievalState="
+                + retrievalState + ", mgmtRuntime="
+                + mgmtRuntime + ", engineContext="
+                + engineContext + ", appliancesInCluster="
+                + appliancesInCluster + ", pvsForThisAppliance="
+                + pvsForThisAppliance + ", parts2PVNamesForThisAppliance="
+                + parts2PVNamesForThisAppliance + ", pausedPVsForThisAppliance="
+                + pausedPVsForThisAppliance + ", applianceAggregateInfo="
+                + applianceAggregateInfo + ", eventBus="
+                + eventBus + ", archapplproperties="
+                + archapplproperties + ", pvName2KeyConverter="
+                + pvName2KeyConverter + ", persistanceLayer="
+                + persistanceLayer + ", failoverPVs="
+                + failoverPVs + ", warFile="
+                + warFile + ", startupState="
+                + startupState + ", startupExecutor="
+                + startupExecutor + ", processMetrics="
+                + processMetrics + ", runTimeFields="
+                + runTimeFields + ", theExecutionPolicy="
+                + theExecutionPolicy + ", servletContext="
+                + servletContext + ", appserverStartEpochSeconds="
+                + appserverStartEpochSeconds + ", extraFields="
+                + Arrays.toString(extraFields) + ", finishedLoggingPolicyLocation="
+                + finishedLoggingPolicyLocation + '}';
+    }
+
 	private class PVApplianceCombo implements Comparable<PVApplianceCombo> {
 		String applianceIdentity;
 		String pvName;

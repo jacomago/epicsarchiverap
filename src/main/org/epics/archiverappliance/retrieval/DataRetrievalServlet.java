@@ -977,7 +977,7 @@ public class DataRetrievalServlet extends HttpServlet {
      */
     private List<Future<EventStream>> getEventStreamFuturesFromRetrievalResults(RetrievalExecutorResult executorResult, LinkedList<Future<RetrievalResult>> retrievalResultFutures)
             throws InterruptedException, ExecutionException {
-        // List containing the result§
+        // List containing the result
         List<Future<EventStream>> eventStreamFutures = new LinkedList<Future<EventStream>>();
 
         // Loop thru the retrievalResultFutures one by one in sequence; get all the event streams from the plugins and consolidate them into a sequence of eventStream futures.

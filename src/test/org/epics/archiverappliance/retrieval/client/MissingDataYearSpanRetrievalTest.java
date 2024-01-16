@@ -56,12 +56,12 @@ import java.util.stream.Stream;
 @Tag("integration")
 public class MissingDataYearSpanRetrievalTest {
     private static final Logger logger = LogManager.getLogger(MissingDataYearSpanRetrievalTest.class.getName());
-    private static final LinkedList<Instant> generatedTimeStamps = new LinkedList<Instant>();
+    private static final LinkedList<Instant> generatedTimeStamps = new LinkedList<>();
     static String testSpecificFolder = "MissingDataYearSpanRetrieval";
-    static String pvNamePB = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + FileExtension.PB + ":"
-            + testSpecificFolder + ":mdata_yspan";
-    static String pvNameParquet = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + FileExtension.PARQUET + ":"
-            + testSpecificFolder + ":mdata_yspan";
+    static String pvNamePB =
+            ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + FileExtension.PB + ":" + testSpecificFolder;
+    static String pvNameParquet =
+            ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + FileExtension.PARQUET + ":" + testSpecificFolder;
     static File dataFolder = new File(ConfigServiceForTests.getDefaultPBTestFolder() + File.separator + "ArchUnitTest"
             + File.separator + testSpecificFolder);
     static PBCommonSetup PBSetup = new PBCommonSetup();
@@ -108,8 +108,8 @@ public class MissingDataYearSpanRetrievalTest {
                     year,
                     jun201201secsIntoYear + day * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(),
                     111000000);
-            strmPB.add(new SimulationEvent(yts, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<Double>(0.0)));
-            strmParquet.add(new SimulationEvent(yts, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<Double>(0.0)));
+            strmPB.add(new SimulationEvent(yts, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<>(0.0)));
+            strmParquet.add(new SimulationEvent(yts, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<>(0.0)));
             generatedTimeStamps.add(TimeUtils.convertFromYearSecondTimestamp(yts));
         }
         try (BasicContext context = new BasicContext()) {
@@ -143,79 +143,82 @@ public class MissingDataYearSpanRetrievalTest {
      * <pre>
      */
     static Stream<Arguments> provideMissingDataYearSpan() {
-        return Stream.of(pvNamePB, pvNameParquet)
-                .flatMap(pvName -> Stream.of(
-                        Arguments.of("2011-06-01T00:00:00.000Z", "2011-07-01T00:00:00.000Z", 0, null, -1, pvName),
-                        Arguments.of(
-                                "2011-08-10T00:00:00.000Z",
-                                "2011-09-15T10:00:00.000Z",
-                                15,
-                                "2011-09-01T00:00:00.111Z",
-                                0,
-                                pvName),
-                        Arguments.of(
-                                "2011-09-10T00:00:00.000Z",
-                                "2011-09-15T10:00:00.000Z",
-                                6,
-                                "2011-09-09T00:00:00.111Z",
-                                8,
-                                pvName),
-                        Arguments.of(
-                                "2011-09-10T00:00:00.000Z",
-                                "2011-10-15T10:00:00.000Z",
-                                22,
-                                "2011-09-09T00:00:00.111Z",
-                                8,
-                                pvName),
-                        Arguments.of(
-                                "2011-10-10T00:00:00.000Z",
-                                "2011-10-15T10:00:00.000Z",
-                                1,
-                                "2011-09-30T00:00:00.111Z",
-                                29,
-                                pvName),
-                        Arguments.of(
-                                "2011-10-10T00:00:00.000Z",
-                                "2012-01-15T10:00:00.000Z",
-                                1,
-                                "2011-09-30T00:00:00.111Z",
-                                29,
-                                pvName),
-                        Arguments.of(
-                                "2012-01-10T00:00:00.000Z",
-                                "2012-01-15T10:00:00.000Z",
-                                1,
-                                "2011-09-30T00:00:00.111Z",
-                                29,
-                                pvName),
-                        Arguments.of(
-                                "2012-01-10T00:00:00.000Z",
-                                "2012-06-15T10:00:00.000Z",
-                                16,
-                                "2011-09-30T00:00:00.111Z",
-                                29,
-                                pvName),
-                        Arguments.of(
-                                "2012-06-10T00:00:00.000Z",
-                                "2012-06-15T10:00:00.000Z",
-                                6,
-                                "2012-06-09T00:00:00.111Z",
-                                38,
-                                pvName),
-                        Arguments.of(
-                                "2012-09-10T00:00:00.000Z",
-                                "2012-09-15T10:00:00.000Z",
-                                1,
-                                "2012-06-30T00:00:00.111Z",
-                                59,
-                                pvName),
-                        Arguments.of(
-                                "2013-01-10T00:00:00.000Z",
-                                "2013-01-15T10:00:00.000Z",
-                                1,
-                                "2012-06-30T00:00:00.111Z",
-                                59,
-                                pvName)));
+        return Stream.of(pvNamePB, pvNameParquet).flatMap(MissingDataYearSpanRetrievalTest::getArgumentsStream);
+    }
+
+    static Stream<Arguments> getArgumentsStream(String pvName) {
+        return Stream.of(
+                Arguments.of("2011-06-01T00:00:00.000Z", "2011-07-01T00:00:00.000Z", 0, null, -1, pvName),
+                Arguments.of(
+                        "2011-08-10T00:00:00.000Z",
+                        "2011-09-15T10:00:00.000Z",
+                        15,
+                        "2011-09-01T00:00:00.111Z",
+                        0,
+                        pvName),
+                Arguments.of(
+                        "2011-09-10T00:00:00.000Z",
+                        "2011-09-15T10:00:00.000Z",
+                        6,
+                        "2011-09-09T00:00:00.111Z",
+                        8,
+                        pvName),
+                Arguments.of(
+                        "2011-09-10T00:00:00.000Z",
+                        "2011-10-15T10:00:00.000Z",
+                        22,
+                        "2011-09-09T00:00:00.111Z",
+                        8,
+                        pvName),
+                Arguments.of(
+                        "2011-10-10T00:00:00.000Z",
+                        "2011-10-15T10:00:00.000Z",
+                        1,
+                        "2011-09-30T00:00:00.111Z",
+                        29,
+                        pvName),
+                Arguments.of(
+                        "2011-10-10T00:00:00.000Z",
+                        "2012-01-15T10:00:00.000Z",
+                        1,
+                        "2011-09-30T00:00:00.111Z",
+                        29,
+                        pvName),
+                Arguments.of(
+                        "2012-01-10T00:00:00.000Z",
+                        "2012-01-15T10:00:00.000Z",
+                        1,
+                        "2011-09-30T00:00:00.111Z",
+                        29,
+                        pvName),
+                Arguments.of(
+                        "2012-01-10T00:00:00.000Z",
+                        "2012-06-15T10:00:00.000Z",
+                        16,
+                        "2011-09-30T00:00:00.111Z",
+                        29,
+                        pvName),
+                Arguments.of(
+                        "2012-06-10T00:00:00.000Z",
+                        "2012-06-15T10:00:00.000Z",
+                        6,
+                        "2012-06-09T00:00:00.111Z",
+                        38,
+                        pvName),
+                Arguments.of(
+                        "2012-09-10T00:00:00.000Z",
+                        "2012-09-15T10:00:00.000Z",
+                        1,
+                        "2012-06-30T00:00:00.111Z",
+                        59,
+                        pvName),
+                Arguments.of(
+                        "2013-01-10T00:00:00.000Z",
+                        "2013-01-15T10:00:00.000Z",
+                        1,
+                        "2012-06-30T00:00:00.111Z",
+                        59,
+                        pvName));
     }
 
     /**

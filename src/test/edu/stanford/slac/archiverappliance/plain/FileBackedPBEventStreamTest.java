@@ -322,7 +322,7 @@ public class FileBackedPBEventStreamTest {
                 boolean firstEvent = true;
                 for (Event e : stream) {
                     if (firstEvent) {
-                        Assertions.assertEquals( startTime,e.getEventTimeStamp());
+                        Assertions.assertEquals(startTime, e.getEventTimeStamp());
                         firstEvent = false;
                     } else {
                         finalEvent = e.makeClone();

@@ -315,7 +315,7 @@ public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, St
             logger.trace(desc + " Found " + paths.length + " matching files for pv " + pvName + " in store "
                     + this.getName());
             boolean useSearchForPositions = (this.compressionMode == CompressionMode.NONE);
-            boolean doNotuseSearchForPositions = !useSearchForPositions;
+            boolean doNotUseSearchForPositions = !useSearchForPositions;
 
             ArrayList<Callable<EventStream>> ret = new ArrayList<Callable<EventStream>>();
             // Regardless of what we find, we add the last event from the partition before the start time
@@ -345,7 +345,7 @@ public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, St
                                     paths[0],
                                     startTime,
                                     endTime,
-                                    doNotuseSearchForPositions,
+                                    doNotUseSearchForPositions,
                                     fileInfo),
                             postProcessor,
                             askingForProcessedDataButAbsentInCache));
@@ -362,7 +362,7 @@ public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, St
                             postProcessor,
                             paths,
                             askingForProcessedDataButAbsentInCache,
-                            doNotuseSearchForPositions,
+                            doNotUseSearchForPositions,
                             ret,
                             pathsCount,
                             pathid,

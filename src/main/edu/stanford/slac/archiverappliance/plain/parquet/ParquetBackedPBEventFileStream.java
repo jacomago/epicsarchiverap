@@ -14,6 +14,7 @@ import org.epics.archiverappliance.common.EmptyEventIterator;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.YearSecondTimestamp;
 import org.epics.archiverappliance.config.ArchDBRTypes;
+import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.retrieval.RemotableOverRaw;
 
@@ -61,11 +62,15 @@ public class ParquetBackedPBEventFileStream implements ETLParquetFilesStream, Re
         this.type = type;
         this.startTime = startTime;
         this.endTime = endTime;
-
     }
 
     public ParquetBackedPBEventFileStream(
-            String pvName, List<Path> paths, ArchDBRTypes type, Instant startTime, Instant endTime, ParquetInfo fileInfo) {
+            String pvName,
+            List<Path> paths,
+            ArchDBRTypes type,
+            Instant startTime,
+            Instant endTime,
+            ParquetInfo fileInfo) {
         this.pvName = pvName;
         this.paths = paths;
         this.type = type;
@@ -73,6 +78,29 @@ public class ParquetBackedPBEventFileStream implements ETLParquetFilesStream, Re
         this.endTime = endTime;
 
         this.firstFileInfo = fileInfo;
+    }
+
+    private static TimePeriod trimDates(
+            YearSecondTimestamp startYst,
+            YearSecondTimestamp endYst,
+            YearSecondTimestamp firstFileEventTime,
+            YearSecondTimestamp lastFileEventTime,
+            YearSecondTimestamp firstBeforeEventTime) {
+        // if yst start before file yst start reset seconds to 0 and year to file year
+        YearSecondTimestamp timePeriodStartYst = startYst;
+        if (startYst.compareTo(firstFileEventTime) < 0) {
+            timePeriodStartYst = firstFileEventTime;
+        } else if (startYst.compareTo(firstBeforeEventTime) > 0) {
+            timePeriodStartYst = firstBeforeEventTime;
+        }
+
+        // if end yst after file yst, set endYst to last timestamp
+        YearSecondTimestamp timePeriodEndYst = endYst;
+        if (endYst.compareTo(lastFileEventTime) > 0) {
+            timePeriodEndYst = lastFileEventTime;
+        }
+
+        return new TimePeriod(timePeriodStartYst, timePeriodEndYst);
     }
 
     @Override
@@ -90,26 +118,6 @@ public class ParquetBackedPBEventFileStream implements ETLParquetFilesStream, Re
         return this.lastFileInfo;
     }
 
-    private static TimePeriod trimDates(
-            YearSecondTimestamp startYst,
-            YearSecondTimestamp endYst,
-            YearSecondTimestamp firstEventTime,
-            YearSecondTimestamp lastEventTime) {
-        // if year start before file year start reset seconds to 0 and year to file year
-        YearSecondTimestamp timePeriodStartYst = startYst;
-        if (startYst.compareTo(firstEventTime) < 0) {
-            timePeriodStartYst = firstEventTime;
-        }
-
-        // if end year after file year, set endYst to last timestamp
-        YearSecondTimestamp timePeriodEndYst = endYst;
-        if (endYst.compareTo(lastEventTime) > 0) {
-            timePeriodEndYst = lastEventTime;
-        }
-
-        return new TimePeriod(timePeriodStartYst, timePeriodEndYst);
-    }
-
     @Override
     public void close() throws IOException {
         /* Nothing to close */
@@ -124,16 +132,15 @@ public class ParquetBackedPBEventFileStream implements ETLParquetFilesStream, Re
 
     @Override
     public String toString() {
-        return "ParquetBackedPBEventFileStream{" +
-                "pvName='" + pvName + '\'' +
-                ", type=" + type +
-                ", paths=" + paths +
-                ", startTime=" + startTime +
-                ", endTime=" + endTime +
-                ", firstFileInfo=" + firstFileInfo +
-                ", lastFileInfo=" + lastFileInfo +
-                ", desc=" + desc +
-                '}';
+        return "ParquetBackedPBEventFileStream{" + "pvName='"
+                + pvName + '\'' + ", type="
+                + type + ", paths="
+                + paths + ", startTime="
+                + startTime + ", endTime="
+                + endTime + ", firstFileInfo="
+                + firstFileInfo + ", lastFileInfo="
+                + lastFileInfo + ", desc="
+                + desc + '}';
     }
 
     @Override
@@ -144,15 +151,16 @@ public class ParquetBackedPBEventFileStream implements ETLParquetFilesStream, Re
             YearSecondTimestamp startYst = TimeUtils.convertToYearSecondTimestamp(startTime);
             YearSecondTimestamp endYst = TimeUtils.convertToYearSecondTimestamp(endTime);
             // if no overlap in year return empty
-            YearSecondTimestamp firstEventTime =
-                    ((PartionedTime) this.getFirstEvent()).getYearSecondTimestamp();
-            YearSecondTimestamp lastEventTime = ((PartionedTime) getLastFileInfo().getLastEvent()).getYearSecondTimestamp();
+            YearSecondTimestamp firstEventTime = ((PartionedTime) this.getFirstEvent()).getYearSecondTimestamp();
+            YearSecondTimestamp lastEventTime =
+                    ((PartionedTime) getLastFileInfo().getLastEvent()).getYearSecondTimestamp();
             if (endYst.compareTo(firstEventTime) < 0 || startYst.compareTo(lastEventTime) > 0) {
                 return new EmptyEventIterator();
             }
-
-            builders = builders.map(b -> b.withFilter(
-                    trimDates(startYst, endYst, firstEventTime, lastEventTime).filter()));
+            YearSecondTimestamp lastEventBeforeTime = getLastEventBeforeTime(startYst);
+            builders = builders.map(
+                    b -> b.withFilter(trimDates(startYst, endYst, firstEventTime, lastEventTime, lastEventBeforeTime)
+                            .filter()));
         }
         try {
             return createEventIterator(builders.toList());
@@ -161,6 +169,21 @@ public class ParquetBackedPBEventFileStream implements ETLParquetFilesStream, Re
             logger.error(ex.getMessage(), ex);
             return new EmptyEventIterator();
         }
+    }
+
+    private YearSecondTimestamp getLastEventBeforeTime(YearSecondTimestamp startYst) {
+        YearSecondTimestamp lastEventBeforeTime;
+        if (paths.size() == 1) {
+            DBRTimeEvent event = getLastFileInfo().getLastEventBefore(startYst);
+            if (event != null) {
+                lastEventBeforeTime = event.getYearSecondTimestamp();
+            } else {
+                lastEventBeforeTime = startYst;
+            }
+        } else {
+            lastEventBeforeTime = startYst;
+        }
+        return lastEventBeforeTime;
     }
 
     @Override
