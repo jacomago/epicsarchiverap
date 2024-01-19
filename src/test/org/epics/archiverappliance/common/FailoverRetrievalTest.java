@@ -36,7 +36,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+
+import static org.epics.archiverappliance.config.ConfigServiceForTests.DATA_RETRIEVAL_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.DEFAULT_MGMT_PORT;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.HTTP_LOCALHOST;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
 
 /**
  * Test basic failover - just the retrieval side of things.
@@ -102,7 +108,10 @@ public class FailoverRetrievalTest {
 		destPVTypeInfo.setChunkKey(configService.getPVNameToKeyConverter().convertPVNameToKey(pvName));
 		destPVTypeInfo.setCreationTime(TimeUtils.convertFromISO8601String("2020-11-11T14:49:58.523Z"));
 		destPVTypeInfo.setModificationTime(TimeUtils.now());
-		GetUrlContent.postObjectAndGetContentAsJSONObject(applURL + "/mgmt/bpl/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, "UTF-8") + "&override=true&createnew=true", encoder.encode(destPVTypeInfo));
+        GetUrlContent.postObjectAndGetContentAsJSONObject(
+                applURL + "/mgmt/bpl/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8)
+                        + "&override=true&createnew=true",
+                encoder.encode(destPVTypeInfo));
 		logger.info("Added " + pvName + " to the appliance " + applianceName);
 		
 		RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream(applURL + "/retrieval/data/getData.raw");
@@ -132,24 +141,29 @@ public class FailoverRetrievalTest {
 	}
 	
 	private void changeMTSForDest() throws Exception {
-		JSONObject srcPVTypeInfoJSON = GetUrlContent.getURLContentAsJSONObject("http://localhost:17665/mgmt/bpl/getPVTypeInfo?pv=" + URLEncoder.encode(pvName, "UTF-8"));
+        JSONObject srcPVTypeInfoJSON = GetUrlContent.getURLContentAsJSONObject(
+                MGMT_URL + "/getPVTypeInfo?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8));
 		JSONDecoder<PVTypeInfo> decoder = JSONDecoder.getDecoder(PVTypeInfo.class);
 		JSONEncoder<PVTypeInfo> encoder = JSONEncoder.getEncoder(PVTypeInfo.class);
 		PVTypeInfo destPVTypeInfo = new PVTypeInfo();
 		decoder.decode(srcPVTypeInfoJSON, destPVTypeInfo);
-		String otherURL = "pbraw://localhost?name=MTS&rawURL=" + URLEncoder.encode("http://localhost:17669/retrieval/data/getData.raw", "UTF-8");
-		destPVTypeInfo.getDataStores()[1] = "merge://localhost?name=MTS&dest="
-				+ URLEncoder.encode(destPVTypeInfo.getDataStores()[1], "UTF-8") 
-				+ "&other=" + URLEncoder.encode(otherURL, "UTF-8");
+        String otherURL = "pbraw://localhost?name=MTS&rawURL="
+                + URLEncoder.encode("http://localhost:17669/retrieval/data/getData.raw", StandardCharsets.UTF_8);
+        destPVTypeInfo.getDataStores()[1] = "merge://localhost?name=MTS&dest="
+                + URLEncoder.encode(destPVTypeInfo.getDataStores()[1], StandardCharsets.UTF_8)
+                + "&other=" + URLEncoder.encode(otherURL, StandardCharsets.UTF_8);
 		logger.info("Data store is " + destPVTypeInfo.getDataStores()[1]);
-		
-		GetUrlContent.postObjectAndGetContentAsJSONObject("http://localhost:17665/mgmt/bpl/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, "UTF-8") + "&override=true&createnew=true", encoder.encode(destPVTypeInfo));
+
+        GetUrlContent.postObjectAndGetContentAsJSONObject(
+                MGMT_URL + "/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8)
+                        + "&override=true&createnew=true",
+                encoder.encode(destPVTypeInfo));
 		logger.info("Changed " + pvName + " to a merge dedup plugin");
 
 	}
 	
 	private void testMergedRetrieval() throws Exception {
-		RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:17665/retrieval/data/getData.raw");
+		RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream(DATA_RETRIEVAL_URL + "/data/getData.raw");
 		long rtvlEventCount = 0;
 		try(EventStream stream = rawDataRetrieval.getDataForPVS(new String[] { pvName }, TimeUtils.minusDays(TimeUtils.now(), 90), TimeUtils.plusDays(TimeUtils.now(), 31), null)) {
 			long lastEvEpoch = 0;
@@ -175,7 +189,7 @@ public class FailoverRetrievalTest {
 	public void testRetrieval() throws Exception {
         // Register the PV with both appliances and generate data.
         Instant lastMonth = TimeUtils.minusDays(TimeUtils.now(), 2 * 31);
-		long dCount = generateMTSData("http://localhost:17665", "dest_appliance", lastMonth, 0);
+		long dCount = generateMTSData(HTTP_LOCALHOST + DEFAULT_MGMT_PORT, "dest_appliance", lastMonth, 0);
 		long oCount = generateMTSData("http://localhost:17669", "other_appliance", lastMonth, 1);
 		tCount = dCount + oCount;
 		

@@ -27,6 +27,8 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_INDEX_URL;
+
 /**
  * A common use case is where we archive the .VAL and ask for data either way.
  * This test archives two PVs; one with a .VAL and one without.
@@ -77,7 +79,7 @@ public class VALNoVALTest {
 
 	@Test
 	public void testVALNoVALTest() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
+		 driver.get(MGMT_INDEX_URL);
 		 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
 		 String pvNameToArchive1 = "UnitTestNoNamingConvention:sine";
 		 pvstextarea.sendKeys(pvNameToArchive1);

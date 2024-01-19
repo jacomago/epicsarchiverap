@@ -32,6 +32,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.DEFAULT_MGMT_PORT;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.HTTP_LOCALHOST;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.DATA_RETRIEVAL_URL;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
@@ -159,7 +164,7 @@ public class FailoverUpgradeTest {
 	}
 	
 	private void changeMTSForDest() throws Exception {
-		JSONObject srcPVTypeInfoJSON = GetUrlContent.getURLContentAsJSONObject("http://localhost:17665/mgmt/bpl/getPVTypeInfo?pv=" + URLEncoder.encode(pvName, "UTF-8"));
+		JSONObject srcPVTypeInfoJSON = GetUrlContent.getURLContentAsJSONObject(MGMT_URL + "/getPVTypeInfo?pv=" + URLEncoder.encode(pvName, "UTF-8"));
 		JSONDecoder<PVTypeInfo> decoder = JSONDecoder.getDecoder(PVTypeInfo.class);
 		JSONEncoder<PVTypeInfo> encoder = JSONEncoder.getEncoder(PVTypeInfo.class);
 		PVTypeInfo destPVTypeInfo = new PVTypeInfo();
@@ -172,13 +177,13 @@ public class FailoverUpgradeTest {
 			logger.info("Data store is " + destPVTypeInfo.getDataStores()[1]);
 		}
 		
-		GetUrlContent.postObjectAndGetContentAsJSONObject("http://localhost:17665/mgmt/bpl/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, "UTF-8") + "&override=true&createnew=true", encoder.encode(destPVTypeInfo));
+		GetUrlContent.postObjectAndGetContentAsJSONObject(MGMT_URL + "/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, "UTF-8") + "&override=true&createnew=true", encoder.encode(destPVTypeInfo));
 		logger.info("Changed " + pvName + " to a merge dedup plugin");
 
 	}
 
 	private void changeSTSForDest() throws Exception {
-		JSONObject srcPVTypeInfoJSON = GetUrlContent.getURLContentAsJSONObject("http://localhost:17665/mgmt/bpl/getPVTypeInfo?pv=" + URLEncoder.encode(pvName, "UTF-8"));
+		JSONObject srcPVTypeInfoJSON = GetUrlContent.getURLContentAsJSONObject(MGMT_URL + "/getPVTypeInfo?pv=" + URLEncoder.encode(pvName, "UTF-8"));
 		JSONDecoder<PVTypeInfo> decoder = JSONDecoder.getDecoder(PVTypeInfo.class);
 		JSONEncoder<PVTypeInfo> encoder = JSONEncoder.getEncoder(PVTypeInfo.class);
 		PVTypeInfo destPVTypeInfo = new PVTypeInfo();
@@ -189,13 +194,13 @@ public class FailoverUpgradeTest {
 					+ URLEncoder.encode(destPVTypeInfo.getDataStores()[0], "UTF-8") 
 					+ "&other=" + URLEncoder.encode(otherURL, "UTF-8");
 		}
-		GetUrlContent.postObjectAndGetContentAsJSONObject("http://localhost:17665/mgmt/bpl/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, "UTF-8") + "&override=true&createnew=true", encoder.encode(destPVTypeInfo));
+		GetUrlContent.postObjectAndGetContentAsJSONObject(MGMT_URL + "/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, "UTF-8") + "&override=true&createnew=true", encoder.encode(destPVTypeInfo));
 		logger.info("Changed " + pvName + " to a merge dedup plugin");
 
 	}
 	
 	private void testDataForRange(long start, long end, int expectedCount) throws Exception {
-		RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:17665/retrieval/data/getData.raw");
+		RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream(DATA_RETRIEVAL_URL + "/data/getData.raw");
 		long rtvlEventCount = 0;
 		try(EventStream stream = rawDataRetrieval.getDataForPVS(new String[] { pvName }, TimeUtils.convertFromEpochSeconds(start, 0), TimeUtils.convertFromEpochSeconds(end, 0), null)) {
 			long lastEvEpoch = 0;
@@ -222,7 +227,7 @@ public class FailoverUpgradeTest {
 	public void testRetrieval() throws Exception {
 		// Register the PV with both appliances and generate data.
 		long sampleStart = TimeUtils.getStartOfCurrentYearInSeconds();		
-		generateData("http://localhost:17665", "dest_appliance", sampleStart);
+		generateData(HTTP_LOCALHOST + DEFAULT_MGMT_PORT, "dest_appliance", sampleStart);
 		generateData("http://localhost:17669", "other_appliance", sampleStart);
 		
 		changeMTSForDest();

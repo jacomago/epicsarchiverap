@@ -164,9 +164,7 @@ public class TomcatSetup {
 		final CountDownLatch latch = new CountDownLatch(1);
 
 		final BufferedReader li = new BufferedReader(new InputStreamReader(p.getInputStream()));
-		Thread t = new Thread(() -> {
-			catchApplianceLog(applianceName, p, latch, li);
-		});
+        Thread t = new Thread(() -> catchApplianceLog(applianceName, p, latch, li));
 		t.start();
 
 		// We wait for some time to make sure the server started up

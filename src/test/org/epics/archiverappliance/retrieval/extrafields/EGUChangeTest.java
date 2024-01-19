@@ -30,6 +30,9 @@ import java.net.URLEncoder;
 import java.time.Instant;
 import java.util.HashMap;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_INDEX_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
+
 /**
  * We want to make sure we capture changes in EGU and return them as part of the retrieval request.
  * We archive a PV, then get data (and thus the EGU).
@@ -67,7 +70,7 @@ public class EGUChangeTest {
 
 	@Test
 	public void testSimpleArchivePV() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
+		 driver.get(MGMT_INDEX_URL);
 		 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
 		 pvstextarea.sendKeys(pvName);
 		 WebElement archiveButton = driver.findElement(By.id("archstatArchive"));
@@ -92,12 +95,12 @@ public class EGUChangeTest {
 		 SIOCSetup.caput(pvName + ".EGU", "oranges");
 		 Thread.sleep(5*1000);
 		 // Pause and resume the PV to reget the meta data
-		 String pausePVURL = "http://localhost:17665/mgmt/bpl/pauseArchivingPV?pv=" + URLEncoder.encode(pvName, "UTF-8");
+		 String pausePVURL = MGMT_URL + "/pauseArchivingPV?pv=" + URLEncoder.encode(pvName, "UTF-8");
 		 JSONObject pauseStatus = GetUrlContent.getURLContentAsJSONObject(pausePVURL);
 		 Assertions.assertTrue(pauseStatus.containsKey("status") && pauseStatus.get("status").equals("ok"), "Cannot pause PV");
 		 logger.info("Done pausing PV " + pvName);
 		 Thread.sleep(5*1000);
-		 String resumePVURL = "http://localhost:17665/mgmt/bpl/resumeArchivingPV?pv=" + URLEncoder.encode(pvName, "UTF-8");
+		 String resumePVURL = MGMT_URL + "/resumeArchivingPV?pv=" + URLEncoder.encode(pvName, "UTF-8");
 		 JSONObject resumeStatus = GetUrlContent.getURLContentAsJSONObject(resumePVURL);
 		 Assertions.assertTrue(resumeStatus.containsKey("status") && resumeStatus.get("status").equals("ok"), "Cannot resume PV");
 		 logger.info("Done resuming PV " + pvName);

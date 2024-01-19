@@ -38,6 +38,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.DATA_RETRIEVAL_URL;
+
 /**
  * Test basic failover - test the ETL side of things when the other server is down...
  * @author mshankar
@@ -106,7 +108,7 @@ public class FailoverETLServerDownTest {
         destPVTypeInfo.setCreationTime(TimeUtils.convertFromISO8601String("2020-11-11T14:49:58.523Z"));
         destPVTypeInfo.setModificationTime(TimeUtils.now());
         String otherURL = "pbraw://localhost?name=MTS&rawURL="
-                + URLEncoder.encode("http://localhost:17665/retrieval/data/getData.raw", StandardCharsets.UTF_8);
+                + URLEncoder.encode(DATA_RETRIEVAL_URL + "/data/getData.raw", StandardCharsets.UTF_8);
         destPVTypeInfo.getDataStores()[1] = "merge://localhost?name=MTS&dest="
                 + URLEncoder.encode(destPVTypeInfo.getDataStores()[1], StandardCharsets.UTF_8)
                 + "&other=" + URLEncoder.encode(otherURL, StandardCharsets.UTF_8);

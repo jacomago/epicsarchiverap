@@ -4,8 +4,8 @@ package edu.stanford.slac.archiverappliance.plain;
  * Lists possible file extensions for this plugin.
  */
 public enum FileExtension {
-    PB("pb"),
     PARQUET("parquet"),
+    PB("pb"),
     ;
 
     private final String suffix;

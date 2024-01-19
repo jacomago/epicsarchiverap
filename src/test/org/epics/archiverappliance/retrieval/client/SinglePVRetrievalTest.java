@@ -12,7 +12,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
-import org.epics.archiverappliance.EventStreamDesc;
 import org.epics.archiverappliance.TomcatSetup;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
@@ -63,12 +62,7 @@ public class SinglePVRetrievalTest {
 		
 		EventStream stream = null;
 		try {
-			stream = rawDataRetrieval.getDataForPVS(new String[] { ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "Sine1" }, start, end, new RetrievalEventProcessor() {
-				@Override
-				public void newPVOnStream(EventStreamDesc desc) {
-					logger.info("Getting data for PV " + desc.getPvName());
-				}
-			});
+            stream = rawDataRetrieval.getDataForPVS(new String[]{ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "Sine1"}, start, end, desc -> logger.info("Getting data for PV " + desc.getPvName()));
 
 			long previousEpochSeconds = 0;
 			int eventCount = 0;
@@ -82,8 +76,8 @@ public class SinglePVRetrievalTest {
 					eventCount++;
 				}
 			}
-			
-			Assertions.assertTrue(eventCount == expectedCount, "Event count is not what we expect. We got " + eventCount + " and we expected " + expectedCount + " for year " + year);
+
+            Assertions.assertEquals(eventCount, expectedCount, "Event count is not what we expect. We got " + eventCount + " and we expected " + expectedCount + " for year " + year);
 		} finally {
 			if(stream != null) try { stream.close(); stream = null; } catch(Throwable t) { }
 		}

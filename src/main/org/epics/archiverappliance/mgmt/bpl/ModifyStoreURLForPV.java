@@ -1,13 +1,5 @@
 package org.epics.archiverappliance.mgmt.bpl;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.HashMap;
-import java.util.LinkedList;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
@@ -18,6 +10,13 @@ import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.LinkedList;
 
 /**
  * Modifies the specified store for this PV using the new definition. The PV needs to be paused first.
@@ -36,19 +35,19 @@ public class ModifyStoreURLForPV implements BPLAction {
 	@Override
 	public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService) throws IOException {
 		String pvName = req.getParameter("pv");
-		if(pvName == null || pvName.equals("")) {
+        if (pvName == null || pvName.isEmpty()) {
 			resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Please specify the PV name");
 			return;
 		}
 		
 		String storage = req.getParameter("storage");
-		if(storage == null || storage.equals("")) {
+        if (storage == null || storage.isEmpty()) {
 			resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Please specify the name of the store to alter");
 			return;
 		}
 
 		String plugin_url = req.getParameter("plugin_url");
-		if(plugin_url == null || plugin_url.equals("")) {
+        if (plugin_url == null || plugin_url.isEmpty()) {
 			resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Please specify the new storage specification as the plugin_url argument");
 			return;
 		}

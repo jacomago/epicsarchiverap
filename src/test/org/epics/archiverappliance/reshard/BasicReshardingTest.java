@@ -44,6 +44,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_INDEX_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_UI_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
+
 /**
  * Simple test to test resharding a PV from one appliance to another...
  * <ul>
@@ -114,7 +118,7 @@ public class BasicReshardingTest {
 	public void testReshardPV() throws Exception {
 		// This section is straight from the ArchivePVTest
 		// Let's archive the PV and wait for it to connect.
-		driver.get("http://localhost:17665/mgmt/ui/index.html");
+		driver.get(MGMT_INDEX_URL);
 		WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
 		pvstextarea.sendKeys(pvName);
 		WebElement archiveButton = driver.findElement(By.id("archstatArchive"));
@@ -142,7 +146,7 @@ public class BasicReshardingTest {
 		// We need to fake this to an old value so that the data is moved correctly.
 		// The LTS data spans 2 years, so we set a creation time of about 4 years ago.
 		typeInfoBeforePausing.setCreationTime(TimeUtils.getStartOfYear(TimeUtils.getCurrentYear() - 4));
-		String updatePVTypeInfoURL = "http://localhost:17665/mgmt/bpl/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, "UTF-8") + "&override=true";
+		String updatePVTypeInfoURL = MGMT_URL + "/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, "UTF-8") + "&override=true";
 		GetUrlContent.postObjectAndGetContentAsJSONObject(updatePVTypeInfoURL, JSONEncoder.getEncoder(PVTypeInfo.class).encode(typeInfoBeforePausing));
 
 		Instant beforeReshardingCreationTimedstamp = typeInfoBeforePausing.getCreationTime();
@@ -192,13 +196,13 @@ public class BasicReshardingTest {
 		}
 		
 		// Let's pause the PV.
-		String pausePVURL = "http://localhost:17665/mgmt/bpl/pauseArchivingPV?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8);
+		String pausePVURL = MGMT_URL + "/pauseArchivingPV?pv=" + URLEncoder.encode(pvName, "UTF-8");
 		JSONObject pauseStatus = GetUrlContent.getURLContentAsJSONObject(pausePVURL);
 		Assertions.assertTrue(pauseStatus.containsKey("status") && pauseStatus.get("status").equals("ok"), "Cannot pause PV");
 		Thread.sleep(1000);
 		logger.info("Successfully paused the PV; other appliance is " + otherAppliance);
 		
-		driver.get("http://localhost:17665/mgmt/ui/pvdetails.html?pv=" + pvName);
+		driver.get(MGMT_UI_URL + "/pvdetails.html?pv=" + pvName);
 		Thread.sleep(2*1000);
 		WebElement reshardPVButton = driver.findElement(By.id("pvDetailsReshardPV"));
 		logger.info("About to click on reshard button.");
@@ -228,7 +232,7 @@ public class BasicReshardingTest {
 		Instant afterReshardingCreationTimedstamp = typeInfoAfterResharding.getCreationTime();
 		
 		// Let's resume the PV.
-		String resumePVURL = "http://localhost:17665/mgmt/bpl/resumeArchivingPV?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8);
+		String resumePVURL = MGMT_URL + "/resumeArchivingPV?pv=" + URLEncoder.encode(pvName, "UTF-8");
 		JSONObject resumeStatus = GetUrlContent.getURLContentAsJSONObject(resumePVURL);
 		Assertions.assertTrue(resumeStatus.containsKey("status") && resumeStatus.get("status").equals("ok"), "Cannot resume PV");
 
@@ -250,7 +254,7 @@ public class BasicReshardingTest {
 
 	private void checkRemnantShardPVs() {
 		// Make sure we do not have any temporary PV's present.
-		String tempReshardPVs = "http://localhost:17665/mgmt/bpl/getAllPVs?pv=*_reshard_*";
+		String tempReshardPVs = MGMT_URL + "/getAllPVs?pv=*_reshard_*";
 		JSONArray reshardPVs = GetUrlContent.getURLContentAsJSONArray(tempReshardPVs);
 		StringWriter buf = new StringWriter();
 		for(Object reshardPV : reshardPVs) {
@@ -260,8 +264,8 @@ public class BasicReshardingTest {
 		Assertions.assertTrue(reshardPVs.isEmpty(), "We seem to have some reshard temporary PV's present " + buf);
 	}
 	
-	private PVTypeInfo getPVTypeInfo() throws Exception {
-		String getPVTypeInfoURL = "http://localhost:17665/mgmt/bpl/getPVTypeInfo?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8);
+	private PVTypeInfo getPVTypeInfo() throws Exception { 
+		String getPVTypeInfoURL = MGMT_URL + "/getPVTypeInfo?pv=" + URLEncoder.encode(pvName, "UTF-8");
 		JSONObject typeInfoJSON = GetUrlContent.getURLContentAsJSONObject(getPVTypeInfoURL);
 		Assertions.assertNotNull(typeInfoJSON, "Cannot get typeinfo for pv using " + getPVTypeInfoURL);
         PVTypeInfo unmarshalledTypeInfo = new PVTypeInfo();

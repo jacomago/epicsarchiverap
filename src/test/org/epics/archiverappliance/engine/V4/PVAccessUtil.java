@@ -167,7 +167,7 @@ public class PVAccessUtil {
     private static String getCurentStatus(String pvName, String mgmtUrl) {
         String curentStatus;
         // Check archiving
-        String statusPVURL = mgmtUrl + "getPVStatus?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8);
+        String statusPVURL = mgmtUrl + "/getPVStatus?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8);
         JSONArray pvStatus = GetUrlContent.getURLContentAsJSONArray(statusPVURL);
         curentStatus = ((JSONObject) pvStatus.get(0)).get("status").toString();
         logger.debug("status is " + curentStatus);

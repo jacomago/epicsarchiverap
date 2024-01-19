@@ -1,5 +1,6 @@
 package org.epics.archiverappliance.mgmt.pauseresume;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_INDEX_URL;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -68,7 +69,7 @@ public class DeleteMultiplePVTest {
 
 	@Test
 	public void testDeleteMultiplePV() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
+		 driver.get(MGMT_INDEX_URL);
 
 		 logger.info("Archiving 5 PV");
 		 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));

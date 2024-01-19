@@ -29,7 +29,7 @@ import java.time.Instant;
  *
  */
 class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
-	private static Logger logger = LogManager.getLogger(MergeDedupConsumer.class.getName());
+	private static final Logger logger = LogManager.getLogger(MergeDedupConsumer.class.getName());
 	private Instant startTimeStamp;
 	int totalEvents = 0;
 	int skippedEvents = 0;
@@ -130,8 +130,7 @@ class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
                         if (e.getEventTimeStamp().isBefore(this.startTimeStamp) || e.getEventTimeStamp().equals(this.startTimeStamp)) {
 							logger.debug("Making a copy of another event " + TimeUtils.convertToHumanReadableString(e.getEventTimeStamp()));
 							firstEvent = e.makeClone();
-							continue;
-						} else { 
+                        } else {
 							haveIpushedTheFirstEvent = true;
 							logger.debug("Consuming first and current events " + TimeUtils.convertToHumanReadableString(e.getEventTimeStamp()));
 							mimeresponse.consumeEvent(firstEvent);
@@ -140,22 +139,20 @@ class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
                             if (!e.getEventTimeStamp().isAfter(timestampOfLastEvent)) {
 								logger.debug("After sending first event, current event is not after the first event. Skipping " + TimeUtils.convertToHumanReadableString(e.getEventTimeStamp()));
 								skippedEvents++;
-								continue;
-							} else { 
+                            } else {
 								mimeresponse.consumeEvent(e);
 								totalEvents++;
 								timestampOfLastEvent = e.getEventTimeStamp();
-								continue;
-							}
-						}
-					}
+                            }
+                        }
+                        continue;
+                    }
 					
 					if(amIDeduping) {
 						comparedEvents++;
                         if (!e.getEventTimeStamp().isAfter(timestampOfLastEvent)) {
 							skippedEvents++;
-							continue;
-						} else {
+                        } else {
 							amIDeduping = false;
 							mimeresponse.consumeEvent(e);
 							timestampOfLastEvent = e.getEventTimeStamp();

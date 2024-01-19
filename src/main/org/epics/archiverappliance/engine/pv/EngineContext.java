@@ -529,16 +529,24 @@ public class EngineContext {
 		StoragePlugin firstDest = StoragePluginURLParser.parseStoragePlugin(typeInfo.getDataStores()[0], configService);
 		SamplingMethod samplingMethod = typeInfo.getSamplingMethod();
 		float samplingPeriod = typeInfo.getSamplingPeriod();
-		int secondsToBuffer = PVTypeInfo.getSecondsToBuffer(configService);
         Instant lastKnownTimeStamp = typeInfo.determineLastKnownEventFromStores(configService);
 		String controllingPV = typeInfo.getControllingPV();
 		String[] archiveFields = typeInfo.getArchiveFields();
 
 		logger.info("Archiving PV " + pvName + "using " + samplingMethod.toString() + " with a sampling period of "+ samplingPeriod + "(s)");
-		ArchiveEngine.archivePV(pvName, samplingPeriod, samplingMethod,
-				firstDest, configService,
-				dbrType, lastKnownTimeStamp, controllingPV,
-				archiveFields, typeInfo.getHostName(), typeInfo.isUsePVAccess(), typeInfo.isUseDBEProperties());
+        ArchiveEngine.archivePV(
+                pvName,
+                samplingPeriod,
+                samplingMethod,
+                firstDest,
+                configService,
+                dbrType,
+                lastKnownTimeStamp,
+                controllingPV,
+                archiveFields,
+                typeInfo.getHostName(),
+                typeInfo.isUsePVAccess(),
+                typeInfo.isUseDBEProperties());
 	}
 
 

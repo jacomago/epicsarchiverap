@@ -1,5 +1,6 @@
 package org.epics.archiverappliance.mgmt.appxml;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_INDEX_URL;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -72,7 +73,7 @@ public class FQDNApplianceXMLTest {
 		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
 		driver = new FirefoxDriver();
 		
-		driver.get("http://localhost:17665/mgmt/ui/index.html");
+		driver.get(MGMT_INDEX_URL);
 		WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
 		Assertions.assertNotNull(pvstextarea, "Cannot get to the home page...");
 

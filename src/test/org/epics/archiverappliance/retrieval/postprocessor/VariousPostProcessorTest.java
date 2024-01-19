@@ -27,6 +27,8 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_INDEX_URL;
+
 /**
  * This tests various post processors using sample data generated from within Matlab
  * We change an ai record using various values generated from within Matlab and then make various postprocessor calls and compare with values we got from Matlab
@@ -80,7 +82,7 @@ public class VariousPostProcessorTest {
 
 	@Test
 	public void testPostProcessors() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
+		 driver.get(MGMT_INDEX_URL);
 		 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
 		 String pvNameToArchive = pvName;
 		 pvstextarea.sendKeys(pvNameToArchive);

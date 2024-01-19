@@ -27,6 +27,9 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.time.Instant;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_INDEX_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
+
 /**
  * Check addAlias and removeAlias functionality.
  * We test after the PV workflow is complete. 
@@ -63,7 +66,7 @@ public class AddRemoveAliasTest {
 
 	@Test
 	public void testSimpleArchivePV() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
+		 driver.get(MGMT_INDEX_URL);
 		 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
 		 String pvNameToArchive = "UnitTestNoNamingConvention:sine";
 		 pvstextarea.sendKeys(pvNameToArchive);
@@ -100,7 +103,7 @@ public class AddRemoveAliasTest {
 		 testRetrievalCount("UnitTestNoNamingConvention:sine.HIHI", true);
 		 testRetrievalCount("UnitTestNoNamingConvention:arandomalias.HIHI", false);
 		 
-		 String addAliasURL = "http://localhost:17665/mgmt/bpl/addAlias" 
+		 String addAliasURL = MGMT_URL + "/addAlias"
 		 + "?pv="+ URLEncoder.encode("UnitTestNoNamingConvention:sine", "UTF-8")
 		 + "&aliasname="+ URLEncoder.encode("UnitTestNoNamingConvention:arandomalias", "UTF-8");
 		 JSONObject addAliasStatus = GetUrlContent.getURLContentAsJSONObject(addAliasURL);
@@ -113,7 +116,7 @@ public class AddRemoveAliasTest {
 		 testRetrievalCount("UnitTestNoNamingConvention:sine.HIHI", true);
 		 testRetrievalCount("UnitTestNoNamingConvention:arandomalias.HIHI", true);
 		 
-		 String removeAliasURL = "http://localhost:17665/mgmt/bpl/removeAlias" 
+		 String removeAliasURL = MGMT_URL + "/removeAlias"
 		 + "?pv="+ URLEncoder.encode("UnitTestNoNamingConvention:sine", "UTF-8")
 		 + "&aliasname="+ URLEncoder.encode("UnitTestNoNamingConvention:arandomalias", "UTF-8");
 		 JSONObject removeAliasStatus = GetUrlContent.getURLContentAsJSONObject(removeAliasURL);

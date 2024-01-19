@@ -1,5 +1,7 @@
 package org.epics.archiverappliance.mgmt.pauseresume;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_INDEX_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_UI_URL;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -74,7 +76,7 @@ public class ResumePVAfterRestartTest {
 
 	@Test
 	public void testResumePVAfterRestart() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
+		 driver.get(MGMT_INDEX_URL);
 		 {
 			 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
 			 pvstextarea.sendKeys(pvNameToArchive);
@@ -91,7 +93,7 @@ public class ResumePVAfterRestartTest {
 		 }
 
 		 logger.info("Let's go to the details page and resume the PV");
-		 driver.get("http://localhost:17665/mgmt/ui/pvdetails.html?pv=" + pvNameToArchive);
+		 driver.get(MGMT_UI_URL + "/pvdetails.html?pv=" + pvNameToArchive);
 		 { 
 			 Thread.sleep(2*1000);
 			 WebElement resumeArchivingButn = driver.findElement(By.id("pvDetailsResumeArchiving"));
@@ -99,7 +101,7 @@ public class ResumePVAfterRestartTest {
 			 resumeArchivingButn.click();
 		 }
 		 Thread.sleep(30*1000);
-		 driver.get("http://localhost:17665/mgmt/ui/pvdetails.html?pv=" + pvNameToArchive);
+		 driver.get(MGMT_UI_URL + "/pvdetails.html?pv=" + pvNameToArchive);
 		 {
 			 Thread.sleep(2*1000);
 			 WebElement pvDetailsTable = driver.findElement(By.id("pvDetailsTable"));

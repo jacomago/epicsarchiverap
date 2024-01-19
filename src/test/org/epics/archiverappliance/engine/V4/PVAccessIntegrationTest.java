@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
 import static org.epics.archiverappliance.engine.V4.PVAccessUtil.fromGenericSampleValueToPVAData;
 import static org.epics.archiverappliance.engine.V4.PVAccessUtil.waitForStatusChange;
 
@@ -246,13 +247,11 @@ public class PVAccessIntegrationTest {
         String pvURLName = URLEncoder.encode(pvName, StandardCharsets.UTF_8);
 
         // Archive PV
-        String mgmtUrl = "http://localhost:17665/mgmt/bpl/";
-        String archivePVURL = mgmtUrl + "archivePV?pv=pva://";
+        String mgmtUrl = MGMT_URL;
+        String archivePVURL = mgmtUrl + "/archivePV?pv=pva://";
 
         GetUrlContent.getURLContentAsJSONArray(archivePVURL + pvURLName);
         waitForStatusChange(pvName, "Being archived", 60, mgmtUrl, 10);
-
-        Instant start = firstInstant;
 
         long samplingPeriodMilliSeconds = 100;
 
@@ -275,7 +274,7 @@ public class PVAccessIntegrationTest {
         EventStream stream = null;
         Map<Instant, PVA> actualValues = new HashMap<>();
         try {
-            stream = rawDataRetrieval.getDataForPVS(new String[]{pvName}, start, end, desc -> logger.info("Getting data for PV " + desc.getPvName()));
+            stream = rawDataRetrieval.getDataForPVS(new String[]{pvName}, firstInstant, end, desc -> logger.info("Getting data for PV " + desc.getPvName()));
 
             // Make sure we get the DBR type we expect
             Assertions.assertEquals(type, stream.getDescription().getArchDBRType());

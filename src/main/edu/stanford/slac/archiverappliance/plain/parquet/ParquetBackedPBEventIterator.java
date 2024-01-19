@@ -2,6 +2,8 @@ package edu.stanford.slac.archiverappliance.plain.parquet;
 
 import com.google.protobuf.MessageOrBuilder;
 import edu.stanford.slac.archiverappliance.plain.pb.EventStreamIterator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.data.DBRTimeEvent;
@@ -15,7 +17,11 @@ import java.util.NoSuchElementException;
  * An implementation of {@link EventStreamIterator} that reads from a Parquet reader.
  */
 public class ParquetBackedPBEventIterator implements EventStreamIterator {
+    private static final Logger logger = LogManager.getLogger(ParquetBackedPBEventIterator.class.getName());
 
+    /**
+     * Collection of readers of parquet files, built when needed.
+     */
     List<ParquetReader.Builder<Object>> readerBuilders;
     /**
      * The current reader.

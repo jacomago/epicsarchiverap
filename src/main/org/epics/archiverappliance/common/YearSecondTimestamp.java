@@ -74,9 +74,11 @@ public class YearSecondTimestamp implements Comparable<YearSecondTimestamp> {
 	@Override
 	public String toString() {
 		return "YearSecondTimestamp{" +
-				"year=" + year +
+                "datetime=" + TimeUtils.convertFromYearSecondTimestamp(this) +
+				", year=" + year +
 				", secondsintoyear=" + secondsintoyear +
 				", nanos=" + nanos +
+
 				'}';
 	}
 

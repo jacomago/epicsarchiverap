@@ -135,8 +135,8 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
         if (info.getLastEvent() != null) {
             this.lastKnownTimeStamp = info.getLastEvent().getEventTimeStamp();
         } else {
-            logger.error("Cannot determine last known timestamp when updating state for PV " + pvName + " and path "
-                    + currentPVFilePath);
+            logger.error(() -> "Cannot determine last known timestamp when updating state for PV " + pvName
+                    + " and path " + currentPVFilePath);
         }
 
         this.writerBuilder = buildWriterExistingFile(currentPVFilePath, info);
@@ -159,7 +159,7 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
                 throw new IOException("Trying to write a header into a file that exists " + pvPath.toAbsolutePath());
             }
         }
-        logger.debug(desc + ": Writing new Parquet file" + pvPath.toAbsolutePath()
+        logger.debug(() -> desc + ": Writing new Parquet file" + pvPath.toAbsolutePath()
                 + " for PV " + pvName
                 + " for year " + this.currentEventsYear
                 + " of type " + stream.getDescription().getArchDBRType()
@@ -228,8 +228,7 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
         }
     }
 
-    public EpicsParquetWriter.Builder<Object> buildWriterExistingFile(Path currentPVPath, ParquetInfo info)
-            throws IOException {
+    public EpicsParquetWriter.Builder<Object> buildWriterExistingFile(Path currentPVPath, ParquetInfo info) {
         logger.debug("parquet buildWriterExistingFile  pvPath {} fileInfo {} ", currentPVPath, info);
         var tempCurrentPVPath = Path.of(
                 currentPVPath.toAbsolutePath().getParent().toString(), TEMP_FILE_PREFIX + currentPVPath.getFileName());

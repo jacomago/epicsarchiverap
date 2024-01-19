@@ -1,5 +1,7 @@
 package org.epics.archiverappliance.mgmt.pauseresume;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_INDEX_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_UI_URL;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -68,7 +70,7 @@ public class DeletePVTest {
 
 	@Test
 	public void testSimpleDeletePV() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
+		 driver.get(MGMT_INDEX_URL);
 		 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
 		 String pvNameToArchive = "UnitTestNoNamingConvention:sine";
 		 pvstextarea.sendKeys(pvNameToArchive);
@@ -89,7 +91,7 @@ public class DeletePVTest {
 		 Assertions.assertTrue(expectedPVStatus.equals(pvArchiveStatusObtainedFromTable), "Expecting PV archive status to be " + expectedPVStatus + "; instead it is " + pvArchiveStatusObtainedFromTable);
 
 		 logger.info("We are now archiving the PV; let's go into the details page; pause and delete");
-		 driver.get("http://localhost:17665/mgmt/ui/pvdetails.html?pv=" + pvNameToArchive);
+		 driver.get(MGMT_UI_URL + "/pvdetails.html?pv=" + pvNameToArchive);
 		 { 
 			 Thread.sleep(2*1000);
 			 WebElement pauseArchivingButn = driver.findElement(By.id("pvDetailsPauseArchiving"));
@@ -159,7 +161,7 @@ public class DeletePVTest {
 			 Thread.sleep(10*1000);
 		 }
 		 { 
-			 driver.get("http://localhost:17665/mgmt/ui/index.html");
+			 driver.get(MGMT_INDEX_URL);
 			 checkStatusButton = driver.findElement(By.id("archstatCheckStatus"));
 			 checkStatusButton.click();
 			 Thread.sleep(2*1000);

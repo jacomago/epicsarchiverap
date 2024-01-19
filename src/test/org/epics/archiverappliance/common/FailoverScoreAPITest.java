@@ -41,6 +41,12 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Map;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.DEFAULT_MGMT_PORT;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.HTTP_LOCALHOST;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.DATA_RETRIEVAL_URL;
+
+
 /**
  * Test the getDataAtTime API when using the merge dedup plugin.
  * Generate data such that each failover cluster has one of known data on the morning or afternoon.
@@ -169,7 +175,7 @@ public class FailoverScoreAPITest {
 
     private void changeMTSForDest() throws Exception {
         JSONObject srcPVTypeInfoJSON =
-                GetUrlContent.getURLContentAsJSONObject("http://localhost:17665/mgmt/bpl/getPVTypeInfo?pv="
+                GetUrlContent.getURLContentAsJSONObject(MGMT_URL + "/getPVTypeInfo?pv="
                         + URLEncoder.encode(pvName, StandardCharsets.UTF_8));
         JSONDecoder<PVTypeInfo> decoder = JSONDecoder.getDecoder(PVTypeInfo.class);
         JSONEncoder<PVTypeInfo> encoder = JSONEncoder.getEncoder(PVTypeInfo.class);
@@ -183,7 +189,7 @@ public class FailoverScoreAPITest {
         logger.info("Data store is " + destPVTypeInfo.getDataStores()[1]);
 
         GetUrlContent.postObjectAndGetContentAsJSONObject(
-                "http://localhost:17665/mgmt/bpl/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8)
+                MGMT_URL + "/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8)
                         + "&override=true&createnew=true",
                 encoder.encode(destPVTypeInfo));
         logger.info("Changed " + pvName + " to a merge dedup plugin");
@@ -191,7 +197,7 @@ public class FailoverScoreAPITest {
 
     @SuppressWarnings("unchecked")
     private void testDataAtTime(long epochSecs, boolean morningp) throws Exception {
-        String scoreURL = "http://localhost:17665/retrieval/data/getDataAtTime.json?at="
+        String scoreURL = DATA_RETRIEVAL_URL + "/data/getDataAtTime.json?at="
                 + TimeUtils.convertToISO8601String(epochSecs);
         JSONArray array = new JSONArray();
         array.add(pvName);
@@ -219,7 +225,7 @@ public class FailoverScoreAPITest {
     public void testRetrieval() throws Exception {
         // Register the PV with both appliances and generate data.
         Instant lastMonth = TimeUtils.minusDays(TimeUtils.now(), 2*31);
-        generateMTSData("http://localhost:17665", "dest_appliance", lastMonth, true);
+        generateMTSData(HTTP_LOCALHOST + DEFAULT_MGMT_PORT, "dest_appliance", lastMonth, true);
         generateMTSData("http://localhost:17669", "other_appliance", lastMonth, false);
 
         changeMTSForDest();

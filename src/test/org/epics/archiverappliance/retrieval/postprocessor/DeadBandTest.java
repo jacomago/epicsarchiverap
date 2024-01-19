@@ -36,6 +36,8 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
+
 /**
  * Michael DavidSaver supplied the data for this test.
  * We have raw data and data from another PV that applies the ADEL.
@@ -92,7 +94,7 @@ public class DeadBandTest {
 		newPVTypeInfo.setPaused(true);
 		newPVTypeInfo.setChunkKey("TST-CT{}Sig/1-I:");
 		JSONEncoder<PVTypeInfo> encoder = JSONEncoder.getEncoder(PVTypeInfo.class);
-		GetUrlContent.postObjectAndGetContentAsJSONObject("http://localhost:17665/mgmt/bpl/putPVTypeInfo?pv=" + URLEncoder.encode(newPVName, "UTF-8") + "&createnew=true", encoder.encode(newPVTypeInfo));
+		GetUrlContent.postObjectAndGetContentAsJSONObject(MGMT_URL + "/putPVTypeInfo?pv=" + URLEncoder.encode(newPVName, "UTF-8") + "&createnew=true", encoder.encode(newPVTypeInfo));
 
 		logger.info("Sample file copied to " + destFile.getAbsolutePath());
 

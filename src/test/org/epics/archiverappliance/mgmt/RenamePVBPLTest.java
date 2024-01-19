@@ -41,6 +41,9 @@ import java.net.URLEncoder;
 import java.time.Instant;
 import java.util.HashMap;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_INDEX_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
+
 /**
  * Test rename PV with data at the backend.
  * We create data in the LTS and then pause, rename and check to make sure we have the same number of samples before and after.
@@ -113,7 +116,7 @@ public class RenamePVBPLTest {
 
 	@Test
 	public void testSimpleArchivePV() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
+		 driver.get(MGMT_INDEX_URL);
 		 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
 		 pvstextarea.sendKeys(pvName);
 		 WebElement archiveButton = driver.findElement(By.id("archstatArchive"));
@@ -138,7 +141,7 @@ public class RenamePVBPLTest {
 		 logger.info("Before renaming, we had this many events from retrieval" +  beforeRenameCount);
 		 
 		 // Let's pause the PV.
-		 String pausePVURL = "http://localhost:17665/mgmt/bpl/pauseArchivingPV?pv=" + URLEncoder.encode(pvName, "UTF-8");
+		 String pausePVURL = MGMT_URL + "/pauseArchivingPV?pv=" + URLEncoder.encode(pvName, "UTF-8");
 		 JSONObject pauseStatus = GetUrlContent.getURLContentAsJSONObject(pausePVURL);
 		 Assertions.assertTrue(pauseStatus.containsKey("status") && pauseStatus.get("status").equals("ok"), "Cannot pause PV");
 		 Thread.sleep(5000);
@@ -146,7 +149,7 @@ public class RenamePVBPLTest {
 
 		 // Let's rename the PV.
 		 String newPVName = "NewName_" + pvName;
-		 String renamePVURL = "http://localhost:17665/mgmt/bpl/renamePV?pv=" + URLEncoder.encode(pvName, "UTF-8") + "&newname=" + URLEncoder.encode(newPVName, "UTF-8");
+		 String renamePVURL = MGMT_URL + "/renamePV?pv=" + URLEncoder.encode(pvName, "UTF-8") + "&newname=" + URLEncoder.encode(newPVName, "UTF-8");
 		 JSONObject renameStatus = GetUrlContent.getURLContentAsJSONObject(renamePVURL);
 		 Assertions.assertTrue(renameStatus.containsKey("status") && renameStatus.get("status").equals("ok"), "Cannot rename PV");
 		 Thread.sleep(5000);
@@ -161,14 +164,14 @@ public class RenamePVBPLTest {
 		 Assertions.assertTrue(Math.abs(beforeRenameCount-afterRenameOldPVCount) < 2, "After the rename, we were still expecting data for the old PV " + afterRenameOldPVCount);
 		 
 		 // Delete the old PV
-		 String deletePVURL = "http://localhost:17665/mgmt/bpl/deletePV?pv=" + URLEncoder.encode(pvName, "UTF-8") + "&deleteData=true";
+		 String deletePVURL = MGMT_URL + "/deletePV?pv=" + URLEncoder.encode(pvName, "UTF-8") + "&deleteData=true";
 		 JSONObject deletePVtatus = GetUrlContent.getURLContentAsJSONObject(deletePVURL);
 		 Assertions.assertTrue(deletePVtatus.containsKey("status") && deletePVtatus.get("status").equals("ok"), "Cannot delete old PV");
 		 logger.info("Done with deleting the old PV....." + pvName);
 		 Thread.sleep(30000);
 		 
 		 // Let's rename the PV back to its original name
-		 String renamePVBackURL = "http://localhost:17665/mgmt/bpl/renamePV?pv=" + URLEncoder.encode(newPVName, "UTF-8") + "&newname=" + URLEncoder.encode(pvName, "UTF-8");
+		 String renamePVBackURL = MGMT_URL + "/renamePV?pv=" + URLEncoder.encode(newPVName, "UTF-8") + "&newname=" + URLEncoder.encode(pvName, "UTF-8");
 		 JSONObject renameBackStatus = GetUrlContent.getURLContentAsJSONObject(renamePVBackURL);
 		 Assertions.assertTrue(renameBackStatus.containsKey("status") && renameBackStatus.get("status").equals("ok"), "Cannot rename PV");
 		 Thread.sleep(5000);

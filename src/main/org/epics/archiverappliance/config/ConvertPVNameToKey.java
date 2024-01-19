@@ -42,9 +42,8 @@ public class ConvertPVNameToKey implements PVNameToKeyMapping {
 	private char terminatorChar = ':';
 	
 	private ConfigService configService;
-	private ConcurrentHashMap<String, String> chunkKeys = new ConcurrentHashMap<String, String>();
-	
-	
+    private final ConcurrentHashMap<String, String> chunkKeys = new ConcurrentHashMap<String, String>();
+
 	/* (non-Javadoc)
 	 * @see org.epics.archiverappliance.config.PVNameToKeyMapping#convertPVNameToKey(java.lang.String)
 	 * @see <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ConcurrentHashMap.html">java.util.concurrent.ConcurrentHashMap</a>
@@ -125,7 +124,6 @@ public class ConvertPVNameToKey implements PVNameToKeyMapping {
 		return "ConvertPVNameToKey{" +
 				"siteNameSpaceSeparators='" + siteNameSpaceSeparators + '\'' +
 				", terminatorChar=" + terminatorChar +
-				", configService=" + configService +
 				", chunkKeys=" + chunkKeys +
 				'}';
 	}

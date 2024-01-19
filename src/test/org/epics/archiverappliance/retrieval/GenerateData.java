@@ -81,7 +81,6 @@ public class GenerateData {
                 storagePlugin.appendData(context, pvName, simstream);
             }
         }
-        configService.shutdownNow();
         return numberOfEvents;
     }
     /**

@@ -1,6 +1,7 @@
 package org.epics.archiverappliance.config;
 
 
+import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +51,7 @@ public class SampleRetrievalState extends RetrievalState {
 				// pwd is build/tomcats/tomcat_CAYearSpanRetrievalTest/appliance0/logs
 				File dataFile = new File("../../../src/test/org/epics/archiverappliance/retrieval/channelarchiver");
 				assert(dataFile.exists());
-				String dataSrcURL = "rtree://localhost?serverURL=" + URLEncoder.encode("file://" + dataFile.getAbsolutePath(), "UTF-8") + "&archiveKey=1";
+				String dataSrcURL = "rtree://localhost?serverURL=" + URLEncoder.encode("file://" + dataFile.getAbsolutePath(), StandardCharsets.UTF_8) + "&archiveKey=1";
 				StoragePlugin caStoragePlugin = StoragePluginURLParser.parseStoragePlugin(dataSrcURL, configService);
 				datasources.add(new DataSourceforPV(pvName, caStoragePlugin, 1, null, null));
 				return datasources;
@@ -59,10 +61,14 @@ public class SampleRetrievalState extends RetrievalState {
 			}
 		}
 
-        PlainStoragePlugin mediumTermStore = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=MTS&rootFolder=" + configService.rootFolder + "&partitionGranularity=PARTITION_YEAR", configService);
+		FileExtension fileExtension = FileExtension.PB;
+		if (pvName.startsWith(ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "PARQUET")) {
+			fileExtension = FileExtension.PARQUET;
+		}
+		PlainStoragePlugin mediumTermStore = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(fileExtension.getSuffix() + "://localhost?name=MTS&rootFolder=" + configService.rootFolder + "&partitionGranularity=PARTITION_YEAR", configService);
 		datasources.add(new DataSourceforPV(pvName, mediumTermStore, 1, null, null));
 
-        PlainStoragePlugin shortTermStore = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=STS&rootFolder=" + ConfigServiceForTests.DEFAULT_PB_SHORT_TERM_TEST_DATA_FOLDER + "&partitionGranularity=PARTITION_YEAR", configService);
+		PlainStoragePlugin shortTermStore = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(fileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + ConfigServiceForTests.DEFAULT_PB_SHORT_TERM_TEST_DATA_FOLDER + "&partitionGranularity=PARTITION_YEAR", configService);
 		datasources.add(new DataSourceforPV(pvName, shortTermStore, 0, null, null));
 		
 		return datasources;

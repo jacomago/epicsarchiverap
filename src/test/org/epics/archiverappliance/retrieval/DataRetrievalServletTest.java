@@ -31,7 +31,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -45,20 +46,14 @@ import java.time.Instant;
  */
 @Tag("integration")
 public class DataRetrievalServletTest {
-	
-	private static Logger logger = LogManager.getLogger(DataRetrievalServletTest.class.getName());
-	private ConfigService configService;
-	PBCommonSetup pbSetup = new PBCommonSetup();
-    PlainStoragePlugin pbplugin = new PlainStoragePlugin();
+
+    private static final Logger logger = LogManager.getLogger(DataRetrievalServletTest.class.getName());
 	TomcatSetup tomcatSetup = new TomcatSetup();
 
-	String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "_dataretrieval";
 	short year = (short) 2011;
 	
 	@BeforeEach
 	public void setUp() throws Exception {
-		configService = new ConfigServiceForTests(-1);
-		pbSetup.setUpRootFolder(pbplugin);
 		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
 	}
 
@@ -66,21 +61,30 @@ public class DataRetrievalServletTest {
 	public void tearDown() throws Exception {
 		tomcatSetup.tearDown();
 
-        Files.deleteIfExists(PathNameUtility.getPathNameForTime(pbplugin, pvName, TimeUtils.getStartOfYear(year), new ArchPaths(), configService.getPVNameToKeyConverter(), FileExtension.PB));
 	}
 	
 	
 	/**
 	 * Test that makes sure that the merge dedup gives data whose timestamps are ascending.
 	 */
-	@Test
-	public void testTimesAreSequential() throws Exception {
+    @ParameterizedTest
+    @EnumSource(FileExtension.class)
+    public void testTimesAreSequential(FileExtension fileExtension) throws Exception {
+		String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + fileExtension + "_dataretrieval";
+
+		PBCommonSetup pbSetup = new PBCommonSetup();
+
+        PlainStoragePlugin pbplugin = new PlainStoragePlugin(fileExtension);
+        pbSetup.setUpRootFolder(pbplugin);
+
+
 		PBOverHTTPStoragePlugin storagePlugin = new PBOverHTTPStoragePlugin();
 		ConfigService configService = new ConfigServiceForTests(-1);
 		storagePlugin.initialize("pbraw://localhost?rawURL=" + URLEncoder.encode("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw", StandardCharsets.UTF_8), configService);
 
-        Files.deleteIfExists(PathNameUtility.getPathNameForTime(pbplugin, pvName, TimeUtils.getStartOfYear(year), new ArchPaths(), configService.getPVNameToKeyConverter(), FileExtension.PB));
+        Files.deleteIfExists(PathNameUtility.getPathNameForTime(pbplugin, pvName, TimeUtils.getStartOfYear(year), new ArchPaths(), configService.getPVNameToKeyConverter(), fileExtension));
 		SimulationEventStream simstream = new SimulationEventStream(ArchDBRTypes.DBR_SCALAR_DOUBLE, new SineGenerator(0), TimeUtils.getStartOfYear(year), TimeUtils.getEndOfYear(year), 1);
+
 		try(BasicContext context = new BasicContext()) {
 			pbplugin.appendData(context, pvName, simstream);
 		}
@@ -97,7 +101,6 @@ public class DataRetrievalServletTest {
 			int totalEvents = 0;
 			// Goes through the stream
 			for(Event e : stream) {
-				System.out.println(e.getRawForm());
 				long actualSeconds = e.getEpochSeconds();
 				long desired = starttimeinseconds + next++;
 				Assertions.assertTrue(actualSeconds >= desired, "Expecting "
@@ -110,6 +113,10 @@ public class DataRetrievalServletTest {
 			}
 			long e = System.currentTimeMillis();
 			logger.info("Found a total of " + totalEvents + " in " + (e-s) + "(ms)");
+			Assertions.assertEquals(end.getEpochSecond() - start.getEpochSecond() + 1, totalEvents);
 		}
+        Files.deleteIfExists(PathNameUtility.getPathNameForTime(pbplugin, pvName, TimeUtils.getStartOfYear(year), new ArchPaths(), configService.getPVNameToKeyConverter(), fileExtension));
+
+		pbSetup.deleteTestFolder();
 	}
 }
