@@ -33,13 +33,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Map;
+
+import static org.epics.archiverappliance.config.ConfigServiceForTests.DATA_RETRIEVAL_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.DEFAULT_MGMT_PORT;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.HTTP_LOCALHOST;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
 
 /**
  * Test the getDataAtTime API when using the merge dedup plugin.
@@ -92,9 +96,9 @@ public class FailoverScoreAPITest {
                             pvName,
                             TimeUtils.convertToYearSecondTimestamp(theMonth).getYear()));
             for (Instant s = TimeUtils.getPreviousPartitionLastSecond(theMonth, PartitionGranularity.PARTITION_DAY)
-                    .plusSeconds(1);
-                 s.isBefore(TimeUtils.now());
-                 s = s.plusSeconds(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk())) {
+                            .plusSeconds(1);
+                    s.isBefore(TimeUtils.now());
+                    s = s.plusSeconds(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk())) {
 
                 POJOEvent pojoEvent = new POJOEvent(
                         ArchDBRTypes.DBR_SCALAR_DOUBLE,
@@ -111,11 +115,11 @@ public class FailoverScoreAPITest {
                 genEventCount++;
             }
             plugin.appendData(context, pvName, strm);
-
         }
         logger.info("Done generating data for appliance " + applianceName);
 
-        JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream("src/test/org/epics/archiverappliance/retrieval/postprocessor/data/PVTypeInfoPrototype.json")));
+        JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream(
+                "src/test/org/epics/archiverappliance/retrieval/postprocessor/data/PVTypeInfoPrototype.json")));
         PVTypeInfo destPVTypeInfo = new PVTypeInfo();
         JSONDecoder<PVTypeInfo> decoder = JSONDecoder.getDecoder(PVTypeInfo.class);
         JSONEncoder<PVTypeInfo> encoder = JSONEncoder.getEncoder(PVTypeInfo.class);
@@ -137,7 +141,7 @@ public class FailoverScoreAPITest {
                 new RawDataRetrievalAsEventStream(applURL + "/retrieval/data/getData.raw");
         long rtvlEventCount = 0;
         try (EventStream stream = rawDataRetrieval.getDataForPVS(
-                new String[]{pvName},
+                new String[] {pvName},
                 TimeUtils.minusDays(TimeUtils.now(), 90),
                 TimeUtils.plusDays(TimeUtils.now(), 31),
                 null)) {
@@ -146,7 +150,13 @@ public class FailoverScoreAPITest {
                 for (Event e : stream) {
                     long evEpoch = TimeUtils.convertToEpochSeconds(e.getEventTimeStamp());
                     if (lastEvEpoch != 0) {
-                        Assertions.assertTrue((evEpoch - lastEvEpoch) == PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), "We got events more than " + PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() + " seconds apart " + TimeUtils.convertToHumanReadableString(lastEvEpoch) + " and  " + TimeUtils.convertToHumanReadableString(evEpoch));
+                        Assertions.assertEquals(
+                                (evEpoch - lastEvEpoch),
+                                PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(),
+                                "We got events more than "
+                                        + PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk()
+                                        + " seconds apart " + TimeUtils.convertToHumanReadableString(lastEvEpoch)
+                                        + " and  " + TimeUtils.convertToHumanReadableString(evEpoch));
                     }
                     lastEvEpoch = evEpoch;
                     rtvlEventCount++;
@@ -162,9 +172,8 @@ public class FailoverScoreAPITest {
     }
 
     private void changeMTSForDest() throws Exception {
-        JSONObject srcPVTypeInfoJSON =
-                GetUrlContent.getURLContentAsJSONObject("http://localhost:17665/mgmt/bpl/getPVTypeInfo?pv="
-                        + URLEncoder.encode(pvName, StandardCharsets.UTF_8));
+        JSONObject srcPVTypeInfoJSON = GetUrlContent.getURLContentAsJSONObject(
+                MGMT_URL + "/getPVTypeInfo?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8));
         JSONDecoder<PVTypeInfo> decoder = JSONDecoder.getDecoder(PVTypeInfo.class);
         JSONEncoder<PVTypeInfo> encoder = JSONEncoder.getEncoder(PVTypeInfo.class);
         PVTypeInfo destPVTypeInfo = new PVTypeInfo();
@@ -177,7 +186,7 @@ public class FailoverScoreAPITest {
         logger.info("Data store is " + destPVTypeInfo.getDataStores()[1]);
 
         GetUrlContent.postObjectAndGetContentAsJSONObject(
-                "http://localhost:17665/mgmt/bpl/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8)
+                MGMT_URL + "/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8)
                         + "&override=true&createnew=true",
                 encoder.encode(destPVTypeInfo));
         logger.info("Changed " + pvName + " to a merge dedup plugin");
@@ -185,8 +194,8 @@ public class FailoverScoreAPITest {
 
     @SuppressWarnings("unchecked")
     private void testDataAtTime(long epochSecs, boolean morningp) throws Exception {
-        String scoreURL = "http://localhost:17665/retrieval/data/getDataAtTime.json?at="
-                + TimeUtils.convertToISO8601String(epochSecs);
+        String scoreURL =
+                DATA_RETRIEVAL_URL + "/data/getDataAtTime.json?at=" + TimeUtils.convertToISO8601String(epochSecs);
         JSONArray array = new JSONArray();
         array.add(pvName);
         Map<String, Map<String, Object>> ret =
@@ -212,20 +221,20 @@ public class FailoverScoreAPITest {
     @Test
     public void testRetrieval() throws Exception {
         // Register the PV with both appliances and generate data.
-        Instant lastMonth = TimeUtils.minusDays(TimeUtils.now(), 2*31);
-        generateMTSData("http://localhost:17665", "dest_appliance", lastMonth, true);
+        Instant lastMonth = TimeUtils.minusDays(TimeUtils.now(), 2 * 31);
+        generateMTSData(HTTP_LOCALHOST + DEFAULT_MGMT_PORT, "dest_appliance", lastMonth, true);
         generateMTSData("http://localhost:17669", "other_appliance", lastMonth, false);
 
         changeMTSForDest();
 
         for (int i = 0; i < 20; i++) {
             long startOfDay = (TimeUtils.convertToEpochSeconds(TimeUtils.minusDays(TimeUtils.now(), -1 * (i - 25)))
-                    / PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk())
+                            / PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk())
                     * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
             for (int h = 0; h < 24; h++) {
                 logger.info("Looking for value of PV at  "
                         + TimeUtils.convertToHumanReadableString(startOfDay
-                        + (long) h * PartitionGranularity.PARTITION_HOUR.getApproxSecondsPerChunk()));
+                                + (long) h * PartitionGranularity.PARTITION_HOUR.getApproxSecondsPerChunk()));
                 testDataAtTime(
                         startOfDay + (long) h * PartitionGranularity.PARTITION_HOUR.getApproxSecondsPerChunk(),
                         (h >= 10 && h < 20));

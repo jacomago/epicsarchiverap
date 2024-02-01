@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
 import static org.epics.archiverappliance.engine.V4.PVAccessUtil.convertBytesToPVAStructure;
 import static org.epics.archiverappliance.engine.V4.PVAccessUtil.waitForStatusChange;
 
@@ -58,7 +59,8 @@ public class PVAFlakyIntegrationTest {
     @Test
     public void testStartAfterArchive() throws Exception {
 
-        String pvName = "PV:" + org.epics.archiverappliance.engine.V4.PVAccessIntegrationTest.class.getSimpleName() + ":" + UUID.randomUUID();
+        String pvName = "PV:" + org.epics.archiverappliance.engine.V4.PVAccessIntegrationTest.class.getSimpleName()
+                + ":" + UUID.randomUUID();
 
         logger.info("Starting pvAccess test for pv " + pvName);
 
@@ -76,8 +78,8 @@ public class PVAFlakyIntegrationTest {
         String pvURLName = URLEncoder.encode(pvName, StandardCharsets.UTF_8);
 
         // Archive PV
-        String mgmtUrl = "http://localhost:17665/mgmt/bpl/";
-        String archivePVURL = mgmtUrl + "archivePV?pv=pva://";
+        String mgmtUrl = MGMT_URL;
+        String archivePVURL = mgmtUrl + "/archivePV?pv=pva://";
 
         GetUrlContent.getURLContentAsJSONArray(archivePVURL + pvURLName);
 
@@ -130,24 +132,25 @@ public class PVAFlakyIntegrationTest {
         EventStream stream = null;
         Map<Instant, SampleValue> actualValues = new HashMap<>();
         try {
-            stream = rawDataRetrieval.getDataForPVS(new String[]{pvName}, start, end, desc -> logger.info("Getting data for PV " + desc.getPvName()));
+            stream = rawDataRetrieval.getDataForPVS(
+                    new String[] {pvName}, start, end, desc -> logger.info("Getting data for PV " + desc.getPvName()));
 
             // Make sure we get the DBR type we expect
-            Assertions.assertEquals(ArchDBRTypes.DBR_V4_GENERIC_BYTES, stream.getDescription().getArchDBRType());
+            Assertions.assertEquals(
+                    ArchDBRTypes.DBR_V4_GENERIC_BYTES, stream.getDescription().getArchDBRType());
 
             // We are making sure that the stream we get back has times in sequential order...
             for (Event e : stream) {
                 actualValues.put(e.getEventTimeStamp(), e.getSampleValue());
             }
         } finally {
-            if (stream != null) try {
-                stream.close();
-            } catch (Throwable ignored) {
-            }
+            if (stream != null)
+                try {
+                    stream.close();
+                } catch (Throwable ignored) {
+                }
         }
 
         Assertions.assertEquals(expectedValues, convertBytesToPVAStructure(actualValues));
     }
-
-
 }

@@ -24,6 +24,8 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import java.io.IOException;
 import java.time.Instant;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_INDEX_URL;
+
 /**
  * Use the firefox driver to test operator's adding a PV to the system.
  * @author mshankar
@@ -32,96 +34,106 @@ import java.time.Instant;
 @Tag("integration")
 @Tag("localEpics")
 public class ArchiveAliasedPVTest {
-	private static Logger logger = LogManager.getLogger(ArchiveAliasedPVTest.class.getName());
-	TomcatSetup tomcatSetup = new TomcatSetup();
-	SIOCSetup siocSetup = new SIOCSetup();
-	WebDriver driver;
+    private static Logger logger = LogManager.getLogger(ArchiveAliasedPVTest.class.getName());
+    TomcatSetup tomcatSetup = new TomcatSetup();
+    SIOCSetup siocSetup = new SIOCSetup();
+    WebDriver driver;
 
-	@BeforeAll
-	public static void setupClass() {
-		WebDriverManager.firefoxdriver().setup();
-	}
+    @BeforeAll
+    public static void setupClass() {
+        WebDriverManager.firefoxdriver().setup();
+    }
 
-	@BeforeEach
-	public void setUp() throws Exception {
-		siocSetup.startSIOCWithDefaultDB();
-		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
-		driver = new FirefoxDriver();
-	}
+    @BeforeEach
+    public void setUp() throws Exception {
+        siocSetup.startSIOCWithDefaultDB();
+        tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
+        driver = new FirefoxDriver();
+    }
 
-	@AfterEach
-	public void tearDown() throws Exception {
-		driver.quit();
-		tomcatSetup.tearDown();
-		siocSetup.stopSIOC();
-	}
+    @AfterEach
+    public void tearDown() throws Exception {
+        driver.quit();
+        tomcatSetup.tearDown();
+        siocSetup.stopSIOC();
+    }
 
-	@Test
-	public void testSimpleArchivePV() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
-		 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
-		 String pvNameToArchive = "UnitTestNoNamingConvention:sinealias";
-		 pvstextarea.sendKeys(pvNameToArchive);
-		 WebElement archiveButton = driver.findElement(By.id("archstatArchive"));
-		 logger.debug("About to submit");
-		 archiveButton.click();
-		 // We have to wait for a few minutes here as it does take a while for the workflow to complete.
-		 // In addition, we are also getting .HIHI etc the monitors for which get established many minutes after the beginning of archiving 
-		 Thread.sleep(15*60*1000);
-		 WebElement checkStatusButton = driver.findElement(By.id("archstatCheckStatus"));
-		 checkStatusButton.click();
-		 Thread.sleep(2*1000);
-		 WebElement statusPVName = driver.findElement(By.cssSelector("#archstatsdiv_table tr:nth-child(1) td:nth-child(1)"));
-		 String pvNameObtainedFromTable = statusPVName.getText();
-		 String expectedPVName = "UnitTestNoNamingConvention:sinealias";
-		 Assertions.assertTrue(expectedPVName.equals(pvNameObtainedFromTable), "Expecting PV name to be " + expectedPVName + "; instead we get " + pvNameObtainedFromTable);
-		 WebElement statusPVStatus = driver.findElement(By.cssSelector("#archstatsdiv_table tr:nth-child(1) td:nth-child(2)"));
-		 String pvArchiveStatusObtainedFromTable = statusPVStatus.getText();
-		 String expectedPVStatus = "Being archived";
-		 Assertions.assertTrue(expectedPVStatus.equals(pvArchiveStatusObtainedFromTable), "Expecting PV archive status to be " + expectedPVStatus + "; instead it is " + pvArchiveStatusObtainedFromTable);
+    @Test
+    public void testSimpleArchivePV() throws Exception {
+        driver.get(MGMT_INDEX_URL);
+        WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
+        String pvNameToArchive = "UnitTestNoNamingConvention:sinealias";
+        pvstextarea.sendKeys(pvNameToArchive);
+        WebElement archiveButton = driver.findElement(By.id("archstatArchive"));
+        logger.debug("About to submit");
+        archiveButton.click();
+        // We have to wait for a few minutes here as it does take a while for the workflow to complete.
+        // In addition, we are also getting .HIHI etc the monitors for which get established many minutes after the
+        // beginning of archiving
+        Thread.sleep(15 * 60 * 1000);
+        WebElement checkStatusButton = driver.findElement(By.id("archstatCheckStatus"));
+        checkStatusButton.click();
+        Thread.sleep(2 * 1000);
+        WebElement statusPVName =
+                driver.findElement(By.cssSelector("#archstatsdiv_table tr:nth-child(1) td:nth-child(1)"));
+        String pvNameObtainedFromTable = statusPVName.getText();
+        String expectedPVName = "UnitTestNoNamingConvention:sinealias";
+        Assertions.assertTrue(
+                expectedPVName.equals(pvNameObtainedFromTable),
+                "Expecting PV name to be " + expectedPVName + "; instead we get " + pvNameObtainedFromTable);
+        WebElement statusPVStatus =
+                driver.findElement(By.cssSelector("#archstatsdiv_table tr:nth-child(1) td:nth-child(2)"));
+        String pvArchiveStatusObtainedFromTable = statusPVStatus.getText();
+        String expectedPVStatus = "Being archived";
+        Assertions.assertTrue(
+                expectedPVStatus.equals(pvArchiveStatusObtainedFromTable),
+                "Expecting PV archive status to be " + expectedPVStatus + "; instead it is "
+                        + pvArchiveStatusObtainedFromTable);
 
-		 SIOCSetup.caput("UnitTestNoNamingConvention:sine.HIHI", 2.0);
-		 Thread.sleep(2*1000);
-		 SIOCSetup.caput("UnitTestNoNamingConvention:sine.HIHI", 3.0);
-		 Thread.sleep(2*1000);
-		 SIOCSetup.caput("UnitTestNoNamingConvention:sine.HIHI", 4.0);
-		 Thread.sleep(2*1000);
-		 logger.info("Done updating UnitTestNoNamingConvention:sine.HIHI");
-		 Thread.sleep(2*60*1000);
-		 
-		 // Test retrieval of data using the real name and the aliased name
-		 testRetrievalCount("UnitTestNoNamingConvention:sine");
-		 testRetrievalCount("UnitTestNoNamingConvention:sinealias");
-		 testRetrievalCount("UnitTestNoNamingConvention:sine.HIHI");
-		 testRetrievalCount("UnitTestNoNamingConvention:sinealias.HIHI");
-			
-		 
-	}
+        SIOCSetup.caput("UnitTestNoNamingConvention:sine.HIHI", 2.0);
+        Thread.sleep(2 * 1000);
+        SIOCSetup.caput("UnitTestNoNamingConvention:sine.HIHI", 3.0);
+        Thread.sleep(2 * 1000);
+        SIOCSetup.caput("UnitTestNoNamingConvention:sine.HIHI", 4.0);
+        Thread.sleep(2 * 1000);
+        logger.info("Done updating UnitTestNoNamingConvention:sine.HIHI");
+        Thread.sleep(2 * 60 * 1000);
 
-	/**
-	 * Make sure we get some data when retriving under the given name
-	 * @throws IOException
-	 */
-	private void testRetrievalCount(String pvName) throws IOException {
-		 RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
+        // Test retrieval of data using the real name and the aliased name
+        testRetrievalCount("UnitTestNoNamingConvention:sine");
+        testRetrievalCount("UnitTestNoNamingConvention:sinealias");
+        testRetrievalCount("UnitTestNoNamingConvention:sine.HIHI");
+        testRetrievalCount("UnitTestNoNamingConvention:sinealias.HIHI");
+    }
+
+    /**
+     * Make sure we get some data when retriving under the given name
+     *
+     * @throws IOException
+     */
+    private void testRetrievalCount(String pvName) throws IOException {
+        RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream(
+                "http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT + "/retrieval/data/getData.raw");
         Instant end = TimeUtils.plusDays(TimeUtils.now(), 3);
         Instant start = TimeUtils.minusDays(end, 6);
-		try(EventStream stream = rawDataRetrieval.getDataForPVS(new String[] { pvName}, start, end, null)) {
-			 long previousEpochSeconds = 0;
-			 int eventCount = 0;
+        try (EventStream stream = rawDataRetrieval.getDataForPVS(new String[] {pvName}, start, end, null)) {
+            long previousEpochSeconds = 0;
+            int eventCount = 0;
 
-			 // We are making sure that the stream we get back has times in sequential order...
-			 if(stream != null) {
-				 for(Event e : stream) {
-					 long actualSeconds = e.getEpochSeconds();
-					 Assertions.assertTrue(actualSeconds >= previousEpochSeconds);
-					 previousEpochSeconds = actualSeconds;
-					 eventCount++;
-				 }
-			 }
+            // We are making sure that the stream we get back has times in sequential order...
+            if (stream != null) {
+                for (Event e : stream) {
+                    long actualSeconds = e.getEpochSeconds();
+                    Assertions.assertTrue(actualSeconds >= previousEpochSeconds);
+                    previousEpochSeconds = actualSeconds;
+                    eventCount++;
+                }
+            }
 
-			 logger.info("Got " + eventCount + " event for pv " + pvName);
-			 Assertions.assertTrue(eventCount > 0, "When asking for data using " + pvName + ", event count is 0. We got " + eventCount);
-		 }
-	}
+            logger.info("Got " + eventCount + " event for pv " + pvName);
+            Assertions.assertTrue(
+                    eventCount > 0,
+                    "When asking for data using " + pvName + ", event count is 0. We got " + eventCount);
+        }
+    }
 }

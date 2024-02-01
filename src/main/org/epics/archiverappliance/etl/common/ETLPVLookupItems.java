@@ -7,11 +7,11 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl.common;
 
-import java.util.concurrent.ScheduledFuture;
-
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.etl.ETLDest;
 import org.epics.archiverappliance.etl.ETLSource;
+
+import java.util.concurrent.ScheduledFuture;
 
 /**
  * A POJO for PV name, ETLSource, and ETLDest items,
@@ -22,198 +22,218 @@ import org.epics.archiverappliance.etl.ETLSource;
  *
  */
 public class ETLPVLookupItems {
-	private String pvName;
-	private ArchDBRTypes dbrType;
-	private ETLSource source;
-	private ETLDest dest;
-	private int lifetimeorder = 0;
-	private ETLMetricsForLifetime metricsForLifetime;
-	private long lastETLCompleteEpochSeconds = 0L;
-	private long lastETLTimeWeSpentInETLInMilliSeconds = 0L;
-	private long totalTimeWeSpentInETLInMilliSeconds = 0L;
-	private long time4getETLStreams;
-	private long time4checkSizes;
-	private long time4prepareForNewPartition;
-	private long time4appendToETLAppendData;
-	private long time4commitETLAppendData; 
-	private long time4markForDeletion;
-	private long time4runPostProcessors;
-	private long time4executePostETLTasks;
-	private long totalSrcBytes;
-	
-	private int numberofTimesWeETLed = 0;
-	private ScheduledFuture<?> cancellingFuture;
-	
-	private OutOfSpaceHandling outOfSpaceHandling;
-	private long outOfSpaceChunksDeleted = 0;
-	
-	
-	public ETLPVLookupItems(String pvName, ArchDBRTypes dbrType, ETLSource source, ETLDest dest, int lifetimeorder, ETLMetricsForLifetime metricsForLifetime, OutOfSpaceHandling outOfSpaceHandling) {
-		this.pvName = pvName;
-		this.dbrType = dbrType;
-		this.source = source;
-		this.dest = dest;
-		this.lifetimeorder = lifetimeorder;
-		this.metricsForLifetime = metricsForLifetime;
-		this.outOfSpaceHandling = outOfSpaceHandling;
-	}
+    private String pvName;
+    private ArchDBRTypes dbrType;
+    private ETLSource source;
+    private ETLDest dest;
+    private int lifetimeorder = 0;
+    private ETLMetricsForLifetime metricsForLifetime;
+    private long lastETLCompleteEpochSeconds = 0L;
+    private long lastETLTimeWeSpentInETLInMilliSeconds = 0L;
+    private long totalTimeWeSpentInETLInMilliSeconds = 0L;
+    private long time4getETLStreams;
+    private long time4checkSizes;
+    private long time4prepareForNewPartition;
+    private long time4appendToETLAppendData;
+    private long time4commitETLAppendData;
+    private long time4markForDeletion;
+    private long time4runPostProcessors;
+    private long time4executePostETLTasks;
+    private long totalSrcBytes;
 
-	public int getLifetimeorder() {
-		return lifetimeorder;
-	}
+    private int numberofTimesWeETLed = 0;
+    private ScheduledFuture<?> cancellingFuture;
 
-	public String getPvName() {
-		return pvName;
-	}
-	
-	public void setPvName(String pvName) {
-		this.pvName = pvName;
-	}
-	
-	public ETLSource getETLSource() {
-		return source;
-	}
-	
-	public void setETLSource(ETLSource source) {
-		this.source = source;
-	}
-	
-	public ETLDest getETLDest() {
-		return dest;
-	}
-	
-	public void setETLDest(ETLDest dest) {
-		this.dest = dest;
-	}
-	
-	@Override
-	public boolean equals(Object obj) {
-		ETLPVLookupItems other = (ETLPVLookupItems) obj;
-		return this.pvName.equals(other.pvName) && this.lifetimeorder == other.lifetimeorder;
-	}
-	@Override
-	public int hashCode() {
-		return this.pvName.hashCode() + Integer.valueOf(this.lifetimeorder).hashCode();
-	}
+    private OutOfSpaceHandling outOfSpaceHandling;
+    private long outOfSpaceChunksDeleted = 0;
 
-	public long getTotalTimeWeSpentInETLInMilliSeconds() {
-		return totalTimeWeSpentInETLInMilliSeconds;
-	}
+    public ETLPVLookupItems(
+            String pvName,
+            ArchDBRTypes dbrType,
+            ETLSource source,
+            ETLDest dest,
+            int lifetimeorder,
+            ETLMetricsForLifetime metricsForLifetime,
+            OutOfSpaceHandling outOfSpaceHandling) {
+        this.pvName = pvName;
+        this.dbrType = dbrType;
+        this.source = source;
+        this.dest = dest;
+        this.lifetimeorder = lifetimeorder;
+        this.metricsForLifetime = metricsForLifetime;
+        this.outOfSpaceHandling = outOfSpaceHandling;
+    }
 
-	public int getNumberofTimesWeETLed() {
-		return numberofTimesWeETLed;
-	}
-	
-	public long getLastETLCompleteEpochSeconds() {
-		return lastETLCompleteEpochSeconds;
-	}
+    public int getLifetimeorder() {
+        return lifetimeorder;
+    }
 
-	public void addETLDurationInMillis(long pvETLStartEpochMilliSeconds, long pvETLEndEpochMilliSeconds) {
-		lastETLTimeWeSpentInETLInMilliSeconds = (pvETLEndEpochMilliSeconds - pvETLStartEpochMilliSeconds);
-		totalTimeWeSpentInETLInMilliSeconds += lastETLTimeWeSpentInETLInMilliSeconds;
-		numberofTimesWeETLed++;
-		lastETLCompleteEpochSeconds = pvETLEndEpochMilliSeconds/1000;
-		metricsForLifetime.timeForOverallETLInMilliSeconds += lastETLTimeWeSpentInETLInMilliSeconds;
-		metricsForLifetime.totalETLRuns = Math.max(numberofTimesWeETLed, metricsForLifetime.totalETLRuns);
-		metricsForLifetime.updateApproximateGlobalLastETLTime(lastETLTimeWeSpentInETLInMilliSeconds);
-	}
+    public String getPvName() {
+        return pvName;
+    }
 
-	public ArchDBRTypes getDbrType() {
-		return dbrType;
-	}
-	
-	public ScheduledFuture<?> getCancellingFuture() {
-		return cancellingFuture;
-	}
+    public void setPvName(String pvName) {
+        this.pvName = pvName;
+    }
 
-	public void setCancellingFuture(ScheduledFuture<?> cancellingFuture) {
-		this.cancellingFuture = cancellingFuture;
-	}
-	
-	public String toString() { 
-		return pvName + "(" + lifetimeorder + ")";
-	}
+    public ETLSource getETLSource() {
+        return source;
+    }
 
-	public void addInfoAboutDetailedTime(long time4getETLStreams, long time4checkSizes, long time4prepareForNewPartition, long time4appendToETLAppendData,
-			long time4commitETLAppendData, long time4markForDeletion, long time4runPostProcessors, long time4executePostETLTasks,
-			long totalSrcBytes) {
-		this.time4getETLStreams += time4getETLStreams;
-		this.time4checkSizes += time4checkSizes;
-		this.time4prepareForNewPartition += time4prepareForNewPartition;
-		this.time4appendToETLAppendData += time4appendToETLAppendData;
-		this.time4commitETLAppendData += time4commitETLAppendData; 
-		this.time4markForDeletion += time4markForDeletion;
-		this.time4runPostProcessors += time4runPostProcessors;
-		this.time4executePostETLTasks += time4executePostETLTasks;
-		this.totalSrcBytes += totalSrcBytes;
-		
-		metricsForLifetime.timeinMillSecond4getETLStreams += time4getETLStreams;
-		metricsForLifetime.timeinMillSecond4checkSizes += time4checkSizes;
-		metricsForLifetime.timeinMillSecond4prepareForNewPartition += time4prepareForNewPartition;
-		metricsForLifetime.timeinMillSecond4appendToETLAppendData += time4appendToETLAppendData;
-		metricsForLifetime.timeinMillSecond4commitETLAppendData += time4commitETLAppendData; 
-		metricsForLifetime.timeinMillSecond4markForDeletion += time4markForDeletion;
-		metricsForLifetime.timeinMillSecond4runPostProcessors += time4runPostProcessors;
-		metricsForLifetime.timeinMillSecond4executePostETLTasks += time4executePostETLTasks;
-		metricsForLifetime.totalSrcBytes += totalSrcBytes;
-	}
+    public void setETLSource(ETLSource source) {
+        this.source = source;
+    }
 
-	public long getTime4getETLStreams() {
-		return time4getETLStreams;
-	}
+    public ETLDest getETLDest() {
+        return dest;
+    }
 
-	public long getTime4prepareForNewPartition() {
-		return time4prepareForNewPartition;
-	}
+    public void setETLDest(ETLDest dest) {
+        this.dest = dest;
+    }
 
-	public long getTime4appendToETLAppendData() {
-		return time4appendToETLAppendData;
-	}
+    @Override
+    public boolean equals(Object obj) {
+        ETLPVLookupItems other = (ETLPVLookupItems) obj;
+        return this.pvName.equals(other.pvName) && this.lifetimeorder == other.lifetimeorder;
+    }
 
-	public long getTime4commitETLAppendData() {
-		return time4commitETLAppendData;
-	}
+    @Override
+    public int hashCode() {
+        return this.pvName.hashCode() + Integer.valueOf(this.lifetimeorder).hashCode();
+    }
 
-	public long getTime4markForDeletion() {
-		return time4markForDeletion;
-	}
+    public long getTotalTimeWeSpentInETLInMilliSeconds() {
+        return totalTimeWeSpentInETLInMilliSeconds;
+    }
 
-	public long getTime4runPostProcessors() {
-		return time4runPostProcessors;
-	}
+    public int getNumberofTimesWeETLed() {
+        return numberofTimesWeETLed;
+    }
 
-	public long getTime4executePostETLTasks() {
-		return time4executePostETLTasks;
-	}
+    public long getLastETLCompleteEpochSeconds() {
+        return lastETLCompleteEpochSeconds;
+    }
 
-	public OutOfSpaceHandling getOutOfSpaceHandling() {
-		return outOfSpaceHandling;
-	}
+    public void addETLDurationInMillis(long pvETLStartEpochMilliSeconds, long pvETLEndEpochMilliSeconds) {
+        lastETLTimeWeSpentInETLInMilliSeconds = (pvETLEndEpochMilliSeconds - pvETLStartEpochMilliSeconds);
+        totalTimeWeSpentInETLInMilliSeconds += lastETLTimeWeSpentInETLInMilliSeconds;
+        numberofTimesWeETLed++;
+        lastETLCompleteEpochSeconds = pvETLEndEpochMilliSeconds / 1000;
+        metricsForLifetime.timeForOverallETLInMilliSeconds += lastETLTimeWeSpentInETLInMilliSeconds;
+        metricsForLifetime.totalETLRuns = Math.max(numberofTimesWeETLed, metricsForLifetime.totalETLRuns);
+        metricsForLifetime.updateApproximateGlobalLastETLTime(lastETLTimeWeSpentInETLInMilliSeconds);
+    }
 
-	public long getOutOfSpaceChunksDeleted() {
-		return outOfSpaceChunksDeleted;
-	}
-	
-	public void outOfSpaceChunkDeleted() { 
-		outOfSpaceChunksDeleted++;
-	}
+    public ArchDBRTypes getDbrType() {
+        return dbrType;
+    }
 
-	public long getTotalSrcBytes() {
-		return totalSrcBytes;
-	}
+    public ScheduledFuture<?> getCancellingFuture() {
+        return cancellingFuture;
+    }
 
-	public long getLastETLTimeWeSpentInETLInMilliSeconds() {
-		return lastETLTimeWeSpentInETLInMilliSeconds;
-	}
+    public void setCancellingFuture(ScheduledFuture<?> cancellingFuture) {
+        this.cancellingFuture = cancellingFuture;
+    }
 
-	public long getTime4checkSizes() {
-		return time4checkSizes;
-	}
+    @Override
+    public String toString() {
+        return "ETLPVLookupItems{" + "pvName='"
+                + pvName + '\'' + ", dbrType="
+                + dbrType + ", source="
+                + source + ", dest="
+                + dest + ", lifetimeorder="
+                + lifetimeorder + '}';
+    }
 
-	/**
-	 * @return the metricsForLifetime
-	 */
-	public ETLMetricsForLifetime getMetricsForLifetime() {
-		return metricsForLifetime;
-	}
+    public void addInfoAboutDetailedTime(
+            long time4getETLStreams,
+            long time4checkSizes,
+            long time4prepareForNewPartition,
+            long time4appendToETLAppendData,
+            long time4commitETLAppendData,
+            long time4markForDeletion,
+            long time4runPostProcessors,
+            long time4executePostETLTasks,
+            long totalSrcBytes) {
+        this.time4getETLStreams += time4getETLStreams;
+        this.time4checkSizes += time4checkSizes;
+        this.time4prepareForNewPartition += time4prepareForNewPartition;
+        this.time4appendToETLAppendData += time4appendToETLAppendData;
+        this.time4commitETLAppendData += time4commitETLAppendData;
+        this.time4markForDeletion += time4markForDeletion;
+        this.time4runPostProcessors += time4runPostProcessors;
+        this.time4executePostETLTasks += time4executePostETLTasks;
+        this.totalSrcBytes += totalSrcBytes;
+
+        metricsForLifetime.timeinMillSecond4getETLStreams += time4getETLStreams;
+        metricsForLifetime.timeinMillSecond4checkSizes += time4checkSizes;
+        metricsForLifetime.timeinMillSecond4prepareForNewPartition += time4prepareForNewPartition;
+        metricsForLifetime.timeinMillSecond4appendToETLAppendData += time4appendToETLAppendData;
+        metricsForLifetime.timeinMillSecond4commitETLAppendData += time4commitETLAppendData;
+        metricsForLifetime.timeinMillSecond4markForDeletion += time4markForDeletion;
+        metricsForLifetime.timeinMillSecond4runPostProcessors += time4runPostProcessors;
+        metricsForLifetime.timeinMillSecond4executePostETLTasks += time4executePostETLTasks;
+        metricsForLifetime.totalSrcBytes += totalSrcBytes;
+    }
+
+    public long getTime4getETLStreams() {
+        return time4getETLStreams;
+    }
+
+    public long getTime4prepareForNewPartition() {
+        return time4prepareForNewPartition;
+    }
+
+    public long getTime4appendToETLAppendData() {
+        return time4appendToETLAppendData;
+    }
+
+    public long getTime4commitETLAppendData() {
+        return time4commitETLAppendData;
+    }
+
+    public long getTime4markForDeletion() {
+        return time4markForDeletion;
+    }
+
+    public long getTime4runPostProcessors() {
+        return time4runPostProcessors;
+    }
+
+    public long getTime4executePostETLTasks() {
+        return time4executePostETLTasks;
+    }
+
+    public OutOfSpaceHandling getOutOfSpaceHandling() {
+        return outOfSpaceHandling;
+    }
+
+    public long getOutOfSpaceChunksDeleted() {
+        return outOfSpaceChunksDeleted;
+    }
+
+    public void outOfSpaceChunkDeleted() {
+        outOfSpaceChunksDeleted++;
+    }
+
+    public long getTotalSrcBytes() {
+        return totalSrcBytes;
+    }
+
+    public long getLastETLTimeWeSpentInETLInMilliSeconds() {
+        return lastETLTimeWeSpentInETLInMilliSeconds;
+    }
+
+    public long getTime4checkSizes() {
+        return time4checkSizes;
+    }
+
+    /**
+     * @return the metricsForLifetime
+     */
+    public ETLMetricsForLifetime getMetricsForLifetime() {
+        return metricsForLifetime;
+    }
 }

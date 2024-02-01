@@ -1,13 +1,5 @@
 package org.epics.archiverappliance.engine.pv;
 
-import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.TimeUtils;
@@ -22,7 +14,15 @@ import org.epics.pva.client.PVAChannel;
 import org.epics.pva.data.PVAData;
 import org.epics.pva.data.PVAStructure;
 
-public class EPICS_V4_PV implements PV,  ClientChannelListener, MonitorListener {
+import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
     private static final Logger logger = LogManager.getLogger(EPICS_V4_PV.class.getName());
 
     /** Channel name. */
@@ -94,10 +94,15 @@ public class EPICS_V4_PV implements PV,  ClientChannelListener, MonitorListener 
 
     private AutoCloseable subscriptionCloseable = null;
 
-    EPICS_V4_PV(final String name, ConfigService configservice, boolean isControlPV, ArchDBRTypes archDBRTypes, int jcaCommandThreadId) {
+    EPICS_V4_PV(
+            final String name,
+            ConfigService configservice,
+            boolean isControlPV,
+            ArchDBRTypes archDBRTypes,
+            int jcaCommandThreadId) {
         this(name, configservice, jcaCommandThreadId);
         this.archDBRType = archDBRTypes;
-        if(archDBRTypes != null) {
+        if (archDBRTypes != null) {
             this.con = configservice.getArchiverTypeSystem().getV4Constructor(this.archDBRType);
         }
     }
@@ -107,7 +112,6 @@ public class EPICS_V4_PV implements PV,  ClientChannelListener, MonitorListener 
         this.configservice = configservice;
         this.jcaCommandThreadId = jcaCommandThreadId;
     }
-
 
     @Override
     public String getName() {
@@ -119,11 +123,6 @@ public class EPICS_V4_PV implements PV,  ClientChannelListener, MonitorListener 
         listeners.add(listener);
     }
 
-    @Override
-    public void removeListener(PVListener listener) {
-        listeners.remove(listener);
-    }
-
     /** Notify all listeners. */
     private void fireDisconnected() {
         for (final PVListener listener : listeners) {
@@ -131,14 +130,12 @@ public class EPICS_V4_PV implements PV,  ClientChannelListener, MonitorListener 
         }
     }
 
-
     /** Notify all listeners. */
     private void fireValueUpdate(DBRTimeEvent ev) {
         for (final PVListener listener : listeners) {
             listener.pvValueUpdate(this, ev);
         }
     }
-
 
     @Override
     public void start() throws Exception {
@@ -177,303 +174,13 @@ public class EPICS_V4_PV implements PV,  ClientChannelListener, MonitorListener 
         return this.state;
     }
 
-	@Override
-	public ArchDBRTypes getArchDBRTypes() {
-		return archDBRType;
-	}
-
-    @Override
-    public HashMap<String, String> getLatestMetadata() {
-        HashMap<String, String> retVal = new HashMap<>();
-        // The totalMetaInfo is updated once every 24hours...
-        MetaInfo metaInfo = this.totalMetaInfo;
-        if(metaInfo != null) {
-            metaInfo.addToDict(retVal);
-        }
-        if (fieldValuesCache != null) {
-            retVal.putAll(fieldValuesCache.getCurrentFieldValues());
-        }
-        return retVal;
-    }
-
-    @Override
-    public void updateTotalMetaInfo() throws IllegalStateException {
-        // We should not need to do anyting here as we should get updates on any field change for PVAccess and we do not need to do an explicit get.
-    }
-
-    @Override
-    public String getHostName() {
-        return hostName;
-    }
-
-    @Override
-    public void getLowLevelChannelInfo(List<Map<String, String>> statuses) {
-        // We don't use this for PVAccess
-
-    }
-
-    @Override
-    public void channelStateChanged(PVAChannel channel, ClientChannelState clientChannelState) {
-
-        logger.info("channelStateChanged:" + clientChannelState + " " + channel.getName());
-        if (clientChannelState == ClientChannelState.CONNECTED) {
-            this.scheduleCommand(this::handleConnected);
-        } else if (connected) {
-            this.scheduleCommand(() -> {
-                state = PVConnectionState.Disconnected;
-                connected = false;
-                unsubscribe();
-                fireDisconnected();
-            });
-        }
-    }
-
-    private void setupDBRType(PVAStructure data) {
-        logger.info("Construct the fieldValuesCache for PV " + this.getName());
-        boolean excludeV4Changes = true;
-        this.fieldValuesCache = new FieldValuesCache(data, excludeV4Changes);
-        this.timeStampBits = this.fieldValuesCache.getTimeStampBits();
-        if(this.timeStampBits.isEmpty()) {
-            logger.error("Cannot determine the timestamp bitset for PV " + this.name + ". This means we may not save any data at all for this PV.");
-        } else {
-            logger.debug("The timestamp bits for the PV " + this.name + " are " + this.timeStampBits);
-        }
-
-        if (archDBRType ==null || con == null ) {
-            String structureID = data.formatType();
-            logger.info("Type from structure in monitorConnect is " + structureID);
-
-            PVAData valueField = data.get("value");
-            if(valueField == null) {
-                archDBRType = ArchDBRTypes.DBR_V4_GENERIC_BYTES;
-            } else {
-                logger.info("Value field in monitorConnect is of type " + valueField.getType());
-                archDBRType = determineDBRType(structureID, valueField.getType(), valueField.formatType());
-            }
-
-            con = configservice.getArchiverTypeSystem().getV4Constructor(archDBRType);
-            logger.info("Determined ArchDBRTypes for " + this.name + " as " + archDBRType);
-        }
-    }
-
-    private static boolean timeStampUpdated(BitSet changes, BitSet timeStampBits) {
-        if (!timeStampBits.isEmpty()) {
-            return changes.intersects(timeStampBits);
-        }
-        return false;
-    }
-
-    private boolean newMetaDataSavePeriod(long lastSaveSecs, long periodLengthSecs) {
-        long nowES = TimeUtils.getCurrentEpochSeconds();
-        return lastSaveSecs <= 0 || (nowES - lastSaveSecs) >= periodLengthSecs;
-    }
-
-    private DBRTimeEvent fromStructure(PVAStructure data, BitSet changes)
-            throws Exception {
-
-        DBRTimeEvent dbrtimeevent = con.newInstance(data);
-        this.totalMetaInfo.computeRate(dbrtimeevent);
-
-        this.fieldValuesCache.updateFieldValues(data, changes);
-        dbrtimeevent.setFieldValues(this.fieldValuesCache.getUpdatedFieldValues(false, this.metaFields), false);
-
-        return dbrtimeevent;
-    }
-
-    @Override
-    public void handleMonitor(PVAChannel channel, BitSet changes, BitSet overruns, PVAStructure data) {
-        logger.debug("handleMonitor: {}", data);
-        if (data == null) {
-            logger.warn("Server ends subscription for " + this.name);
-            unsubscribe();
-            fireDisconnected();
-        }
-
-        state = PVConnectionState.GotMonitor;
-
-        if (!connected)
-            connected = true;
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("Obtained monitor event for pv " + this.name);
-        }
-
-        if (archDBRType == null || con == null) {
-            logger.error("Have not determined the DBRTYpes yet for " + this.name);
-            this.setupDBRType(data);
-        }
-
-        logger.debug("Changed bitset: " + changes);
-
-        try {
-
-            // Check to see if we got the monitor-event as part of record processing.
-            // We use the timestamp to ascertain this fact.
-            // We store fields as part of the next record processing event.
-            // If this is not a record processing event, skip this.
-            if (!timeStampUpdated(changes, this.timeStampBits)) {
-                logger.debug("Timestamp has not changed; most likely this is a update to the properties for pv "
-                        + this.name);
-                logger.debug("Timestamp bits " + this.timeStampBits + " Changed bits " + changes);
-                return;
-            }
-
-            DBRTimeEvent dbrtimeevent = fromStructure(data, changes);
-
-            // Update listeners
-            fireValueUpdate(dbrtimeevent);
-
-        } catch (Exception e) {
-            logger.error("exception in monitor changed function when converting DBR to dbrtimeevent", e);
-        }
-
-    }
-
-    private void scheduleCommand(final Runnable command) {
-        configservice.getEngineContext().getJCACommandThread(jcaCommandThreadId).addCommand(command);
-    }
-
-    private void connect() {
-        logger.info("Connecting to PV " + this.name);
-        this.scheduleCommand(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    state = PVConnectionState.Connecting;
-                    synchronized (this) {
-                        if (pvaChannel == null) {
-                            pvaChannel = configservice.getEngineContext().getPVAClient().getChannel(name,
-                                    EPICS_V4_PV.this);
-                        }
-
-                        if (pvaChannel == null) {
-                            logger.error("No pvaChannel when trying to connect to pv " + name);
-                            return;
-                        }
-
-                        if (pvaChannel.isConnected()) {
-                            handleConnected();
-                        }
-                    }
-                } catch (Exception e) {
-                    logger.error("exception when connecting pv", e);
-                }
-            }
-        });
-    }
-
-
-    /**
-     * PV is connected. Get meta info, or subscribe right away.
-     */
-    private void handleConnected() {
-        if (state == PVConnectionState.Connected)
-            return;
-
-        state = PVConnectionState.Connected;
-
-
-        for (final PVListener listener : listeners) {
-            listener.pvConnected(this);
-        }
-
-        if (!running) {
-            connected = true;
-            synchronized (this) {
-                this.notifyAll();
-            }
-            return;
-        }
-
-        subscribe();
-    }
-
-    private void disconnect() {
-        PVAChannel channelCopy;
-        synchronized (this) {
-            if (pvaChannel == null)
-                return;
-            channelCopy = pvaChannel;
-            connected = false;
-            pvaChannel = null;
-        }
-
-        try {
-            channelCopy.close();
-        } catch (final Exception e) {
-            logger.error("exception when disconnecting pv", e);
-        }
-
-        fireDisconnected();
-    }
-
-    /** Subscribe for value updates. */
-    private void subscribe() {
-        synchronized (this) {
-            // Prevent multiple subscriptions.
-            if (subscriptionCloseable != null) {
-                logger.error("When trying to establish a subscription, subscription already exists " + this.name);
-                return;
-            }
-
-            // Late callback, channel already closed?
-            if (pvaChannel == null) {
-                logger.error("When trying to establish a subscription, channel already closed " + this.name);
-                return;
-            }
-
-            try {
-                var pvaStructure = pvaChannel.read("").get();
-                this.setupDBRType(pvaStructure);
-                DBRTimeEvent dbrTimeEvent = fromStructure(pvaStructure, null);
-                fireValueUpdate(dbrTimeEvent);
-            } catch (Exception e) {
-                logger.error("exception when reading pv", e);
-            }
-            try {
-                if(pvaChannel.getState() != ClientChannelState.CONNECTED){
-                    logger.error("When trying to establish a subscription, the PVA channel is not connected for " + this.name);
-                    return;
-                }
-                state = PVConnectionState.Subscribing;
-                totalMetaInfo.setStartTime(System.currentTimeMillis());
-                int pipeline = 0;
-                subscriptionCloseable = pvaChannel.subscribe("", pipeline, this);
-            } catch (final Exception ex) {
-                logger.error("exception when subscribing pv", ex);
-            }
-        }
-    }
-
-
-    /** Unsubscribe from value updates. */
-    private void unsubscribe() {
-        AutoCloseable subCopy;
-        synchronized (this) {
-            subCopy = subscriptionCloseable;
-            subscriptionCloseable = null;
-            archDBRType = null;
-            con = null;
-        }
-
-        if (subCopy == null) {
-            return;
-        }
-
-        try {
-            subCopy.close();
-        } catch (final Exception ex) {
-            logger.error("exception when unsubscribing pv", ex);
-        }
-    }
-
-    private static HashMap<String, String> metaInfoToStore( MetaInfo totalMetaInfo) {
+    private static HashMap<String, String> metaInfoToStore(MetaInfo totalMetaInfo) {
         HashMap<String, String> tempHashMap = new HashMap<>();
-        if(totalMetaInfo != null) {
-            if(totalMetaInfo.getUnit() != null) {
+        if (totalMetaInfo != null) {
+            if (totalMetaInfo.getUnit() != null) {
                 tempHashMap.put("EGU", totalMetaInfo.getUnit());
             }
-            if(totalMetaInfo.getPrecision() != 0) {
+            if (totalMetaInfo.getPrecision() != 0) {
                 tempHashMap.put("PREC", Integer.toString(totalMetaInfo.getPrecision()));
             }
         }
@@ -481,11 +188,11 @@ public class EPICS_V4_PV implements PV,  ClientChannelListener, MonitorListener 
     }
 
     private static ArchDBRTypes determineDBRType(String structureID, String valueTypeId, String valueFormatType) {
-        if(structureID == null || valueTypeId == null) {
+        if (structureID == null || valueTypeId == null) {
             return ArchDBRTypes.DBR_V4_GENERIC_BYTES;
         }
 
-        switch(valueTypeId) {
+        switch (valueTypeId) {
             case "string[]" -> {
                 return ArchDBRTypes.DBR_WAVEFORM_STRING;
             }
@@ -545,7 +252,293 @@ public class EPICS_V4_PV implements PV,  ClientChannelListener, MonitorListener 
                 return ArchDBRTypes.DBR_V4_GENERIC_BYTES;
             }
         }
+    }
 
+    @Override
+    public ArchDBRTypes getArchDBRTypes() {
+        return archDBRType;
+    }
+
+    @Override
+    public String getHostName() {
+        return hostName;
+    }
+
+    @Override
+    public void getLowLevelChannelInfo(List<Map<String, String>> statuses) {
+        // We don't use this for PVAccess
+
+    }
+
+    @Override
+    public void channelStateChanged(PVAChannel channel, ClientChannelState clientChannelState) {
+
+        logger.info("channelStateChanged:" + clientChannelState + " " + channel.getName());
+        if (clientChannelState == ClientChannelState.CONNECTED) {
+            this.scheduleCommand(this::handleConnected);
+        } else if (connected) {
+            this.scheduleCommand(() -> {
+                state = PVConnectionState.Disconnected;
+                connected = false;
+                unsubscribe();
+                fireDisconnected();
+            });
+        }
+    }
+
+    @Override
+    public HashMap<String, String> getLatestMetadata() {
+        HashMap<String, String> retVal = new HashMap<>();
+        // The totalMetaInfo is updated once every 24hours...
+        MetaInfo metaInfo = this.totalMetaInfo;
+        if (metaInfo != null) {
+            metaInfo.addToDict(retVal);
+        }
+        if (fieldValuesCache != null) {
+            retVal.putAll(fieldValuesCache.getCurrentFieldValues());
+        }
+        return retVal;
+    }
+
+    private static boolean timeStampUpdated(BitSet changes, BitSet timeStampBits) {
+        if (!timeStampBits.isEmpty()) {
+            return changes.intersects(timeStampBits);
+        }
+        return false;
+    }
+
+    private boolean newMetaDataSavePeriod(long lastSaveSecs, long periodLengthSecs) {
+        long nowES = TimeUtils.getCurrentEpochSeconds();
+        return lastSaveSecs <= 0 || (nowES - lastSaveSecs) >= periodLengthSecs;
+    }
+
+    @Override
+    public void updateTotalMetaInfo() throws IllegalStateException {
+        // We should not need to do anyting here as we should get updates on any field change for PVAccess and we do not
+        // need to do an explicit get.
+    }
+
+    private void setupDBRType(PVAStructure data) {
+        logger.info("Construct the fieldValuesCache for PV " + this.getName());
+        boolean excludeV4Changes = true;
+        this.fieldValuesCache = new FieldValuesCache(data, excludeV4Changes);
+        this.timeStampBits = this.fieldValuesCache.getTimeStampBits();
+        if (this.timeStampBits.isEmpty()) {
+            logger.error("Cannot determine the timestamp bitset for PV " + this.name
+                    + ". This means we may not save any data at all for this PV.");
+        } else {
+            logger.debug("The timestamp bits for the PV " + this.name + " are " + this.timeStampBits);
+        }
+
+        if (archDBRType == null || con == null) {
+            String structureID = data.formatType();
+            logger.info("Type from structure in monitorConnect is " + structureID);
+
+            PVAData valueField = data.get("value");
+            if (valueField == null) {
+                archDBRType = ArchDBRTypes.DBR_V4_GENERIC_BYTES;
+            } else {
+                logger.info("Value field in monitorConnect is of type " + valueField.getType());
+                archDBRType = determineDBRType(structureID, valueField.getType(), valueField.formatType());
+            }
+
+            con = configservice.getArchiverTypeSystem().getV4Constructor(archDBRType);
+            logger.info("Determined ArchDBRTypes for " + this.name + " as " + archDBRType);
+        }
+    }
+
+    private void scheduleCommand(final Runnable command) {
+        configservice.getEngineContext().getJCACommandThread(jcaCommandThreadId).addCommand(command);
+    }
+
+    private DBRTimeEvent fromStructure(PVAStructure data, BitSet changes) throws Exception {
+
+        DBRTimeEvent dbrtimeevent = con.newInstance(data);
+        this.totalMetaInfo.computeRate(dbrtimeevent);
+
+        this.fieldValuesCache.updateFieldValues(data, changes);
+        dbrtimeevent.setFieldValues(this.fieldValuesCache.getUpdatedFieldValues(false, this.metaFields), false);
+
+        return dbrtimeevent;
+    }
+
+    @Override
+    public void handleMonitor(PVAChannel channel, BitSet changes, BitSet overruns, PVAStructure data) {
+        logger.debug("handleMonitor: {}", data);
+        if (data == null) {
+            logger.warn("Server ends subscription for " + this.name);
+            unsubscribe();
+            fireDisconnected();
+        }
+
+        state = PVConnectionState.GotMonitor;
+
+        if (!connected) connected = true;
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Obtained monitor event for pv " + this.name);
+        }
+
+        if (archDBRType == null || con == null) {
+            logger.error("Have not determined the DBRTYpes yet for " + this.name);
+            this.setupDBRType(data);
+        }
+
+        logger.debug("Changed bitset: " + changes);
+
+        try {
+
+            // Check to see if we got the monitor-event as part of record processing.
+            // We use the timestamp to ascertain this fact.
+            // We store fields as part of the next record processing event.
+            // If this is not a record processing event, skip this.
+            if (!timeStampUpdated(changes, this.timeStampBits)) {
+                logger.debug("Timestamp has not changed; most likely this is a update to the properties for pv "
+                        + this.name);
+                logger.debug("Timestamp bits " + this.timeStampBits + " Changed bits " + changes);
+                return;
+            }
+
+            DBRTimeEvent dbrtimeevent = fromStructure(data, changes);
+
+            // Update listeners
+            fireValueUpdate(dbrtimeevent);
+
+        } catch (Exception e) {
+            logger.error("exception in monitor changed function when converting DBR to dbrtimeevent", e);
+        }
+    }
+
+    private void connect() {
+        logger.info("Connecting to PV " + this.name);
+        this.scheduleCommand(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    state = PVConnectionState.Connecting;
+                    synchronized (this) {
+                        if (pvaChannel == null) {
+                            pvaChannel = configservice
+                                    .getEngineContext()
+                                    .getPVAClient()
+                                    .getChannel(name, EPICS_V4_PV.this);
+                        }
+
+                        if (pvaChannel == null) {
+                            logger.error("No pvaChannel when trying to connect to pv " + name);
+                            return;
+                        }
+
+                        if (pvaChannel.isConnected()) {
+                            handleConnected();
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.error("exception when connecting pv", e);
+                }
+            }
+        });
+    }
+
+    /**
+     * PV is connected. Get meta info, or subscribe right away.
+     */
+    private void handleConnected() {
+        if (state == PVConnectionState.Connected) return;
+
+        state = PVConnectionState.Connected;
+
+        for (final PVListener listener : listeners) {
+            listener.pvConnected(this);
+        }
+
+        if (!running) {
+            connected = true;
+            synchronized (this) {
+                this.notifyAll();
+            }
+            return;
+        }
+
+        subscribe();
+    }
+
+    /** Unsubscribe from value updates. */
+    private void unsubscribe() {
+        AutoCloseable subCopy;
+        synchronized (this) {
+            subCopy = subscriptionCloseable;
+            subscriptionCloseable = null;
+            archDBRType = null;
+            con = null;
+        }
+
+        if (subCopy == null) {
+            return;
+        }
+
+        try {
+            subCopy.close();
+        } catch (final Exception ex) {
+            logger.error("exception when unsubscribing pv", ex);
+        }
+    }
+
+    private void disconnect() {
+        PVAChannel channelCopy;
+        synchronized (this) {
+            if (pvaChannel == null) return;
+            channelCopy = pvaChannel;
+            connected = false;
+            pvaChannel = null;
+        }
+
+        try {
+            channelCopy.close();
+        } catch (final Exception e) {
+            logger.error("exception when disconnecting pv", e);
+        }
+
+        fireDisconnected();
+    }
+
+    /** Subscribe for value updates. */
+    private void subscribe() {
+        synchronized (this) {
+            // Prevent multiple subscriptions.
+            if (subscriptionCloseable != null) {
+                logger.error("When trying to establish a subscription, subscription already exists " + this.name);
+                return;
+            }
+
+            // Late callback, channel already closed?
+            if (pvaChannel == null) {
+                logger.error("When trying to establish a subscription, channel already closed " + this.name);
+                return;
+            }
+
+            try {
+                var pvaStructure = pvaChannel.read("").get();
+                this.setupDBRType(pvaStructure);
+                DBRTimeEvent dbrTimeEvent = fromStructure(pvaStructure, null);
+                fireValueUpdate(dbrTimeEvent);
+            } catch (Exception e) {
+                logger.error("exception when reading pv", e);
+            }
+            try {
+                if (pvaChannel.getState() != ClientChannelState.CONNECTED) {
+                    logger.error("When trying to establish a subscription, the PVA channel is not connected for "
+                            + this.name);
+                    return;
+                }
+                state = PVConnectionState.Subscribing;
+                totalMetaInfo.setStartTime(System.currentTimeMillis());
+                int pipeline = 0;
+                subscriptionCloseable = pvaChannel.subscribe("", pipeline, this);
+            } catch (final Exception ex) {
+                logger.error("exception when subscribing pv", ex);
+            }
+        }
     }
 
     /***
