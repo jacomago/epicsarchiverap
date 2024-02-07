@@ -4,7 +4,7 @@ plugins {
 	id "eclipse"
 	id "ca.cutterslade.analyze" version "1.9.1" // Analyzes dependancies for usage
 	id 'com.palantir.git-version' version '0.15.0'
-	id("com.diffplug.spotless") version "6.22.0"
+	id("com.diffplug.spotless") version "6.25.0"
 }
 
 sourceSets {
@@ -92,6 +92,11 @@ dependencies {
 	implementation("org.apache.logging.log4j:log4j-jul:2.20.0")
 	implementation("com.opencsv:opencsv:5.7.1")
 	implementation("com.google.protobuf:protobuf-java:3.23.0")
+	implementation("org.apache.parquet:parquet-protobuf:1.13.1")
+	implementation("org.apache.parquet:parquet-column:1.13.1")
+	implementation("org.apache.parquet:parquet-common:1.13.1")
+	implementation("org.apache.parquet:parquet-hadoop:1.13.1")
+	implementation("org.apache.hadoop:hadoop-common:3.3.6")
 	implementation("org.phoebus:core-pva:4.7.2")
 	implementation("javax.xml.stream:stax-api:1.0-2")
 	runtimeOnly("org.apache.hadoop:hadoop-client:3.3.2")
