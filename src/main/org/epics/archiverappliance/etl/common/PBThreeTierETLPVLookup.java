@@ -62,7 +62,7 @@ public final class PBThreeTierETLPVLookup {
     private final List<ScheduledThreadPoolExecutor> etlLifeTimeThreadPoolExecutors =
             new LinkedList<ScheduledThreadPoolExecutor>();
 
-    private final ETLMetrics applianceMetrics = new ETLMetrics();
+    private final List<ETLMetricsForLifetime> applianceMetrics = new LinkedList<ETLMetricsForLifetime>();
     private ConfigService configService = null;
     /**
      * Used to poll the config service in the background and add ETL jobs for PVs
@@ -149,7 +149,7 @@ public final class PBThreeTierETLPVLookup {
                                 new ScheduledThreadPoolExecutor(1, new ETLLifeTimeThreadFactory(etllifetimeid)));
                         lifetimeId2PVName2LookupItem.put(
                                 etllifetimeid, new ConcurrentHashMap<String, ETLPVLookupItems>());
-                        applianceMetrics.add(etllifetimeid);
+                        applianceMetrics.add(new ETLMetricsForLifetime(etllifetimeid));
                     }
 
                     String sourceStr = dataSources[etllifetimeid];
@@ -379,9 +379,4 @@ public final class PBThreeTierETLPVLookup {
             return new Thread(r, "ETL - " + lifetimeid);
         }
     }
-
-    public ETLMetrics getApplianceMetrics() {
-        return applianceMetrics;
-    }
-
 }
