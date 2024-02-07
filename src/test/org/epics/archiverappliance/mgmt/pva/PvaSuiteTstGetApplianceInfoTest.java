@@ -1,5 +1,11 @@
 package org.epics.archiverappliance.mgmt.pva;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.ENGINE_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.ETL_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.RETRIEVAL_URL;
+import static org.epics.archiverappliance.mgmt.pva.PvaMgmtService.PVA_MGMT_SERVICE;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.mgmt.pva.actions.NTUtil;
@@ -16,12 +22,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
-
-import static org.epics.archiverappliance.config.ConfigServiceForTests.ENGINE_URL;
-import static org.epics.archiverappliance.config.ConfigServiceForTests.ETL_URL;
-import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
-import static org.epics.archiverappliance.config.ConfigServiceForTests.RETRIEVAL_URL;
-import static org.epics.archiverappliance.mgmt.pva.PvaMgmtService.PVA_MGMT_SERVICE;
 
 /**
  * Test the pvAccess mgmt service's ability to start archiving a pv

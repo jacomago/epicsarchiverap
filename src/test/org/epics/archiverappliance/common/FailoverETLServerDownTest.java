@@ -7,6 +7,8 @@
  *******************************************************************************/
 package org.epics.archiverappliance.common;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.DATA_RETRIEVAL_URL;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -37,8 +39,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Callable;
-
-import static org.epics.archiverappliance.config.ConfigServiceForTests.DATA_RETRIEVAL_URL;
 
 /**
  * Test basic failover - test the ETL side of things when the other server is down...
