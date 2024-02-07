@@ -1,5 +1,6 @@
 package edu.stanford.slac.archiverappliance.plain;
 
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.commons.io.FileUtils;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
@@ -17,8 +18,7 @@ import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -42,11 +42,10 @@ public class SingleEventTimeBasedIteratorTest {
         configService = new ConfigServiceForTests(-1);
     }
 
-    @ParameterizedTest
-    @EnumSource(PlainStorageType.class)
-    public void testSingleEvent(PlainStorageType plainStorageType) throws Exception {
+    @Test
+    public void testSingleEvent() throws Exception {
         PlainStoragePlugin storagePlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                plainStorageType.plainFileHandler().pluginIdentifier() + "://localhost?name=STS&rootFolder="
+                PBPlainFileHandler.DEFAULT_PB_HANDLER.pluginIdentifier() + "://localhost?name=STS&rootFolder="
                         + rootFolderName + "&partitionGranularity=PARTITION_HOUR",
                 configService);
 

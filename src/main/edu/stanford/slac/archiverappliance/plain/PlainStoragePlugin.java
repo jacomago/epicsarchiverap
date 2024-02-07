@@ -10,6 +10,7 @@ package edu.stanford.slac.archiverappliance.plain;
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility.StartEndTimeFromName;
 import edu.stanford.slac.archiverappliance.plain.pb.PBCompressionMode;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -31,8 +32,6 @@ import org.epics.archiverappliance.etl.ETLInfo;
 import org.epics.archiverappliance.etl.ETLSource;
 import org.epics.archiverappliance.etl.StorageMetrics;
 import org.epics.archiverappliance.etl.StorageMetricsContext;
-import org.epics.archiverappliance.etl.common.DefaultETLInfoListProcessor;
-import org.epics.archiverappliance.etl.common.ETLInfoListProcessor;
 import org.epics.archiverappliance.retrieval.CallableEventStream;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.retrieval.postprocessors.DefaultRawPostProcessor;
@@ -182,8 +181,8 @@ public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, St
         this.appendExtension = plainFileHandler.getExtensionString() + "append";
     }
 
-    public PlainStoragePlugin(PlainStorageType plainStorageType) {
-        this(plainStorageType.plainFileHandler());
+    public PlainStoragePlugin() {
+        this(new PBPlainFileHandler());
     }
 
     private static void addStreamCallable(
@@ -492,20 +491,6 @@ public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, St
     @Override
     public String getDescription() {
         return desc;
-    }
-
-    @Override
-    public ETLInfoListProcessor etlInfoListProcessor(ETLSource curETLSource) {
-        if (curETLSource instanceof PlainStoragePlugin) {
-            PlainStoragePlugin plainStoragePlugin = (PlainStoragePlugin) curETLSource;
-            if (plainStoragePlugin
-                    .getPlainFileHandler()
-                    .getClass()
-                    .equals(this.getPlainFileHandler().getClass())) {
-                return this.getPlainFileHandler().optimisedETLInfoListProcessor(this);
-            }
-        }
-        return new DefaultETLInfoListProcessor(this);
     }
 
     @Override

@@ -10,7 +10,6 @@ package org.epics.archiverappliance.retrieval.client;
 import edu.stanford.slac.archiverappliance.PB.data.PlainCommonSetup;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -29,8 +28,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -100,13 +98,12 @@ public class YearSpanRetrievalTest {
         tomcatSetup.tearDown();
     }
 
-    @ParameterizedTest
-    @EnumSource(PlainStorageType.class)
-    public void testYearSpan(PlainStorageType plainStorageType) throws Exception {
+    @Test
+    public void testYearSpan() throws Exception {
         PlainCommonSetup pbSetup = new PlainCommonSetup();
-        PlainStoragePlugin pbplugin = new PlainStoragePlugin(plainStorageType);
+        PlainStoragePlugin pbplugin = new PlainStoragePlugin();
         pbSetup.setUpRootFolder(pbplugin);
-        String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + plainStorageType + "yspan";
+        String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "yspan";
         generateDataForYears(pbplugin, pvName);
         RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream(
                 "http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT + "/retrieval/data/getData.raw");

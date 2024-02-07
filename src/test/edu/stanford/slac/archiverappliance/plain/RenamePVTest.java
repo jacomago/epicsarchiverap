@@ -7,6 +7,7 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.plain;
 
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,8 +29,7 @@ import org.epics.archiverappliance.retrieval.workers.CurrentThreadWorkerEventStr
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.List;
@@ -67,11 +67,10 @@ public class RenamePVTest {
      *
      * @throws Exception
      */
-    @ParameterizedTest
-    @EnumSource(PlainStorageType.class)
-    public void testRenamePV(PlainStorageType plainStorageType) throws Exception {
+    @Test
+    public void testRenamePV() throws Exception {
         PlainStoragePlugin plugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                plainStorageType.plainFileHandler().pluginIdentifier() + "://localhost?name=RenameTest&rootFolder="
+                PBPlainFileHandler.DEFAULT_PB_HANDLER.pluginIdentifier() + "://localhost?name=RenameTest&rootFolder="
                         + rootFolder + "&partitionGranularity=PARTITION_DAY",
                 configService);
         short currentYear = TimeUtils.getCurrentYear();

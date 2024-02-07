@@ -22,8 +22,7 @@ import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests the various methods needed for ETLDest as implemented by the PlainPBStorage plugin
@@ -43,10 +42,9 @@ public class PlainPBETLDestTest {
         };
     }
 
-    @ParameterizedTest
-    @EnumSource(PlainStorageType.class)
-    public void testGetLastKnownEvent(PlainStorageType plainStorageType) throws Exception {
-        PlainStoragePlugin storagePlugin = new PlainStoragePlugin(plainStorageType);
+    @Test
+    public void testGetLastKnownEvent() throws Exception {
+        PlainStoragePlugin storagePlugin = new PlainStoragePlugin();
         setup.setUpRootFolder(storagePlugin, "PVETLDestTests");
 
         long epochSeconds = TimeUtils.getStartOfCurrentYearInSeconds();

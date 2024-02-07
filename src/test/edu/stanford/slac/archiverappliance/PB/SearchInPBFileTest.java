@@ -13,7 +13,6 @@ import edu.stanford.slac.archiverappliance.PB.search.FileEventStreamSearch;
 import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import edu.stanford.slac.archiverappliance.plain.pb.PBFileInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,12 +49,12 @@ public class SearchInPBFileTest {
 
     @Test
     public void testSeekToTime() throws Exception {
-        PlainStoragePlugin pbplugin = new PlainStoragePlugin(PlainStorageType.PB);
+        PlainStoragePlugin pbplugin = new PlainStoragePlugin();
         pbSetup.setUpRootFolder(pbplugin);
         short year = TimeUtils.getCurrentYear();
         Instant start = TimeUtils.getStartOfYear(year);
         long numberOfSamples = GenerateData.generateSineForPV(
-                "Sine1", 0, ArchDBRTypes.DBR_SCALAR_DOUBLE, PlainStorageType.PB, start, start.plusSeconds(10000));
+                "Sine1", 0, ArchDBRTypes.DBR_SCALAR_DOUBLE, start, start.plusSeconds(10000));
         try {
             Path testPath = PathNameUtility.getPathNameForTime(
                     pbplugin,

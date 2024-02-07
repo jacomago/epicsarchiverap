@@ -6,15 +6,13 @@ import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.api.Test;
 
 public class PlainPBURLRepresentationTest {
 
-    @ParameterizedTest
-    @EnumSource(PlainStorageType.class)
-    public void testToAndFromURL(PlainStorageType plainStorageType) throws Exception {
-        PlainStoragePlugin etlSrc = new PlainStoragePlugin(plainStorageType);
+    @Test
+    public void testToAndFromURL() throws Exception {
+        PlainStoragePlugin etlSrc = new PlainStoragePlugin();
         PlainCommonSetup srcSetup = new PlainCommonSetup();
 
         srcSetup.setUpRootFolder(

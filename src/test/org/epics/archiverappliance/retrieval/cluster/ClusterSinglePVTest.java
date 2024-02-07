@@ -1,7 +1,7 @@
 package org.epics.archiverappliance.retrieval.cluster;
 
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,8 +27,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -82,17 +81,16 @@ public class ClusterSinglePVTest {
      * @throws Exception
      * @throws UnsupportedEncodingException
      */
-    @ParameterizedTest
-    @EnumSource(PlainStorageType.class)
-    public void singlePvsAcrossCluster(PlainStorageType plainStorageType) throws Exception {
-        PlainStoragePlugin pbplugin = new PlainStoragePlugin(plainStorageType);
+    @Test
+    public void singlePvsAcrossCluster() throws Exception {
+        PlainStoragePlugin pbplugin = new PlainStoragePlugin();
 
         ConfigService configService = new ConfigServiceForTests(-1);
 
         // Set up pbplugin so that data can be retrieved using the instance
         pbplugin.initialize(
-                plainStorageType.plainFileHandler().pluginIdentifier() + "://localhost?name=LTS&rootFolder=" + ltsFolder
-                        + "&partitionGranularity=PARTITION_YEAR",
+                PBPlainFileHandler.DEFAULT_PB_HANDLER.pluginIdentifier() + "://localhost?name=LTS&rootFolder="
+                        + ltsFolder + "&partitionGranularity=PARTITION_YEAR",
                 configService);
 
         short currentYear = TimeUtils.getCurrentYear();

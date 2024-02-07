@@ -11,7 +11,6 @@ import edu.stanford.slac.archiverappliance.PB.data.PlainCommonSetup;
 import edu.stanford.slac.archiverappliance.plain.CompressionMode;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BasicContext;
@@ -51,14 +50,14 @@ public class BlackHoleETLTest {
     public static Stream<Arguments> provideBlackHoleETL() {
         return Arrays.stream(PartitionGranularity.values())
                 .filter(g -> g.getNextLargerGranularity() != null)
-                .flatMap(g -> Arrays.stream(PlainStorageType.values()).flatMap(f -> Stream.of(Arguments.of(g, f))));
+                .flatMap(g -> Stream.of(Arguments.of(g)));
     }
 
     @ParameterizedTest
     @MethodSource("provideBlackHoleETL")
-    void testBlackHoleETL(PartitionGranularity granularity, PlainStorageType plainStorageType) throws Exception {
+    void testBlackHoleETL(PartitionGranularity granularity) throws Exception {
 
-        PlainStoragePlugin etlSrc = new PlainStoragePlugin(plainStorageType);
+        PlainStoragePlugin etlSrc = new PlainStoragePlugin();
         PlainCommonSetup srcSetup = new PlainCommonSetup();
         BlackholeStoragePlugin etlDest = new BlackholeStoragePlugin();
         ConfigServiceForTests configService = new ConfigServiceForTests(-1);

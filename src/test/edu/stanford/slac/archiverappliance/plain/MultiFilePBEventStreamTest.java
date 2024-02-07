@@ -7,6 +7,7 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.plain;
 
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,14 +25,11 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.io.File;
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.stream.Stream;
 
 /**
  * Test EventStreams that span multiple PB files.
@@ -59,15 +57,9 @@ public class MultiFilePBEventStreamTest {
         FileUtils.deleteDirectory(rootFolder);
     }
 
-    static Stream<Arguments> provideInput() {
-        return Arrays.stream(PlainStorageType.values()).flatMap(f -> Arrays.stream(PartitionGranularity.values())
-                .map(granularity -> Arguments.of(f, granularity)));
-    }
-
     @ParameterizedTest
-    @MethodSource("provideInput")
-    public void testMultiFileEventStream(PlainStorageType plainStorageType, PartitionGranularity granularity)
-            throws Exception {
+    @EnumSource(PartitionGranularity.class)
+    public void testMultiFileEventStream(PartitionGranularity granularity) throws Exception {
         // We generate a ratio * seconds in granularity worth of data into a PlainStoragePlugin with different
         // granularity.
         // We then retrieve data and make sure that we get what we expect
@@ -75,9 +67,9 @@ public class MultiFilePBEventStreamTest {
         logger.debug("Generating sample data for granularity " + granularity);
 
         String pvName = "MultiYear" + granularity.toString();
-        String configURL = plainStorageType.plainFileHandler().pluginIdentifier() + "://localhost?name=STS&rootFolder="
-                + rootFolderName + "&partitionGranularity=" + granularity;
-        PlainStoragePlugin pbplugin = new PlainStoragePlugin(plainStorageType);
+        String configURL = PBPlainFileHandler.DEFAULT_PB_HANDLER.pluginIdentifier()
+                + "://localhost?name=STS&rootFolder=" + rootFolderName + "&partitionGranularity=" + granularity;
+        PlainStoragePlugin pbplugin = new PlainStoragePlugin();
         pbplugin.initialize(configURL, configService);
         ArchDBRTypes type = ArchDBRTypes.DBR_SCALAR_DOUBLE;
         Instant startTime = ZonedDateTime.now()

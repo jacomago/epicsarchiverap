@@ -5,8 +5,6 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.config.PVNameToKeyMapping;
-import org.epics.archiverappliance.etl.ETLDest;
-import org.epics.archiverappliance.etl.common.ETLInfoListProcessor;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -87,6 +85,4 @@ public interface PlainFileHandler extends PlainStreams {
             CompressionMode compressionMode,
             PVNameToKeyMapping pv2key)
             throws IOException;
-
-    ETLInfoListProcessor optimisedETLInfoListProcessor(ETLDest etlDest);
 }

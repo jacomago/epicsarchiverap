@@ -7,7 +7,6 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval.client;
 
-import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -41,16 +40,12 @@ public class DBRRetrievalTest {
     @BeforeEach
     public void setUp() throws Exception {
 
-        for (PlainStorageType plainStorageType : PlainStorageType.values()) {
-            for (ArchDBRTypes type : ArchDBRTypes.values()) {
-                dataDBRs.add(new DataDBR(
-                        ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX
-                                + plainStorageType
-                                + (type.isWaveForm() ? "V_" : "S_")
-                                + type.getPrimitiveName(),
-                        type,
-                        plainStorageType));
-            }
+        for (ArchDBRTypes type : ArchDBRTypes.values()) {
+            dataDBRs.add(new DataDBR(
+                    ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX
+                            + (type.isWaveForm() ? "V_" : "S_")
+                            + type.getPrimitiveName(),
+                    type));
         }
 
         for (DataDBR dataDBR : dataDBRs) {
@@ -58,7 +53,6 @@ public class DBRRetrievalTest {
                     dataDBR.pvName,
                     0,
                     dataDBR.type,
-                    dataDBR.plainStorageType,
                     TimeUtils.convertFromISO8601String(currentYear + "-02-01T08:00:00.000Z"),
                     TimeUtils.convertFromISO8601String(currentYear + "-02-02T08:00:00.000Z"));
         }
@@ -109,5 +103,5 @@ public class DBRRetrievalTest {
         }
     }
 
-    private record DataDBR(String pvName, ArchDBRTypes type, PlainStorageType plainStorageType) {}
+    private record DataDBR(String pvName, ArchDBRTypes type) {}
 }

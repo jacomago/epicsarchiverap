@@ -7,6 +7,7 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.plain;
 
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,9 +19,9 @@ import org.epics.archiverappliance.utils.nio.ArchPaths;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
@@ -56,10 +57,10 @@ public class PlainPBFileNameUtilityTest {
         };
     }
 
-    static Stream<Arguments> providePartitionFileExtension() {
-        return Arrays.stream(PlainStorageType.values()).flatMap(f -> Arrays.stream(PartitionGranularity.values())
+    static Stream<Arguments> provideGetFilesWithData() {
+        return Arrays.stream(PartitionGranularity.values())
                 .filter(g -> g.getNextLargerGranularity() != null)
-                .map(g -> Arguments.of(f, g)));
+                .map(Arguments::of);
     }
 
     private static void mkPath(Path nf) throws IOException {
@@ -87,13 +88,12 @@ public class PlainPBFileNameUtilityTest {
     }
 
     @ParameterizedTest
-    @MethodSource("providePartitionFileExtension")
-    public void testGetFilesWithData(PlainStorageType plainStorageType, PartitionGranularity granularity)
-            throws Exception {
+    @MethodSource("provideGetFilesWithData")
+    public void testGetFilesWithData(PartitionGranularity granularity) throws Exception {
         // Lets create some files that cater to this partition.
         Instant startOfYear = TimeUtils.getStartOfYear(TimeUtils.getCurrentYear());
         String pvName = granularity.name() + "Part_1";
-        String extension = plainStorageType.plainFileHandler().getExtensionString();
+        String extension = PBPlainFileHandler.DEFAULT_PB_HANDLER.getExtensionString();
         long nIntervals = 1
                 + granularity.getNextLargerGranularity().getApproxSecondsPerChunk()
                         / granularity.getApproxSecondsPerChunk();
@@ -151,14 +151,12 @@ public class PlainPBFileNameUtilityTest {
         Assertions.assertTrue(
                 mostRecentFile
                         .getName()
-                        .endsWith(
-                                fileEnding + plainStorageType.plainFileHandler().getExtensionString()),
+                        .endsWith(fileEnding + PBPlainFileHandler.DEFAULT_PB_HANDLER.getExtensionString()),
                 "Unxpected most recent file " + mostRecentFile.getAbsolutePath() + " expected ending " + fileEnding);
     }
 
-    @ParameterizedTest
-    @EnumSource(PlainStorageType.class)
-    void testGetFilesWithDataOnAYearlyPartition(PlainStorageType plainStorageType) throws Exception {
+    @Test
+    void testGetFilesWithDataOnAYearlyPartition() throws Exception {
         // Lets create some files that cater to this partition.
         ZonedDateTime startOfYear =
                 TimeUtils.getStartOfYear(TimeUtils.getCurrentYear()).atZone(ZoneId.from(ZoneOffset.UTC));
@@ -166,7 +164,7 @@ public class PlainPBFileNameUtilityTest {
         ZonedDateTime curr = startOfYear;
         String pvName = "First:Second:Third:YearPart_1";
         PartitionGranularity partition = PartitionGranularity.PARTITION_YEAR;
-        String extension = plainStorageType.plainFileHandler().getExtensionString();
+        String extension = PBPlainFileHandler.DEFAULT_PB_HANDLER.getExtensionString();
         ZonedDateTime endYear = null;
         for (int years = 0; years < 20; years++) {
             mkPath(PathNameUtility.getPathNameForTime(

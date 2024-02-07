@@ -2,7 +2,6 @@ package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.plain.CompressionMode;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import edu.stanford.slac.archiverappliance.plain.pb.PBCompressionMode;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -61,25 +60,10 @@ public class ETLTimeTest {
     private ConfigServiceForTests configService;
 
     private static Stream<Arguments> provideTestTime() {
-        return ETLTestPlugins.generatePlainStorageType().stream()
-                .flatMap(fileExtensions -> Stream.of(
-                        Arguments.of(fileExtensions[0], fileExtensions[1], CompressionMode.NONE, CompressionMode.NONE),
-                        Arguments.of(
-                                fileExtensions[0],
-                                fileExtensions[1],
-                                CompressionMode.NONE,
-                                getFileExtensionDefaultCompression(fileExtensions[1])),
-                        Arguments.of(
-                                fileExtensions[0],
-                                fileExtensions[1],
-                                getFileExtensionDefaultCompression(fileExtensions[0]),
-                                getFileExtensionDefaultCompression(fileExtensions[1]))));
-    }
-
-    private static CompressionMode getFileExtensionDefaultCompression(PlainStorageType plainStorageType) {
-        return plainStorageType == PlainStorageType.PARQUET
-                ? CompressionMode.valueOf("ZSTD")
-                : CompressionMode.valueOf("ZIP_PER_PV");
+        return Stream.of(
+                Arguments.of(CompressionMode.NONE, CompressionMode.NONE),
+                Arguments.of(CompressionMode.NONE, CompressionMode.valueOf("ZIP_PER_PV")),
+                Arguments.of(CompressionMode.valueOf("ZIP_PER_PV"), CompressionMode.valueOf("ZIP_PER_PV")));
     }
 
     private static double getDataSizeInGBPerHour(CountFiles stsSizeVisitor) {
@@ -107,19 +91,14 @@ public class ETLTimeTest {
 
     @ParameterizedTest
     @MethodSource("provideTestTime")
-    public void testTime(
-            PlainStorageType stsPlainStorageType,
-            PlainStorageType mtsPlainStorageType,
-            CompressionMode srcCompression,
-            CompressionMode destCompression)
-            throws Exception {
+    public void testTime(CompressionMode srcCompression, CompressionMode destCompression) throws Exception {
         PlainStoragePlugin stsStoragePlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                stsPlainStorageType.plainFileHandler().pluginIdentifier() + "://localhost?name=STS&rootFolder="
+                "pb://localhost?name=STS&rootFolder="
                         + shortTermFolderName + "&partitionGranularity=PARTITION_HOUR&compress="
                         + srcCompression.toURLString(),
                 configService);
         PlainStoragePlugin mtsStoragePlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                mtsPlainStorageType.plainFileHandler().pluginIdentifier() + "://localhost?name=MTS&rootFolder="
+                "pb://localhost?name=MTS&rootFolder="
                         + mediumTermFolderName + "&partitionGranularity=PARTITION_YEAR&compress="
                         + destCompression.toURLString(),
                 configService);
@@ -128,8 +107,8 @@ public class ETLTimeTest {
         ArrayList<String> pvs = new ArrayList<String>();
         for (int i = 0; i < testSize; i++) {
             int tableName = 0;
-            String pvName = "ArchUnitTest" + tableName + stsPlainStorageType + mtsPlainStorageType
-                    + srcCompression.toURLString() + destCompression.toURLString() + ":ETLTimeTest" + i;
+            String pvName = "ArchUnitTest" + tableName + srcCompression.toURLString() + destCompression.toURLString()
+                    + ":ETLTimeTest" + i;
             PVTypeInfo typeInfo = new PVTypeInfo(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
             String[] dataStores =
                     new String[] {stsStoragePlugin.getURLRepresentation(), mtsStoragePlugin.getURLRepresentation()};
@@ -197,11 +176,7 @@ public class ETLTimeTest {
                 srcCompression.getPbCompression() != PBCompressionMode.ZIP_PER_PV ? 0 : pvs.size(),
                 postETLSrcVisitor.filesPresent,
                 "We have some files that have not moved " + postETLSrcVisitor.filesPresent);
-        int expectedFiles =
-                switch (mtsPlainStorageType) {
-                    case PB -> pvs.size();
-                    case PARQUET -> pvs.size() * 2; // includes checksum files
-                };
+        int expectedFiles = pvs.size();
         Assertions.assertEquals(
                 postETLDestVisitor.filesPresent,
                 expectedFiles,
