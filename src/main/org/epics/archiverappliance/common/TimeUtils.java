@@ -7,7 +7,6 @@
  *******************************************************************************/
 package org.epics.archiverappliance.common;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.pva.data.PVAInt;
@@ -214,6 +213,17 @@ public class TimeUtils {
         long diffInSecs = epochseconds - startOfYearInSeconds;
         assert (diffInSecs <= Integer.MAX_VALUE);
         return (int) (diffInSecs);
+    }
+
+    /**
+     * Convert Java EPOCH seconds to a seconds into year
+     *
+     * @param instant &emsp;
+     * @return SecondsIntoYear The difference in Seconds
+     */
+    public static int getSecondsIntoYear(Instant instant) {
+        long epochseconds = instant.getEpochSecond();
+        return getSecondsIntoYear(epochseconds);
     }
 
     /**
@@ -526,6 +536,7 @@ public class TimeUtils {
 
     /**
      * Convert the timeStamp from a pvAccess normative type to YearSecondTimestamp
+     *
      * @param timeStampPVStructure
      * @return Timestamp
      */
@@ -572,19 +583,5 @@ public class TimeUtils {
                         TimeUtils.convertFromEpochSeconds(currentBinEndEpochSeconds - binSizeInSeconds, 0), end));
             return ret;
         }
-    }
-
-    public static Instant fromString(String timestampString, Instant defaultTime) throws IllegalArgumentException {
-
-        // ISO datetimes are of the form "2011-02-02T08:00:00.000Z"
-        Instant res = defaultTime;
-        if (!StringUtils.isEmpty(timestampString)) {
-            try {
-                res = convertFromISO8601String(timestampString);
-            } catch (IllegalArgumentException ex) {
-                res = convertFromDateTimeStringWithOffset(timestampString);
-            }
-        }
-        return res;
     }
 }

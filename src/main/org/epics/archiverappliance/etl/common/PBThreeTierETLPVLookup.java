@@ -44,19 +44,10 @@ import java.util.concurrent.TimeUnit;
 public final class PBThreeTierETLPVLookup {
     private static final Logger logger = LogManager.getLogger(PBThreeTierETLPVLookup.class.getName());
     private static final Logger configlogger = LogManager.getLogger("config." + PBThreeTierETLPVLookup.class.getName());
-
-    private ConfigService configService = null;
-
-    /**
-     * Used to poll the config service in the background and add ETL jobs for PVs
-     */
-    private ScheduledThreadPoolExecutor configServiceSyncThread = null;
-
     /**
      * PVs for whom we have already added etl jobs
      */
     private final ConcurrentSkipListSet<String> pvsForWhomWeHaveAddedETLJobs = new ConcurrentSkipListSet<String>();
-
     /**
      * Metrics and state for each lifetimeid transition for a pv
      * The first level index is the source lifetimeid
@@ -64,7 +55,6 @@ public final class PBThreeTierETLPVLookup {
      */
     private final HashMap<Integer, ConcurrentHashMap<String, ETLPVLookupItems>> lifetimeId2PVName2LookupItem =
             new HashMap<Integer, ConcurrentHashMap<String, ETLPVLookupItems>>();
-
     /**
      * We have a thread pool for each lifetime id transition.
      * Adding a pv to ETL involves scheduling an ETLPVLookupItem into each of the appropriate lifetimeid transitions with a period appropriate to the source partition granularity
@@ -73,12 +63,26 @@ public final class PBThreeTierETLPVLookup {
             new LinkedList<ScheduledThreadPoolExecutor>();
 
     private final List<ETLMetricsForLifetime> applianceMetrics = new LinkedList<ETLMetricsForLifetime>();
+    private ConfigService configService = null;
+    /**
+     * Used to poll the config service in the background and add ETL jobs for PVs
+     */
+    private ScheduledThreadPoolExecutor configServiceSyncThread = null;
 
     public PBThreeTierETLPVLookup(ConfigService configService) {
         this.configService = configService;
         configServiceSyncThread = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, "Config service sync thread"));
 
         configService.addShutdownHook(new ETLShutdownThread(this));
+    }
+
+    public static OutOfSpaceHandling determineOutOfSpaceHandling(ConfigService configService) {
+        String outOfSpaceHandler = configService
+                .getInstallationProperties()
+                .getProperty(
+                        "org.epics.archiverappliance.etl.common.OutOfSpaceHandling",
+                        OutOfSpaceHandling.DELETE_SRC_STREAMS_IF_FIRST_DEST_WHEN_OUT_OF_SPACE.toString());
+        return OutOfSpaceHandling.valueOf(outOfSpaceHandler);
     }
 
     /**
@@ -121,6 +125,7 @@ public final class PBThreeTierETLPVLookup {
 
     /**
      * Add jobs for each of the ETL lifetime transitions.
+     *
      * @param pvName
      * @param typeInfo
      */
@@ -199,11 +204,16 @@ public final class PBThreeTierETLPVLookup {
                     }
 
                     // We schedule a ETLPVLookupItems with the appropriate thread using an ETLJob
-                    ETLJob etlJob = new ETLJob(etlpvLookupItems);
-                    ScheduledFuture<?> cancellingFuture = etlLifeTimeThreadPoolExecutors
-                            .get(etllifetimeid)
-                            .scheduleWithFixedDelay(etlJob, initialDelay, delaybetweenETLJobs, TimeUnit.SECONDS);
-                    etlpvLookupItems.setCancellingFuture(cancellingFuture);
+                    if (!etlLifeTimeThreadPoolExecutors.get(etllifetimeid).isShutdown()) {
+                        ETLJob etlJob = new ETLJob(etlpvLookupItems);
+                        ScheduledFuture<?> cancellingFuture = etlLifeTimeThreadPoolExecutors
+                                .get(etllifetimeid)
+                                .scheduleWithFixedDelay(etlJob, initialDelay, delaybetweenETLJobs, TimeUnit.SECONDS);
+                        etlpvLookupItems.setCancellingFuture(cancellingFuture);
+                    } else {
+                        logger.error("ETL thread pool executor for lifetime " + etllifetimeid
+                                + " is already shutdown. Should only happen in tests");
+                    }
                     logger.debug("Scheduled ETL job for " + pvName + " and lifetime " + etllifetimeid
                             + " with initial delay of " + initialDelay + " and between job delay of "
                             + delaybetweenETLJobs);
@@ -220,6 +230,7 @@ public final class PBThreeTierETLPVLookup {
 
     /**
      * Cancel the ETL jobs for each of the ETL lifetime transitions and also remove from internal structures.
+     *
      * @param pvName The name of PV.
      */
     public void deleteETLJobs(String pvName) {
@@ -231,10 +242,7 @@ public final class PBThreeTierETLPVLookup {
                 ETLPVLookupItems lookupItem =
                         lifetimeId2PVName2LookupItem.get(etllifetimeid).get(pvName);
                 if (lookupItem != null) {
-                    ScheduledFuture<?> cancellingFuture = lookupItem.getCancellingFuture();
-                    if (cancellingFuture != null) {
-                        cancellingFuture.cancel(false);
-                    }
+                    lookupItem.getCancellingFuture().cancel(false);
                     lifetimeId2PVName2LookupItem.get(etllifetimeid).remove(pvName);
 
                     if (lookupItem.getETLSource().consolidateOnShutdown()) {
@@ -260,6 +268,7 @@ public final class PBThreeTierETLPVLookup {
 
     /**
      * Get the internal state for all the ETL lifetime transitions for a pv
+     *
      * @param pvName The name of PV.
      * @return LinkedList  &emsp;
      */
@@ -284,9 +293,10 @@ public final class PBThreeTierETLPVLookup {
 
     /**
      * Get the latest (last known) entry from the stores for this PV.
+     *
      * @param pvName The name of PV.
      * @return Event LatestEventFromDataStores
-     * @throws IOException  &emsp;
+     * @throws IOException &emsp;
      */
     public Event getLatestEventFromDataStores(String pvName) throws IOException {
         LinkedList<ETLPVLookupItems> etlEntries = getLookupItemsForPV(pvName);
@@ -297,6 +307,27 @@ public final class PBThreeTierETLPVLookup {
             }
         }
         return null;
+    }
+
+    public void addETLJobsForUnitTests(String pvName, PVTypeInfo typeInfo) {
+        logger.warn("This message should only be called from the unit tests.");
+        addETLJobs(pvName, typeInfo);
+    }
+
+    public List<ETLMetricsForLifetime> getApplianceMetrics() {
+        return applianceMetrics;
+    }
+
+    /**
+     * Some unit tests want to run the ETL jobs manually; so we shut down the threads.
+     * We should probably write a pausable thread pool executor
+     * Use with care.
+     */
+    public void manualControlForUnitTests() {
+        logger.error("Shutting down ETL for unit tests...");
+        for (ScheduledThreadPoolExecutor scheduledThreadPoolExecutor : this.etlLifeTimeThreadPoolExecutors) {
+            scheduledThreadPoolExecutor.shutdownNow();
+        }
     }
 
     private static final class ETLShutdownThread implements Runnable {
@@ -347,35 +378,5 @@ public final class PBThreeTierETLPVLookup {
         public Thread newThread(Runnable r) {
             return new Thread(r, "ETL - " + lifetimeid);
         }
-    }
-
-    public List<ETLMetricsForLifetime> getApplianceMetrics() {
-        return applianceMetrics;
-    }
-
-    /**
-     * Some unit tests want to run the ETL jobs manually; so we shut down the threads.
-     * We should probably write a pausable thread pool executor
-     * Use with care.
-     */
-    public void manualControlForUnitTests() {
-        logger.error("Shutting down ETL for unit tests...");
-        for (ScheduledThreadPoolExecutor scheduledThreadPoolExecutor : this.etlLifeTimeThreadPoolExecutors) {
-            scheduledThreadPoolExecutor.shutdownNow();
-        }
-    }
-
-    public static OutOfSpaceHandling determineOutOfSpaceHandling(ConfigService configService) {
-        String outOfSpaceHandler = configService
-                .getInstallationProperties()
-                .getProperty(
-                        "org.epics.archiverappliance.etl.common.OutOfSpaceHandling",
-                        OutOfSpaceHandling.DELETE_SRC_STREAMS_IF_FIRST_DEST_WHEN_OUT_OF_SPACE.toString());
-        return OutOfSpaceHandling.valueOf(outOfSpaceHandler);
-    }
-
-    public void addETLJobsForUnitTests(String pvName, PVTypeInfo typeInfo) {
-        logger.warn("addETLJobsForUnitTests This message should only be called from the unit tests.");
-        addETLJobs(pvName, typeInfo);
     }
 }
