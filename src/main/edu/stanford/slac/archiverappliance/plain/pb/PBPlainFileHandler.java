@@ -24,7 +24,6 @@ import java.time.Instant;
 import java.util.Map;
 
 public class PBPlainFileHandler implements PlainFileHandler {
-    public static final PlainFileHandler DEFAULT_PB_HANDLER = new PBPlainFileHandler();
     public static final String PB_PLUGIN_IDENTIFIER = "pb";
     public static final String pbFileExtension = ".pb";
 

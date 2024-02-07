@@ -9,7 +9,6 @@ package edu.stanford.slac.archiverappliance.plain;
 
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility.StartEndTimeFromName;
-import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -185,8 +184,8 @@ public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, St
         this.appendExtension = plainFileHandler.getExtensionString() + "append";
     }
 
-    public PlainStoragePlugin() {
-        this(new PBPlainFileHandler());
+    public PlainStoragePlugin(PlainStorageType plainStorageType) {
+        this(plainStorageType.plainFileHandler());
     }
 
     private static void addStreamCallable(
@@ -441,7 +440,7 @@ public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, St
             logger.info("Iterating thru {}", path.toString());
             FileInfo fileInfo = this.plainFileHandler.fileInfo(path);
             try (EventStream strm =
-                         plainFileHandler.getStreamForIteration(pvName, path, startAtTime, fileInfo.getType(), direction)) {
+                    plainFileHandler.getStreamForIteration(pvName, path, startAtTime, fileInfo.getType(), direction)) {
                 for (Event ev : strm) {
                     if (!thePredicate.test(ev)) {
                         return;
@@ -795,8 +794,8 @@ public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, St
                     long currentTimeInMillis = currentTime.toEpochMilli();
                     if ((currentTimeInMillis - lastModifiedInMillis)
                             > ((long) (this.holdETLForPartitions + 1)
-                            * this.getPartitionGranularity().getApproxSecondsPerChunk()
-                            * 60)) {
+                                    * this.getPartitionGranularity().getApproxSecondsPerChunk()
+                                    * 60)) {
                         logger.warn("Zero byte file is older than current ETL time by holdETLForPartions; deleting it "
                                 + path.toAbsolutePath());
                         try {
@@ -832,8 +831,8 @@ public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, St
                         long currentTimeInMillis = currentTime.toEpochMilli();
                         if ((currentTimeInMillis - lastModifiedInMillis)
                                 > ((long) (this.holdETLForPartitions + 1)
-                                * this.getPartitionGranularity().getApproxSecondsPerChunk()
-                                * 60)) {
+                                        * this.getPartitionGranularity().getApproxSecondsPerChunk()
+                                        * 60)) {
                             logger.warn("Empty file is older than current ETL time by holdETLForPartions; deleting it "
                                     + path.toAbsolutePath());
                             try {
