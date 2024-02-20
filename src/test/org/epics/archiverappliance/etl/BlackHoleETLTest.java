@@ -7,11 +7,11 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
+import edu.stanford.slac.archiverappliance.PB.data.PlainCommonSetup;
 import edu.stanford.slac.archiverappliance.plain.CompressionMode;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BasicContext;
@@ -51,15 +51,15 @@ public class BlackHoleETLTest {
     public static Stream<Arguments> provideBlackHoleETL() {
         return Arrays.stream(PartitionGranularity.values())
                 .filter(g -> g.getNextLargerGranularity() != null)
-                .flatMap(g -> Arrays.stream(FileExtension.values()).flatMap(f -> Stream.of(Arguments.of(g, f))));
+                .flatMap(g -> Arrays.stream(PlainStorageType.values()).flatMap(f -> Stream.of(Arguments.of(g, f))));
     }
 
     @ParameterizedTest
     @MethodSource("provideBlackHoleETL")
-    void testBlackHoleETL(PartitionGranularity granularity, FileExtension fileExtension) throws Exception {
+    void testBlackHoleETL(PartitionGranularity granularity, PlainStorageType plainStorageType) throws Exception {
 
-        PlainStoragePlugin etlSrc = new PlainStoragePlugin(fileExtension);
-        PBCommonSetup srcSetup = new PBCommonSetup();
+        PlainStoragePlugin etlSrc = new PlainStoragePlugin(plainStorageType);
+        PlainCommonSetup srcSetup = new PlainCommonSetup();
         BlackholeStoragePlugin etlDest = new BlackholeStoragePlugin();
         ConfigServiceForTests configService = new ConfigServiceForTests(-1);
 
@@ -97,10 +97,10 @@ public class BlackHoleETLTest {
                     curEpochSeconds += incrementSeconds;
                 }
                 etlSrc.appendData(context, pvName, instream);
-                int filesWithDataBefore = getFilesWithData(pvName, etlSrc, fileExtension, configService);
+                int filesWithDataBefore = getFilesWithData(pvName, etlSrc, configService);
                 ETLExecutor.runETLs(configService, TimeUtils.convertFromEpochSeconds(curEpochSeconds, 0));
                 logger.debug("Done performing ETL");
-                int filesWithDataAfter = getFilesWithData(pvName, etlSrc, fileExtension, configService);
+                int filesWithDataAfter = getFilesWithData(pvName, etlSrc, configService);
                 Assertions.assertTrue(
                         filesWithDataAfter < filesWithDataBefore,
                         "Black hole did not remove source files before = " + filesWithDataBefore + " and after = "
@@ -111,15 +111,14 @@ public class BlackHoleETLTest {
         srcSetup.deleteTestFolder();
     }
 
-    private int getFilesWithData(
-            String pvName, PlainStoragePlugin etlSrc, FileExtension fileExtension, ConfigService configService)
+    private int getFilesWithData(String pvName, PlainStoragePlugin etlSrc, ConfigService configService)
             throws Exception {
         // Check that all the files in the destination store are valid files.
         Path[] allPaths = PathNameUtility.getAllPathsForPV(
                 new ArchPaths(),
                 etlSrc.getRootFolder(),
                 pvName,
-                fileExtension.getExtensionString(),
+                etlSrc.getExtensionString(),
                 CompressionMode.NONE,
                 configService.getPVNameToKeyConverter());
         return allPaths.length;

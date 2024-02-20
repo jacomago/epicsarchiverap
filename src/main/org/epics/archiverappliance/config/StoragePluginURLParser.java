@@ -8,8 +8,8 @@
 package org.epics.archiverappliance.config;
 
 import edu.stanford.slac.archiverappliance.PBOverHTTP.PBOverHTTPStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.commons.lang3.text.StrLookup;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.logging.log4j.LogManager;
@@ -25,6 +25,13 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import static edu.stanford.slac.archiverappliance.PBOverHTTP.PBOverHTTPStoragePlugin.PBHTTP_PLUGIN_IDENTIFIER;
+import static edu.stanford.slac.archiverappliance.plain.parquet.ParquetPlainFileHandler.PARQUET_PLUGIN_IDENTIFIER;
+import static edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler.PB_PLUGIN_IDENTIFIER;
+import static org.epics.archiverappliance.common.mergededup.MergeDedupStoragePlugin.MERGE_PLUGIN_IDENTIFIER;
+import static org.epics.archiverappliance.retrieval.channelarchiver.ChannelArchiverReadOnlyPlugin.RTREE_PLUGIN_IDENTIFIER;
+import static org.epics.archiverappliance.utils.blackhole.BlackholeStoragePlugin.BLACKHOLE_PLUGIN_IDENTIFIER;
+
 /**
  * Parses a URL representation of a storage plugin.
  * Storage plugins can optionally implement ETLSource, ETLDest and perhaps other interfaces.
@@ -33,9 +40,9 @@ import java.net.URISyntaxException;
  * <ol>
  * <li>The <code>pb</code> prefix initializes {@link PlainStoragePlugin PlainStoragePlugin}.</li>
  * <li>The <code>parquet</code> prefix initializes {@link PlainStoragePlugin PlainStoragePlugin} with Parquet file backend.</li>
- * <li>The <code>pbraw</code> prefix initializes {@link edu.stanford.slac.archiverappliance.PBOverHTTP.PBOverHTTPStoragePlugin PBOverHTTPStoragePlugin}.</li>
- * <li>The <code>blackhole</code> prefix initializes {@link org.epics.archiverappliance.utils.blackhole.BlackholeStoragePlugin BlackholeStoragePlugin}.</li>
- * <li>The <code>rtree</code> prefix initializes {@link org.epics.archiverappliance.retrieval.channelarchiver.ChannelArchiverReadOnlyPlugin ChannelArchiverReadOnlyPlugin}.</li>
+ * <li>The <code>pbraw</code> prefix initializes {@link PBOverHTTPStoragePlugin PBOverHTTPStoragePlugin}.</li>
+ * <li>The <code>blackhole</code> prefix initializes {@link BlackholeStoragePlugin BlackholeStoragePlugin}.</li>
+ * <li>The <code>rtree</code> prefix initializes {@link ChannelArchiverReadOnlyPlugin ChannelArchiverReadOnlyPlugin}.</li>
  * </ol>
  * @author mshankar
  *
@@ -49,22 +56,22 @@ public class StoragePluginURLParser {
             URI srcURI = new URI(srcURIStr);
             String pluginIdentifier = srcURI.getScheme();
             switch (pluginIdentifier) {
-                case "pb" -> {
-                    return parsePlainPBStoragePlugin(srcURIStr, configService, FileExtension.PB);
+                case PB_PLUGIN_IDENTIFIER -> {
+                    return parsePlainStoragePlugin(srcURIStr, configService, PlainStorageType.PB);
                 }
-                case "parquet" -> {
-                    return parsePlainPBStoragePlugin(srcURIStr, configService, FileExtension.PARQUET);
+                case PARQUET_PLUGIN_IDENTIFIER -> {
+                    return parsePlainStoragePlugin(srcURIStr, configService, PlainStorageType.PARQUET);
                 }
-                case "pbraw" -> {
+                case PBHTTP_PLUGIN_IDENTIFIER -> {
                     return parseHTTPStoragePlugin(srcURIStr, configService);
                 }
-                case "blackhole" -> {
+                case BLACKHOLE_PLUGIN_IDENTIFIER -> {
                     return parseBlackHolePlugin(srcURIStr, configService);
                 }
-                case "rtree" -> {
+                case RTREE_PLUGIN_IDENTIFIER -> {
                     return parseChannelArchiverPlugin(srcURIStr, configService);
                 }
-                case "merge" -> {
+                case MERGE_PLUGIN_IDENTIFIER -> {
                     return parseMergeDedupPlugin(srcURIStr, configService);
                 }
                 default -> {
@@ -84,16 +91,16 @@ public class StoragePluginURLParser {
             URI srcURI = new URI(srcURIStr);
             String pluginIdentifier = srcURI.getScheme();
             switch (pluginIdentifier) {
-                case "pb" -> {
-                    return parsePlainPBStoragePlugin(srcURIStr, configService, FileExtension.PB);
+                case PB_PLUGIN_IDENTIFIER -> {
+                    return parsePlainStoragePlugin(srcURIStr, configService, PlainStorageType.PB);
                 }
-                case "parquet" -> {
-                    return parsePlainPBStoragePlugin(srcURIStr, configService, FileExtension.PARQUET);
+                case PARQUET_PLUGIN_IDENTIFIER -> {
+                    return parsePlainStoragePlugin(srcURIStr, configService, PlainStorageType.PARQUET);
                 }
-                case "merge" -> {
+                case MERGE_PLUGIN_IDENTIFIER -> {
                     return parseMergeDedupPlugin(srcURIStr, configService);
                 }
-                case "blackhole" -> {
+                case BLACKHOLE_PLUGIN_IDENTIFIER -> {
                     logger.warn(
                             "The blackhole plugin cannot serve as an ETL source; so it has to be the last plugin in the list of data stores.");
                     return null;
@@ -114,16 +121,16 @@ public class StoragePluginURLParser {
             URI srcURI = new URI(srcURIStr);
             String pluginIdentifier = srcURI.getScheme();
             switch (pluginIdentifier) {
-                case "pb" -> {
-                    return parsePlainPBStoragePlugin(srcURIStr, configService, FileExtension.PB);
+                case PB_PLUGIN_IDENTIFIER -> {
+                    return parsePlainStoragePlugin(srcURIStr, configService, PlainStorageType.PB);
                 }
-                case "parquet" -> {
-                    return parsePlainPBStoragePlugin(srcURIStr, configService, FileExtension.PARQUET);
+                case PARQUET_PLUGIN_IDENTIFIER -> {
+                    return parsePlainStoragePlugin(srcURIStr, configService, PlainStorageType.PARQUET);
                 }
-                case "merge" -> {
+                case MERGE_PLUGIN_IDENTIFIER -> {
                     return parseMergeDedupPlugin(srcURIStr, configService);
                 }
-                case "blackhole" -> {
+                case BLACKHOLE_PLUGIN_IDENTIFIER -> {
                     return parseBlackHolePlugin(srcURIStr, configService);
                 }
                 default -> {
@@ -137,9 +144,9 @@ public class StoragePluginURLParser {
         return null;
     }
 
-    private static PlainStoragePlugin parsePlainPBStoragePlugin(
-            String srcURIStr, ConfigService configService, FileExtension fileExtension) throws IOException {
-        PlainStoragePlugin ret = new PlainStoragePlugin(fileExtension);
+    private static PlainStoragePlugin parsePlainStoragePlugin(
+            String srcURIStr, ConfigService configService, PlainStorageType plainStorageType) throws IOException {
+        PlainStoragePlugin ret = new PlainStoragePlugin(plainStorageType);
         ret.initialize(expandMacros(srcURIStr), configService);
         return ret;
     }

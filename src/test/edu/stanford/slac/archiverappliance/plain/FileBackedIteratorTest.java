@@ -68,13 +68,13 @@ public class FileBackedIteratorTest {
             new File(ConfigServiceForTests.getDefaultPBTestFolder() + File.separator + "FileBackedIteratorTest");
     private static final String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + ":FileBackedIteratorTest";
     private static final short currentYear = TimeUtils.getCurrentYear();
-    private static final Path pbFilePath = Paths.get(
-            testFolder.getAbsolutePath(),
-            pvName.replace(":", "/").replace("--", "") + "+" + currentYear + FileExtension.PB.getExtensionString());
-    private static final Path parquetFilePath = Paths.get(
-            testFolder.getAbsolutePath(),
-            pvName.replace(":", "/").replace("--", "") + "+" + currentYear
-                    + FileExtension.PARQUET.getExtensionString());
+
+    static Path filePath(String extensionString) {
+        return Paths.get(
+                testFolder.getAbsolutePath(),
+                pvName.replace(":", "/").replace("--", "") + "+" + currentYear + extensionString);
+    }
+
     private static final ConfigService configService;
 
     static {
@@ -90,8 +90,8 @@ public class FileBackedIteratorTest {
     @BeforeAll
     public static void setUp() throws Exception {
         try {
-            generateData(FileExtension.PB);
-            generateData(FileExtension.PARQUET);
+            generateData(PlainStorageType.PB);
+            generateData(PlainStorageType.PARQUET);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -104,15 +104,11 @@ public class FileBackedIteratorTest {
 
     public static Stream<Arguments> provideCorrectIterator() {
 
-        return Arrays.stream(FileExtension.values()).flatMap(fileExtension -> {
-            var filePath =
-                    switch (fileExtension) {
-                        case PB -> pbFilePath;
-                        case PARQUET -> parquetFilePath;
-                    };
+        return Arrays.stream(PlainStorageType.values()).flatMap(fileExtension -> {
+            var filePath = filePath(fileExtension.plainFileHandler().getExtensionString());
             FileInfo fileInfo;
             try {
-                fileInfo = FileInfo.extensionPath(fileExtension, filePath);
+                fileInfo = fileExtension.plainFileHandler().fileInfo(filePath);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -185,11 +181,13 @@ public class FileBackedIteratorTest {
         });
     }
 
-    private static void generateData(FileExtension fileExtension) throws IOException {
-        logger.info("generate Data " + fileExtension + " to " + pbFilePath + " " + parquetFilePath);
+    private static void generateData(PlainStorageType plainStorageType) throws IOException {
+        logger.info("generate Data " + plainStorageType + " to "
+                + filePath(plainStorageType.plainFileHandler().getExtensionString()));
         PlainStoragePlugin storagePlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                fileExtension.getSuffix() + "://localhost?name=FileBackedIteratorTest&rootFolder="
-                        + testFolder.getAbsolutePath() + "&partitionGranularity=PARTITION_YEAR",
+                plainStorageType.plainFileHandler().pluginIdentifier()
+                        + "://localhost?name=FileBackedIteratorTest&rootFolder=" + testFolder.getAbsolutePath()
+                        + "&partitionGranularity=PARTITION_YEAR",
                 FileBackedIteratorTest.configService);
 
         // Add data with gaps every month
@@ -238,7 +236,7 @@ public class FileBackedIteratorTest {
             Instant maxQTE,
             Class<? extends Iterator<Event>> expectedIteratorClass,
             Path pbFilePath,
-            FileExtension fileExtension)
+            PlainStorageType plainStorageType)
             throws IOException {
         for (Instant QTS = minQTS; QTS.isBefore(maxQTS); QTS = TimeUtils.plusDays(QTS, 1)) {
             for (Instant QTE = minQTE; QTE.isBefore(maxQTE); QTE = TimeUtils.plusDays(QTE, 1)) {
@@ -248,8 +246,9 @@ public class FileBackedIteratorTest {
                 logger.debug("Checking " + testCase + " for QTS " + TimeUtils.convertToISO8601String(QTS) + " and QTE "
                         + TimeUtils.convertToISO8601String(QTE));
 
-                try (EventStream strm =
-                        FileStreamCreator.getTimeStream(fileExtension, pvName, pbFilePath, dbrType, QTS, QTE, false)) {
+                try (EventStream strm = plainStorageType
+                        .plainFileHandler()
+                        .getTimeStream(pvName, pbFilePath, dbrType, QTS, QTE, false)) {
                     Assertions.assertSame(
                             expectedIteratorClass,
                             strm.iterator().getClass(),

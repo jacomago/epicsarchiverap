@@ -35,12 +35,7 @@ public class PathNameUtility {
     private static final Logger logger = LogManager.getLogger(PathNameUtility.class);
 
     public static Path getPathNameForTime(
-            PlainStoragePlugin plugin,
-            String pvName,
-            Instant ts,
-            ArchPaths paths,
-            PVNameToKeyMapping pv2key,
-            FileExtension fileExtension)
+            PlainStoragePlugin plugin, String pvName, Instant ts, ArchPaths paths, PVNameToKeyMapping pv2key)
             throws IOException {
         return getPathNameForTime(
                 plugin.getRootFolder(),
@@ -50,7 +45,7 @@ public class PathNameUtility {
                 paths,
                 plugin.getCompressionMode(),
                 pv2key,
-                fileExtension);
+                plugin.getExtensionString());
     }
 
     public static Path getPathNameForTime(
@@ -61,18 +56,10 @@ public class PathNameUtility {
             ArchPaths paths,
             CompressionMode compressionMode,
             PVNameToKeyMapping pv2key,
-            FileExtension fileExtension)
+            String fileExtension)
             throws IOException {
         return getFileName(
-                rootFolder,
-                pvName,
-                ts,
-                fileExtension.getExtensionString(),
-                partitionGranularity,
-                false,
-                paths,
-                compressionMode,
-                pv2key);
+                rootFolder, pvName, ts, fileExtension, partitionGranularity, false, paths, compressionMode, pv2key);
     }
 
     /**

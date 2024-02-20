@@ -8,10 +8,10 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.plain.CompressionMode;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.utils.ValidatePBFile;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
+import edu.stanford.slac.archiverappliance.plain.utils.ValidatePlainFile;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -63,7 +63,7 @@ public class NamedFlagETLTest {
      * Check that we only move reduced data into the MTS.
      */
     @Test
-    public void testMoveNoFlags() throws Exception {
+    void testMoveNoFlags() throws Exception {
         logger.info("Testing Plain ETL");
         BeforeAndAfterETLCounts etlCounts = generateAndMoveData(configService, "", "", "testMoveNoFlags");
         Assertions.assertTrue(etlCounts.afterCountMTS > 0, "Seems like no events were moved by ETL ");
@@ -78,7 +78,7 @@ public class NamedFlagETLTest {
     }
 
     @Test
-    public void testMoveDestFlagged() throws Exception {
+    void testMoveDestFlagged() throws Exception {
 
         logger.info("Testing with flag but value of flag is false");
 
@@ -94,7 +94,7 @@ public class NamedFlagETLTest {
     }
 
     @Test
-    public void testMoveWithFlagTrue() throws Exception {
+    void testMoveWithFlagTrue() throws Exception {
 
         configService.setNamedFlag("testFlagTrue", true);
         logger.info("Testing with flag but value of flag is true");
@@ -112,7 +112,7 @@ public class NamedFlagETLTest {
     }
 
     @Test
-    public void testMoveWithFlagTrueDestSomeOtherFlag() throws Exception {
+    void testMoveWithFlagTrueDestSomeOtherFlag() throws Exception {
 
         configService.setNamedFlag("testFlagTrue", true);
 
@@ -130,7 +130,7 @@ public class NamedFlagETLTest {
     }
 
     @Test
-    public void testNoFlagSrcWithFlag() throws Exception {
+    void testNoFlagSrcWithFlag() throws Exception {
 
         logger.info("Testing with flag but value of flag is false");
 
@@ -144,7 +144,7 @@ public class NamedFlagETLTest {
     }
 
     @Test
-    public void testSrcWithFlagTrue() throws Exception {
+    void testSrcWithFlagTrue() throws Exception {
 
         configService.setNamedFlag("testFlagSrcTrue", true);
 
@@ -163,7 +163,7 @@ public class NamedFlagETLTest {
     }
 
     @Test
-    public void testEtlOutofStoreIfFromHereSomeOtherFlag() throws Exception {
+    void testEtlOutofStoreIfFromHereSomeOtherFlag() throws Exception {
 
         configService.setNamedFlag("testFlagSrcTrue", true);
 
@@ -256,14 +256,14 @@ public class NamedFlagETLTest {
                 new ArchPaths(),
                 etlDest.getRootFolder(),
                 pvName,
-                FileExtension.PB.getExtensionString(),
+                etlDest.getExtensionString(),
                 CompressionMode.NONE,
                 configService.getPVNameToKeyConverter());
         Assertions.assertNotNull(allPaths, "PlainPBFileNameUtility returns null for getAllFilesForPV for " + pvName);
 
         for (Path destPath : allPaths) {
             Assertions.assertTrue(
-                    ValidatePBFile.validatePBFile(destPath, true, FileExtension.PB),
+                    ValidatePlainFile.validatePlainFile(destPath, true, PlainStorageType.PB.plainFileHandler()),
                     "File validation failed for " + destPath.toAbsolutePath());
         }
 

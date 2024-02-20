@@ -21,6 +21,10 @@ import java.io.IOException;
  */
 public interface StoragePlugin extends Reader, Writer {
     /**
+     * Returns the key for specifying what the prefix in the storage plugin url is.
+     */
+    String pluginIdentifier();
+    /**
      * Multiple PVs will probably use the same storage area and we identify the area using the name.
      * This is principally used in capacity planning/load balancing to identify the storage area for the PV.
      * We should make sure that storage's with similar lifetimes have the same name in all the appliances.

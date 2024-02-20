@@ -1,9 +1,9 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.PB.data.PlainCommonSetup;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -64,7 +64,7 @@ public class PlainPBConversionTest {
     }
 
     private static Stream<Arguments> provideConversionForGranularity(PartitionGranularity granularity) {
-        return Arrays.stream(FileExtension.values())
+        return Arrays.stream(PlainStorageType.values())
                 .flatMap(f -> Stream.of(
                         Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_INT, ArchDBRTypes.DBR_SCALAR_DOUBLE, f),
                         Arguments.of(granularity, ArchDBRTypes.DBR_SCALAR_ENUM, ArchDBRTypes.DBR_SCALAR_DOUBLE, f),
@@ -80,7 +80,7 @@ public class PlainPBConversionTest {
     }
 
     public static Stream<Arguments> provideFailedConversionForDBRType() {
-        return Arrays.stream(FileExtension.values())
+        return Arrays.stream(PlainStorageType.values())
                 .flatMap(f -> Stream.of(
                         Arguments.of(PartitionGranularity.PARTITION_HOUR, f),
                         Arguments.of(PartitionGranularity.PARTITION_DAY, f),
@@ -93,10 +93,10 @@ public class PlainPBConversionTest {
             PartitionGranularity granularity,
             ArchDBRTypes srcDBRType,
             ArchDBRTypes destDBRType,
-            FileExtension fileExtension)
+            PlainStorageType plainStorageType)
             throws Exception {
-        PlainStoragePlugin storagePlugin = new PlainStoragePlugin(fileExtension);
-        PBCommonSetup setup = new PBCommonSetup();
+        PlainStoragePlugin storagePlugin = new PlainStoragePlugin(plainStorageType);
+        PlainCommonSetup setup = new PlainCommonSetup();
         setup.setUpRootFolder(storagePlugin, "PlainPBConversionTest", granularity);
         logger.info("Testing conversion from " + srcDBRType.toString() + " to " + destDBRType.toString());
         String pvName = "PlainPBConversionTest_" + srcDBRType + "_" + destDBRType;
@@ -116,10 +116,10 @@ public class PlainPBConversionTest {
 
     @ParameterizedTest
     @MethodSource("provideFailedConversionForDBRType")
-    public void testFailedConversionForDBRType(PartitionGranularity granularity, FileExtension fileExtension)
+    public void testFailedConversionForDBRType(PartitionGranularity granularity, PlainStorageType plainStorageType)
             throws Exception {
-        PlainStoragePlugin storagePlugin = new PlainStoragePlugin(fileExtension);
-        PBCommonSetup setup = new PBCommonSetup();
+        PlainStoragePlugin storagePlugin = new PlainStoragePlugin(plainStorageType);
+        PlainCommonSetup setup = new PlainCommonSetup();
         setup.setUpRootFolder(storagePlugin, "PlainPBConversionTest", granularity);
         logger.info("Testing failed conversion from " + ArchDBRTypes.DBR_SCALAR_DOUBLE + " to "
                 + ArchDBRTypes.DBR_WAVEFORM_STRING + ". You could see an exception here; ignore it. It is expected");

@@ -8,10 +8,10 @@
 package edu.stanford.slac.archiverappliance.PB.data;
 
 import edu.stanford.slac.archiverappliance.plain.CompressionMode;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.utils.ValidatePBFile;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
+import edu.stanford.slac.archiverappliance.plain.utils.ValidatePlainFile;
 import gov.aps.jca.dbr.DBR_TIME_Double;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
@@ -39,9 +39,9 @@ import java.util.Collections;
  * @author mshankar
  *
  */
-public class LargePBLineTest {
+class LargePBLineTest {
     private ConfigService configService;
-    PBCommonSetup largeLineSetup = new PBCommonSetup();
+    PlainCommonSetup largeLineSetup = new PlainCommonSetup();
     private static final Logger logger = LogManager.getLogger(LargePBLineTest.class.getName());
 
     @BeforeEach
@@ -51,13 +51,14 @@ public class LargePBLineTest {
 
     @AfterEach
     public void tearDown() throws Exception {
+        configService.shutdownNow();
         largeLineSetup.deleteTestFolder();
     }
 
     @ParameterizedTest
-    @EnumSource(FileExtension.class)
-    public void testLargeLines(FileExtension fileExtension) throws Exception {
-        PlainStoragePlugin storagePlugin = new PlainStoragePlugin(fileExtension);
+    @EnumSource(PlainStorageType.class)
+    void testLargeLines(PlainStorageType plainStorageType) throws Exception {
+        PlainStoragePlugin storagePlugin = new PlainStoragePlugin(plainStorageType);
         largeLineSetup.setUpRootFolder(storagePlugin, "largeLineTest", PartitionGranularity.PARTITION_HOUR);
 
         // We create vector doubles with a large number of elements; write it out and then test the read.
@@ -85,7 +86,7 @@ public class LargePBLineTest {
                 new ArchPaths(),
                 storagePlugin.getRootFolder(),
                 pvName,
-                fileExtension.getExtensionString(),
+                storagePlugin.getExtensionString(),
                 CompressionMode.NONE,
                 configService.getPVNameToKeyConverter());
         Assertions.assertNotNull(allPaths, "testLargeLines returns null for getAllFilesForPV for " + pvName);
@@ -95,7 +96,7 @@ public class LargePBLineTest {
         for (Path destPath : allPaths) {
             try {
                 Assertions.assertTrue(
-                        ValidatePBFile.validatePBFile(destPath, false, fileExtension),
+                        ValidatePlainFile.validatePlainFile(destPath, false, storagePlugin.getPlainFileHandler()),
                         "File validation failed for " + destPath.toAbsolutePath());
             } catch (Exception ex) {
                 logger.error("Exception parsing file" + destPath.toAbsolutePath(), ex);

@@ -26,8 +26,8 @@ import java.util.Set;
  * @author mshankar
  *
  */
-public class PBCommonSetup {
-    private static final Logger logger = LogManager.getLogger(PBCommonSetup.class.getName());
+public class PlainCommonSetup {
+    private static final Logger logger = LogManager.getLogger(PlainCommonSetup.class.getName());
     static ConfigServiceForTests configService;
 
     static {
@@ -52,29 +52,29 @@ public class PBCommonSetup {
         }
     }
 
-    public void setUpRootFolder(PlainStoragePlugin plainStoragePlugin) throws Exception {
+    public void setUpRootFolder(PlainStoragePlugin storagePlugin) throws Exception {
         setUpRootFolder();
         tempFolderForTests = new File(configService.getPBRootFolder());
-        plainStoragePlugin.initialize(
-                plainStoragePlugin.getFileExtension().getSuffix() + "://localhost?name=UnitTest&rootFolder="
-                        + tempFolderForTests + "&partitionGranularity=PARTITION_YEAR",
+        storagePlugin.initialize(
+                storagePlugin.getPluginIdentifier() + "://localhost?name=UnitTest&rootFolder=" + tempFolderForTests
+                        + "&partitionGranularity=PARTITION_YEAR",
                 configService);
-        plainStoragePlugin.setRootFolder(tempFolderForTests.getAbsolutePath());
-        plainStoragePlugin.setName(tempFolderForTests.getAbsolutePath());
+        storagePlugin.setRootFolder(tempFolderForTests.getAbsolutePath());
+        storagePlugin.setName(tempFolderForTests.getAbsolutePath());
     }
 
-    public void setUpRootFolder(PlainStoragePlugin plainStoragePlugin, String testSpecificFolder) throws Exception {
-        setUpRootFolder(plainStoragePlugin, testSpecificFolder, PartitionGranularity.PARTITION_YEAR);
+    public void setUpRootFolder(PlainStoragePlugin storagePlugin, String testSpecificFolder) throws Exception {
+        setUpRootFolder(storagePlugin, testSpecificFolder, PartitionGranularity.PARTITION_YEAR);
     }
 
     public void setUpRootFolder(
-            PlainStoragePlugin plainStoragePlugin, String testSpecificFolder, PartitionGranularity partitionGranularity)
+            PlainStoragePlugin storagePlugin, String testSpecificFolder, PartitionGranularity partitionGranularity)
             throws Exception {
-        setUpRootFolder(plainStoragePlugin, testSpecificFolder, partitionGranularity, CompressionMode.NONE);
+        setUpRootFolder(storagePlugin, testSpecificFolder, partitionGranularity, CompressionMode.NONE);
     }
 
     public void setUpRootFolder(
-            PlainStoragePlugin plainStoragePlugin,
+            PlainStoragePlugin storagePlugin,
             String testSpecificFolder,
             PartitionGranularity partitionGranularity,
             CompressionMode compressionMode)
@@ -88,15 +88,15 @@ public class PBCommonSetup {
         }
         tempFolderForTests.mkdirs();
 
-        plainStoragePlugin.initialize(
-                plainStoragePlugin.getFileExtension().getSuffix() + "://localhost?name=UnitTest&rootFolder="
-                        + tempFolderForTests + "&partitionGranularity=" + partitionGranularity.toString(),
+        storagePlugin.initialize(
+                storagePlugin.getPluginIdentifier() + "://localhost?name=UnitTest&rootFolder=" + tempFolderForTests
+                        + "&partitionGranularity=" + partitionGranularity.toString(),
                 configService);
 
-        plainStoragePlugin.setRootFolder(tempFolderForTests.getAbsolutePath());
-        plainStoragePlugin.setPartitionGranularity(partitionGranularity);
-        plainStoragePlugin.setName(partitionGranularity.toString());
-        plainStoragePlugin.setCompressionMode(compressionMode);
+        storagePlugin.setRootFolder(tempFolderForTests.getAbsolutePath());
+        storagePlugin.setPartitionGranularity(partitionGranularity);
+        storagePlugin.setName(partitionGranularity.toString());
+        storagePlugin.setCompressionMode(compressionMode);
     }
 
     public void deleteTestFolder() throws IOException {

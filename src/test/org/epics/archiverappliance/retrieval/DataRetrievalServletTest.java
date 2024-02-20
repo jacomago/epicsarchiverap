@@ -7,11 +7,11 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
+import edu.stanford.slac.archiverappliance.PB.data.PlainCommonSetup;
 import edu.stanford.slac.archiverappliance.PBOverHTTP.PBOverHTTPStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -66,13 +66,13 @@ public class DataRetrievalServletTest {
      * Test that makes sure that the merge dedup gives data whose timestamps are ascending.
      */
     @ParameterizedTest
-    @EnumSource(FileExtension.class)
-    public void testTimesAreSequential(FileExtension fileExtension) throws Exception {
-        String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + fileExtension + "_dataretrieval";
+    @EnumSource(PlainStorageType.class)
+    public void testTimesAreSequential(PlainStorageType plainStorageType) throws Exception {
+        String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + plainStorageType + "_dataretrieval";
 
-        PBCommonSetup pbSetup = new PBCommonSetup();
+        PlainCommonSetup pbSetup = new PlainCommonSetup();
 
-        PlainStoragePlugin pbplugin = new PlainStoragePlugin(fileExtension);
+        PlainStoragePlugin pbplugin = new PlainStoragePlugin(plainStorageType);
         pbSetup.setUpRootFolder(pbplugin);
 
         PBOverHTTPStoragePlugin storagePlugin = new PBOverHTTPStoragePlugin();
@@ -90,8 +90,7 @@ public class DataRetrievalServletTest {
                 pvName,
                 TimeUtils.getStartOfYear(year),
                 new ArchPaths(),
-                configService.getPVNameToKeyConverter(),
-                fileExtension));
+                configService.getPVNameToKeyConverter()));
         SimulationEventStream simstream = new SimulationEventStream(
                 ArchDBRTypes.DBR_SCALAR_DOUBLE,
                 new SineGenerator(0),
@@ -138,8 +137,7 @@ public class DataRetrievalServletTest {
                 pvName,
                 TimeUtils.getStartOfYear(year),
                 new ArchPaths(),
-                configService.getPVNameToKeyConverter(),
-                fileExtension));
+                configService.getPVNameToKeyConverter()));
 
         pbSetup.deleteTestFolder();
     }

@@ -11,6 +11,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
 import edu.stanford.slac.archiverappliance.PB.data.PBParseException;
 import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
+import edu.stanford.slac.archiverappliance.plain.EventStreamIterator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.ByteArray;

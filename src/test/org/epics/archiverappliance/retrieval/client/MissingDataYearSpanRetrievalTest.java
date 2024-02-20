@@ -7,9 +7,9 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval.client;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.PB.data.PlainCommonSetup;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,15 +59,15 @@ public class MissingDataYearSpanRetrievalTest {
     private static final LinkedList<Instant> generatedTimeStamps = new LinkedList<>();
     static String testSpecificFolder = "MissingDataYearSpanRetrieval";
     static String pvNamePB =
-            ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + FileExtension.PB + ":" + testSpecificFolder;
+            ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + PlainStorageType.PB + ":" + testSpecificFolder;
     static String pvNameParquet =
-            ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + FileExtension.PARQUET + ":" + testSpecificFolder;
+            ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + PlainStorageType.PARQUET + ":" + testSpecificFolder;
     static File dataFolder = new File(ConfigServiceForTests.getDefaultPBTestFolder() + File.separator + "ArchUnitTest"
             + File.separator + testSpecificFolder);
-    static PBCommonSetup PBSetup = new PBCommonSetup();
-    static PBCommonSetup parquetSetup = new PBCommonSetup();
-    static PlainStoragePlugin pbPlugin = new PlainStoragePlugin(FileExtension.PB);
-    static PlainStoragePlugin parquetPlugin = new PlainStoragePlugin(FileExtension.PARQUET);
+    static PlainCommonSetup PBSetup = new PlainCommonSetup();
+    static PlainCommonSetup parquetSetup = new PlainCommonSetup();
+    static PlainStoragePlugin pbPlugin = new PlainStoragePlugin(PlainStorageType.PB);
+    static PlainStoragePlugin parquetPlugin = new PlainStoragePlugin(PlainStorageType.PARQUET);
     static TomcatSetup tomcatSetup = new TomcatSetup();
 
     @BeforeAll

@@ -7,7 +7,7 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.plain;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
+import edu.stanford.slac.archiverappliance.PB.data.PlainCommonSetup;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BasicContext;
@@ -64,7 +64,7 @@ public class HoldAndGatherTest {
     }
 
     public static Stream<Arguments> provideHoldAndGather() {
-        return Arrays.stream(FileExtension.values())
+        return Arrays.stream(PlainStorageType.values())
                 .flatMap(f -> Stream.of(
                         Arguments.of(f, PartitionGranularity.PARTITION_5MIN, 7, 5),
                         Arguments.of(f, PartitionGranularity.PARTITION_15MIN, 7, 5),
@@ -81,14 +81,14 @@ public class HoldAndGatherTest {
      */
     @ParameterizedTest
     @MethodSource("provideHoldAndGather")
-    void testHoldAndGather(FileExtension fileExtension, PartitionGranularity granularity, int hold, int gather)
+    void testHoldAndGather(PlainStorageType plainStorageType, PartitionGranularity granularity, int hold, int gather)
             throws Exception {
 
-        PlainStoragePlugin etlSrc = new PlainStoragePlugin(fileExtension);
-        PBCommonSetup srcSetup = new PBCommonSetup();
+        PlainStoragePlugin etlSrc = new PlainStoragePlugin(plainStorageType);
+        PlainCommonSetup srcSetup = new PlainCommonSetup();
         srcSetup.setUpRootFolder(etlSrc, "ETLHoldGatherTest_" + granularity, granularity);
 
-        etlSrc.setHoldETLForPartions(hold);
+        etlSrc.setHoldETLForPartitions(hold);
         etlSrc.setGatherETLinPartitions(gather);
 
         logger.info("Testing ETL hold gather for " + etlSrc.getPartitionGranularity());
@@ -98,8 +98,9 @@ public class HoldAndGatherTest {
 
         long incrementSeconds = granularity.getApproxSecondsPerChunk() / ratio;
 
-        String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + fileExtension.getSuffix() + hold + "_"
-                + gather + "_ETL_hold_gather" + etlSrc.getPartitionGranularity();
+        String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX
+                + plainStorageType.plainFileHandler().pluginIdentifier() + hold + "_" + gather + "_ETL_hold_gather"
+                + etlSrc.getPartitionGranularity();
         PVTypeInfo typeInfo = new PVTypeInfo(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
         String[] dataStores = new String[] {etlSrc.getURLRepresentation(), etlDest.getURLRepresentation()};
         typeInfo.setDataStores(dataStores);

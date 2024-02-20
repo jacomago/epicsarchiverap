@@ -7,7 +7,7 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.plain;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
+import edu.stanford.slac.archiverappliance.PB.data.PlainCommonSetup;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
@@ -23,37 +23,36 @@ import java.nio.file.Path;
 import java.time.Instant;
 
 /**
- * Test the PBFileInfo.
+ * Test the FileInfo.
  * @author mshankar
  *
  */
-public class PBFileInfoTest {
-    PBCommonSetup setup = new PBCommonSetup();
-    Path pBfile;
+class FileInfoTest {
+    PlainCommonSetup setup = new PlainCommonSetup();
+    Path plainFile;
     String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "PVInfo";
 
     @AfterEach
     public void tearDown() throws Exception {
-        Files.deleteIfExists(pBfile);
+        Files.deleteIfExists(plainFile);
     }
 
     @ParameterizedTest
-    @EnumSource(FileExtension.class)
-    public void testPBInfo(FileExtension fileExtension) throws Exception {
-        PlainStoragePlugin storagePlugin = new PlainStoragePlugin(fileExtension);
+    @EnumSource(PlainStorageType.class)
+    void testPBInfo(PlainStorageType plainStorageType) throws Exception {
+        PlainStoragePlugin storagePlugin = new PlainStoragePlugin(plainStorageType);
         short currentYear = TimeUtils.getCurrentYear();
         setup.setUpRootFolder(storagePlugin);
-        pBfile = PathNameUtility.getPathNameForTime(
+        plainFile = PathNameUtility.getPathNameForTime(
                 storagePlugin,
                 pvName,
                 TimeUtils.getStartOfYear(currentYear),
                 new ArchPaths(),
-                (new ConfigServiceForTests(-1).getPVNameToKeyConverter()),
-                fileExtension);
+                (new ConfigServiceForTests(-1).getPVNameToKeyConverter()));
         Instant start = TimeUtils.getStartOfYear(currentYear);
         Instant end = start.plusSeconds(10000);
-        GenerateData.generateSineForPV(pvName, 0, ArchDBRTypes.DBR_SCALAR_DOUBLE, fileExtension, start, end);
-        FileInfo info = FileInfo.extensionPath(fileExtension, pBfile);
+        GenerateData.generateSineForPV(pvName, 0, ArchDBRTypes.DBR_SCALAR_DOUBLE, plainStorageType, start, end);
+        FileInfo info = storagePlugin.fileInfo(plainFile);
         Assertions.assertEquals(info.getPVName(), pvName, "PVInfo PV name " + info.getPVName());
         Assertions.assertEquals(info.getDataYear(), currentYear, "PVInfo year " + info.getDataYear());
         Assertions.assertEquals(ArchDBRTypes.DBR_SCALAR_DOUBLE, info.getType(), "PVInfo type " + info.getType());

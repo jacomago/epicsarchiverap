@@ -7,13 +7,13 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PB;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
 import edu.stanford.slac.archiverappliance.PB.data.PBScalarDouble;
+import edu.stanford.slac.archiverappliance.PB.data.PlainCommonSetup;
 import edu.stanford.slac.archiverappliance.PB.search.FileEventStreamSearch;
 import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import edu.stanford.slac.archiverappliance.plain.pb.PBFileInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,7 +40,7 @@ import java.time.Instant;
  */
 public class SearchInPBFileTest {
     private static final Logger logger = LogManager.getLogger(SearchInPBFileTest.class.getName());
-    PBCommonSetup pbSetup = new PBCommonSetup();
+    PlainCommonSetup pbSetup = new PlainCommonSetup();
     private ConfigService configService;
 
     @BeforeEach
@@ -50,20 +50,19 @@ public class SearchInPBFileTest {
 
     @Test
     public void testSeekToTime() throws Exception {
-        PlainStoragePlugin pbplugin = new PlainStoragePlugin(FileExtension.PB);
+        PlainStoragePlugin pbplugin = new PlainStoragePlugin(PlainStorageType.PB);
         pbSetup.setUpRootFolder(pbplugin);
         short year = TimeUtils.getCurrentYear();
         Instant start = TimeUtils.getStartOfYear(year);
         long numberOfSamples = GenerateData.generateSineForPV(
-                "Sine1", 0, ArchDBRTypes.DBR_SCALAR_DOUBLE, FileExtension.PB, start, start.plusSeconds(10000));
+                "Sine1", 0, ArchDBRTypes.DBR_SCALAR_DOUBLE, PlainStorageType.PB, start, start.plusSeconds(10000));
         try {
             Path testPath = PathNameUtility.getPathNameForTime(
                     pbplugin,
                     "Sine1",
                     TimeUtils.getStartOfYear(year),
                     new ArchPaths(),
-                    configService.getPVNameToKeyConverter(),
-                    FileExtension.PB);
+                    configService.getPVNameToKeyConverter());
             logger.info("Searching for times in file " + testPath);
             long filelen = Files.size(testPath);
             int step = 983;

@@ -7,10 +7,10 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.PB.data.PlainCommonSetup;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
@@ -60,22 +60,17 @@ public class GenerateData {
             String pvName,
             int phasediffindegrees,
             ArchDBRTypes type,
-            FileExtension fileExtension,
+            PlainStorageType plainStorageType,
             Instant start,
             Instant end)
             throws Exception {
-        PlainStoragePlugin storagePlugin = new PlainStoragePlugin(fileExtension);
-        PBCommonSetup setup = new PBCommonSetup();
+        PlainStoragePlugin storagePlugin = new PlainStoragePlugin(plainStorageType);
+        PlainCommonSetup setup = new PlainCommonSetup();
         setup.setUpRootFolder(storagePlugin);
         long numberOfEvents = 0;
         try (BasicContext context = new BasicContext()) {
             if (!Files.exists(PathNameUtility.getPathNameForTime(
-                    storagePlugin,
-                    pvName,
-                    start,
-                    context.getPaths(),
-                    configService.getPVNameToKeyConverter(),
-                    fileExtension))) {
+                    storagePlugin, pvName, start, context.getPaths(), configService.getPVNameToKeyConverter()))) {
                 SimulationEventStream simstream =
                         new SimulationEventStream(type, new SineGenerator(phasediffindegrees), start, end, 1);
                 numberOfEvents = simstream.getNumberOfEvents();
@@ -89,13 +84,14 @@ public class GenerateData {
      * @throws IOException
      */
     public static long generateSineForPV(
-            String pvName, int phasediffindegrees, ArchDBRTypes type, FileExtension fileExtension) throws Exception {
+            String pvName, int phasediffindegrees, ArchDBRTypes type, PlainStorageType plainStorageType)
+            throws Exception {
 
         return generateSineForPV(
                 pvName,
                 phasediffindegrees,
                 type,
-                fileExtension,
+                plainStorageType,
                 TimeUtils.getStartOfYear(TimeUtils.getCurrentYear()),
                 TimeUtils.getEndOfYear(TimeUtils.getCurrentYear()));
     }

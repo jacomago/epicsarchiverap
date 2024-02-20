@@ -7,10 +7,10 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval.client;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.PB.data.PlainCommonSetup;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -63,8 +63,7 @@ public class YearSpanRetrievalTest {
                             pvName,
                             TimeUtils.getStartOfYear(currentyear),
                             new ArchPaths(),
-                            configService.getPVNameToKeyConverter(),
-                            pbplugin.getFileExtension())
+                            configService.getPVNameToKeyConverter())
                     .toFile()
                     .exists()) {
                 logger.info("File for year " + currentyear + " does not exist. Generating data for all the years.");
@@ -80,8 +79,7 @@ public class YearSpanRetrievalTest {
                         pvName,
                         TimeUtils.getStartOfYear(currentyear),
                         new ArchPaths(),
-                        configService.getPVNameToKeyConverter(),
-                        pbplugin.getFileExtension()));
+                        configService.getPVNameToKeyConverter()));
             }
 
             SimulationEventStream simstream = new SimulationEventStream(
@@ -103,12 +101,12 @@ public class YearSpanRetrievalTest {
     }
 
     @ParameterizedTest
-    @EnumSource(FileExtension.class)
-    public void testYearSpan(FileExtension fileExtension) throws Exception {
-        PBCommonSetup pbSetup = new PBCommonSetup();
-        PlainStoragePlugin pbplugin = new PlainStoragePlugin(fileExtension);
+    @EnumSource(PlainStorageType.class)
+    public void testYearSpan(PlainStorageType plainStorageType) throws Exception {
+        PlainCommonSetup pbSetup = new PlainCommonSetup();
+        PlainStoragePlugin pbplugin = new PlainStoragePlugin(plainStorageType);
         pbSetup.setUpRootFolder(pbplugin);
-        String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + fileExtension + "yspan";
+        String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + plainStorageType + "yspan";
         generateDataForYears(pbplugin, pvName);
         RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream(
                 "http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT + "/retrieval/data/getData.raw");

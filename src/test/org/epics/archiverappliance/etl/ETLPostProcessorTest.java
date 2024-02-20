@@ -1,7 +1,7 @@
 package org.epics.archiverappliance.etl;
 
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -55,7 +55,7 @@ public class ETLPostProcessorTest {
     ArchDBRTypes type = ArchDBRTypes.DBR_SCALAR_DOUBLE;
 
     private static Stream<Arguments> provideArguments() {
-        return ETLTestPlugins.provideFileExtensionArguments();
+        return ETLTestPlugins.providePlainStorageTypeArguments();
     }
 
     @BeforeAll
@@ -91,18 +91,19 @@ public class ETLPostProcessorTest {
 
     @ParameterizedTest
     @MethodSource("provideArguments")
-    public void testPostProcessorDuringETL(FileExtension stsFileExtension, FileExtension mtsFileExtension)
+    public void testPostProcessorDuringETL(PlainStorageType stsPlainStorageType, PlainStorageType mtsPlainStorageType)
             throws Exception {
 
-        String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "ETLPostProcessorTest" + stsFileExtension
-                + mtsFileExtension;
+        String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "ETLPostProcessorTest"
+                + stsPlainStorageType + mtsPlainStorageType;
         PlainStoragePlugin srcPlainPlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                stsFileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + rootFolderName
-                        + "/src&partitionGranularity=PARTITION_HOUR",
+                stsPlainStorageType.plainFileHandler().pluginIdentifier() + "://localhost?name=STS&rootFolder="
+                        + rootFolderName + "/src&partitionGranularity=PARTITION_HOUR",
                 configService);
         PlainStoragePlugin destPlainPlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                mtsFileExtension.getSuffix() + "://localhost?name=MTS&rootFolder=" + rootFolderName
-                        + "/dest&partitionGranularity=PARTITION_DAY&pp=" + testPostProcessor.getExtension(),
+                stsPlainStorageType.plainFileHandler().pluginIdentifier() + "://localhost?name=MTS&rootFolder="
+                        + rootFolderName + "/dest&partitionGranularity=PARTITION_DAY&pp="
+                        + testPostProcessor.getExtension(),
                 configService);
         PVTypeInfo typeInfo = new PVTypeInfo(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
         String[] dataStores =

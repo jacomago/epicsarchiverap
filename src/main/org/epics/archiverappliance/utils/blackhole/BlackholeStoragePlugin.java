@@ -120,6 +120,13 @@ public class BlackholeStoragePlugin implements StoragePlugin, ETLDest {
         }
     }
 
+    public static final String BLACKHOLE_PLUGIN_IDENTIFIER = "blackhole";
+
+    @Override
+    public String pluginIdentifier() {
+        return BLACKHOLE_PLUGIN_IDENTIFIER;
+    }
+
     @Override
     public String getName() {
         return name;

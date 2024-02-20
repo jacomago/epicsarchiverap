@@ -68,11 +68,11 @@ public class RenamePVTest {
      * @throws Exception
      */
     @ParameterizedTest
-    @EnumSource(FileExtension.class)
-    public void testRenamePV(FileExtension fileExtension) throws Exception {
+    @EnumSource(PlainStorageType.class)
+    public void testRenamePV(PlainStorageType plainStorageType) throws Exception {
         PlainStoragePlugin plugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                fileExtension.getSuffix() + "://localhost?name=RenameTest&rootFolder=" + rootFolder
-                        + "&partitionGranularity=PARTITION_DAY",
+                plainStorageType.plainFileHandler().pluginIdentifier() + "://localhost?name=RenameTest&rootFolder="
+                        + rootFolder + "&partitionGranularity=PARTITION_DAY",
                 configService);
         short currentYear = TimeUtils.getCurrentYear();
         String oldPVName = "Test:rename:oldPVName";
@@ -109,7 +109,7 @@ public class RenamePVTest {
                             context.getPaths(),
                             plugin.getRootFolder(),
                             oldPVName,
-                            plugin.getFileExtension().getExtensionString(),
+                            plugin.getExtensionString(),
                             CompressionMode.NONE,
                             configService.getPVNameToKeyConverter())
                     .length;
@@ -140,7 +140,7 @@ public class RenamePVTest {
                             context.getPaths(),
                             plugin.getRootFolder(),
                             newPVName,
-                            plugin.getFileExtension().getExtensionString(),
+                            plugin.getExtensionString(),
                             CompressionMode.NONE,
                             configService.getPVNameToKeyConverter())
                     .length;
@@ -148,7 +148,7 @@ public class RenamePVTest {
                             context.getPaths(),
                             plugin.getRootFolder(),
                             oldPVName,
-                            plugin.getFileExtension().getExtensionString(),
+                            plugin.getExtensionString(),
                             CompressionMode.NONE,
                             configService.getPVNameToKeyConverter())
                     .length;

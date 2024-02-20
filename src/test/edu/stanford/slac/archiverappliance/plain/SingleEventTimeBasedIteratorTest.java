@@ -43,14 +43,14 @@ public class SingleEventTimeBasedIteratorTest {
     }
 
     @ParameterizedTest
-    @EnumSource(FileExtension.class)
-    public void testSingleEvent(FileExtension fileExtension) throws Exception {
-        PlainStoragePlugin pbplugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                fileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + rootFolderName
-                        + "&partitionGranularity=PARTITION_HOUR",
+    @EnumSource(PlainStorageType.class)
+    public void testSingleEvent(PlainStorageType plainStorageType) throws Exception {
+        PlainStoragePlugin storagePlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+                plainStorageType.plainFileHandler().pluginIdentifier() + "://localhost?name=STS&rootFolder="
+                        + rootFolderName + "&partitionGranularity=PARTITION_HOUR",
                 configService);
 
-        File rootFolder = new File(pbplugin.getRootFolder());
+        File rootFolder = new File(storagePlugin.getRootFolder());
         if (rootFolder.exists()) {
             FileUtils.deleteDirectory(rootFolder);
         }
@@ -63,7 +63,7 @@ public class SingleEventTimeBasedIteratorTest {
             YearSecondTimestamp eventTs = TimeUtils.convertToYearSecondTimestamp(
                     TimeUtils.convertFromISO8601String("2013-02-21T18:45:08.570Z"));
             testData.add(new SimulationEvent(eventTs, type, new ScalarValue<Double>(6.855870246887207)));
-            pbplugin.appendData(context, pvName, testData);
+            storagePlugin.appendData(context, pvName, testData);
         }
 
         try (BasicContext context = new BasicContext()) {
@@ -71,19 +71,20 @@ public class SingleEventTimeBasedIteratorTest {
                     context.getPaths(),
                     rootFolderName,
                     pvName,
-                    fileExtension.getExtensionString(),
+                    storagePlugin.getExtensionString(),
                     CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());
             Assertions.assertEquals(1, paths.length, "We should get only one file, instead we got " + paths.length);
             long eventCount = 0;
-            try (EventStream strm = FileStreamCreator.getTimeStream(
-                    fileExtension,
-                    pvName,
-                    paths[0],
-                    type,
-                    TimeUtils.convertFromISO8601String("2013-02-19T10:45:08.570Z"),
-                    TimeUtils.convertFromISO8601String("2013-02-22T10:45:08.570Z"),
-                    false)) {
+            try (EventStream strm = storagePlugin
+                    .getPlainFileHandler()
+                    .getTimeStream(
+                            pvName,
+                            paths[0],
+                            type,
+                            TimeUtils.convertFromISO8601String("2013-02-19T10:45:08.570Z"),
+                            TimeUtils.convertFromISO8601String("2013-02-22T10:45:08.570Z"),
+                            false)) {
                 for (@SuppressWarnings("unused") Event event : strm) {
                     eventCount++;
                 }

@@ -1,7 +1,7 @@
 package org.epics.archiverappliance.retrieval;
 
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -80,15 +80,15 @@ public class MultiPVClusterRetrievalTest {
      * Test to make sure that data is retrieved from across clusters.
      */
     @ParameterizedTest
-    @EnumSource(FileExtension.class)
-    public void multiplePvsAcrossCluster(FileExtension fileExtension) throws Exception {
-        PlainStoragePlugin pbplugin = new PlainStoragePlugin(fileExtension);
+    @EnumSource(PlainStorageType.class)
+    public void multiplePvsAcrossCluster(PlainStorageType plainStorageType) throws Exception {
+        PlainStoragePlugin pbplugin = new PlainStoragePlugin(plainStorageType);
 
         ConfigService configService = new ConfigServiceForTests(-1);
 
         // Set up pbplugin so that data can be retrieved using the instance
         pbplugin.initialize(
-                fileExtension.getSuffix() + "://localhost?name=LTS&rootFolder=" + ltsFolder
+                plainStorageType.plainFileHandler().pluginIdentifier() + "://localhost?name=LTS&rootFolder=" + ltsFolder
                         + "&partitionGranularity=PARTITION_YEAR",
                 configService);
 

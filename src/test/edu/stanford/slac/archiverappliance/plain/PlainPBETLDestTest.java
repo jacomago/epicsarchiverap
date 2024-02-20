@@ -7,7 +7,7 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.plain;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
+import edu.stanford.slac.archiverappliance.PB.data.PlainCommonSetup;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -32,7 +32,7 @@ import org.junit.jupiter.params.provider.EnumSource;
  */
 public class PlainPBETLDestTest {
     private static final Logger logger = LogManager.getLogger(PlainPBETLDestTest.class);
-    PBCommonSetup setup = new PBCommonSetup();
+    PlainCommonSetup setup = new PlainCommonSetup();
 
     private static int getSecondsBetweenEvents(PartitionGranularity partitionGranularity) {
         return switch (partitionGranularity) {
@@ -44,9 +44,9 @@ public class PlainPBETLDestTest {
     }
 
     @ParameterizedTest
-    @EnumSource(FileExtension.class)
-    public void testGetLastKnownEvent(FileExtension fileExtension) throws Exception {
-        PlainStoragePlugin storagePlugin = new PlainStoragePlugin(fileExtension);
+    @EnumSource(PlainStorageType.class)
+    public void testGetLastKnownEvent(PlainStorageType plainStorageType) throws Exception {
+        PlainStoragePlugin storagePlugin = new PlainStoragePlugin(plainStorageType);
         setup.setUpRootFolder(storagePlugin, "PVETLDestTests");
 
         long epochSeconds = TimeUtils.getStartOfCurrentYearInSeconds();

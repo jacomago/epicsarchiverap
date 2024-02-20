@@ -1,7 +1,6 @@
 package org.epics.archiverappliance.zipfs;
 
 import edu.stanford.slac.archiverappliance.plain.CompressionMode;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import edu.stanford.slac.archiverappliance.plain.pb.FileBackedPBEventStream;
@@ -91,7 +90,7 @@ public class ZipCachedFetchTest {
                     pvName,
                     startTime,
                     endTime,
-                    FileExtension.PB.getExtensionString(),
+                    pbplugin.getExtensionString(),
                     pbplugin.getPartitionGranularity(),
                     pbplugin.getCompressionMode(),
                     configService.getPVNameToKeyConverter());
@@ -145,7 +144,7 @@ public class ZipCachedFetchTest {
                     pvName,
                     startTime,
                     endTime,
-                    FileExtension.PB.getExtensionString(),
+                    pbplugin.getExtensionString(),
                     pbplugin.getPartitionGranularity(),
                     CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());

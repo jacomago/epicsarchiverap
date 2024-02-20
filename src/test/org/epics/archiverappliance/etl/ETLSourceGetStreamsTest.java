@@ -7,8 +7,8 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
@@ -52,7 +52,7 @@ public class ETLSourceGetStreamsTest {
             .withSecond(0);
 
     static Stream<Arguments> provideTestArguments() {
-        return Arrays.stream(FileExtension.values())
+        return Arrays.stream(PlainStorageType.values())
                 .flatMap(f -> Stream.of(
                         Arguments.of(
                                 f,
@@ -108,11 +108,14 @@ public class ETLSourceGetStreamsTest {
     @ParameterizedTest
     @MethodSource("provideTestArguments")
     public void getETLStreams(
-            FileExtension fileExtension, PartitionGranularity partitionGranularity, long sampleRange, long skipSeconds)
+            PlainStorageType plainStorageType,
+            PartitionGranularity partitionGranularity,
+            long sampleRange,
+            long skipSeconds)
             throws Exception {
         PlainStoragePlugin pbplugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                fileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + testFolder
-                        + "/src&partitionGranularity=PARTITION_HOUR",
+                plainStorageType.plainFileHandler().pluginIdentifier() + "://localhost?name=STS&rootFolder="
+                        + testFolder + "/src&partitionGranularity=PARTITION_HOUR",
                 configService);
         ETLContext etlContext = new ETLContext();
 
@@ -120,12 +123,12 @@ public class ETLSourceGetStreamsTest {
                 + File.separator
                 + partitionGranularity.toString()
                 + File.separator
-                + fileExtension);
+                + plainStorageType);
         rootFolder.mkdirs();
         pbplugin.setRootFolder(rootFolder.getAbsolutePath());
         pbplugin.setPartitionGranularity(partitionGranularity);
         String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + ":ETLSourceGetStreamsTest:"
-                + partitionGranularity + fileExtension;
+                + partitionGranularity + plainStorageType;
         ArchDBRTypes type = ArchDBRTypes.DBR_SCALAR_DOUBLE;
         ArrayListEventStream testData =
                 new ArrayListEventStream(1000, new RemotableEventStreamDesc(type, pvName, currentYear));

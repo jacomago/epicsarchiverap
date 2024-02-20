@@ -78,7 +78,7 @@ import java.util.concurrent.Callable;
  *
  */
 public class MergeDedupStoragePlugin implements StoragePlugin, ETLSource, ETLDest, StorageMetrics {
-    private static Logger logger = LogManager.getLogger(MergeDedupStoragePlugin.class.getName());
+    private static final Logger logger = LogManager.getLogger(MergeDedupStoragePlugin.class.getName());
     private String name;
     private StoragePlugin dest;
     private StoragePlugin other;
@@ -198,6 +198,13 @@ public class MergeDedupStoragePlugin implements StoragePlugin, ETLSource, ETLDes
     @Override
     public boolean consolidateOnShutdown() {
         return ((ETLSource) dest).consolidateOnShutdown();
+    }
+
+    public static final String MERGE_PLUGIN_IDENTIFIER = "merge";
+
+    @Override
+    public String pluginIdentifier() {
+        return MERGE_PLUGIN_IDENTIFIER;
     }
 
     @Override

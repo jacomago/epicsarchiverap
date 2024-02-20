@@ -60,13 +60,13 @@ public class MultiFilePBEventStreamTest {
     }
 
     static Stream<Arguments> provideInput() {
-        return Arrays.stream(FileExtension.values()).flatMap(f -> Arrays.stream(PartitionGranularity.values())
+        return Arrays.stream(PlainStorageType.values()).flatMap(f -> Arrays.stream(PartitionGranularity.values())
                 .map(granularity -> Arguments.of(f, granularity)));
     }
 
     @ParameterizedTest
     @MethodSource("provideInput")
-    public void testMultiFileEventStream(FileExtension fileExtension, PartitionGranularity granularity)
+    public void testMultiFileEventStream(PlainStorageType plainStorageType, PartitionGranularity granularity)
             throws Exception {
         // We generate a ratio * seconds in granularity worth of data into a PlainStoragePlugin with different
         // granularity.
@@ -75,9 +75,9 @@ public class MultiFilePBEventStreamTest {
         logger.debug("Generating sample data for granularity " + granularity);
 
         String pvName = "MultiYear" + granularity.toString();
-        String configURL = fileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + rootFolderName
-                + "&partitionGranularity=" + granularity;
-        PlainStoragePlugin pbplugin = new PlainStoragePlugin(fileExtension);
+        String configURL = plainStorageType.plainFileHandler().pluginIdentifier() + "://localhost?name=STS&rootFolder="
+                + rootFolderName + "&partitionGranularity=" + granularity;
+        PlainStoragePlugin pbplugin = new PlainStoragePlugin(plainStorageType);
         pbplugin.initialize(configURL, configService);
         ArchDBRTypes type = ArchDBRTypes.DBR_SCALAR_DOUBLE;
         Instant startTime = ZonedDateTime.now()

@@ -7,11 +7,11 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
+import edu.stanford.slac.archiverappliance.PB.data.PlainCommonSetup;
 import edu.stanford.slac.archiverappliance.plain.CompressionMode;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
-import edu.stanford.slac.archiverappliance.plain.utils.ValidatePBFile;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
+import edu.stanford.slac.archiverappliance.plain.utils.ValidatePlainFile;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -50,8 +50,8 @@ import java.util.stream.Stream;
  */
 public class SimpleETLTest {
     private static final Logger logger = LogManager.getLogger(SimpleETLTest.class);
-    static PBCommonSetup srcSetup = new PBCommonSetup();
-    static PBCommonSetup destSetup = new PBCommonSetup();
+    static PlainCommonSetup srcSetup = new PlainCommonSetup();
+    static PlainCommonSetup destSetup = new PlainCommonSetup();
     static ConfigServiceForTests configService;
     static long ratio = 5;
     static List<ETLTestPlugins> etlPlugins;
@@ -90,13 +90,13 @@ public class SimpleETLTest {
     public void testMove(PartitionGranularity granularity, ETLTestPlugins testPlugins) throws Exception {
         srcSetup.setUpRootFolder(
                 testPlugins.src(),
-                "SimpleETLTestSrc_" + granularity + testPlugins.src().getFileExtension(),
+                "SimpleETLTestSrc_" + granularity + testPlugins.src().getPluginIdentifier(),
                 granularity);
         destSetup.setUpRootFolder(
                 testPlugins.dest(),
-                "SimpleETLTestDest" + granularity + testPlugins.dest().getFileExtension(),
+                "SimpleETLTestDest" + granularity + testPlugins.dest().getPluginIdentifier(),
                 granularity.getNextLargerGranularity(),
-                testPlugins.dest().getFileExtension() == FileExtension.PARQUET
+                testPlugins.dest().getPlainFileHandler() == PlainStorageType.PARQUET.plainFileHandler()
                         ? CompressionMode.valueOf("ZSTD")
                         : CompressionMode.NONE);
 
@@ -149,7 +149,7 @@ public class SimpleETLTest {
                 new ArchPaths(),
                 testPlugins.dest().getRootFolder(),
                 pvName,
-                testPlugins.dest().getFileExtension().getExtensionString(),
+                testPlugins.dest().getExtensionString(),
                 CompressionMode.NONE,
                 configService.getPVNameToKeyConverter());
         Assertions.assertNotNull(allPaths, "PlainPBFileNameUtility returns null for getAllFilesForPV for " + pvName);
@@ -160,8 +160,8 @@ public class SimpleETLTest {
 
         for (Path destPath : allPaths) {
             Assertions.assertTrue(
-                    ValidatePBFile.validatePBFile(
-                            destPath, true, testPlugins.dest().getFileExtension()),
+                    ValidatePlainFile.validatePlainFile(
+                            destPath, true, testPlugins.dest().getPlainFileHandler()),
                     "File validation failed for " + destPath.toAbsolutePath());
         }
 

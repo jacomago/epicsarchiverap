@@ -7,9 +7,9 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.plain.utils;
 
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.FileInfo;
-import edu.stanford.slac.archiverappliance.plain.FileStreamCreator;
+import edu.stanford.slac.archiverappliance.plain.PlainFileHandler;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -29,17 +29,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author mshankar
  *
  */
-public class ValidatePBFile {
-    private static final Logger logger = LogManager.getLogger(ValidatePBFile.class.getName());
+public class ValidatePlainFile {
+    private static final Logger logger = LogManager.getLogger(ValidatePlainFile.class.getName());
 
-    public static boolean validatePBFile(Path path, boolean verboseMode, FileExtension fileExtension)
+    public static boolean validatePlainFile(Path path, boolean verboseMode, PlainFileHandler plainFileHandler)
             throws IOException {
-        FileInfo info = FileInfo.extensionPath(fileExtension, path);
+        FileInfo info = plainFileHandler.fileInfo(path);
         logger.info("File " + path.getFileName().toString() + " is for PV " + info.getPVName() + " of type "
                 + info.getType() + " for year " + info.getDataYear());
         Instant previousTimestamp = Instant.EPOCH;
         long eventnum = 0;
-        try (EventStream strm = FileStreamCreator.getStream(fileExtension, info.getPVName(), path, info.getType())) {
+        try (EventStream strm = plainFileHandler.getStream(info.getPVName(), path, info.getType())) {
             Event firstEvent = null;
             Event lastEvent = null;
             for (Event ev : strm) {
@@ -128,7 +128,7 @@ public class ValidatePBFile {
 
                             @Override
                             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                                if (!validatePBFile(file, verboseMode, FileExtension.PB)) {
+                                if (!validatePlainFile(file, verboseMode, new PBPlainFileHandler())) {
                                     failures.incrementAndGet();
                                 }
                                 return FileVisitResult.CONTINUE;
@@ -145,7 +145,7 @@ public class ValidatePBFile {
                             }
                         }.init(verboseMode));
             } else {
-                if (!validatePBFile(path, verboseMode, FileExtension.PB)) {
+                if (!validatePlainFile(path, verboseMode, new PBPlainFileHandler())) {
                     failures.incrementAndGet();
                 }
             }

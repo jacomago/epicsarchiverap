@@ -1,7 +1,5 @@
 package edu.stanford.slac.archiverappliance.plain;
 
-import edu.stanford.slac.archiverappliance.plain.parquet.ParquetAppendDataStateData;
-import edu.stanford.slac.archiverappliance.plain.pb.PBAppendDataStateData;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -57,22 +55,6 @@ public abstract class AppendDataStateData {
             this.lastKnownTimeStamp = lastKnownTimestamp;
             this.previousYear = TimeUtils.getYear(lastKnownTimestamp);
         }
-    }
-
-    public static AppendDataStateData createAppendDataStateData(
-            FileExtension fileExtension,
-            Instant timestamp,
-            PartitionGranularity partitionGranularity,
-            String rootFolder,
-            String desc,
-            PVNameToKeyMapping pv2key,
-            CompressionMode compressionMode) {
-        return switch (fileExtension) {
-            case PARQUET -> new ParquetAppendDataStateData(
-                    partitionGranularity, rootFolder, desc, timestamp, compressionMode, pv2key);
-            case PB -> new PBAppendDataStateData(
-                    partitionGranularity, rootFolder, desc, timestamp, compressionMode, pv2key);
-        };
     }
 
     /**

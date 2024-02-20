@@ -1,6 +1,5 @@
 package org.epics.archiverappliance.zipfs;
 
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import edu.stanford.slac.archiverappliance.plain.pb.FileBackedPBEventStream;
@@ -133,12 +132,7 @@ public class ZipSingleDayRawFetchTest {
         long start = System.currentTimeMillis();
         try (BasicContext context = new BasicContext()) {
             Path path = PathNameUtility.getPathNameForTime(
-                    pbplugin,
-                    pvName,
-                    startTime,
-                    context.getPaths(),
-                    configService.getPVNameToKeyConverter(),
-                    FileExtension.PB);
+                    pbplugin, pvName, startTime, context.getPaths(), configService.getPVNameToKeyConverter());
             for (Event e : new FileBackedPBEventStream(pvName, path, ArchDBRTypes.DBR_SCALAR_DOUBLE)) {
                 Instant actualTime = e.getEventTimeStamp();
                 // The PlainPBStorage plugin will also yield the last event of the previous partition.

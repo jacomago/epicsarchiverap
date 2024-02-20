@@ -4,7 +4,6 @@ import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
 import edu.stanford.slac.archiverappliance.PB.utils.LineEscaper;
 import edu.stanford.slac.archiverappliance.plain.AppendDataStateData;
 import edu.stanford.slac.archiverappliance.plain.CompressionMode;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.FileInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -131,7 +130,7 @@ public class PBAppendDataStateData extends AppendDataStateData {
      * @throws IOException &emsp;
      */
     public void updateStateBasedOnExistingFile(String pvName, Path pvPath) throws IOException {
-        FileInfo info = FileInfo.extensionPath(FileExtension.PB, pvPath);
+        FileInfo info = new PBFileInfo(pvPath);
         if (!info.getPVName().equals(pvName))
             throw new IOException("Trying to append data for " + pvName + " to a file " + pvPath + " that has data for "
                     + info.getPVName());

@@ -1,7 +1,7 @@
 package edu.stanford.slac.archiverappliance.plain.parquet;
 
 import com.google.protobuf.MessageOrBuilder;
-import edu.stanford.slac.archiverappliance.plain.pb.EventStreamIterator;
+import edu.stanford.slac.archiverappliance.plain.EventStreamIterator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.parquet.hadoop.ParquetReader;

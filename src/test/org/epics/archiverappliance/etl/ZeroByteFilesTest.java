@@ -8,10 +8,10 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.plain.CompressionMode;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.utils.ValidatePBFile;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
+import edu.stanford.slac.archiverappliance.plain.utils.ValidatePlainFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -94,16 +94,16 @@ public class ZeroByteFilesTest {
     }
 
     @ParameterizedTest
-    @EnumSource(FileExtension.class)
-    public void testZeroByteFileInDest(FileExtension fileExtension) throws Exception {
+    @EnumSource(PlainStorageType.class)
+    public void testZeroByteFileInDest(PlainStorageType plainStorageType) throws Exception {
 
         PlainStoragePlugin etlSrc = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                fileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + shortTermFolderName
-                        + "/&partitionGranularity=PARTITION_DAY",
+                plainStorageType.plainFileHandler().pluginIdentifier() + "://localhost?name=STS&rootFolder="
+                        + shortTermFolderName + "/&partitionGranularity=PARTITION_DAY",
                 configService);
         PlainStoragePlugin etlDest = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                fileExtension.getSuffix() + "://localhost?name=MTS&rootFolder=" + mediumTermFolderName
-                        + "/&partitionGranularity=PARTITION_YEAR",
+                plainStorageType.plainFileHandler().pluginIdentifier() + "://localhost?name=MTS&rootFolder="
+                        + mediumTermFolderName + "/&partitionGranularity=PARTITION_YEAR",
                 configService);
         String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "ETL_testZeroDest";
         // Create an zero byte file in the ETL dest
@@ -111,24 +111,24 @@ public class ZeroByteFilesTest {
             assert etlDest != null;
             Path zeroDestPath = Paths.get(
                     etlDest.getRootFolder(),
-                    pvNameToKeyConverter.convertPVNameToKey(pvName) + currentYear + fileExtension.getExtensionString());
+                    pvNameToKeyConverter.convertPVNameToKey(pvName) + currentYear + etlDest.getExtensionString());
             logger.info("Creating zero byte file " + zeroDestPath);
             Files.write(zeroDestPath, new byte[0], StandardOpenOption.CREATE);
         };
-        runETLAndValidate(pvName, zeroByteGenerator, etlSrc, etlDest, fileExtension);
+        runETLAndValidate(pvName, zeroByteGenerator, etlSrc, etlDest, plainStorageType);
     }
 
     @ParameterizedTest
-    @EnumSource(FileExtension.class)
-    public void testZeroByteFilesInSource(FileExtension fileExtension) throws Exception {
+    @EnumSource(PlainStorageType.class)
+    public void testZeroByteFilesInSource(PlainStorageType plainStorageType) throws Exception {
 
         PlainStoragePlugin etlSrc = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                fileExtension.getSuffix() + "://localhost?name=STS&rootFolder=" + shortTermFolderName
-                        + "/&partitionGranularity=PARTITION_DAY",
+                plainStorageType.plainFileHandler().pluginIdentifier() + "://localhost?name=STS&rootFolder="
+                        + shortTermFolderName + "/&partitionGranularity=PARTITION_DAY",
                 configService);
         PlainStoragePlugin etlDest = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                fileExtension.getSuffix() + "://localhost?name=MTS&rootFolder=" + mediumTermFolderName
-                        + "/&partitionGranularity=PARTITION_YEAR",
+                plainStorageType.plainFileHandler().pluginIdentifier() + "://localhost?name=MTS&rootFolder="
+                        + mediumTermFolderName + "/&partitionGranularity=PARTITION_YEAR",
                 configService);
         // Create zero byte files in the ETL source; since this is a daily partition, we need something like so
         // sine:2016_03_31.pb
@@ -145,12 +145,12 @@ public class ZeroByteFilesTest {
                                                         * PartitionGranularity.PARTITION_DAY
                                                                 .getApproxSecondsPerChunk()),
                                         PartitionGranularity.PARTITION_DAY)
-                                + fileExtension.getExtensionString());
+                                + etlSrc.getExtensionString());
                 logger.info("Creating zero byte file " + zeroSrcPath);
                 Files.write(zeroSrcPath, new byte[0], StandardOpenOption.CREATE);
             }
         };
-        runETLAndValidate(pvName, zeroByteGenerator, etlSrc, etlDest, fileExtension);
+        runETLAndValidate(pvName, zeroByteGenerator, etlSrc, etlDest, plainStorageType);
     }
 
     /**
@@ -161,7 +161,7 @@ public class ZeroByteFilesTest {
             VoidFunction zeroByteGenerationFunction,
             PlainStoragePlugin etlSrc,
             PlainStoragePlugin etlDest,
-            FileExtension fileExtension)
+            PlainStorageType plainStorageType)
             throws Exception {
 
         // Generate some data in the src
@@ -223,7 +223,7 @@ public class ZeroByteFilesTest {
                 new ArchPaths(),
                 etlDest.getRootFolder(),
                 pvName,
-                fileExtension.getExtensionString(),
+                etlDest.getExtensionString(),
                 CompressionMode.NONE,
                 pvNameToKeyConverter);
         Assertions.assertNotNull(allPaths, "PlainPBFileNameUtility returns null for getAllFilesForPV for " + pvName);
@@ -235,7 +235,7 @@ public class ZeroByteFilesTest {
         logger.info("allPaths {}", (Object) allPaths);
         for (Path destPath : allPaths) {
             Assertions.assertTrue(
-                    ValidatePBFile.validatePBFile(destPath, false, fileExtension),
+                    ValidatePlainFile.validatePlainFile(destPath, false, plainStorageType.plainFileHandler()),
                     "File validation failed for " + destPath.toAbsolutePath());
         }
 
@@ -275,8 +275,9 @@ public class ZeroByteFilesTest {
             int index = 0;
             for (Event afterEvent : afterDest) {
                 Event beforeEvent = beforeEvents.get(index);
-                Assertions.assertTrue(
-                        beforeEvent.getEventTimeStamp().equals(afterEvent.getEventTimeStamp()),
+                Assertions.assertEquals(
+                        beforeEvent.getEventTimeStamp(),
+                        afterEvent.getEventTimeStamp(),
                         "Before timestamp " + TimeUtils.convertToHumanReadableString(beforeEvent.getEventTimeStamp())
                                 + " After timestamp "
                                 + TimeUtils.convertToHumanReadableString(afterEvent.getEventTimeStamp()));

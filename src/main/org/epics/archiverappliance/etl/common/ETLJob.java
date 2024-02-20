@@ -1,8 +1,8 @@
 package org.epics.archiverappliance.etl.common;
 
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import edu.stanford.slac.archiverappliance.plain.parquet.ParquetBackedPBEventFileStream;
+import edu.stanford.slac.archiverappliance.plain.parquet.ParquetPlainFileHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.EventStream;
@@ -282,21 +282,21 @@ public class ETLJob implements Runnable {
             throws IOException {
         // If the ETLDest and ETLSrc are PlainStoragePlugin backed by Parquet files,
         // we use the Parquet file rewriter to combine the Parquet files for the ETLJob
-        if (curETLDest instanceof PlainStoragePlugin plainDest && curETLSource instanceof PlainStoragePlugin plainSrc) {
-            if (plainDest.getFileExtension() == FileExtension.PARQUET
-                    && plainSrc.getFileExtension() == FileExtension.PARQUET) {
-                return processParquetSourceInfoList(
-                        etlInfoList,
-                        pvName,
-                        totalSrcBytes,
-                        destMetrics,
-                        movedList,
-                        time4checkSizes,
-                        curETLDest,
-                        etlContext,
-                        time4prepareForNewPartition,
-                        time4appendToETLAppendData);
-            }
+        if (curETLDest instanceof PlainStoragePlugin plainDest
+                && curETLSource instanceof PlainStoragePlugin plainSrc
+                && (plainDest.getPlainFileHandler() instanceof ParquetPlainFileHandler
+                        && plainSrc.getPlainFileHandler() instanceof ParquetPlainFileHandler)) {
+            return processParquetSourceInfoList(
+                    etlInfoList,
+                    pvName,
+                    totalSrcBytes,
+                    destMetrics,
+                    movedList,
+                    time4checkSizes,
+                    curETLDest,
+                    etlContext,
+                    time4prepareForNewPartition,
+                    time4appendToETLAppendData);
         }
         return processPBSourceInfoList(
                 etlInfoList,

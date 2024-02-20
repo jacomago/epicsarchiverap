@@ -9,10 +9,10 @@ package edu.stanford.slac.archiverappliance.plain.utils;
 
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
 import edu.stanford.slac.archiverappliance.PB.utils.LineEscaper;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.FileInfo;
 import edu.stanford.slac.archiverappliance.plain.pb.FileBackedPBEventStream;
 import edu.stanford.slac.archiverappliance.plain.pb.PBFileInfo;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.ByteArray;
@@ -94,7 +94,8 @@ public class ValidateAndFixPBFile {
 
                             @Override
                             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                                boolean isValid = ValidatePBFile.validatePBFile(file, verboseMode, FileExtension.PB);
+                                boolean isValid = ValidatePlainFile.validatePlainFile(
+                                        file, verboseMode, new PBPlainFileHandler());
                                 if (!isValid) {
                                     logger.debug("Path " + file + " is not a valid PB file");
                                     fixPBFile(file, verboseMode, makeBackups);
@@ -113,7 +114,7 @@ public class ValidateAndFixPBFile {
                             }
                         }.init(verboseMode, makeBackups));
             } else {
-                boolean isValid = ValidatePBFile.validatePBFile(path, verboseMode, FileExtension.PB);
+                boolean isValid = ValidatePlainFile.validatePlainFile(path, verboseMode, new PBPlainFileHandler());
                 if (!isValid) {
                     logger.debug("Path " + path + " is not a valid PB file");
                     fixPBFile(path, verboseMode, makeBackups);

@@ -7,8 +7,8 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -86,7 +86,7 @@ public class DataReductionPostProcessorsTest {
                         "median_3600",
                         "firstFill_3600",
                         "lastFill_3600")
-                .flatMap(rdu -> Arrays.stream(FileExtension.values()).map(f -> Arguments.of(rdu, f)));
+                .flatMap(rdu -> Arrays.stream(PlainStorageType.values()).map(f -> Arguments.of(rdu, f)));
     }
 
     @AfterAll
@@ -115,12 +115,12 @@ public class DataReductionPostProcessorsTest {
      */
     @ParameterizedTest
     @MethodSource("provideReduceDataUsing")
-    public void testPostProcessor(String reduceDataUsing, FileExtension ltsFileExtension) throws Exception {
+    public void testPostProcessor(String reduceDataUsing, PlainStorageType ltsPlainStorageType) throws Exception {
         logger.info("Testing for " + reduceDataUsing);
         final String rawPVName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX
                 + DataReductionPostProcessorsTest.class.getSimpleName()
                 + reduceDataUsing
-                + ltsFileExtension.getSuffix();
+                + ltsPlainStorageType;
         final String reducedPVName = rawPVName + "reduced";
 
         String shortTermFolderName =
@@ -138,12 +138,12 @@ public class DataReductionPostProcessorsTest {
                 "pb://localhost?name=MTS&rootFolder=" + mediumTermFolderName + "/&partitionGranularity=PARTITION_DAY",
                 configService);
         PlainStoragePlugin etlLTSRaw = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                ltsFileExtension.getSuffix() + "://localhost?name=LTS&rootFolder=" + longTermFolderName
-                        + "/&partitionGranularity=PARTITION_YEAR",
+                ltsPlainStorageType.plainFileHandler().pluginIdentifier() + "://localhost?name=LTS&rootFolder="
+                        + longTermFolderName + "/&partitionGranularity=PARTITION_YEAR",
                 configService);
         PlainStoragePlugin etlLTSReduced = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                ltsFileExtension.getSuffix() + "://localhost?name=LTS&rootFolder=" + longTermFolderName
-                        + "/&partitionGranularity=PARTITION_YEAR&reducedata=" + reduceDataUsing,
+                ltsPlainStorageType.plainFileHandler().pluginIdentifier() + "://localhost?name=LTS&rootFolder="
+                        + longTermFolderName + "/&partitionGranularity=PARTITION_YEAR&reducedata=" + reduceDataUsing,
                 configService);
         {
             PVTypeInfo typeInfo = new PVTypeInfo(rawPVName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);

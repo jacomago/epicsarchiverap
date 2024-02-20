@@ -7,9 +7,9 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval.client;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.plain.FileExtension;
+import edu.stanford.slac.archiverappliance.PB.data.PlainCommonSetup;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -56,17 +56,17 @@ import java.util.stream.Stream;
 class MissingDataYearSpanRetrievalUnitTest {
     static final String testSpecificFolder = "MissingDataYearSpanRetrievalUnit";
     static final String pvNamePB =
-            ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + FileExtension.PB + ":" + testSpecificFolder;
+            ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + PlainStorageType.PB + ":" + testSpecificFolder;
     static final String pvNameParquet =
-            ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + FileExtension.PARQUET + ":" + testSpecificFolder;
+            ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + PlainStorageType.PARQUET + ":" + testSpecificFolder;
     private static final Logger logger = LogManager.getLogger(MissingDataYearSpanRetrievalUnitTest.class.getName());
     private static final LinkedList<Instant> generatedTimeStamps = new LinkedList<Instant>();
     static File dataFolder = new File(ConfigServiceForTests.getDefaultPBTestFolder() + File.separator + "ArchUnitTest"
             + File.separator + testSpecificFolder);
-    static PBCommonSetup PBSetup = new PBCommonSetup();
-    static PBCommonSetup parquetSetup = new PBCommonSetup();
-    static PlainStoragePlugin pbPlugin = new PlainStoragePlugin(FileExtension.PB);
-    static PlainStoragePlugin parquetPlugin = new PlainStoragePlugin(FileExtension.PARQUET);
+    static PlainCommonSetup PBSetup = new PlainCommonSetup();
+    static PlainCommonSetup parquetSetup = new PlainCommonSetup();
+    static PlainStoragePlugin pbPlugin = new PlainStoragePlugin(PlainStorageType.PB);
+    static PlainStoragePlugin parquetPlugin = new PlainStoragePlugin(PlainStorageType.PARQUET);
 
     static Stream<Arguments> provideMissingDataYearSpan() {
         return Stream.of(List.of(pvNameParquet, parquetPlugin), List.of(pvNamePB, pbPlugin))
@@ -79,19 +79,13 @@ class MissingDataYearSpanRetrievalUnitTest {
      * and not collating different files as in {@link org.epics.archiverappliance.retrieval.DataRetrievalServlet}
      *
      * @param pvName             name of pv
-     * @param plainStoragePlugin matching plugin for pvName
+     * @param storagePlugin matching plugin for pvName
      * @return Arguments that match {@link #testRetrieval(String, String, int, String, int, String, PlainStoragePlugin)}
      */
-    static Stream<Arguments> getArgumentsStream(Object pvName, Object plainStoragePlugin) {
+    static Stream<Arguments> getArgumentsStream(Object pvName, Object storagePlugin) {
         return Stream.of(
                 Arguments.of(
-                        "2011-06-01T00:00:00.000Z",
-                        "2011-07-01T00:00:00.000Z",
-                        0,
-                        null,
-                        -1,
-                        pvName,
-                        plainStoragePlugin),
+                        "2011-06-01T00:00:00.000Z", "2011-07-01T00:00:00.000Z", 0, null, -1, pvName, storagePlugin),
                 Arguments.of(
                         "2011-08-10T00:00:00.000Z",
                         "2011-09-15T10:00:00.000Z",
@@ -99,7 +93,7 @@ class MissingDataYearSpanRetrievalUnitTest {
                         "2011-09-01T00:00:00.111Z",
                         0,
                         pvName,
-                        plainStoragePlugin),
+                        storagePlugin),
                 Arguments.of(
                         "2011-09-10T00:00:00.000Z",
                         "2011-09-15T10:00:00.000Z",
@@ -107,7 +101,7 @@ class MissingDataYearSpanRetrievalUnitTest {
                         "2011-09-09T00:00:00.111Z",
                         8,
                         pvName,
-                        plainStoragePlugin),
+                        storagePlugin),
                 Arguments.of(
                         "2011-09-10T00:00:00.000Z",
                         "2011-10-15T10:00:00.000Z",
@@ -115,7 +109,7 @@ class MissingDataYearSpanRetrievalUnitTest {
                         "2011-09-09T00:00:00.111Z",
                         8,
                         pvName,
-                        plainStoragePlugin),
+                        storagePlugin),
                 Arguments.of(
                         "2011-10-10T00:00:00.000Z",
                         "2011-10-15T10:00:00.000Z",
@@ -123,15 +117,9 @@ class MissingDataYearSpanRetrievalUnitTest {
                         "2011-09-30T00:00:00.111Z",
                         29,
                         pvName,
-                        plainStoragePlugin),
+                        storagePlugin),
                 Arguments.of(
-                        "2011-10-10T00:00:00.000Z",
-                        "2012-01-15T10:00:00.000Z",
-                        0,
-                        null,
-                        -1,
-                        pvName,
-                        plainStoragePlugin),
+                        "2011-10-10T00:00:00.000Z", "2012-01-15T10:00:00.000Z", 0, null, -1, pvName, storagePlugin),
                 Arguments.of(
                         "2012-01-10T00:00:00.000Z",
                         "2012-01-15T10:00:00.000Z",
@@ -139,7 +127,7 @@ class MissingDataYearSpanRetrievalUnitTest {
                         "2011-09-30T00:00:00.111Z",
                         29,
                         pvName,
-                        plainStoragePlugin),
+                        storagePlugin),
                 Arguments.of(
                         "2012-01-10T00:00:00.000Z",
                         "2012-06-15T10:00:00.000Z",
@@ -147,7 +135,7 @@ class MissingDataYearSpanRetrievalUnitTest {
                         "2011-09-30T00:00:00.111Z",
                         29,
                         pvName,
-                        plainStoragePlugin),
+                        storagePlugin),
                 Arguments.of(
                         "2013-01-10T00:00:00.000Z",
                         "2013-01-15T10:00:00.000Z",
@@ -155,7 +143,7 @@ class MissingDataYearSpanRetrievalUnitTest {
                         "2012-06-30T00:00:00.111Z",
                         59,
                         pvName,
-                        plainStoragePlugin));
+                        storagePlugin));
     }
 
     @BeforeAll
@@ -228,7 +216,7 @@ class MissingDataYearSpanRetrievalUnitTest {
             String firstTimeStampExpectedStr,
             int firstTSIndex,
             String pvName,
-            PlainStoragePlugin plainStoragePlugin) {
+            PlainStoragePlugin storagePlugin) {
         logger.info("testRetrieval: {} {} {}", startStr, endStr, pvName);
         Instant start = TimeUtils.convertFromISO8601String(startStr);
         Instant end = TimeUtils.convertFromISO8601String(endStr);
@@ -252,8 +240,7 @@ class MissingDataYearSpanRetrievalUnitTest {
 
         try (EventStream stream = new CurrentThreadWorkerEventStream(
                 pvName,
-                plainStoragePlugin.getDataForPV(
-                        new BasicContext(), pvName, start, end, new DefaultRawPostProcessor()))) {
+                storagePlugin.getDataForPV(new BasicContext(), pvName, start, end, new DefaultRawPostProcessor()))) {
 
             for (Event e : stream) {
                 if (obtainedFirstSample == null) {
