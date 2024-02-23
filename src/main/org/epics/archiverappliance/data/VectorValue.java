@@ -10,6 +10,7 @@ package org.epics.archiverappliance.data;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * An implementation of SampleValue for vector numbers.
@@ -20,8 +21,8 @@ import java.util.List;
 public class VectorValue <T extends Number> implements SampleValue {
     private final List<T> values;
 	
-	public VectorValue(List<T> vals) {
-		this.values = vals;
+	public VectorValue(List<T> values) {
+		this.values = values;
 	}
 
 	/* (non-Javadoc)
@@ -48,6 +49,10 @@ public class VectorValue <T extends Number> implements SampleValue {
 	 * @see java.lang.Object#toString()
 	 */
 	public String toString() {
+		return getString();
+	}
+
+	private String getString() {
 		boolean first = true;
 		StringWriter buf = new StringWriter();
 		buf.append('[');
@@ -72,28 +77,30 @@ public class VectorValue <T extends Number> implements SampleValue {
 	}
 
 	@Override
+	public List<String> getStringValues() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public List<Number> getNumberValues() {
+		return (List<Number>) values;
+	}
+
+	@Override
 	public int hashCode() {
 		return values.hashCode();
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		@SuppressWarnings("unchecked")
-		VectorValue<T> other = (VectorValue<T>) obj; 
-		return values.equals(other.getValues());
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (!(o instanceof VectorValue<?> that)) return false;
+        return Objects.equals(getValues(), that.getValues());
 	}
 
 	@Override
 	public String toJSONString() {
-		boolean first = true;
-		StringWriter buf = new StringWriter();
-		buf.append('[');
-		for(T value : values) {
-			if(first) { first = false; } else { buf.append(","); }
-			buf.append(value.toString());
-		}
-		buf.append(']');
-		return buf.toString();
+		return getString();
 	}
 
 	@Override

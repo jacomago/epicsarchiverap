@@ -52,9 +52,10 @@ public class ByteBufSampleValue implements SampleValue {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		ByteBufSampleValue other = (ByteBufSampleValue) obj;
-		return this.buf.equals(other.getValueAsBytes());
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (!(o instanceof ByteBufSampleValue that)) return false;
+        return Objects.equals(buf, that.buf);
 	}
 
 	@Override
@@ -230,6 +231,16 @@ public class ByteBufSampleValue implements SampleValue {
 	@Override
 	public List getValues() {
 		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public List<String> getStringValues() {
+		throw  new UnsupportedOperationException();
+	}
+
+	@Override
+	public <T extends Number> List<T> getNumberValues() {
+		throw  new UnsupportedOperationException();
 	}
 
 	@Override

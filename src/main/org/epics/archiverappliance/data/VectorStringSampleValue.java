@@ -10,6 +10,7 @@ package org.epics.archiverappliance.data;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Objects;
 
 import org.json.simple.JSONValue;
 
@@ -19,10 +20,10 @@ import org.json.simple.JSONValue;
  *
  */
 public class VectorStringSampleValue implements SampleValue {
-	private List<String> values;
+	private final List<String> values;
 
-	public VectorStringSampleValue(List<String> vals) {
-		this.values = vals;
+	public VectorStringSampleValue(List<String> values) {
+		this.values = values;
 	}
 	
 	/* (non-Javadoc)
@@ -68,14 +69,25 @@ public class VectorStringSampleValue implements SampleValue {
 	}
 
 	@Override
+	public List<String> getStringValues() {
+		return values;
+	}
+
+	@Override
+	public <T extends Number> List<T> getNumberValues() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public int hashCode() {
 		return values.hashCode();
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		VectorStringSampleValue other = (VectorStringSampleValue) obj; 
-		return values.equals(other.getValues());
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (!(o instanceof VectorStringSampleValue that)) return false;
+        return Objects.equals(getValues(), that.getValues());
 	}
 
 	@Override

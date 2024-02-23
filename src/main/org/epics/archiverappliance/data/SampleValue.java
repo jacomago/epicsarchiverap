@@ -25,6 +25,8 @@ public interface SampleValue {
 	public String toJSONString();
 	@SuppressWarnings("rawtypes")
 	public List getValues();
+	public List<String> getStringValues();
+	public <T extends Number> List<T> getNumberValues();
 	/**
 	 * Return the value as a ByteBuffer that is ready to read.
 	 * @return ByteBuffer  &emsp;

@@ -5,7 +5,7 @@
  * EPICS archiver appliance is distributed subject to a Software License Agreement found
  * in file LICENSE that is included with this distribution.
  *******************************************************************************/
-package org.epics.archiverappliance;
+package edu.stanford.slac.archiverappliance.PB.data;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -23,6 +23,7 @@ import gov.aps.jca.dbr.DBR_TIME_String;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.ByteArray;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.YearSecondTimestamp;
 import org.epics.archiverappliance.config.ArchDBRTypes;
@@ -61,19 +62,19 @@ import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
-public record Event<T extends SampleValue>(Instant instant, int severity, int status,
-                                           Map<String, String> fieldValues, T value, ArchDBRTypes archDBRTypes) {
+public record DefaultEvent<T extends SampleValue>(Instant instant, int severity, int status,
+                                                  Map<String, String> fieldValues, T value, ArchDBRTypes archDBRTypes) {
 
-    private static final Logger logger = LogManager.getLogger(Event.class.getName());
+    private static final Logger logger = LogManager.getLogger(DefaultEvent.class.getName());
 
 
-    public static <T extends SampleValue> Event<?> fromDBR(ArchDBRTypes archDBRTypes, DBR dbr, Map<String, String> fieldValues) {
+    public static <T extends SampleValue> DefaultEvent<?> fromDBR(ArchDBRTypes archDBRTypes, DBR dbr, Map<String, String> fieldValues) {
         switch (archDBRTypes) {
             case DBR_SCALAR_STRING -> {
                 DBR_TIME_String dbrTime = (DBR_TIME_String) dbr;
 
                 Instant instant = TimeUtils.convertFromJCATimeStamp(dbrTime.getTimeStamp());
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         dbrTime.getSeverity().getValue(),
                         dbrTime.getStatus().getValue(),
@@ -86,7 +87,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 DBR_TIME_Short dbrTime = (DBR_TIME_Short) dbr;
 
                 Instant instant = TimeUtils.convertFromJCATimeStamp(dbrTime.getTimeStamp());
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         dbrTime.getSeverity().getValue(),
                         dbrTime.getStatus().getValue(),
@@ -99,7 +100,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 DBR_TIME_Float dbrTime = (DBR_TIME_Float) dbr;
 
                 Instant instant = TimeUtils.convertFromJCATimeStamp(dbrTime.getTimeStamp());
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         dbrTime.getSeverity().getValue(),
                         dbrTime.getStatus().getValue(),
@@ -112,7 +113,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 DBR_TIME_Enum dbrTime = (DBR_TIME_Enum) dbr;
 
                 Instant instant = TimeUtils.convertFromJCATimeStamp(dbrTime.getTimeStamp());
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         dbrTime.getSeverity().getValue(),
                         dbrTime.getStatus().getValue(),
@@ -125,7 +126,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 DBR_TIME_Byte dbrTime = (DBR_TIME_Byte) dbr;
 
                 Instant instant = TimeUtils.convertFromJCATimeStamp(dbrTime.getTimeStamp());
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         dbrTime.getSeverity().getValue(),
                         dbrTime.getStatus().getValue(),
@@ -138,7 +139,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 DBR_TIME_Int dbrTime = (DBR_TIME_Int) dbr;
 
                 Instant instant = TimeUtils.convertFromJCATimeStamp(dbrTime.getTimeStamp());
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         dbrTime.getSeverity().getValue(),
                         dbrTime.getStatus().getValue(),
@@ -151,7 +152,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 DBR_TIME_Double dbrTime = (DBR_TIME_Double) dbr;
 
                 Instant instant = TimeUtils.convertFromJCATimeStamp(dbrTime.getTimeStamp());
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         dbrTime.getSeverity().getValue(),
                         dbrTime.getStatus().getValue(),
@@ -164,7 +165,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 DBR_TIME_String dbrTime = (DBR_TIME_String) dbr;
 
                 Instant instant = TimeUtils.convertFromJCATimeStamp(dbrTime.getTimeStamp());
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         dbrTime.getSeverity().getValue(),
                         dbrTime.getStatus().getValue(),
@@ -177,7 +178,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 DBR_TIME_Short dbrTime = (DBR_TIME_Short) dbr;
 
                 Instant instant = TimeUtils.convertFromJCATimeStamp(dbrTime.getTimeStamp());
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         dbrTime.getSeverity().getValue(),
                         dbrTime.getStatus().getValue(),
@@ -190,7 +191,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 DBR_TIME_Float dbrTime = (DBR_TIME_Float) dbr;
 
                 Instant instant = TimeUtils.convertFromJCATimeStamp(dbrTime.getTimeStamp());
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         dbrTime.getSeverity().getValue(),
                         dbrTime.getStatus().getValue(),
@@ -203,7 +204,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 DBR_TIME_Enum dbrTime = (DBR_TIME_Enum) dbr;
 
                 Instant instant = TimeUtils.convertFromJCATimeStamp(dbrTime.getTimeStamp());
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         dbrTime.getSeverity().getValue(),
                         dbrTime.getStatus().getValue(),
@@ -216,7 +217,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 DBR_TIME_Byte dbrTime = (DBR_TIME_Byte) dbr;
 
                 Instant instant = TimeUtils.convertFromJCATimeStamp(dbrTime.getTimeStamp());
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         dbrTime.getSeverity().getValue(),
                         dbrTime.getStatus().getValue(),
@@ -229,7 +230,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 DBR_TIME_Int dbrTime = (DBR_TIME_Int) dbr;
 
                 Instant instant = TimeUtils.convertFromJCATimeStamp(dbrTime.getTimeStamp());
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         dbrTime.getSeverity().getValue(),
                         dbrTime.getStatus().getValue(),
@@ -242,7 +243,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 DBR_TIME_Double dbrTime = (DBR_TIME_Double) dbr;
 
                 Instant instant = TimeUtils.convertFromJCATimeStamp(dbrTime.getTimeStamp());
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         dbrTime.getSeverity().getValue(),
                         dbrTime.getStatus().getValue(),
@@ -258,7 +259,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
         throw new UnsupportedOperationException();
     }
 
-    public static Event<?> fromPVAStructure(ArchDBRTypes archDBRTypes, PVAStructure pvaStructure, Map<String, String> fieldValues) {
+    public static DefaultEvent<?> fromPVAStructure(ArchDBRTypes archDBRTypes, PVAStructure pvaStructure, Map<String, String> fieldValues) {
 
         Instant instant = TimeUtils.instantFromPVTimeStamp(pvaStructure.get("timeStamp"));
         DBRAlarm alarm = DBRAlarm.convertPVAlarm(pvaStructure.get("alarm"));
@@ -266,7 +267,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
 
         switch (archDBRTypes) {
             case DBR_SCALAR_STRING -> {
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         alarm.severity(),
                         alarm.status(),
@@ -276,7 +277,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 );
             }
             case DBR_SCALAR_SHORT -> {
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         alarm.severity(),
                         alarm.status(),
@@ -286,7 +287,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 );
             }
             case DBR_SCALAR_FLOAT -> {
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         alarm.severity(),
                         alarm.status(),
@@ -296,7 +297,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 );
             }
             case DBR_SCALAR_ENUM -> {
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         alarm.severity(),
                         alarm.status(),
@@ -306,7 +307,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 );
             }
             case DBR_SCALAR_BYTE -> {
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         alarm.severity(),
                         alarm.status(),
@@ -316,7 +317,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 );
             }
             case DBR_SCALAR_INT -> {
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         alarm.severity(),
                         alarm.status(),
@@ -326,7 +327,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 );
             }
             case DBR_SCALAR_DOUBLE -> {
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         alarm.severity(),
                         alarm.status(),
@@ -336,7 +337,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 );
             }
             case DBR_WAVEFORM_STRING -> {
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         alarm.severity(),
                         alarm.status(),
@@ -346,7 +347,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 );
             }
             case DBR_WAVEFORM_SHORT -> {
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         alarm.severity(),
                         alarm.status(),
@@ -356,7 +357,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 );
             }
             case DBR_WAVEFORM_FLOAT -> {
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         alarm.severity(),
                         alarm.status(),
@@ -369,7 +370,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
 
                 List<Integer> data = Arrays.stream(((PVAStructureArray) value).get()).map(pvaSArray -> ((PVAInt) pvaSArray.get("index")).get()).toList();
 
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         alarm.severity(),
                         alarm.status(),
@@ -379,7 +380,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 );
             }
             case DBR_WAVEFORM_BYTE -> {
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         alarm.severity(),
                         alarm.status(),
@@ -389,7 +390,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 );
             }
             case DBR_WAVEFORM_INT -> {
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         alarm.severity(),
                         alarm.status(),
@@ -399,7 +400,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 );
             }
             case DBR_WAVEFORM_DOUBLE -> {
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         alarm.severity(),
                         alarm.status(),
@@ -418,7 +419,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
                 } catch (Exception e) {
                     logger.error("Error serializing pvAccess Generic Bytes ", e);
                 }
-                return new Event<>(
+                return new DefaultEvent<>(
                         instant,
                         alarm.severity(),
                         alarm.status(),
@@ -431,7 +432,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
         throw new UnsupportedOperationException();
     }
 
-    public static Event<?> fromByteArray(ArchDBRTypes archDBRTypes, ByteArray byteArray, short year) {
+    public static DefaultEvent<?> fromByteArray(ArchDBRTypes archDBRTypes, ByteArray byteArray, short year) {
 
         try {
             switch (archDBRTypes) {
@@ -527,12 +528,12 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
         return ret;
     }
 
-    public static Event<?> fromMessage(ArchDBRTypes archDBRTypes, Message message, short year) {
+    public static DefaultEvent<?> fromMessage(ArchDBRTypes archDBRTypes, Message message, short year) {
         switch (archDBRTypes) {
             case DBR_SCALAR_STRING -> {
                 var epicsEvent = (EPICSEvent.ScalarString) message;
                 YearSecondTimestamp yearSecondTimestamp = new YearSecondTimestamp(year, epicsEvent.getSecondsintoyear(), epicsEvent.getNano());
-                return new Event<>(
+                return new DefaultEvent<>(
                         TimeUtils.convertFromYearSecondTimestamp(yearSecondTimestamp),
                         epicsEvent.getSeverity(),
                         epicsEvent.getStatus(),
@@ -544,7 +545,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
             case DBR_SCALAR_SHORT -> {
                 var epicsEvent = (EPICSEvent.ScalarShort) message;
                 YearSecondTimestamp yearSecondTimestamp = new YearSecondTimestamp(year, epicsEvent.getSecondsintoyear(), epicsEvent.getNano());
-                return new Event<>(
+                return new DefaultEvent<>(
                         TimeUtils.convertFromYearSecondTimestamp(yearSecondTimestamp),
                         epicsEvent.getSeverity(),
                         epicsEvent.getStatus(),
@@ -556,7 +557,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
             case DBR_SCALAR_FLOAT -> {
                 var epicsEvent = (EPICSEvent.ScalarFloat) message;
                 YearSecondTimestamp yearSecondTimestamp = new YearSecondTimestamp(year, epicsEvent.getSecondsintoyear(), epicsEvent.getNano());
-                return new Event<>(
+                return new DefaultEvent<>(
                         TimeUtils.convertFromYearSecondTimestamp(yearSecondTimestamp),
                         epicsEvent.getSeverity(),
                         epicsEvent.getStatus(),
@@ -568,7 +569,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
             case DBR_SCALAR_ENUM -> {
                 var epicsEvent = (EPICSEvent.ScalarEnum) message;
                 YearSecondTimestamp yearSecondTimestamp = new YearSecondTimestamp(year, epicsEvent.getSecondsintoyear(), epicsEvent.getNano());
-                return new Event<>(
+                return new DefaultEvent<>(
                         TimeUtils.convertFromYearSecondTimestamp(yearSecondTimestamp),
                         epicsEvent.getSeverity(),
                         epicsEvent.getStatus(),
@@ -580,7 +581,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
             case DBR_SCALAR_BYTE -> {
                 var epicsEvent = (EPICSEvent.ScalarByte) message;
                 YearSecondTimestamp yearSecondTimestamp = new YearSecondTimestamp(year, epicsEvent.getSecondsintoyear(), epicsEvent.getNano());
-                return new Event<>(
+                return new DefaultEvent<>(
                         TimeUtils.convertFromYearSecondTimestamp(yearSecondTimestamp),
                         epicsEvent.getSeverity(),
                         epicsEvent.getStatus(),
@@ -592,7 +593,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
             case DBR_SCALAR_INT -> {
                 var epicsEvent = (EPICSEvent.ScalarInt) message;
                 YearSecondTimestamp yearSecondTimestamp = new YearSecondTimestamp(year, epicsEvent.getSecondsintoyear(), epicsEvent.getNano());
-                return new Event<>(
+                return new DefaultEvent<>(
                         TimeUtils.convertFromYearSecondTimestamp(yearSecondTimestamp),
                         epicsEvent.getSeverity(),
                         epicsEvent.getStatus(),
@@ -604,7 +605,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
             case DBR_SCALAR_DOUBLE -> {
                 var epicsEvent = (EPICSEvent.ScalarDouble) message;
                 YearSecondTimestamp yearSecondTimestamp = new YearSecondTimestamp(year, epicsEvent.getSecondsintoyear(), epicsEvent.getNano());
-                return new Event<>(
+                return new DefaultEvent<>(
                         TimeUtils.convertFromYearSecondTimestamp(yearSecondTimestamp),
                         epicsEvent.getSeverity(),
                         epicsEvent.getStatus(),
@@ -616,7 +617,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
             case DBR_WAVEFORM_STRING -> {
                 var epicsEvent = (EPICSEvent.VectorString) message;
                 YearSecondTimestamp yearSecondTimestamp = new YearSecondTimestamp(year, epicsEvent.getSecondsintoyear(), epicsEvent.getNano());
-                return new Event<>(
+                return new DefaultEvent<>(
                         TimeUtils.convertFromYearSecondTimestamp(yearSecondTimestamp),
                         epicsEvent.getSeverity(),
                         epicsEvent.getStatus(),
@@ -628,7 +629,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
             case DBR_WAVEFORM_SHORT -> {
                 var epicsEvent = (EPICSEvent.VectorShort) message;
                 YearSecondTimestamp yearSecondTimestamp = new YearSecondTimestamp(year, epicsEvent.getSecondsintoyear(), epicsEvent.getNano());
-                return new Event<>(
+                return new DefaultEvent<>(
                         TimeUtils.convertFromYearSecondTimestamp(yearSecondTimestamp),
                         epicsEvent.getSeverity(),
                         epicsEvent.getStatus(),
@@ -640,7 +641,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
             case DBR_WAVEFORM_FLOAT -> {
                 var epicsEvent = (EPICSEvent.VectorFloat) message;
                 YearSecondTimestamp yearSecondTimestamp = new YearSecondTimestamp(year, epicsEvent.getSecondsintoyear(), epicsEvent.getNano());
-                return new Event<>(
+                return new DefaultEvent<>(
                         TimeUtils.convertFromYearSecondTimestamp(yearSecondTimestamp),
                         epicsEvent.getSeverity(),
                         epicsEvent.getStatus(),
@@ -652,7 +653,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
             case DBR_WAVEFORM_ENUM -> {
                 var epicsEvent = (EPICSEvent.VectorEnum) message;
                 YearSecondTimestamp yearSecondTimestamp = new YearSecondTimestamp(year, epicsEvent.getSecondsintoyear(), epicsEvent.getNano());
-                return new Event<>(
+                return new DefaultEvent<>(
                         TimeUtils.convertFromYearSecondTimestamp(yearSecondTimestamp),
                         epicsEvent.getSeverity(),
                         epicsEvent.getStatus(),
@@ -664,7 +665,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
             case DBR_WAVEFORM_BYTE -> {
                 var epicsEvent = (EPICSEvent.VectorChar) message;
                 YearSecondTimestamp yearSecondTimestamp = new YearSecondTimestamp(year, epicsEvent.getSecondsintoyear(), epicsEvent.getNano());
-                return new Event<>(
+                return new DefaultEvent<>(
                         TimeUtils.convertFromYearSecondTimestamp(yearSecondTimestamp),
                         epicsEvent.getSeverity(),
                         epicsEvent.getStatus(),
@@ -676,7 +677,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
             case DBR_WAVEFORM_INT -> {
                 var epicsEvent = (EPICSEvent.VectorInt) message;
                 YearSecondTimestamp yearSecondTimestamp = new YearSecondTimestamp(year, epicsEvent.getSecondsintoyear(), epicsEvent.getNano());
-                return new Event<>(
+                return new DefaultEvent<>(
                         TimeUtils.convertFromYearSecondTimestamp(yearSecondTimestamp),
                         epicsEvent.getSeverity(),
                         epicsEvent.getStatus(),
@@ -688,7 +689,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
             case DBR_WAVEFORM_DOUBLE -> {
                 var epicsEvent = (EPICSEvent.VectorDouble) message;
                 YearSecondTimestamp yearSecondTimestamp = new YearSecondTimestamp(year, epicsEvent.getSecondsintoyear(), epicsEvent.getNano());
-                return new Event<>(
+                return new DefaultEvent<>(
                         TimeUtils.convertFromYearSecondTimestamp(yearSecondTimestamp),
                         epicsEvent.getSeverity(),
                         epicsEvent.getStatus(),
@@ -700,7 +701,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
             case DBR_V4_GENERIC_BYTES -> {
                 var epicsEvent = (EPICSEvent.V4GenericBytes) message;
                 YearSecondTimestamp yearSecondTimestamp = new YearSecondTimestamp(year, epicsEvent.getSecondsintoyear(), epicsEvent.getNano());
-                return new Event<>(
+                return new DefaultEvent<>(
                         TimeUtils.convertFromYearSecondTimestamp(yearSecondTimestamp),
                         epicsEvent.getSeverity(),
                         epicsEvent.getStatus(),
@@ -716,7 +717,7 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Event<?> that)) return false;
+        if (!(o instanceof DefaultEvent<?> that)) return false;
         return severity == that.severity && status == that.status && Objects.equals(instant, that.instant) && Objects.equals(fieldValues, that.fieldValues) && Objects.equals(value, that.value) && archDBRTypes == that.archDBRTypes;
     }
 

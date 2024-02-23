@@ -11,6 +11,7 @@ import org.json.simple.JSONValue;
 
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Objects;
 
 
 /**
@@ -60,14 +61,25 @@ public class ScalarStringSampleValue implements SampleValue {
 	}
 	
 	@Override
+	public List<String> getStringValues() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public <T extends Number> List<T> getNumberValues() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public int hashCode() {
 		return value.hashCode();
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		ScalarStringSampleValue other = (ScalarStringSampleValue) obj; 
-		return value.equals(other.toString());
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (!(o instanceof ScalarStringSampleValue that)) return false;
+        return Objects.equals(getValue(), that.getValue());
 	}
 
 	@Override

@@ -9,6 +9,7 @@ package org.epics.archiverappliance.data;
 
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * An implementation of SampleValue for scalar numbers.
@@ -16,7 +17,7 @@ import java.util.List;
  * @param <T>  &emsp;
  */
 public class ScalarValue<T extends Number> implements SampleValue {
-	private T value;
+	private final T value;
 	public ScalarValue(T val) {
 		this.value = val;
 	}
@@ -43,7 +44,7 @@ public class ScalarValue<T extends Number> implements SampleValue {
 	 */
 	@Override
 	public Number getValue(int index) {
-		assert(index >= 0 && index < 1);
+		assert(index == 0);
 		return value;
 	}
 	
@@ -59,15 +60,26 @@ public class ScalarValue<T extends Number> implements SampleValue {
 	}
 
 	@Override
+	public List<String> getStringValues() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public <V extends Number> List<V> getNumberValues() {
+		throw new UnsupportedOperationException();
+	}
+
+
+	@Override
 	public int hashCode() {
 		return value.hashCode();
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		@SuppressWarnings("unchecked")
-		ScalarValue<T> other = (ScalarValue<T>) obj; 
-		return value.equals(other.getValue());
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (!(o instanceof ScalarValue<?> that)) return false;
+        return Objects.equals(getValue(), that.getValue());
 	}
 
 	@Override

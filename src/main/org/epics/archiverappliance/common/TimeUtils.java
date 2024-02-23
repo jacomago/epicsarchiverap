@@ -530,11 +530,10 @@ public class TimeUtils {
 	 * @param timeStampPVStructure
 	 * @return Timestamp
 	 */
-    public static YearSecondTimestamp convertFromPVTimeStamp(PVAStructure timeStampPVStructure) {
+    public static Instant instantFromPVTimeStamp(PVAStructure timeStampPVStructure) {
         long secondsPastEpoch = ((PVALong)timeStampPVStructure.get("secondsPastEpoch")).get();
         int nanoSeconds = ((PVAInt) timeStampPVStructure.get("nanoseconds")).get();
-        Instant timestamp = TimeUtils.convertFromEpochSeconds(secondsPastEpoch, nanoSeconds);
-        return TimeUtils.convertToYearSecondTimestamp(timestamp);
+        return TimeUtils.convertFromEpochSeconds(secondsPastEpoch, nanoSeconds);
     }
 	
     /**
