@@ -7,7 +7,6 @@
  *******************************************************************************/
 package org.epics.archiverappliance.utils.simulation;
 
-import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.ByteArray;
@@ -31,7 +30,6 @@ public class SimulationEvent implements DBRTimeEvent {
     private static final Logger logger = LogManager.getLogger(SimulationEvent.class.getName());
     private final int secondsIntoYear;
     private final ArchDBRTypes type;
-    private final DBR2PBTypeMapping mapping;
     short yearofdata;
     SampleValue sampleValue;
     private int nanos = 0;
@@ -40,7 +38,6 @@ public class SimulationEvent implements DBRTimeEvent {
         this.secondsIntoYear = TimeUtils.getSecondsIntoYear(instant.getEpochSecond());
         this.yearofdata = TimeUtils.getYear(instant);
         this.type = type;
-        this.mapping = DBR2PBTypeMapping.getPBClassFor(this.type);
         this.sampleValue = valueGenerator.getSampleValue(this.type, secondsIntoYear);
     }
 
@@ -48,7 +45,6 @@ public class SimulationEvent implements DBRTimeEvent {
         this.secondsIntoYear = secondsIntoYear;
         this.yearofdata = yearofdata;
         this.type = type;
-        this.mapping = DBR2PBTypeMapping.getPBClassFor(this.type);
         this.sampleValue = sampleValue;
     }
 
@@ -62,7 +58,6 @@ public class SimulationEvent implements DBRTimeEvent {
         this.nanos = src.nanos;
         this.yearofdata = src.yearofdata;
         this.type = src.type;
-        this.mapping = src.mapping;
         this.sampleValue = src.sampleValue;
     }
 

@@ -9,20 +9,17 @@ package edu.stanford.slac.archiverappliance.PBOverHTTP;
 
 
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
-import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
+import org.epics.archiverappliance.Event;
 import edu.stanford.slac.archiverappliance.PB.utils.LineEscaper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.ByteArray;
-import org.epics.archiverappliance.Event;
-import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.retrieval.client.RetrievalEventProcessor;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Constructor;
 import java.time.Instant;
 import java.util.Iterator;
 
@@ -31,7 +28,7 @@ import java.util.Iterator;
  * @author mshankar
  *
  */
-public class InputStreamBackedEventStreamIterator implements Iterator<Event> {
+public class InputStreamBackedEventStreamIterator implements Iterator<Event<?>> {
 	private static Logger logger = LogManager.getLogger(InputStreamBackedEventStreamIterator.class.getName());
 	private static int BUFFER_SIZE=10*1024;
 	private InputStream is = null;
@@ -48,8 +45,7 @@ public class InputStreamBackedEventStreamIterator implements Iterator<Event> {
 	
 	private byte[] nextLine = null;
 	private short year;
-	private Constructor<? extends DBRTimeEvent> unmarshallingConstructor;
-	
+
 	@Override
 	public boolean hasNext() {
 		nextLine = readLine();
@@ -95,7 +91,6 @@ public class InputStreamBackedEventStreamIterator implements Iterator<Event> {
 			logger.debug("Still in the same PV " + currentEventStreamDesc.getPvName());
 		}
 		currentEventStreamDesc = newEventStreamDesc;
-		unmarshallingConstructor = DBR2PBTypeMapping.getPBClassFor(currentEventStreamDesc.getArchDBRType()).getUnmarshallingFromByteArrayConstructor();
 		year = currentEventStreamDesc.getYear();
 		if(processingnewPV) {
 			// Issue an event
@@ -104,11 +99,10 @@ public class InputStreamBackedEventStreamIterator implements Iterator<Event> {
 	}
 	
 	@Override
-	public Event next() {
+	public Event<?> next() {
 		try {
-			assert(unmarshallingConstructor != null);
 			assert(year != 0);
-			return (Event) unmarshallingConstructor.newInstance(year, new ByteArray(nextLine));
+			return Event.fromByteArray(this.currentEventStreamDesc.getArchDBRType(), new ByteArray(nextLine), year);
 		} catch (Exception ex) {
 			logger.error("Exception creating event object processing line " + linenumber, ex);
 			return null;

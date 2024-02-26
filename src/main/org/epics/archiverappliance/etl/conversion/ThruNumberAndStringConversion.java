@@ -1,6 +1,5 @@
 package org.epics.archiverappliance.etl.conversion;
 
-import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.EventStreamDesc;
@@ -28,12 +27,9 @@ import java.util.Iterator;
  */
 public class ThruNumberAndStringConversion implements ConversionFunction {
     private final ArchDBRTypes destDBRType;
-    private final Constructor<? extends DBRTimeEvent> serializingConstructor;
 
     public ThruNumberAndStringConversion(ArchDBRTypes destDBRType) {
         this.destDBRType = destDBRType;
-        this.serializingConstructor =
-                DBR2PBTypeMapping.getPBClassFor(destDBRType).getSerializingConstructor();
     }
 
     @Override
@@ -75,10 +71,10 @@ public class ThruNumberAndStringConversion implements ConversionFunction {
                 @Override
                 public Event next() {
                     try {
-                        DBRTimeEvent event = (DBRTimeEvent) theIterator.next();
+                        Event event = theIterator.next();
                         HashMapEvent hashEvent = new HashMapEvent(destDBRType, event);
                         hashEvent.setValue(HashMapEvent.VALUE_FIELD_NAME, convert2DestType(event.getSampleValue()));
-                        return serializingConstructor.newInstance(hashEvent);
+                        return Event.f(hashEvent);
                     } catch (Exception ex) {
                         throw new ConversionException(
                                 "Exception during conversion of pv "

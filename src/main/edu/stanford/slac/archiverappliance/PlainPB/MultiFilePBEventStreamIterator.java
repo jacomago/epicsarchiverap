@@ -18,7 +18,6 @@ import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 
-import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
 import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
 
 /**
@@ -28,22 +27,18 @@ import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
  *
  */
 public class MultiFilePBEventStreamIterator implements Iterator<Event> {
-	private static Logger logger = LogManager.getLogger(MultiFilePBEventStreamIterator.class.getName());
+	private static final Logger logger = LogManager.getLogger(MultiFilePBEventStreamIterator.class.getName());
 	private short year = 0;
 	private ArchDBRTypes type;
-	private DBR2PBTypeMapping mapping;
-	private Constructor<? extends DBRTimeEvent> unmarshallingConstructor;
-	private LineByteStreamCreator istreams[];
+	private final LineByteStreamCreator[] istreams;
 	private int currentStreamIndex = 0;
 	private LineByteStream currentLis;
 	private byte[] nextLine = null;
 
-	public MultiFilePBEventStreamIterator(LineByteStreamCreator istreams[], String pvName, short year, ArchDBRTypes type) throws IOException {
+	public MultiFilePBEventStreamIterator(LineByteStreamCreator[] istreams, String pvName, short year, ArchDBRTypes type) throws IOException {
 		this.istreams = istreams;
 		this.type = type;
 		this.year = year;
-		mapping = DBR2PBTypeMapping.getPBClassFor(this.type);
-		unmarshallingConstructor = mapping.getUnmarshallingFromByteArrayConstructor();
 		currentLis = istreams[currentStreamIndex].getLineByteStream();
 	}
 
@@ -76,7 +71,7 @@ public class MultiFilePBEventStreamIterator implements Iterator<Event> {
 	@Override
 	public Event next() {
 		try {
-			return (Event) unmarshallingConstructor.newInstance(year, new ByteArray(nextLine));
+			return Event.fromByteArray(type, new ByteArray(nextLine), year);
 		} catch (Exception ex) {
 			logger.error("Exception creating event object", ex);
 			return null;

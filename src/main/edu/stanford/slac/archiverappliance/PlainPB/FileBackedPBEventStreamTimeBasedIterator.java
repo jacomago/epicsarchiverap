@@ -8,7 +8,6 @@
 package edu.stanford.slac.archiverappliance.PlainPB;
 
 import com.google.protobuf.InvalidProtocolBufferException;
-import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
 import edu.stanford.slac.archiverappliance.PB.data.PBParseException;
 import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
 import org.apache.logging.log4j.LogManager;
@@ -32,11 +31,11 @@ import java.util.NoSuchElementException;
  */
 public class FileBackedPBEventStreamTimeBasedIterator implements FileBackedPBEventStreamIterator {
     private static final Logger logger = LogManager.getLogger(FileBackedPBEventStreamTimeBasedIterator.class.getName());
-    private final long startTimeEpochSeconds;
-    private final long endTimeEpochSeconds;
+    private final Instant startTimeEpochSeconds;
+    private final Instant endTimeEpochSeconds;
     private final short year;
     private final LineByteStream lbs;
-    private final Constructor<? extends DBRTimeEvent> unmarshallingConstructor;
+    private final ArchDBRTypes archDBRTypes;
     Events events = new Events();
     /**
      * A flag indicating if the iterator has been fully read.
@@ -45,14 +44,13 @@ public class FileBackedPBEventStreamTimeBasedIterator implements FileBackedPBEve
 
     public FileBackedPBEventStreamTimeBasedIterator(
             Path path, Instant startTime, Instant endTime, short year, ArchDBRTypes type) throws IOException {
-        this.startTimeEpochSeconds = TimeUtils.convertToEpochSeconds(startTime);
-        this.endTimeEpochSeconds = TimeUtils.convertToEpochSeconds(endTime);
-        DBR2PBTypeMapping mapping = DBR2PBTypeMapping.getPBClassFor(type);
-        unmarshallingConstructor = mapping.getUnmarshallingFromByteArrayConstructor();
-        assert (startTimeEpochSeconds >= 0);
-        assert (endTimeEpochSeconds >= 0);
-        assert (endTimeEpochSeconds >= startTimeEpochSeconds);
+        this.startTimeEpochSeconds = startTime;
+        this.endTimeEpochSeconds = endTime;
+        assert (startTimeEpochSeconds.getEpochSecond() >= 0);
+        assert (endTimeEpochSeconds.getEpochSecond() >= 0);
+        assert (endTimeEpochSeconds.compareTo(startTimeEpochSeconds) >= 0);
         this.year = year;
+        this.archDBRTypes = type;
         lbs = new LineByteStream(path);
         try {
             // This should read the header
@@ -62,7 +60,7 @@ public class FileBackedPBEventStreamTimeBasedIterator implements FileBackedPBEve
                 events.popEvent();
                 events.readEvents(lbs);
             }
-            logger.info("after start search event1 {}", events.event1.getEventTimeStamp());
+            logger.info("after start search event1 {}", events.event1.instant());
         } catch (Exception ex) {
             logger.error("Exception getting next event from path " + path.toString(), ex);
             events.clear();
@@ -111,10 +109,10 @@ public class FileBackedPBEventStreamTimeBasedIterator implements FileBackedPBEve
                     try {
                         lbs.readLine(line1);
                         if (!line1.isEmpty()) {
-                            event1 = unmarshallingConstructor.newInstance(year, line1);
-                            long event1EpochSeconds = event1.getEpochSeconds();
+                            event1 = Event.fromByteArray(archDBRTypes, line1, year);
+                            Instant event1EpochSeconds = event1.instant();
                             done = true;
-                            if (event1EpochSeconds > endTimeEpochSeconds) {
+                            if (event1EpochSeconds.isAfter(endTimeEpochSeconds)) {
                                 event1 = null;
                                 line1.reset();
                                 finished = true;
@@ -132,8 +130,8 @@ public class FileBackedPBEventStreamTimeBasedIterator implements FileBackedPBEve
 
         boolean startFound() {
             if (event1 != null) {
-                long event1EpochSeconds = event1.getEpochSeconds();
-                if (event1EpochSeconds >= startTimeEpochSeconds) {
+                Instant event1EpochSeconds = event1.instant();
+                if (event1EpochSeconds.compareTo(startTimeEpochSeconds) >= 0) {
                     logger.debug(
                             "We have reached an event whose start time is greater than the requested start already. Terminating the search.");
                     return true;

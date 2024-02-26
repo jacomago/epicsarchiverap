@@ -1,6 +1,5 @@
 package org.epics.archiverappliance.retrieval.postprocessors;
 
-import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,7 +43,7 @@ public class Optimized implements PostProcessor, PostProcessorWithConsolidatedEv
         @Override
         public SummaryStatsVectorCollector getCollector() {
             return new SummaryStatsVectorCollector() {
-                private SummaryStatistics stats = new SummaryStatistics();
+                private final SummaryStatistics stats = new SummaryStatistics();
                 @Override
                 public void setBinParams(int intervalSecs, long binNum) {
                 }
@@ -76,7 +75,7 @@ public class Optimized implements PostProcessor, PostProcessorWithConsolidatedEv
                         allEvents.add(e);
                     }
                     numEvents++;
-                    double val = e.getSampleValue().getValue().doubleValue();
+                    double val = e.value().getValue().doubleValue();
                     if(!Double.isNaN(val)) { 
                         stats.addValue(val);
                     } else { 
@@ -173,9 +172,7 @@ public class Optimized implements PostProcessor, PostProcessorWithConsolidatedEv
                     return stream;
                 } else {
                     transformedRawEvents = new ArrayListEventStream(allEvents.size(),allEvents.getDescription());
-                    for (Event e : allEvents) {
-                        transformedRawEvents.add(DBR2PBTypeMapping.getPBClassFor(e.getDBRType()).getSerializingConstructor().newInstance(e));
-                    }
+                    transformedRawEvents.addAll(allEvents);
                     return transformedRawEvents;
                 }
             }

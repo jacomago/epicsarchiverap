@@ -51,6 +51,7 @@ import org.epics.pva.data.PVAStructureArray;
 
 import java.nio.ByteBuffer;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -952,6 +953,121 @@ public record Event<T extends SampleValue>(Instant instant, int severity, int st
         throw new UnsupportedOperationException();
     }
 
+    public static Event<?> fromCSV(String[] line, ArchDBRTypes archDBRTypes) throws Exception {
+        // This line is of this format epochseconds, nanos, value, status, severity
+        // Example: 1301986801,446452000,5.55269,0,0
+        // Waveforms are pipe escaped....
+        if(line == null || line.length < 5) throw new Exception("We need at least five columns in the CSV - epochseconds, nanos, value, status, severity. Example: - 1301986801,446452000,5.55269,0,0");
+        // Per Bob, the epochseconds here is EPICS epoch seconds. We need to convert to Java epoch seconds; so we add the offset.
+        long epochSeconds = Long.parseLong(line[0]) + TimeUtils.EPICS_EPOCH_2_JAVA_EPOCH_OFFSET;
+        int nanos = Integer.parseInt(line[1]);
+        Instant timestamp = TimeUtils.convertFromEpochSeconds(epochSeconds, nanos);
+        String valueStr = line[2];
+        String[] vectorValueStr = valueStr.split("\\|");
+        int status = Integer.parseInt(line[3]);
+        int severity = Integer.parseInt(line[4]);
+        SampleValue sampleValue;
+        switch(archDBRTypes) {
+            case DBR_SCALAR_STRING, DBR_V4_GENERIC_BYTES:
+                sampleValue = new ScalarStringSampleValue(valueStr);
+                break;
+            case DBR_SCALAR_SHORT, DBR_SCALAR_ENUM:
+                sampleValue = new ScalarValue<Short>(Short.valueOf(valueStr));
+                break;
+            case DBR_SCALAR_FLOAT:
+                sampleValue = new ScalarValue<Float>(Float.valueOf(valueStr));
+                break;
+            case DBR_SCALAR_BYTE:
+                sampleValue = new ScalarValue<Byte>(Byte.valueOf(valueStr));
+                break;
+            case DBR_SCALAR_INT:
+                sampleValue = new ScalarValue<Integer>(Integer.valueOf(valueStr));
+                break;
+            case DBR_SCALAR_DOUBLE:
+                sampleValue = new ScalarValue<Double>(Double.valueOf(valueStr));
+                break;
+            case DBR_WAVEFORM_STRING:
+                if(valueStr.isEmpty()) {
+                    sampleValue = new VectorStringSampleValue(List.of());
+                } else {
+                    sampleValue = new VectorStringSampleValue(Arrays.asList(vectorValueStr));
+                }
+                break;
+            case DBR_WAVEFORM_SHORT, DBR_WAVEFORM_ENUM:
+            {
+                if(valueStr.isEmpty()) {
+                    sampleValue = new VectorValue<Short>(List.of());
+                } else {
+                    ArrayList<Short> vals = new ArrayList<Short>(vectorValueStr.length);
+                    for(String val : vectorValueStr) {
+                        vals.add(Short.valueOf(val));
+                    }
+                    sampleValue = new VectorValue<Short>(vals);
+                }
+            }
+            break;
+            case DBR_WAVEFORM_FLOAT:
+            {
+                if(valueStr.isEmpty()) {
+                    sampleValue = new VectorValue<Float>(List.of());
+                } else {
+                    ArrayList<Float> vals = new ArrayList<Float>(vectorValueStr.length);
+                    for(String val : vectorValueStr) {
+                        vals.add(Float.valueOf(val));
+                    }
+                    sampleValue = new VectorValue<Float>(vals);
+                }
+            }
+            break;
+            case DBR_WAVEFORM_BYTE:
+            {
+                if(valueStr.isEmpty()) {
+                    sampleValue = new VectorValue<Byte>(List.of());
+                } else {
+                    ArrayList<Byte> vals = new ArrayList<Byte>(vectorValueStr.length);
+                    for(String val : vectorValueStr) {
+                        vals.add(Byte.valueOf(val));
+                    }
+                    sampleValue = new VectorValue<Byte>(vals);
+                }
+            }
+            break;
+            case DBR_WAVEFORM_INT:
+            {
+                if(valueStr.isEmpty()) {
+                    sampleValue = new VectorValue<Integer>(List.of());
+                } else {
+                    ArrayList<Integer> vals = new ArrayList<Integer>(vectorValueStr.length);
+                    for(String val : vectorValueStr) {
+                        vals.add(Integer.valueOf(val));
+                    }
+                    sampleValue = new VectorValue<Integer>(vals);
+                }
+            }
+            break;
+            case DBR_WAVEFORM_DOUBLE:
+            {
+                if(valueStr.isEmpty()) {
+                    sampleValue = new VectorValue<Double>(List.of());
+                } else {
+                    ArrayList<Double> vals = new ArrayList<Double>(vectorValueStr.length);
+                    for(String val : vectorValueStr) {
+                        vals.add(Double.valueOf(val));
+                    }
+                    sampleValue = new VectorValue<Double>(vals);
+                }
+            }
+            break;
+
+            default:
+                throw new Exception("Unsupported DBR type in swicth statement " + archDBRTypes.toString());
+        }
+        return new Event<>(
+                timestamp,
+                severity,status,Map.of(),sampleValue,archDBRTypes
+
+        );
+    }
     private byte[] getBytes() {
         List<Byte> bytes = value.getNumberValues();
         byte[] values = new byte[bytes.size()];

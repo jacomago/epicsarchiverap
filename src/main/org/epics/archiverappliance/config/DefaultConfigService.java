@@ -35,7 +35,6 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
-import edu.stanford.slac.archiverappliance.PB.data.PBTypeSystem;
 import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -1672,12 +1671,6 @@ public class DefaultConfigService implements ConfigService {
 			throw new IOException(ex);
 		}
 	}
-
-	@Override
-	public TypeSystem getArchiverTypeSystem() {
-		return new PBTypeSystem();
-	}
-
 
 	private boolean finishedLoggingPolicyLocation = false;
 	@Override

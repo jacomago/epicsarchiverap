@@ -17,6 +17,7 @@ import org.epics.archiverappliance.config.ArchDBRTypes;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 
 
 /**
@@ -99,7 +100,7 @@ public class FileEventStreamSearch {
 	 * @throws IOException  &emsp;
 	 * @see edu.stanford.slac.archiverappliance.PlainPB.ComparePBEvent
 	 */
-	public boolean seekToTime(ArchDBRTypes dbrtype, YearSecondTimestamp yearSecondTimestamp) throws IOException {
+	public boolean seekToTime(ArchDBRTypes dbrtype, Instant yearSecondTimestamp) throws IOException {
 		ComparePBEvent comparefunction = new ComparePBEvent(dbrtype, yearSecondTimestamp);
 		return seekToTime(comparefunction);
 	}

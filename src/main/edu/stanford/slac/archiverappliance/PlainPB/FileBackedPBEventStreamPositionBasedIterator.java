@@ -8,7 +8,6 @@
 package edu.stanford.slac.archiverappliance.PlainPB;
 
 
-import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
 import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,11 +32,10 @@ public class FileBackedPBEventStreamPositionBasedIterator implements FileBackedP
 	private final ByteArray nextLine = new ByteArray(LineByteStream.MAX_LINE_SIZE);
 	// Whether the line already in nextLine has been used by the iterator
 	private boolean lineUsed = false;
-	private final Constructor<? extends DBRTimeEvent> unmarshallingConstructor;
+	private final ArchDBRTypes archDBRTypes;
 
 	public FileBackedPBEventStreamPositionBasedIterator(Path path, long startFilePos, long endFilePos, short year, ArchDBRTypes type) throws IOException {
-		DBR2PBTypeMapping mapping = DBR2PBTypeMapping.getPBClassFor(type);
-		unmarshallingConstructor = mapping.getUnmarshallingFromByteArrayConstructor();
+		archDBRTypes = type;
 		assert(startFilePos >= 0);
 		assert(endFilePos >= 0);
 		assert(endFilePos >= startFilePos);
@@ -67,7 +65,7 @@ public class FileBackedPBEventStreamPositionBasedIterator implements FileBackedP
 			if (nextLine.isEmpty() || lineUsed) {
 				lbs.readLine(nextLine);
 			}
-			Event e = unmarshallingConstructor.newInstance(year, nextLine);
+			Event e = Event.fromByteArray(archDBRTypes, nextLine, year);
 			lineUsed = true;
 			return e;
 		} catch (Exception ex) {

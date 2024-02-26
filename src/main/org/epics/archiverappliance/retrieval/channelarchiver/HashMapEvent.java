@@ -46,20 +46,20 @@ public class HashMapEvent implements DBRTimeEvent {
 	}
 	
 	
-	public HashMapEvent(ArchDBRTypes type, DBRTimeEvent event) {
+	public HashMapEvent(ArchDBRTypes type, Event event) {
 		this.type = type;
 		values = new HashMap<String, Object>();
-		values.put(HashMapEvent.SECS_FIELD_NAME, Long.toString(event.getEpochSeconds()));
-        values.put(HashMapEvent.NANO_FIELD_NAME, Integer.toString(event.getEventTimeStamp().getNano()));
-		values.put(HashMapEvent.STAT_FIELD_NAME, Integer.toString(event.getStatus()));
-		values.put(HashMapEvent.SEVR_FIELD_NAME, Integer.toString(event.getSeverity()));
-		if(event.hasFieldValues()) { 
+		values.put(HashMapEvent.SECS_FIELD_NAME, Long.toString(event.instant().getEpochSecond()));
+        values.put(HashMapEvent.NANO_FIELD_NAME, Integer.toString(event.instant().getNano()));
+		values.put(HashMapEvent.STAT_FIELD_NAME, Integer.toString(event.status()));
+		values.put(HashMapEvent.SEVR_FIELD_NAME, Integer.toString(event.severity()));
+		if(event.fieldValues()) {
 			values.put(FIELD_VALUES_FIELD_NAME, event.getFields());
 		}
 		if(event.isActualChange()) { 
 			values.put(FIELD_VALUES_ACTUAL_CHANGE, Boolean.TRUE.toString());
 		}
-		values.put(VALUE_FIELD_NAME, event.getSampleValue().toString());
+		values.put(VALUE_FIELD_NAME, event.value().toString());
 	}
 	
 	

@@ -7,17 +7,21 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PlainPB;
 
-import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
 import edu.stanford.slac.archiverappliance.PB.data.PartionedTime;
 import edu.stanford.slac.archiverappliance.PB.search.CompareEventLine;
 import org.epics.archiverappliance.ByteArray;
+import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.common.PartitionGranularity;
+import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.YearSecondTimestamp;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 /**
  * A comparator for PB events that is used in searching.
@@ -25,39 +29,36 @@ import java.lang.reflect.Constructor;
  *
  */
 public class ComparePBEvent implements CompareEventLine {
-	private final YearSecondTimestamp yearSecondTimestamp;
+	private final Instant yearSecondTimestamp;
 	private final ArchDBRTypes type;
+	private final short year;
 
-	public ComparePBEvent(ArchDBRTypes type, YearSecondTimestamp yearSecondTimestamp) {
+	public ComparePBEvent(ArchDBRTypes type, Instant yearSecondTimestamp) {
 		this.type = type;
 		this.yearSecondTimestamp = yearSecondTimestamp;
+		this.year = (short) ZonedDateTime.ofInstant(yearSecondTimestamp, ZoneId.of("Z")).getYear();
 	}
 	
 
 	@Override
 	public NextStep compare(byte[] line1, byte[] line2) throws IOException  {
 		// The year does not matter here as we are driving solely off secondsintoyear. So we set it to 0.
-		Constructor<? extends DBRTimeEvent> constructor = DBR2PBTypeMapping.getPBClassFor(type).getUnmarshallingFromByteArrayConstructor();
-		YearSecondTimestamp line1Timestamp = new YearSecondTimestamp(this.yearSecondTimestamp.getYear(), 0, 0);
-		YearSecondTimestamp line2Timestamp = new YearSecondTimestamp(
-				this.yearSecondTimestamp.getYear(),
+		Instant line1Timestamp;
+		Instant line2Timestamp = TimeUtils.convertFromYearSecondTimestamp(new YearSecondTimestamp(
+				year,
 				PartitionGranularity.PARTITION_YEAR.getApproxSecondsPerChunk() + 1,
-				0);
+				0));
 		try {
 			// The raw forms for all the DBR types implement the PartionedTime interface
-			PartionedTime e =
-					(PartionedTime) constructor.newInstance(this.yearSecondTimestamp.getYear(), new ByteArray(line1));
-			line1Timestamp = e.getYearSecondTimestamp();
+			Event e =
+					Event.fromByteArray(type, new ByteArray(line1), year);
+			line1Timestamp = e.instant();
 			if(line2 != null) {
-				PartionedTime e2 = (PartionedTime)
-						constructor.newInstance(this.yearSecondTimestamp.getYear(), new ByteArray(line2));
-				line2Timestamp = e2.getYearSecondTimestamp();
+				Event e2 = Event.fromByteArray(type, new ByteArray(line2), year);
+				line2Timestamp = e2.instant();
 			}
 		} catch(Exception ex) {
 			throw new IOException(ex);
-		}
-		if (line1Timestamp.getSecondsintoyear() < 0) {
-			throw new IOException("We cannot have a negative seconds into year " + line1Timestamp);
 		}
 		if (line1Timestamp.compareTo(this.yearSecondTimestamp) > 0) {
 			return NextStep.GO_LEFT;

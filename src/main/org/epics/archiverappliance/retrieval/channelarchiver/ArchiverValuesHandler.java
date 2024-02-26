@@ -32,8 +32,6 @@ import org.epics.archiverappliance.retrieval.ChangeInYearsException;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.retrieval.RemotableOverRaw;
 
-import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
-
 /**
  * Quick handler to parse archiver.values returns.
  * We use STAX to enable stream processing at least from this side of the socket...
@@ -145,7 +143,7 @@ public class ArchiverValuesHandler implements XMLRPCStaxProcessor, EventStream, 
 	/**
 	 * The current completely built event 
 	 */
-	private DBRTimeEvent currentEvent = null;
+	private Event currentEvent = null;
 	
 	/**
 	 * Used to detect ChangeInYearsException
@@ -211,13 +209,13 @@ public class ArchiverValuesHandler implements XMLRPCStaxProcessor, EventStream, 
 			if(lastName != null && lastName.equals("name")) {
 				if(lastTwoNodes.equals("value.string")) {
 					// This is the PV's name
-					String currentValue = value;
-					metaInformation.put("pvName", currentValue);
+                    metaInformation.put("pvName", value);
 					lastName = null;
 				}
 			}
 		}
-		
+
+		boolean nodesEqualCheck = lastTwoNodes.equals("value.i4") || lastTwoNodes.equals("value.string") || lastTwoNodes.equals("value.double");
 		if(inMeta) {
 			if(localName.equals("struct")) {
 				// meta is a struct of name/value pairs. If we encounter a end-struct in meta, we can assume that we are done with meta processing.
@@ -225,10 +223,9 @@ public class ArchiverValuesHandler implements XMLRPCStaxProcessor, EventStream, 
 				return continueProcessing;
 			}
 			
-			if(lastTwoNodes.equals("value.i4") || lastTwoNodes.equals("value.string") || lastTwoNodes.equals("value.double")) {
+			if(nodesEqualCheck) {
 				// All meta information I've see so far fits into int/string/double.
-				String currentValue = value;
-				metaInformation.put(lastName, currentValue);
+                metaInformation.put(lastName, value);
 				lastName = null;
 			}
 		}
@@ -236,12 +233,10 @@ public class ArchiverValuesHandler implements XMLRPCStaxProcessor, EventStream, 
 		if(!inMeta && lastName != null) {
 			// The type and element count that serve to determine the ArchDBRTYPE come between the meta and values 
 			if(lastName.equals("type") && lastTwoNodes.equals("value.i4")) {
-				String currentValue = value;
-				valueType = ArchiverValuesType.lookup(Integer.parseInt(currentValue));
+                valueType = ArchiverValuesType.lookup(Integer.parseInt(value));
 				lastName = null;
 			} else if(lastName.equals("count") && lastTwoNodes.equals("value.i4")) {
-				String currentValue = value;
-				elementCount = Integer.parseInt(currentValue);
+                elementCount = Integer.parseInt(value);
 				lastName = null;
 			}
 			
@@ -260,9 +255,6 @@ public class ArchiverValuesHandler implements XMLRPCStaxProcessor, EventStream, 
 						dbrType = getValueType().getDBRType(getElementCount());					
 					}
 				}
-				if(dbrType != null) { 
-					serializingConstructor = DBR2PBTypeMapping.getPBClassFor(dbrType).getSerializingConstructor();
-				}
 			}
 		}
 		
@@ -270,7 +262,7 @@ public class ArchiverValuesHandler implements XMLRPCStaxProcessor, EventStream, 
 			if(localName.equals("struct") && (workingCopyOfEvent != null)) {
 				// Encountering a end struct in the values section marks the end of the current event.
 				try {
-					currentEvent = (DBRTimeEvent) serializingConstructor.newInstance(new HashMapEvent(dbrType, workingCopyOfEvent));
+					currentEvent = serializingConstructor.newInstance(new HashMapEvent(dbrType, workingCopyOfEvent));
 					long currentEventEpochSeconds = currentEvent.getEpochSeconds();
 					if(previousEventEpochSeconds > 0) { 
 						if(currentEventEpochSeconds < previousEventEpochSeconds) { 
@@ -290,28 +282,17 @@ public class ArchiverValuesHandler implements XMLRPCStaxProcessor, EventStream, 
 					}
 					workingCopyOfEvent = null;
 					continueProcessing = false;
-				} catch(IllegalAccessException ex) {
+				} catch(IllegalAccessException | InvocationTargetException | InstantiationException ex) {
 					logger.error("Exception serializing DBR Type " + dbrType + " for pv " + this.pvName, ex);
 					currentEvent = null;
-					continueProcessing = true;
-				} catch(InstantiationException ex) {
-					logger.error("Exception serializing DBR Type " + dbrType + " for pv " + this.pvName, ex);
-					currentEvent = null;
-					continueProcessing = true;
-				} catch(InvocationTargetException ex) {
-					logger.error("Exception serializing DBR Type " + dbrType + " for pv " + this.pvName, ex);
-					currentEvent = null;
-					continueProcessing = true;
-				} catch(NumberFormatException ex) {
+                } catch(NumberFormatException ex) {
 					// We ignore all samples that cannot be parsed
 					logger.error("Ignoring sample that cannot be parsed " + dbrType + " for pv " + this.pvName, ex);
 					currentEvent = null;
-					continueProcessing = true;
-				}
+                }
 			} else if(lastName != null) {
-				if(lastTwoNodes.equals("value.i4") || lastTwoNodes.equals("value.string") || lastTwoNodes.equals("value.double")) {
-					String currentValue = value;
-					if(lastName.equals("value") && dbrType.isWaveForm()) {
+				if(nodesEqualCheck) {
+                    if(lastName.equals("value") && dbrType.isWaveForm()) {
 						// No choice but to add this SuppressWarnings here.
 						@SuppressWarnings("unchecked")
 						LinkedList<String> vals = (LinkedList<String>) workingCopyOfEvent.get(lastName);
@@ -319,9 +300,9 @@ public class ArchiverValuesHandler implements XMLRPCStaxProcessor, EventStream, 
 							vals = new LinkedList<String>();
 							workingCopyOfEvent.put(lastName, vals);
 						}
-						vals.add(currentValue);
+						vals.add(value);
 					} else {
-						workingCopyOfEvent.put(lastName, currentValue);
+						workingCopyOfEvent.put(lastName, value);
 					}
 					if(dbrType.isWaveForm()) {
 						if(lastTwoNodes.equals("array.data")) {
@@ -422,7 +403,7 @@ public class ArchiverValuesHandler implements XMLRPCStaxProcessor, EventStream, 
 	 */
 	@Override
 	public Event next() {
-		DBRTimeEvent retVal = currentEvent;
+		Event retVal = currentEvent;
 		currentEvent = null;
 		try {
 			boolean continueProcessing = true;

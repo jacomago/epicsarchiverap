@@ -452,14 +452,7 @@ public interface ConfigService {
 	 */
 	public List<String> getFieldsArchivedAsPartOfStream() throws IOException;
 	
-	
-	/**
-	 * Returns a TypeSystem object that is used to convert from JCA DBR's to Event's (actually, DBRTimeEvents)
-	 * @return TypeSystem  &emsp;
-	 */
-	public TypeSystem getArchiverTypeSystem();
-	
-	
+
 	/**
 	 * Which component is this configservice instance.
 	 * @return WAR_FILE  &emsp;

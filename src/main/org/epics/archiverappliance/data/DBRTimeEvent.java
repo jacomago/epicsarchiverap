@@ -16,11 +16,6 @@ import org.epics.archiverappliance.common.YearSecondTimestamp;
  * A catch all interface that contains the attributes in a EPICS DBR_TIME_XXX from db_access.h.
  * @author mshankar
  */
-public interface DBRTimeEvent extends Event, SamplingInfo, AlarmInfo, FieldValues, PartionedTime {
-
-    @Override
-    public default YearSecondTimestamp getYearSecondTimestamp() {
-        return TimeUtils.convertToYearSecondTimestamp(this.getEventTimeStamp());
-    }
+public interface DBRTimeEvent extends SamplingInfo, AlarmInfo, FieldValues, PartionedTime {
 
 }

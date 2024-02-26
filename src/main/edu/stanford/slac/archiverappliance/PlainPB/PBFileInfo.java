@@ -8,7 +8,7 @@
 package edu.stanford.slac.archiverappliance.PlainPB;
 
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
-import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
+import org.epics.archiverappliance.Event;
 import edu.stanford.slac.archiverappliance.PB.data.PBParseException;
 import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
 import edu.stanford.slac.archiverappliance.PB.utils.LineEscaper;
@@ -33,8 +33,8 @@ import java.nio.file.Path;
 public class PBFileInfo {
 	private static final Logger logger = LogManager.getLogger(PBFileInfo.class);
 	PayloadInfo info;
-	DBRTimeEvent firstEvent = null;
-	DBRTimeEvent lastEvent = null;
+	Event<?> firstEvent = null;
+	Event<?> lastEvent = null;
 	long positionOfFirstSample = 0L;
 	long positionOfLastSample = 0;
 
@@ -63,15 +63,14 @@ public class PBFileInfo {
 			positionOfLastSample = Files.size(path);
 
 			ArchDBRTypes type = ArchDBRTypes.valueOf(info.getType());
-			Constructor<? extends DBRTimeEvent> unmarshallingConstructor = DBR2PBTypeMapping.getPBClassFor(type).getUnmarshallingFromByteArrayConstructor();
 			// Let's read the first line
 			lis.seekToFirstNewLine();
 			byte[] firstLine = lis.readLine();
 			if(firstLine != null) {
-				firstEvent = (DBRTimeEvent) unmarshallingConstructor.newInstance(getDataYear(), new ByteArray(firstLine));
+				firstEvent = Event.fromByteArray(type, new ByteArray(firstLine), getDataYear());
 				if(lookupLastEvent) {
 					// If we do not have a first line, we probably do not have a last line
-					this.lookupLastEvent(path, lis, unmarshallingConstructor);
+					this.lookupLastEvent(path, lis, type);
 				}
 			} else {
 				logger.debug("File " + path.toAbsolutePath().toString() + " does not seem to have any first line?");
@@ -98,11 +97,11 @@ public class PBFileInfo {
 		return info;
 	}
 
-	public DBRTimeEvent getFirstEvent() {
+	public Event getFirstEvent() {
 		return firstEvent;
 	}
 
-	public DBRTimeEvent getLastEvent() {
+	public Event getLastEvent() {
 		return lastEvent;
 	}
 
@@ -136,7 +135,7 @@ public class PBFileInfo {
 	}
 	
 	
-	private void lookupLastEvent(Path path, LineByteStream lis, Constructor<? extends DBRTimeEvent> unmarshallingConstructor) throws Exception { 
+	private void lookupLastEvent(Path path, LineByteStream lis, ArchDBRTypes types) throws Exception {
 		// If we do not have a first line, we probably do not have a last line
 		lis.seekToBeforeLastLine();
 		long posn = lis.getCurrentPosition();
@@ -153,8 +152,7 @@ public class PBFileInfo {
 		// Potential infinite loop here; we'll try about 1000 times
 		while(lastEvent == null && lastLine != null && tries < 1000) {
 			try { 
-				lastEvent = (DBRTimeEvent) unmarshallingConstructor.newInstance(getDataYear(), new ByteArray(lastLine));
-				lastEvent.getEventTimeStamp();
+				lastEvent = Event.fromByteArray(types, new ByteArray(lastLine), getDataYear());
 				positionOfLastSample = posn;
 				return;
 			} catch(PBParseException ex) {

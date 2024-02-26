@@ -1,17 +1,14 @@
 package edu.stanford.slac.archiverappliance.PlainPB.utils;
 
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Paths;
-
+import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
 import org.epics.archiverappliance.ByteArray;
+import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.data.DBRTimeEvent;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBTypeSystem;
-import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Paths;
 
 /**
  * Small utilty to read a .pb file as the specfied DBR type.
@@ -33,13 +30,11 @@ public class ReadAsDBRType {
 		String path = args[2];
 
 		ByteArray bar = new ByteArray(LineByteStream.MAX_LINE_SIZE);
-		PBTypeSystem typeSys = new PBTypeSystem();
-		Constructor<? extends DBRTimeEvent> cons = typeSys.getUnmarshallingFromByteArrayConstructor(archDBRType);
 		try(LineByteStream lis = new LineByteStream(Paths.get(path))) {
 			lis.readLine(bar);
 			while(lis.readLine(bar) != null && !bar.isEmpty()) { 
-				DBRTimeEvent event = cons.newInstance(year, bar);
-				System.out.println(TimeUtils.convertToHumanReadableString(event.getEpochSeconds()) + " ==> " + event.getSampleValue().toString());
+				Event event = Event.fromByteArray(archDBRType, bar, year);
+				System.out.println(TimeUtils.convertToHumanReadableString(event.instant()) + " ==> " + event.value().toString());
 			}
 		}
 	}

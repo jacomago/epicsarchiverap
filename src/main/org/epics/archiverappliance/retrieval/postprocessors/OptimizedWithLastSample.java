@@ -1,6 +1,5 @@
 package org.epics.archiverappliance.retrieval.postprocessors;
 
-import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
 import edu.stanford.slac.archiverappliance.PB.data.PBParseException;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.logging.log4j.LogManager;
@@ -103,7 +102,7 @@ public class OptimizedWithLastSample implements PostProcessor, PostProcessorWith
                         allEvents.add(e);
                     }
                     numEvents++;
-                    double val = e.getSampleValue().getValue().doubleValue();
+                    double val = e.value().getValue().doubleValue();
                     if(!Double.isNaN(val)) { 
                         lastValue = val;
                         stats.addValue(val);
@@ -164,7 +163,7 @@ public class OptimizedWithLastSample implements PostProcessor, PostProcessorWith
     private EventStream customStatsConsolidatedEventStream() {
       if(!lastSampleBeforeStartAdded && lastSampleBeforeStart != null) { 
         switchToNewBin(firstBin-1);
-        Logger.debug("Adding lastSampleBeforeStart to bin " + TimeUtils.convertToHumanReadableString(lastSampleBeforeStart.getEpochSeconds()));
+        Logger.debug("Adding lastSampleBeforeStart to bin " + TimeUtils.convertToHumanReadableString(lastSampleBeforeStart.instant()));
         currentBinCollector.addEvent(lastSampleBeforeStart);
         lastSampleBeforeStartAdded = true; 
       }
@@ -215,25 +214,21 @@ public class OptimizedWithLastSample implements PostProcessor, PostProcessorWith
 
     @Override
     public Callable<EventStream> wrap(final Callable<EventStream> callable) {
-        return new Callable<EventStream>() {
-            public EventStream call() throws Exception {
-                if (allEvents == null) {
-                    EventStream strm = callable.call();
-                    RemotableEventStreamDesc org = (RemotableEventStreamDesc)strm.getDescription();
-                    RemotableEventStreamDesc desc = new RemotableEventStreamDesc(org);
-                    allEvents = new ArrayListEventStream(numberOfPoints, desc);
-                }
-                Callable<EventStream> stCall = customStatsWrap(callable);
-                EventStream stream = stCall.call();
-                if (numEvents > allEvents.size()) {
-                    return stream;
-                } else {
-                    transformedRawEvents = new ArrayListEventStream(allEvents.size(),allEvents.getDescription());
-                    for (Event e : allEvents) {
-                        transformedRawEvents.add(DBR2PBTypeMapping.getPBClassFor(e.getDBRType()).getSerializingConstructor().newInstance(e));
-                    }
-                    return transformedRawEvents;
-                }
+        return () -> {
+            if (allEvents == null) {
+                EventStream strm = callable.call();
+                RemotableEventStreamDesc org = (RemotableEventStreamDesc) strm.getDescription();
+                RemotableEventStreamDesc desc = new RemotableEventStreamDesc(org);
+                allEvents = new ArrayListEventStream(numberOfPoints, desc);
+            }
+            Callable<EventStream> stCall = customStatsWrap(callable);
+            EventStream stream = stCall.call();
+            if (numEvents > allEvents.size()) {
+                return stream;
+            } else {
+                transformedRawEvents = new ArrayListEventStream(allEvents.size(), allEvents.getDescription());
+                transformedRawEvents.addAll(allEvents);
+                return transformedRawEvents;
             }
         };
     }  
@@ -250,16 +245,15 @@ public class OptimizedWithLastSample implements PostProcessor, PostProcessorWith
               srcDesc = (RemotableEventStreamDesc) strm.getDescription();
             for (Event e : strm) {
               try {
-                DBRTimeEvent dbrTimeEvent = (DBRTimeEvent) e;
-                long epochSeconds = dbrTimeEvent.getEpochSeconds();
-                  if (dbrTimeEvent.getEventTimeStamp().isAfter(previousEventTimestamp)) {
-                  previousEventTimestamp = dbrTimeEvent.getEventTimeStamp();
+                  long epochSeconds = e.instant().getEpochSecond();
+                  if (e.instant().isAfter(previousEventTimestamp)) {
+                  previousEventTimestamp = e.instant();
                 } else {
                   // Note that this is expected. ETL is not transactional; so we
                   // can get the same event twice from different stores.
                   if (Logger.isDebugEnabled()) {
                     Logger.debug("Skipping older event "
-                        + TimeUtils.convertToHumanReadableString(dbrTimeEvent.getEventTimeStamp()) + " previous "
+                        + TimeUtils.convertToHumanReadableString(e.instant()) + " previous "
                         + TimeUtils.convertToHumanReadableString(previousEventTimestamp));
                   }
                   continue;
@@ -300,10 +294,10 @@ public class OptimizedWithLastSample implements PostProcessor, PostProcessorWith
                     switchToNewBin(binNumber);
                   }
                   currentBinCollector.addEvent(e);
-                  if (dbrTimeEvent.getSeverity() > currentMaxSeverity) {
-                    currentMaxSeverity = dbrTimeEvent.getSeverity();
+                  if (e.severity() > currentMaxSeverity) {
+                    currentMaxSeverity = e.severity();
                   }
-                  if (dbrTimeEvent.hasFieldValues() && dbrTimeEvent.getFields().containsKey("cnxregainedepsecs")) {
+                  if (!e.fieldValues().isEmpty() && e.fieldValues().containsKey("cnxregainedepsecs")) {
                     currentConnectionChangedEvents = true;
                   }
                 } else if (binNumber < firstBin) {
@@ -312,11 +306,11 @@ public class OptimizedWithLastSample implements PostProcessor, PostProcessorWith
                   // single sample.
                   if (!lastSampleBeforeStartAdded) {
                     if (lastSampleBeforeStart != null) {
-                      if (e.getEpochSeconds() >= lastSampleBeforeStart.getEpochSeconds()) {
-                        lastSampleBeforeStart = e.makeClone();
+                      if (e.instant().compareTo(lastSampleBeforeStart.instant()) >= 0) {
+                        lastSampleBeforeStart = e;
                       }
                     } else {
-                      lastSampleBeforeStart = e.makeClone();
+                      lastSampleBeforeStart = e;
                     }
                   }
                 }
