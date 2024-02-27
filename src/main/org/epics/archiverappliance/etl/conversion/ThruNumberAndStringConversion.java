@@ -1,19 +1,19 @@
 package org.epics.archiverappliance.etl.conversion;
 
-import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
+import edu.stanford.slac.archiverappliance.PB.data.DefaultEvent;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.EventStreamDesc;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.data.SampleValue;
+import org.epics.archiverappliance.data.ScalarStringSampleValue;
+import org.epics.archiverappliance.data.ScalarValue;
 import org.epics.archiverappliance.etl.ConversionException;
 import org.epics.archiverappliance.etl.ConversionFunction;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
-import org.epics.archiverappliance.retrieval.channelarchiver.HashMapEvent;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.time.Instant;
 import java.util.Iterator;
 
@@ -28,17 +28,14 @@ import java.util.Iterator;
  */
 public class ThruNumberAndStringConversion implements ConversionFunction {
     private final ArchDBRTypes destDBRType;
-    private final Constructor<? extends DBRTimeEvent> serializingConstructor;
 
     public ThruNumberAndStringConversion(ArchDBRTypes destDBRType) {
         this.destDBRType = destDBRType;
-        this.serializingConstructor =
-                DBR2PBTypeMapping.getPBClassFor(destDBRType).getSerializingConstructor();
     }
 
     @Override
-    public EventStream convertStream(
-            final EventStream srcEventStream, Instant streamStartTime, Instant streamEndTime) throws IOException {
+    public EventStream convertStream(final EventStream srcEventStream, Instant streamStartTime, Instant streamEndTime)
+            throws IOException {
         return new ThruNumStrConversionWrapper(srcEventStream);
     }
 
@@ -76,9 +73,8 @@ public class ThruNumberAndStringConversion implements ConversionFunction {
                 public Event next() {
                     try {
                         DBRTimeEvent event = (DBRTimeEvent) theIterator.next();
-                        HashMapEvent hashEvent = new HashMapEvent(destDBRType, event);
-                        hashEvent.setValue(HashMapEvent.VALUE_FIELD_NAME, convert2DestType(event.getSampleValue()));
-                        return serializingConstructor.newInstance(hashEvent);
+                        DefaultEvent<?> defaultEvent = DefaultEvent.fromDBREvent(event);
+                        return defaultEvent.cloneWithValue(convert2DestType(defaultEvent.value()), destDBRType);
                     } catch (Exception ex) {
                         throw new ConversionException(
                                 "Exception during conversion of pv "
@@ -87,19 +83,19 @@ public class ThruNumberAndStringConversion implements ConversionFunction {
                     }
                 }
 
-                private String convert2DestType(SampleValue sampleValue) {
+                private SampleValue convert2DestType(SampleValue sampleValue) {
                     return switch (destDBRType) {
-                        case DBR_SCALAR_BYTE -> Byte.toString(
+                        case DBR_SCALAR_BYTE -> new ScalarValue<>(
                                 sampleValue.getValue().byteValue());
-                        case DBR_SCALAR_DOUBLE -> Double.toString(
+                        case DBR_SCALAR_DOUBLE -> new ScalarValue<>(
                                 sampleValue.getValue().doubleValue());
-                        case DBR_SCALAR_ENUM, DBR_SCALAR_SHORT -> Short.toString(
+                        case DBR_SCALAR_ENUM, DBR_SCALAR_SHORT -> new ScalarValue<>(
                                 sampleValue.getValue().shortValue());
-                        case DBR_SCALAR_FLOAT -> Float.toString(
+                        case DBR_SCALAR_FLOAT -> new ScalarValue<>(
                                 sampleValue.getValue().floatValue());
-                        case DBR_SCALAR_INT -> Integer.toString(
+                        case DBR_SCALAR_INT -> new ScalarValue<>(
                                 sampleValue.getValue().intValue());
-                        case DBR_SCALAR_STRING -> sampleValue.getStringValue(0);
+                        case DBR_SCALAR_STRING -> new ScalarStringSampleValue(sampleValue.getStringValue(0));
                         default -> throw new UnsupportedOperationException();
                     };
                 }

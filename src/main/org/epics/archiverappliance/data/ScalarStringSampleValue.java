@@ -13,7 +13,6 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Objects;
 
-
 /**
  * An implementation of SampleValue for scalar strings.
  * @author mshankar
@@ -22,81 +21,80 @@ import java.util.Objects;
 public class ScalarStringSampleValue implements SampleValue {
     private final String value;
 
-	public ScalarStringSampleValue(String val) {
-		this.value = val;
-	}
-	
-	/* (non-Javadoc)
-	 * The toString generates something that can be consumed by the JSON response.
-	 * @see java.lang.Object#toString()
-	 */
-	public String toString() {
-		return value;
-	}
+    public ScalarStringSampleValue(String val) {
+        this.value = val;
+    }
 
-	@Override
-	public Number getValue() {
-		throw new UnsupportedOperationException();
-	}
+    /* (non-Javadoc)
+     * The toString generates something that can be consumed by the JSON response.
+     * @see java.lang.Object#toString()
+     */
+    public String toString() {
+        return value;
+    }
 
-	@Override
-	public int getElementCount() {
-		return 1;
-	}
+    @Override
+    public Number getValue() {
+        throw new UnsupportedOperationException();
+    }
 
-	@Override
-	public Number getValue(int index) {
-		throw new UnsupportedOperationException();
-	}
+    @Override
+    public int getElementCount() {
+        return 1;
+    }
 
-	@Override
-	public String getStringValue(int index) {
-		throw new UnsupportedOperationException();
-	}
+    @Override
+    public Number getValue(int index) {
+        throw new UnsupportedOperationException();
+    }
 
-	@SuppressWarnings("rawtypes")
-	@Override
-	public List getValues() {
-		throw new UnsupportedOperationException();
-	}
-	
-	@Override
-	public List<String> getStringValues() {
-		throw new UnsupportedOperationException();
-	}
+    @Override
+    public String getStringValue(int index) {
+        throw new UnsupportedOperationException();
+    }
 
-	@Override
-	public <T extends Number> List<T> getNumberValues() {
-		throw new UnsupportedOperationException();
-	}
+    @SuppressWarnings("rawtypes")
+    @Override
+    public List getValues() {
+        throw new UnsupportedOperationException();
+    }
 
-	@Override
-	public int hashCode() {
-		return value.hashCode();
-	}
+    @Override
+    public List<String> getStringValues() {
+        throw new UnsupportedOperationException();
+    }
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (!(o instanceof ScalarStringSampleValue that)) return false;
-        return Objects.equals(getValue(), that.getValue());
-	}
+    @Override
+    public <T extends Number> List<T> getNumberValues() {
+        throw new UnsupportedOperationException();
+    }
 
-	@Override
-	public String toJSONString() {
-		return "\"" + JSONValue.escape(value) + "\"";
-	}
+    @Override
+    public int hashCode() {
+        return value.hashCode();
+    }
 
-	@Override
-	public ByteBuffer getValueAsBytes() {
-		if(value != null) { 
-			byte[] bytes = value.getBytes();
-			ByteBuffer buf = ByteBuffer.allocate(value.length() + 1);
-			buf.put(bytes);
-			buf.flip();
-			return buf;
-		}
-		return null;
-	}
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ScalarStringSampleValue that)) return false;
+        return Objects.equals(this.value, that.value);
+    }
 
+    @Override
+    public String toJSONString() {
+        return "\"" + JSONValue.escape(value) + "\"";
+    }
+
+    @Override
+    public ByteBuffer getValueAsBytes() {
+        if (value != null) {
+            byte[] bytes = value.getBytes();
+            ByteBuffer buf = ByteBuffer.allocate(value.length() + 1);
+            buf.put(bytes);
+            buf.flip();
+            return buf;
+        }
+        return null;
+    }
 }

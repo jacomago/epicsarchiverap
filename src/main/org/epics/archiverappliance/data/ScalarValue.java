@@ -17,78 +17,78 @@ import java.util.Objects;
  * @param <T>  &emsp;
  */
 public class ScalarValue<T extends Number> implements SampleValue {
-	private final T value;
-	public ScalarValue(T val) {
-		this.value = val;
-	}
+    private final T value;
 
-	@Override
-	public Number getValue() {
-		return value;
-	}
-	
-	@Override
-	public String toString() {
-		return value.toString();
-	}
+    public ScalarValue(T val) {
+        this.value = val;
+    }
 
-	@Override
-	public int getElementCount() {
-		return 1;
-	}
+    @Override
+    public Number getValue() {
+        return value;
+    }
 
-	/* (non-Javadoc)
-	 * @see org.epics.archiverappliance.data.SampleValue#getValue(int)
-	 * We return the same value for all indices
-	 * Perhaps we can throw an exception here for invalid indices
-	 */
-	@Override
-	public Number getValue(int index) {
-		assert(index == 0);
-		return value;
-	}
-	
-	@Override
-	public String getStringValue(int index) {
-		throw new UnsupportedOperationException();
-	}
+    @Override
+    public String toString() {
+        return value.toString();
+    }
 
-	@SuppressWarnings("rawtypes")
-	@Override
-	public List getValues() {
-		throw new UnsupportedOperationException();
-	}
+    @Override
+    public int getElementCount() {
+        return 1;
+    }
 
-	@Override
-	public List<String> getStringValues() {
-		throw new UnsupportedOperationException();
-	}
+    /* (non-Javadoc)
+     * @see org.epics.archiverappliance.data.SampleValue#getValue(int)
+     * We return the same value for all indices
+     * Perhaps we can throw an exception here for invalid indices
+     */
+    @Override
+    public Number getValue(int index) {
+        assert (index == 0);
+        return value;
+    }
 
-	@Override
-	public <V extends Number> List<V> getNumberValues() {
-		throw new UnsupportedOperationException();
-	}
+    @Override
+    public String getStringValue(int index) {
+        throw new UnsupportedOperationException();
+    }
 
+    @SuppressWarnings("rawtypes")
+    @Override
+    public List getValues() {
+        throw new UnsupportedOperationException();
+    }
 
-	@Override
-	public int hashCode() {
-		return value.hashCode();
-	}
+    @Override
+    public List<String> getStringValues() {
+        throw new UnsupportedOperationException();
+    }
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (!(o instanceof ScalarValue<?> that)) return false;
-        return Objects.equals(getValue(), that.getValue());
-	}
+    @Override
+    public <V extends Number> List<V> getNumberValues() {
+        throw new UnsupportedOperationException();
+    }
 
-	@Override
-	public String toJSONString() {
-		return value.toString();
-	}
+    @Override
+    public int hashCode() {
+        return value.hashCode();
+    }
 
-	@Override
-	public ByteBuffer getValueAsBytes() {
-		throw new UnsupportedOperationException();
-	}
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ScalarValue<?> that)) return false;
+        return Objects.equals(this.value, that.value);
+    }
+
+    @Override
+    public String toJSONString() {
+        return value.toString();
+    }
+
+    @Override
+    public ByteBuffer getValueAsBytes() {
+        throw new UnsupportedOperationException();
+    }
 }

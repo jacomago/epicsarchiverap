@@ -59,7 +59,7 @@ public class MatlabResponse implements MimeResponse {
 	
 	@Override
 	public void consumeEvent(Event e) throws Exception {
-		dest.add(e.makeClone());
+		dest.add(e);
 		if(!typesSet) {
 			typesSet = true;
 			dbrType = e.getDBRType();

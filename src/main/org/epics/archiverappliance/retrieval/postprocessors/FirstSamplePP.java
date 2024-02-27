@@ -74,7 +74,7 @@ public class FirstSamplePP implements PostProcessor, AfterAllStreams {
 										lastSampleBeforeStartAdded = true; 
 										lastSampleDesc = null;
 									}
-									buf.add(e.makeClone());
+									buf.add(e);
 									previousBinNum = binNumber;
 									logger.debug("Bin Number " + binNumber + " First: " + firstBin + " Last: " + lastBin);
 								}
@@ -83,12 +83,12 @@ public class FirstSamplePP implements PostProcessor, AfterAllStreams {
 								if(!lastSampleBeforeStartAdded) { 
 									if(lastSampleBeforeStart != null) { 
 										if(e.getEpochSeconds() >= lastSampleBeforeStart.getEpochSeconds()) { 
-											lastSampleBeforeStart = e.makeClone();
+											lastSampleBeforeStart = e;
 											lastSampleDesc = strm.getDescription();
 											logger.info("Resetting the lastSampleBeforeStart to " + TimeUtils.convertToHumanReadableString(lastSampleBeforeStart.getEventTimeStamp()));
 										}
 									} else { 
-										lastSampleBeforeStart = e.makeClone();
+										lastSampleBeforeStart = e;
 										lastSampleDesc = strm.getDescription();
 										logger.info("Setting the lastSampleBeforeStart to " + TimeUtils.convertToHumanReadableString(lastSampleBeforeStart.getEventTimeStamp()));
 									}

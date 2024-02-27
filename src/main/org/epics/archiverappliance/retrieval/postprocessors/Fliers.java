@@ -73,7 +73,7 @@ public class Fliers implements PostProcessor {
 							buf = new ArrayListEventStream(0, (RemotableEventStreamDesc) strm.getDescription());
 							previousBinNum = binNumber;
 						}
-						buf.add(e.makeClone());
+						buf.add(e);
 						double val = e.getSampleValue().getValue().doubleValue();
 						if(!Double.isNaN(val)) { 
 							stats.addValue(val);

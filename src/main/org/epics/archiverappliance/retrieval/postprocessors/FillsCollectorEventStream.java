@@ -115,7 +115,7 @@ public class FillsCollectorEventStream implements EventStream, RemotableOverRaw 
 							currentEvent.getSampleValue(), 
 							((AlarmInfo)currentEvent).getStatus(), 
 							((AlarmInfo)currentEvent).getSeverity());
-					strm.add(pojoEvent.makeClone());
+					strm.add(pojoEvent);
 					if(currentYear == -1) { 
 						// Initialize the current year as the year of the first bin with a value it it.
 						currentYear = TimeUtils.computeYearForEpochSeconds(epochSeconds);

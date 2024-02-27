@@ -43,7 +43,7 @@ public class SampleV4PVAClientTest {
         PVAChannel channel = client.getChannel(pvPrefix + "UnitTestNoNamingConvention:sine:calc");
         channel.connect().get(5, TimeUnit.SECONDS);
         PVAStructure value = channel.read("").get(5, TimeUnit.SECONDS);
-        Assertions.assertFalse(new PVADouble("value", Double.NaN) == value.get("value"));
+        Assertions.assertNotSame(new PVADouble("value", Double.NaN), value.get("value"));
         channel.close();
         client.close();
     }

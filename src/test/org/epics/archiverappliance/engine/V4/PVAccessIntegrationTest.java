@@ -109,9 +109,7 @@ public class PVAccessIntegrationTest {
         var value2 = new PVAEnum("value", 1, choices);
 
         testPVData(ArchDBRTypes.DBR_SCALAR_ENUM,
-                List.of(value, value2), (sampleValue) -> {
-                    return new PVAEnum("value", sampleValue.getValue().intValue(), choices);
-                }, "epics:nt/NTScalar:1.0", pvName);
+                List.of(value, value2), (sampleValue) -> new PVAEnum("value", sampleValue.getValue().intValue(), choices), "epics:nt/NTScalar:1.0", pvName);
 
     }
 
@@ -146,9 +144,7 @@ public class PVAccessIntegrationTest {
         var value2 = new PVAByte("value", true, Integer.valueOf(255).byteValue());
 
         testPVData(ArchDBRTypes.DBR_SCALAR_BYTE,
-                List.of(value, value2), (sampleValue) -> {
-                    return new PVAByte("value", true, sampleValue.getValue().byteValue());
-                }, "epics:nt/NTScalar:1.0", pvName);
+                List.of(value, value2), (sampleValue) -> new PVAByte("value", true, sampleValue.getValue().byteValue()), "epics:nt/NTScalar:1.0", pvName);
 
     }
     @Test
@@ -173,9 +169,7 @@ public class PVAccessIntegrationTest {
         var value2 = new PVAShort("value", true, Integer.valueOf(255).shortValue());
 
         testPVData(ArchDBRTypes.DBR_SCALAR_SHORT,
-                List.of(value, value2), (sampleValue) -> {
-                    return new PVAShort("value", true, sampleValue.getValue().shortValue());
-                }, "epics:nt/NTScalar:1.0", pvName);
+                List.of(value, value2), (sampleValue) -> new PVAShort("value", true, sampleValue.getValue().shortValue()), "epics:nt/NTScalar:1.0", pvName);
 
     }
     @Test
@@ -201,9 +195,7 @@ public class PVAccessIntegrationTest {
         var value2 = new PVAInt("value", true, 255);
 
         testPVData(ArchDBRTypes.DBR_SCALAR_INT,
-                List.of(value, value2), (sampleValue) -> {
-                    return new PVAInt("value", true, sampleValue.getValue().shortValue());
-                }, "epics:nt/NTScalar:1.0", pvName);
+                List.of(value, value2), (sampleValue) -> new PVAInt("value", true, sampleValue.getValue().shortValue()), "epics:nt/NTScalar:1.0", pvName);
 
     }
     @Test

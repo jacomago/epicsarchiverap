@@ -76,7 +76,7 @@ public class FirstFill implements PostProcessor, PostProcessorWithConsolidatedEv
 							if(binNumber != currentBin) {
 								currentBin = binNumber;
 								if(!bin2Event.containsKey(currentBin)) {
-									bin2Event.put(currentBin, e.makeClone());		
+									bin2Event.put(currentBin, e);		
 								} else { 
 									Event currentBinEvent = bin2Event.get(currentBin);
 									if(currentBin == firstBin) { 
@@ -84,13 +84,13 @@ public class FirstFill implements PostProcessor, PostProcessorWithConsolidatedEv
 										// See note below
 										long existingEventsBin = currentBinEvent.getEpochSeconds()/intervalSecs;
 										if(existingEventsBin < firstBin) {
-											Event clonedEvent = e.makeClone();
+											Event clonedEvent = e;
 											bin2Event.put(currentBin, clonedEvent);
 											currentBinEvent = clonedEvent;
 										}
 									}
                                     if (e.getEventTimeStamp().isBefore(currentBinEvent.getEventTimeStamp())) {
-										bin2Event.put(currentBin, e.makeClone());		
+										bin2Event.put(currentBin, e);		
 									}
 								}
 							}
@@ -99,10 +99,10 @@ public class FirstFill implements PostProcessor, PostProcessorWithConsolidatedEv
 								logger.debug("Adding lastSampleBeforeStart");
 								if(lastSampleBeforeStart != null) { 
 									if(e.getEpochSeconds() >= lastSampleBeforeStart.getEpochSeconds()) { 
-										lastSampleBeforeStart = e.makeClone();
+										lastSampleBeforeStart = e;
 									}
 								} else { 
-									lastSampleBeforeStart = e.makeClone();
+									lastSampleBeforeStart = e;
 								}
 							}
 						}

@@ -104,7 +104,7 @@ public class DataReductionTest {
         	List<Event> reducedEvents = new LinkedList<Event>();
         	try (BasicContext context = new BasicContext(); EventStream before = new CurrentThreadWorkerEventStream(pvName, etlSrc.getDataForPV(context, pvName, TimeUtils.minusDays(TimeUtils.now(), 366), TimeUtils.plusDays(TimeUtils.now(), 366), postProcessor))) {
         		for(Event e : before) {
-        			reducedEvents.add(e.makeClone());
+        			reducedEvents.add(e);
         			beforeReducedCount++; 
         		} 
         	}

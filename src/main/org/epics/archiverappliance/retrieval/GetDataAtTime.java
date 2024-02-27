@@ -290,7 +290,7 @@ public class GetDataAtTime {
                                     if (dEv.getEventTimeStamp().isBefore(atTime) || dEv.getEventTimeStamp().equals(atTime)) {
 										if(potentialEvent != null) {
                                             if (dEv.getEventTimeStamp().isAfter(potentialEvent.getEventTimeStamp())) {
-												potentialEvent = (DBRTimeEvent) dEv.makeClone();							
+												potentialEvent = (DBRTimeEvent) dEv;							
 											}
 										} else {
 											potentialEvent = dEv;

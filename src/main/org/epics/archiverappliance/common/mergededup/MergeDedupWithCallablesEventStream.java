@@ -74,24 +74,24 @@ public class MergeDedupWithCallablesEventStream implements EventStream, Remotabl
 			if (s1next != null && s2next != null ) {
 				logger.debug("Still merging both streams " + TimeUtils.convertToHumanReadableString(s1next.getEventTimeStamp()) + " and " + TimeUtils.convertToHumanReadableString(s2next.getEventTimeStamp()));
                 if (s1next.getEventTimeStamp().isBefore(s2next.getEventTimeStamp())) {
-					ret = s1next.makeClone();
+					ret = s1next;
 					moveIt1();
                 } else if (s1next.getEventTimeStamp().isAfter(s2next.getEventTimeStamp())) {
-					ret = s2next.makeClone();
+					ret = s2next;
 					moveIt2();
 				} else {
-					ret = s1next.makeClone();
+					ret = s1next;
 					moveIt1();
 					moveIt2();
 				}
 			} else { 
 				if (s1next != null) {
 					logger.debug("S1 is done");
-					ret = s1next.makeClone();
+					ret = s1next;
 					moveIt1();
 				} else if (s2next != null) {
 					logger.debug("S2 is done");
-					ret = s2next.makeClone();
+					ret = s2next;
 					moveIt2();
 				} else {
 					throw new RuntimeException();  

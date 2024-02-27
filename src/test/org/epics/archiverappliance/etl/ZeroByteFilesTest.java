@@ -186,7 +186,7 @@ public class ZeroByteFilesTest {
                                 TimeUtils.minusDays(TimeUtils.now(), 366),
                                 TimeUtils.plusDays(TimeUtils.now(), 366)))) {
             for (Event e : before) {
-                beforeEvents.add(e.makeClone());
+                beforeEvents.add(e);
                 beforeCount++;
             }
         }

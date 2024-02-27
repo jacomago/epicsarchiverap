@@ -7,12 +7,12 @@
  *******************************************************************************/
 package org.epics.archiverappliance.engine.membuf;
 
-import java.util.ArrayList;
-
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.retrieval.RemotableOverRaw;
+
+import java.util.ArrayList;
 
 /**
  * Implements an event stream on top of an arraylist
@@ -21,30 +21,28 @@ import org.epics.archiverappliance.retrieval.RemotableOverRaw;
  */
 @SuppressWarnings("serial")
 public class ArrayListEventStream extends ArrayList<Event> implements EventStream, RemotableOverRaw {
-	private RemotableEventStreamDesc desc;
-	
-	public ArrayListEventStream(int initialSize, RemotableEventStreamDesc desc) {
-		super(initialSize);
-		this.desc = desc;
-	}
+    private final RemotableEventStreamDesc desc;
 
-	@Override
-	public void close() {
-		// Nothing to do...
-	}
+    public ArrayListEventStream(int initialSize, RemotableEventStreamDesc desc) {
+        super(initialSize);
+        this.desc = desc;
+    }
 
-	@Override
-	public RemotableEventStreamDesc getDescription() {
-		return desc;
-	}
-	
-	public short getYear()
-	{
-		return desc.getYear();
-	}
+    @Override
+    public void close() {
+        // Nothing to do...
+    }
 
-	public void setYear(short year)
-	{
-		desc.setYear(year);
-	}
+    @Override
+    public RemotableEventStreamDesc getDescription() {
+        return desc;
+    }
+
+    public short getYear() {
+        return desc.getYear();
+    }
+
+    public void setYear(short year) {
+        desc.setYear(year);
+    }
 }

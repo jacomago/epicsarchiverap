@@ -79,14 +79,14 @@ public class LastSample implements PostProcessor, PostProcessorWithConsolidatedE
 								}
 								if(binNumber != currentBin) {
 									currentBin = binNumber;
-									bin2Event.put(currentBin, e.makeClone());		
+									bin2Event.put(currentBin, e);		
 								} else { 
 									if(!bin2Event.containsKey(currentBin)) {
-										bin2Event.put(currentBin, e.makeClone());		
+										bin2Event.put(currentBin, e);		
 									} else { 
 										Event currentBinEvent = bin2Event.get(currentBin);
                                         if (e.getEventTimeStamp().isAfter(currentBinEvent.getEventTimeStamp())) {
-											bin2Event.put(currentBin, e.makeClone());		
+											bin2Event.put(currentBin, e);		
 										}
 									}
 								}
@@ -95,11 +95,11 @@ public class LastSample implements PostProcessor, PostProcessorWithConsolidatedE
 								if(!lastSampleBeforeStartAdded) { 
 									if(lastSampleBeforeStart != null) { 
 										if(e.getEpochSeconds() >= lastSampleBeforeStart.getEpochSeconds()) { 
-											lastSampleBeforeStart = e.makeClone();
+											lastSampleBeforeStart = e;
 										}
 										logger.info("Setting the lastSampleBeforeStart to " + TimeUtils.convertToHumanReadableString(lastSampleBeforeStart.getEventTimeStamp()));
 									} else { 
-										lastSampleBeforeStart = e.makeClone();
+										lastSampleBeforeStart = e;
 										logger.info("Setting the lastSampleBeforeStart to " + TimeUtils.convertToHumanReadableString(lastSampleBeforeStart.getEventTimeStamp()));
 									}
 								}

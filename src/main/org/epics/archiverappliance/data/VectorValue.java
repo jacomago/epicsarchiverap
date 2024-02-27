@@ -18,93 +18,96 @@ import java.util.Objects;
  *
  * @param <T>  &emsp;
  */
-public class VectorValue <T extends Number> implements SampleValue {
+public class VectorValue<T extends Number> implements SampleValue {
     private final List<T> values;
-	
-	public VectorValue(List<T> values) {
-		this.values = values;
-	}
 
-	/* (non-Javadoc)
-	 * @see org.epics.archiverappliance.data.SampleValue#getValue()
-	 * For the scalar getValue, we always return the first value
-	 */
-	@Override
-	public Number getValue() {
-		return values.get(0);
-	}
+    public VectorValue(List<T> values) {
+        this.values = values;
+    }
 
-	@Override
-	public int getElementCount() {
-		return values.size();
-	}
+    /* (non-Javadoc)
+     * @see org.epics.archiverappliance.data.SampleValue#getValue()
+     * For the scalar getValue, we always return the first value
+     */
+    @Override
+    public Number getValue() {
+        return values.get(0);
+    }
 
-	@Override
-	public Number getValue(int index) {
-		return values.get(index);
-	}
+    @Override
+    public int getElementCount() {
+        return values.size();
+    }
 
-	/* (non-Javadoc)
-	 * The toString for vectors generates a JSON vector...
-	 * @see java.lang.Object#toString()
-	 */
-	public String toString() {
-		return getString();
-	}
+    @Override
+    public Number getValue(int index) {
+        return values.get(index);
+    }
 
-	private String getString() {
-		boolean first = true;
-		StringWriter buf = new StringWriter();
-		buf.append('[');
-		for(T value : values) {
-			if(first) { first = false; } else { buf.append(","); }
-			buf.append(value.toString());
-		}
-		buf.append(']');
-		return buf.toString();
-	}
+    /* (non-Javadoc)
+     * The toString for vectors generates a JSON vector...
+     * @see java.lang.Object#toString()
+     */
+    public String toString() {
+        return getString();
+    }
 
-	
-	@Override
-	public String getStringValue(int index) {
-		return getValue(index).toString();
-	}
+    private String getString() {
+        boolean first = true;
+        StringWriter buf = new StringWriter();
+        buf.append('[');
+        for (T value : values) {
+            if (first) {
+                first = false;
+            } else {
+                buf.append(",");
+            }
+            buf.append(value.toString());
+        }
+        buf.append(']');
+        return buf.toString();
+    }
 
-	@SuppressWarnings("rawtypes")
-	@Override
-	public List getValues() {
-		return values;
-	}
+    @Override
+    public String getStringValue(int index) {
+        return getValue(index).toString();
+    }
 
-	@Override
-	public List<String> getStringValues() {
-		throw new UnsupportedOperationException();
-	}
+    @SuppressWarnings("rawtypes")
+    @Override
+    public List getValues() {
+        return values;
+    }
 
-	@Override
-	public List<Number> getNumberValues() {
-		return (List<Number>) values;
-	}
+    @Override
+    public List<String> getStringValues() {
+        throw new UnsupportedOperationException();
+    }
 
-	@Override
-	public int hashCode() {
-		return values.hashCode();
-	}
+    @Override
+    public List<Number> getNumberValues() {
+        return (List<Number>) values;
+    }
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (!(o instanceof VectorValue<?> that)) return false;
+    @Override
+    public int hashCode() {
+        return values.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof VectorValue<?> that)) return false;
         return Objects.equals(getValues(), that.getValues());
-	}
+    }
 
-	@Override
-	public String toJSONString() {
-		return getString();
-	}
+    @Override
+    public String toJSONString() {
+        return getString();
+    }
 
-	@Override
-	public ByteBuffer getValueAsBytes() {
-		throw new UnsupportedOperationException();
-	}
+    @Override
+    public ByteBuffer getValueAsBytes() {
+        throw new UnsupportedOperationException();
+    }
 }

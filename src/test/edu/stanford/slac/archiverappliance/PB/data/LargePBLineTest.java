@@ -30,9 +30,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * Test storage and retrieval of events whose serialized sizes are large.
@@ -53,6 +53,7 @@ public class LargePBLineTest {
     public void tearDown() throws Exception {
         largeLineSetup.deleteTestFolder();
     }
+
     @Test
     public void testLargeLines() throws Exception {
         PlainPBStoragePlugin storagePlugin = new PlainPBStoragePlugin();
@@ -70,12 +71,12 @@ public class LargePBLineTest {
             retvd.setTimeStamp(new gov.aps.jca.dbr.TimeStamp(TimeUtils.getStartOfCurrentYearInSeconds() + i));
             retvd.setSeverity(1);
             retvd.setStatus(0);
-            strm.add(new PBVectorDouble(retvd));
+            strm.add(DefaultEvent.fromDBR(type, retvd, Map.of(), false));
         }
         try (BasicContext context = new BasicContext()) {
             storagePlugin.appendData(context, pvName, strm);
         } catch (Exception ex) {
-            logger.error("Exception appending data " +strm, ex);
+            logger.error("Exception appending data " + strm, ex);
             Assertions.fail(ex.getMessage());
         }
 

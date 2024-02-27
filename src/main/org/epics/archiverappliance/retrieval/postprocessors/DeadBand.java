@@ -74,7 +74,7 @@ public class DeadBand implements PostProcessor {
 						try { 
 							// The very first sample we get we write out and that becomes the "last" value.
 							if(lastEventWrittenOut == null) {
-								Event clone = e.makeClone();
+								Event clone = e;
 								lastEventWrittenOut = clone;
 								buf.add(clone);
 								logger.debug("Writing the very first sample out at " + TimeUtils.convertToISO8601String(clone.getEventTimeStamp()));
@@ -88,7 +88,7 @@ public class DeadBand implements PostProcessor {
 									|| Double.isInfinite(lastVALueWrittenOut) || Double.isNaN(lastVALueWrittenOut)
 									) {
 								// If either current value or previous value is NAN/INF, unconditionally write out current value and update last known value 
-								Event clone = e.makeClone();
+								Event clone = e;
 								lastEventWrittenOut = clone;
 								buf.add(clone);
 								logger.debug("Writing out from infinity/NAN at " + TimeUtils.convertToISO8601String(clone.getEventTimeStamp()));
@@ -101,7 +101,7 @@ public class DeadBand implements PostProcessor {
 							int previousSeverity = previousDBRTimeEvent.getSeverity();
 							if(currentSeverity != previousSeverity) {
 								// If alarm severity changes, write out current value and update last known value 
-								Event clone = e.makeClone();
+								Event clone = e;
 								lastEventWrittenOut = clone;
 								buf.add(clone);
 								logger.debug("Writing out from severity change at " + TimeUtils.convertToISO8601String(clone.getEventTimeStamp()));
@@ -112,7 +112,7 @@ public class DeadBand implements PostProcessor {
 							boolean previousConnectionChangeStatus = previousDBRTimeEvent.hasFieldValues() && previousDBRTimeEvent.getFields().containsKey("cnxlostepsecs");
 							if(currentConnectionChangeStatus != previousConnectionChangeStatus) {
 								// If connection state changes changes, write out current value and update last known value 
-								Event clone = e.makeClone();
+								Event clone = e;
 								lastEventWrittenOut = clone;
 								buf.add(clone);
 								logger.debug("Writing out from connection state change at " + TimeUtils.convertToISO8601String(clone.getEventTimeStamp()));
@@ -125,7 +125,7 @@ public class DeadBand implements PostProcessor {
 							//    Update last known value
 							double diff = Math.abs(currentVALue - lastVALueWrittenOut);
 							if (diff > adelValue) { 
-								Event clone = e.makeClone();
+								Event clone = e;
 								lastEventWrittenOut = clone;
 								buf.add(clone);
 								logger.debug("Writing out from magnitude change at " + TimeUtils.convertToISO8601String(clone.getEventTimeStamp()));

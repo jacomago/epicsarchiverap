@@ -48,7 +48,7 @@ public class TimeSpanLimitEventStream implements EventStream, RemotableOverRaw {
 		public Event next() {
 			Event ret = null;
 			if(event != null) {
-				ret = event.makeClone();
+				ret = event;
 				move();
 			}
 			return ret;

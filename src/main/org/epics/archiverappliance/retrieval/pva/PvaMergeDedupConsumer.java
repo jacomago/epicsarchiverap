@@ -141,14 +141,14 @@ public class PvaMergeDedupConsumer implements EventStreamConsumer, AutoCloseable
 	private void handleEvent(Event e) throws Exception {
 		if(!haveIpushedTheFirstEvent && firstEvent == null) {
 			logger.debug("Making a copy of the first event " + TimeUtils.convertToHumanReadableString(e.getEventTimeStamp()));
-			firstEvent = e.makeClone();
+			firstEvent = e;
 			return;
 					}
 					
 					if(!haveIpushedTheFirstEvent) {
                         if (e.getEventTimeStamp().isBefore(this.startTimeStamp)) {
 				logger.debug("Making a copy of another event " + TimeUtils.convertToHumanReadableString(e.getEventTimeStamp()));
-				firstEvent = e.makeClone();
+				firstEvent = e;
 			} else {
 				haveIpushedTheFirstEvent = true;
 				logger.debug("Consuming first and current events " + TimeUtils.convertToHumanReadableString(e.getEventTimeStamp()));

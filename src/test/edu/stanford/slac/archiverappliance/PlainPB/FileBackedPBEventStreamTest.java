@@ -8,6 +8,7 @@ import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
+import org.epics.archiverappliance.common.YearSecondTimestamp;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
@@ -61,9 +62,9 @@ public class FileBackedPBEventStreamTest {
             + "&rootFolder=" + testFolder.getAbsolutePath() + "&partitionGranularity=PARTITION_YEAR";
     private static long events;
 
-    private static final Instant oneWeekIntoYear =
-            TimeUtils.getStartOfYear(TimeUtils.getCurrentYear())
-                    .plusSeconds(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() * 7L);
+    private static final Instant oneWeekIntoYear = TimeUtils.getStartOfYear(TimeUtils.getCurrentYear())
+            .plusSeconds(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() * 7L);
+
     static {
         try {
             configService = new ConfigServiceForTests(-1);
@@ -93,12 +94,7 @@ public class FileBackedPBEventStreamTest {
         Instant start = TimeUtils.getStartOfYear(currentYear);
         Instant end = TimeUtils.getEndOfYear(currentYear);
         logger.info("start {} end {}", start, end);
-        SimulationEventStream simstream = new SimulationEventStream(
-                dbrType,
-                new SineGenerator(10),
-                start,
-                end,
-                1);
+        SimulationEventStream simstream = new SimulationEventStream(dbrType, new SineGenerator(10), start, end, 1);
         try (BasicContext context = new BasicContext()) {
             assert storagePlugin != null;
             return storagePlugin.appendData(context, pvName, simstream);
@@ -106,14 +102,12 @@ public class FileBackedPBEventStreamTest {
     }
 
     private static PlainPBStoragePlugin getStoragePlugin() throws IOException {
-        return (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                storagePBPluginString,
-                configService);
+        return (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(storagePBPluginString, configService);
     }
 
     private static Stream<Arguments> provideTimeBasedIterator() {
         long twoDays = PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() * 2L;
-        return Arrays.stream(new Boolean[]{true, false})
+        return Arrays.stream(new Boolean[] {true, false})
                 .flatMap(sS -> Stream.of(
                         // Start 11 seconds into the year and get two seconds worth of data.
                         Arguments.of(
@@ -132,15 +126,8 @@ public class FileBackedPBEventStreamTest {
                         // Start at one second before end of year and end 2 seconds later to get 1 second
                         Arguments.of(
                                 sS,
-                                convertFromEpochSeconds(
-                                        getStartOfYearInSeconds(getCurrentYear())
-                                                - 1,
-                                        0),
-                                convertFromEpochSeconds(
-                                        getStartOfYearInSeconds(getCurrentYear())
-                                                - 1
-                                                + 2,
-                                        0),
+                                convertFromEpochSeconds(getStartOfYearInSeconds(getCurrentYear()) - 1, 0),
+                                convertFromEpochSeconds(getStartOfYearInSeconds(getCurrentYear()) - 1 + 2, 0),
                                 1 + 1)));
     }
 
@@ -156,7 +143,7 @@ public class FileBackedPBEventStreamTest {
                     oneWeekIntoYear,
                     context.getPaths(),
                     configService.getPVNameToKeyConverter());
-	        Assertions.assertNotNull(path, "Did we not write any data?");
+            Assertions.assertNotNull(path, "Did we not write any data?");
             long eventCount = 0;
             try (FileBackedPBEventStream stream = new FileBackedPBEventStream(pvName, path, dbrType)) {
                 for (Event e : stream) {
@@ -226,7 +213,7 @@ public class FileBackedPBEventStreamTest {
                     configService.getPVNameToKeyConverter());
             long eventCount = 0;
             try (FileBackedPBEventStream stream =
-                         new FileBackedPBEventStream(pvName, path, dbrType, start, end, skipSearch)) {
+                    new FileBackedPBEventStream(pvName, path, dbrType, start, end, skipSearch)) {
                 long eventEpochSeconds = 0;
                 for (Event e : stream) {
                     eventEpochSeconds = e.getEpochSeconds();
@@ -273,10 +260,13 @@ public class FileBackedPBEventStreamTest {
                 boolean firstEvent = true;
                 for (Event e : stream) {
                     if (firstEvent) {
-                        Assertions.assertEquals(e.getEventTimeStamp(), time, "The first event should be equal timestamp "
-                                + convertToISO8601String(time)
-                                + " got "
-                                + convertToISO8601String(e.getEventTimeStamp()));
+                        Assertions.assertEquals(
+                                e.getEventTimeStamp(),
+                                time,
+                                "The first event should be equal timestamp "
+                                        + convertToISO8601String(time)
+                                        + " got "
+                                        + convertToISO8601String(e.getEventTimeStamp()));
                         firstEvent = false;
                     } else {
                         // All other events should be after timestamp
@@ -319,7 +309,7 @@ public class FileBackedPBEventStreamTest {
                         Assertions.assertEquals(startTime, e.getEventTimeStamp());
                         firstEvent = false;
                     } else {
-                        finalEvent = e.makeClone();
+                        finalEvent = e;
                     }
                 }
             }
@@ -352,17 +342,16 @@ public class FileBackedPBEventStreamTest {
                     PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(),
                     new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, highRatePVName, currentYear));
             for (int secondintoday = 0;
-                 secondintoday < PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
-                 secondintoday++) {
+                    secondintoday < PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
+                    secondintoday++) {
                 // The value should be the secondsIntoYear integer divided by 600.
                 // Add 10 events per second
                 for (int i = 0; i < 10; i++) {
                     SimulationEvent sample = new SimulationEvent(
-                            startofdayinseconds + secondintoday,
-                            currentYear,
+                            new YearSecondTimestamp(currentYear, startofdayinseconds + secondintoday, i * 100),
                             ArchDBRTypes.DBR_SCALAR_DOUBLE,
                             new ScalarValue<>((double) (((startofdayinseconds + secondintoday) / 600))));
-                    sample.setNanos(i * 100);
+
                     testData.add(sample);
                 }
             }
@@ -392,10 +381,13 @@ public class FileBackedPBEventStreamTest {
                 for (Event e : stream) {
                     eventCount++;
                     if (firstEvent) {
-                        Assertions.assertEquals(e.getEventTimeStamp(), startTime, "The first event should be equal timestamp "
-                                + convertToISO8601String(startTime)
-                                + " got "
-                                + convertToISO8601String(e.getEventTimeStamp()));
+                        Assertions.assertEquals(
+                                e.getEventTimeStamp(),
+                                startTime,
+                                "The first event should be equal timestamp "
+                                        + convertToISO8601String(startTime)
+                                        + " got "
+                                        + convertToISO8601String(e.getEventTimeStamp()));
                         firstEvent = false;
                     }
                 }

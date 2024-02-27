@@ -196,7 +196,7 @@ public abstract class SummaryStatsPostProcessor implements PostProcessor, PostPr
 							} else if (eventInstant.isBefore(start)) {
 								// Michael Davidsaver's special case; keep track of the last value before the start time and then add that in as a single sample.
 								if (lastSampleBeforeStart == null || e.getEventTimeStamp().isAfter(lastSampleBeforeStart.getEventTimeStamp())) {
-									lastSampleBeforeStart = e.makeClone();
+									lastSampleBeforeStart = e;
 								}
 							}
 						} catch(PBParseException ex) { 

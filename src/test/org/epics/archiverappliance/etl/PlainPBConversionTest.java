@@ -1,6 +1,6 @@
 package org.epics.archiverappliance.etl;
 
-import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
+import edu.stanford.slac.archiverappliance.PB.data.DefaultEvent;
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.apache.logging.log4j.LogManager;
@@ -29,10 +29,10 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;
@@ -51,8 +51,7 @@ public class PlainPBConversionTest {
     private final int markFieldValuesChanged = 20;
 
     @BeforeAll
-    public static void setup() {
-    }
+    public static void setup() {}
 
     public static Stream<Arguments> providePlainPBConversion() {
         return Stream.of(
@@ -150,18 +149,18 @@ public class PlainPBConversionTest {
         ArrayListEventStream ret = new ArrayListEventStream(
                 100, new RemotableEventStreamDesc(dbrType, pvName, TimeUtils.getCurrentYear()));
         int eventsAdded = 0;
-        Constructor<? extends DBRTimeEvent> serializingConstructor =
-                DBR2PBTypeMapping.getPBClassFor(dbrType).getSerializingConstructor();
         Instant endTime = startTime.plusSeconds(totalTimePeriodInSeconds);
         try (SimulationEventStream simstream =
-                     new SimulationEventStream(dbrType, new ValueGenerator(dbrType), startTime, endTime, periodInSeconds)) {
+                new SimulationEventStream(dbrType, new ValueGenerator(dbrType), startTime, endTime, periodInSeconds)) {
             for (Event simEvent : simstream) {
-                DBRTimeEvent genEvent = serializingConstructor.newInstance(simEvent);
+                DBRTimeEvent genEvent = DefaultEvent.fromDBREvent((DBRTimeEvent) simEvent);
                 if (eventsAdded % addFieldValues == 0) {
-                    genEvent.addFieldValue("HIHI", "Test");
-                    genEvent.addFieldValue("LOLO", "13:40:12");
+                    Map<String, String> map = Map.of("HIHI", "Test", "LOLO", "13:40:12");
+
                     if (eventsAdded % markFieldValuesChanged == 0) {
-                        genEvent.markAsActualChange();
+                        genEvent = genEvent.cloneWithExtraFieldValues(map, true);
+                    } else {
+                        genEvent = genEvent.cloneWithExtraFieldValues(map, false);
                     }
                 }
                 ret.add(genEvent);
