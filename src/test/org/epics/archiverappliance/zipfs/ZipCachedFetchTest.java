@@ -4,7 +4,6 @@ import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import edu.stanford.slac.archiverappliance.plain.pb.FileBackedPBEventStream;
 import edu.stanford.slac.archiverappliance.plain.pb.MultiFilePBEventStream;
-import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -90,9 +89,9 @@ public class ZipCachedFetchTest {
                     pvName,
                     startTime,
                     endTime,
-                    PBPlainFileHandler.pbFileExtension,
+                    pbplugin.getExtensionString(),
                     pbplugin.getPartitionGranularity(),
-                    pbplugin.getCompressionMode(),
+                    pbplugin.getPlainFileHandler().getPathResolver(),
                     configService.getPVNameToKeyConverter());
             long previousEpochSeconds = 0L;
             long eventCount = 0;
@@ -144,9 +143,9 @@ public class ZipCachedFetchTest {
                     pvName,
                     startTime,
                     endTime,
-                    PBPlainFileHandler.pbFileExtension,
+                    pbplugin.getExtensionString(),
                     pbplugin.getPartitionGranularity(),
-                    pbplugin.getCompressionMode(),
+                    pbplugin.getPlainFileHandler().getPathResolver(),
                     configService.getPVNameToKeyConverter());
 
             List<Future<EventStream>> futures = new LinkedList<Future<EventStream>>();
