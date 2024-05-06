@@ -240,7 +240,7 @@ tasks.register("mgmtWar", War) {
 		include "*.sql"
 		into "install"
 	}
-	from("docs") {
+	from("${apiDocsDir}") {
 		into "ui/help"
 	}
 	from("docs/samples") {
