@@ -7,32 +7,6 @@ plugins {
 	id("com.diffplug.spotless") version "6.25.0"
 }
 
-sourceSets {
-	main {
-		java {
-			srcDir "src/main/"
-		}
-		resources {
-			srcDirs = []
-		}
-	}
-	test {
-		java {
-			srcDir "src/test/"
-		}
-		resources {
-			srcDirs = []
-		}
-	}
-}
-
-processTestResources {
-	from(file("src/sitespecific/tests/classpathfiles"))
-	from(file("src/resources/test")) {
-		include "log4j2.xml"
-		include "appliances.xml.j2"
-	}
-}
 
 java {
 	toolchain {
@@ -42,7 +16,7 @@ java {
 
 version gitVersion()
 def stageDir = layout.projectDirectory.file("build/stage")
-def srcDir = layout.projectDirectory.file("src/main")
+def srcDir = layout.projectDirectory.file("src/main/java")
 def libDir = layout.projectDirectory.file("lib")
 def apiDocsDir = layout.projectDirectory.file("docs/api")
 def archapplsite = System.getenv("ARCHAPPL_SITEID") ? System.getenv("ARCHAPPL_SITEID") : "tests"
@@ -374,6 +348,10 @@ war {
 
 assemble {
 	dependsOn "buildRelease"
+}
+
+processTestResources {
+	from(file("src/sitespecific/tests/classpathfiles"))
 }
 
 tasks.withType(Test).configureEach {
