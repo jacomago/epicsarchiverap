@@ -87,7 +87,7 @@ public class ArchiveFieldsNotInStreamTest {
 	}
 	@BeforeEach
 	public void setUp() throws Exception {
-		System.getProperties().put("ARCHAPPL_POLICIES", System.getProperty("user.dir") + "/src/test/org/epics/archiverappliance/mgmt/ArchiveFieldsNotInStream.py");
+		System.getProperties().put("ARCHAPPL_POLICIES", System.getProperty("user.dir") + "/src/test/python/ArchiveFieldsNotInStream.py");
 		siocSetup.startSIOCWithDefaultDB();
 		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
 		driver = new FirefoxDriver();

@@ -92,7 +92,7 @@ public class AppendAndAliasPVTest {
 
     private void addPVToCluster(String pvName, String appliance, Instant creationTime) throws Exception {
 		// Load a sample PVTypeInfo from a prototype file.
-		JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream(new File("src/test/org/epics/archiverappliance/retrieval/postprocessor/data/PVTypeInfoPrototype.json"))));
+		JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream(new File("src/test/data/PVTypeInfoPrototype.json"))));
 		PVTypeInfo srcPVTypeInfo = new PVTypeInfo();
 		JSONDecoder<PVTypeInfo> decoder = JSONDecoder.getDecoder(PVTypeInfo.class);
 		decoder.decode(srcPVTypeInfoJSON, srcPVTypeInfo);

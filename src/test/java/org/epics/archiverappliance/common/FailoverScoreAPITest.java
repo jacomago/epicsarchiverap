@@ -115,7 +115,7 @@ public class FailoverScoreAPITest {
         }
         logger.info("Done generating data for appliance " + applianceName);
 
-        JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream("src/test/org/epics/archiverappliance/retrieval/postprocessor/data/PVTypeInfoPrototype.json")));
+        JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream("src/test/data/PVTypeInfoPrototype.json")));
         PVTypeInfo destPVTypeInfo = new PVTypeInfo();
         JSONDecoder<PVTypeInfo> decoder = JSONDecoder.getDecoder(PVTypeInfo.class);
         JSONEncoder<PVTypeInfo> encoder = JSONEncoder.getEncoder(PVTypeInfo.class);

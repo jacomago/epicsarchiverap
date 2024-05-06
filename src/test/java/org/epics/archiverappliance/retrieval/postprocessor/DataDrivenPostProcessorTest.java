@@ -67,13 +67,13 @@ public class DataDrivenPostProcessorTest {
 	@Test
 	public void testRetrievalPV1() throws Exception {
 		File destFile = new File(ltsFolder + "/LN/AM/RadMon/2/DoseRate/I:2014.pb");
-		String srcFile = "src/test/org/epics/archiverappliance/retrieval/postprocessor/data/test1/lrm01_raw.pb";
+		String srcFile = "src/test/data/test1/lrm01_raw.pb";
 		destFile.getParentFile().mkdirs();
 		FileUtils.copyFile(new File(srcFile), destFile);
 		Assertions.assertTrue(destFile.exists(), destFile.getAbsolutePath() + "does not exist");
 		 
 		// Load a sample PVTypeInfo from a prototype file.
-		JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream(new File("src/test/org/epics/archiverappliance/retrieval/postprocessor/data/PVTypeInfoPrototype.json"))));
+		JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream(new File("src/test/data/PVTypeInfoPrototype.json"))));
 		PVTypeInfo srcPVTypeInfo = new PVTypeInfo();
 		JSONDecoder<PVTypeInfo> decoder = JSONDecoder.getDecoder(PVTypeInfo.class);
 		decoder.decode(srcPVTypeInfoJSON, srcPVTypeInfo);

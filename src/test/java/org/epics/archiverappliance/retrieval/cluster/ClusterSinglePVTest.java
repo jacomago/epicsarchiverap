@@ -101,7 +101,7 @@ public class ClusterSinglePVTest {
         logger.info("Done generating data for PV in " + ltsPVFolder.getAbsolutePath());
 
         // Load a sample PVTypeInfo from a prototype file.
-        JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream("src/test/org/epics/archiverappliance/retrieval/postprocessor/data/PVTypeInfoPrototype.json")));
+        JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream("src/test/data/PVTypeInfoPrototype.json")));
 
         // Create target for decoded type info from JSON
         PVTypeInfo srcPVTypeInfo = new PVTypeInfo();

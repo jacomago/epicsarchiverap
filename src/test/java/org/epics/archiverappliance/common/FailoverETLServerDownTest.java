@@ -77,7 +77,7 @@ public class FailoverETLServerDownTest {
 
 	
 	private void changeMTSForDest() throws Exception {
-		JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream(new File("src/test/org/epics/archiverappliance/retrieval/postprocessor/data/PVTypeInfoPrototype.json"))));
+		JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream(new File("src/test/data/PVTypeInfoPrototype.json"))));
 		PVTypeInfo destPVTypeInfo = new PVTypeInfo();
 		JSONDecoder<PVTypeInfo> decoder = JSONDecoder.getDecoder(PVTypeInfo.class);
 		decoder.decode(srcPVTypeInfoJSON, destPVTypeInfo);

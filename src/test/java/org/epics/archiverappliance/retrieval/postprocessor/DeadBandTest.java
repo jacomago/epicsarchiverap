@@ -76,13 +76,13 @@ public class DeadBandTest {
 	@Test
 	public void testRetrievalPV1() throws Exception {
 		File destFile = new File(ltsFolder + "/TST-CT{}Sig/1-I:2014.pb");
-		String srcFile = "src/test/org/epics/archiverappliance/retrieval/postprocessor/data/deadband/sig1-wo-adel.pb";
+		String srcFile = "src/test/data/deadband/sig1-wo-adel.pb";
 		destFile.getParentFile().mkdirs();
 		FileUtils.copyFile(new File(srcFile), destFile);
 		Assertions.assertTrue(destFile.exists(), destFile.getAbsolutePath() + "does not exist");
 		 
 		// Load a sample PVTypeInfo from a prototype file.
-		JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream(new File("src/test/org/epics/archiverappliance/retrieval/postprocessor/data/PVTypeInfoPrototype.json"))));
+		JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream(new File("src/test/data/PVTypeInfoPrototype.json"))));
 		PVTypeInfo srcPVTypeInfo = new PVTypeInfo();
 		JSONDecoder<PVTypeInfo> decoder = JSONDecoder.getDecoder(PVTypeInfo.class);
 		decoder.decode(srcPVTypeInfoJSON, srcPVTypeInfo);
@@ -100,7 +100,7 @@ public class DeadBandTest {
         Instant end = TimeUtils.convertFromISO8601String("2014-12-10T19:15:55.000Z");
 		
 		checkRetrieval(newPVName, start, end, 37, true);
-		try(FileBackedPBEventStream compareStream = new FileBackedPBEventStream("TST-CT{}Sig:2-I", Paths.get("src/test/org/epics/archiverappliance/retrieval/postprocessor/data/deadband/sig2-w-adel.pb"), ArchDBRTypes.DBR_SCALAR_DOUBLE)) { 
+		try(FileBackedPBEventStream compareStream = new FileBackedPBEventStream("TST-CT{}Sig:2-I", Paths.get("src/test/data/deadband/sig2-w-adel.pb"), ArchDBRTypes.DBR_SCALAR_DOUBLE)) { 
 			compareStreams("deadBand_2.0(" + newPVName + ")", start, end, compareStream);
 		}
 	}

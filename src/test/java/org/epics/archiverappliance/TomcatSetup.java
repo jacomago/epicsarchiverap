@@ -216,7 +216,7 @@ public class TomcatSetup {
 		// TomcatSampleServer.xml is a simple MessageFormat template with entries for
 		// 0) server http port
 		// 1) server startup port
-		String serverXML = new String(Files.readAllBytes(Paths.get("./src/test/org/epics/archiverappliance/TomcatSampleServer.xml")));
+		String serverXML = new String(Files.readAllBytes(Paths.get("./src/test/resources/TomcatSampleServer.xml")));
 		String formattedServerXML = MessageFormat.format(serverXML, port, startupPort);
 		Files.write(Paths.get(confFolder.getAbsolutePath(), "server.xml"), formattedServerXML.getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
 		logger.debug("Done generating server.xml");

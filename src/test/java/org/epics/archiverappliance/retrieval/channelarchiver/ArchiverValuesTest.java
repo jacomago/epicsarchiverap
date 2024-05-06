@@ -37,7 +37,7 @@ public class ArchiverValuesTest {
     @Test
     public void testDBR_SCALAR_DOUBLE() throws Exception {
         File f =
-                new File("src/test/org/epics/archiverappliance/retrieval/channelarchiver/DBR_SCALAR_DOUBLE_values.xml");
+                new File("src/test/data/channelarchiver/DBR_SCALAR_DOUBLE_values.xml");
         logger.info("Testing using " + f.getAbsolutePath());
         FileInputStream is = new FileInputStream(f);
         try (ArchiverValuesHandler handler = new ArchiverValuesHandler("DummyPVName", is, f.toString(), null)) {
@@ -78,7 +78,7 @@ public class ArchiverValuesTest {
     @Test
     public void testDBR_WAVEFORM_DOUBLE() throws Exception {
         File f = new File(
-                "src/test/org/epics/archiverappliance/retrieval/channelarchiver/DBR_WAVEFORM_DOUBLE_values.xml");
+                "src/test/data/channelarchiver/DBR_WAVEFORM_DOUBLE_values.xml");
         logger.info("Testing using " + f.getAbsolutePath());
         FileInputStream is = new FileInputStream(f);
         try (ArchiverValuesHandler handler = new ArchiverValuesHandler("DummyPVName", is, f.toString(), null)) {
@@ -122,7 +122,7 @@ public class ArchiverValuesTest {
 
     @Test
     public void testNOData() throws Exception {
-        File f = new File("src/test/org/epics/archiverappliance/retrieval/channelarchiver/NODATA_Sample.xml");
+        File f = new File("src/test/data/channelarchiver/NODATA_Sample.xml");
         logger.info("Testing using " + f.getAbsolutePath());
         FileInputStream is = new FileInputStream(f);
         try (ArchiverValuesHandler handler = new ArchiverValuesHandler("DummyPVName", is, f.toString(), null)) {
@@ -162,7 +162,7 @@ public class ArchiverValuesTest {
 
     @Test
     public void testTwoElementsTest() throws Exception {
-        File f = new File("src/test/org/epics/archiverappliance/retrieval/channelarchiver/TwoElementsTest.xml");
+        File f = new File("src/test/data/channelarchiver/TwoElementsTest.xml");
         logger.info("Testing using " + f.getAbsolutePath());
         FileInputStream is = new FileInputStream(f);
         try (ArchiverValuesHandler handler = new ArchiverValuesHandler("DummyPVName", is, f.toString(), null)) {

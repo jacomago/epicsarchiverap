@@ -40,7 +40,7 @@ public class CAYearSpanTest {
 
 	@Test
 	public void testYearSpan() throws Exception {
-		File f = new File("src/test/org/epics/archiverappliance/retrieval/channelarchiver/--ArchUnitTestCAYearSpan.xml");
+		File f = new File("src/test/data/channelarchiver/--ArchUnitTestCAYearSpan.xml");
 		logger.info("Testing using " + f.getAbsolutePath());
 		FileInputStream is = new FileInputStream(f);
 		try(ArchiverValuesHandler handler = new ArchiverValuesHandler("DummyPVName", is, f.toString(), null)) { 

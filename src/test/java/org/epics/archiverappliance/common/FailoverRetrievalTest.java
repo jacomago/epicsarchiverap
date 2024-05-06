@@ -96,7 +96,7 @@ public class FailoverRetrievalTest {
         logger.info("Done generating dest data");
 
         JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream(new File(
-                "src/test/org/epics/archiverappliance/retrieval/postprocessor/data/PVTypeInfoPrototype.json"))));
+                "src/test/data/PVTypeInfoPrototype.json"))));
         PVTypeInfo destPVTypeInfo = new PVTypeInfo();
         JSONDecoder<PVTypeInfo> decoder = JSONDecoder.getDecoder(PVTypeInfo.class);
         JSONEncoder<PVTypeInfo> encoder = JSONEncoder.getEncoder(PVTypeInfo.class);
