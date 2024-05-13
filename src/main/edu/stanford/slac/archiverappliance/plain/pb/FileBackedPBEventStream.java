@@ -10,6 +10,7 @@ package edu.stanford.slac.archiverappliance.plain.pb;
 import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
 import edu.stanford.slac.archiverappliance.PB.search.FileEventStreamSearch;
 import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
+import edu.stanford.slac.archiverappliance.plain.EventStreamIterator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.ByteArray;
@@ -21,7 +22,6 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.YearSecondTimestamp;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
-import org.epics.archiverappliance.etl.ETLBulkStream;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.retrieval.RemotableOverRaw;
 
@@ -42,7 +42,7 @@ import java.util.Iterator;
  * @author mshankar
  *
  */
-public class FileBackedPBEventStream implements EventStream, RemotableOverRaw, ETLBulkStream {
+public class FileBackedPBEventStream implements EventStream, RemotableOverRaw, ETLPBByteStream {
     private static final Logger logger = LogManager.getLogger(FileBackedPBEventStream.class.getName());
     private final String pvName;
     private final ArchDBRTypes type;
@@ -53,7 +53,7 @@ public class FileBackedPBEventStream implements EventStream, RemotableOverRaw, E
     private Instant endTime = null;
     private boolean positionBoundaries = true;
     private boolean nodata = false;
-    private FileBackedPBEventStreamIterator theIterator = null;
+    private EventStreamIterator theIterator = null;
     private RemotableEventStreamDesc desc;
     private PBFileInfo fileInfo = null;
 
@@ -142,6 +142,7 @@ public class FileBackedPBEventStream implements EventStream, RemotableOverRaw, E
                 theIterator = new FileBackedPBEventStreamPositionBasedIterator(
                         path, startFilePos, endFilePos, desc.getYear(), type);
             } else {
+
                 theIterator =
                         new FileBackedPBEventStreamTimeBasedIterator(path, startTime, endTime, desc.getYear(), type);
             }
