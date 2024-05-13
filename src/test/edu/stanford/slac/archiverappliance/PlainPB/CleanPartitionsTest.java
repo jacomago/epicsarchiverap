@@ -1,7 +1,7 @@
 package edu.stanford.slac.archiverappliance.PlainPB;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.plain.PBFileInfo;
+import edu.stanford.slac.archiverappliance.plain.pb.PBFileInfo;
 import edu.stanford.slac.archiverappliance.plain.PlainPathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainPathNameUtility.StartEndTimeFromName;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
