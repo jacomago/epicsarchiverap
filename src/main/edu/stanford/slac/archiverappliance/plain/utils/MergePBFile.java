@@ -5,12 +5,12 @@
  * EPICS archiver appliance is distributed subject to a Software License Agreement found
  * in file LICENSE that is included with this distribution.
  *******************************************************************************/
-package edu.stanford.slac.archiverappliance.PlainPB.utils;
+package edu.stanford.slac.archiverappliance.plain.utils;
 
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
 import edu.stanford.slac.archiverappliance.PB.utils.LineEscaper;
-import edu.stanford.slac.archiverappliance.PlainPB.FileBackedPBEventStream;
-import edu.stanford.slac.archiverappliance.PlainPB.PBFileInfo;
+import edu.stanford.slac.archiverappliance.plain.pb.FileBackedPBEventStream;
+import edu.stanford.slac.archiverappliance.plain.pb.PBFileInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.ByteArray;
@@ -128,10 +128,10 @@ public class MergePBFile {
             PBFileInfo info0 = new PBFileInfo(srcPath0), info1 = new PBFileInfo(srcPath1);
             try (FileBackedPBEventStream strm0 =
                             new FileBackedPBEventStream(info0.getPVName(), srcPath0, info0.getType());
-                    FileBackedPBEventStream strm1 =
+                 FileBackedPBEventStream strm1 =
                             new FileBackedPBEventStream(info1.getPVName(), srcPath1, info1.getType());
-                    MergeDedupEventStream mergestream = new MergeDedupEventStream(strm0, strm1);
-                    OutputStream os = new BufferedOutputStream(Files.newOutputStream(
+                 MergeDedupEventStream mergestream = new MergeDedupEventStream(strm0, strm1);
+                 OutputStream os = new BufferedOutputStream(Files.newOutputStream(
                             destPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
                 byte[] headerBytes = LineEscaper.escapeNewLines(PayloadInfo.newBuilder()
                         .setPvname(info0.getPVName())
