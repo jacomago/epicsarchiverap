@@ -7,9 +7,10 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.PB.data.PlainCommonSetup;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
@@ -51,7 +52,7 @@ public class GenerateData {
         }
     }
 
-	/**
+    /**
      * We generate a sine wave for the data if it does not already exist.
      * @throws IOException
      */
@@ -59,42 +60,38 @@ public class GenerateData {
             String pvName,
             int phasediffindegrees,
             ArchDBRTypes type,
+            PlainStorageType plainStorageType,
             Instant start,
             Instant end)
             throws Exception {
-        PlainPBStoragePlugin storagePlugin = new PlainPBStoragePlugin();
-        PBCommonSetup setup = new PBCommonSetup();
+        PlainStoragePlugin storagePlugin = new PlainStoragePlugin(plainStorageType);
+        PlainCommonSetup setup = new PlainCommonSetup();
         setup.setUpRootFolder(storagePlugin);
         long numberOfEvents = 0;
         try (BasicContext context = new BasicContext()) {
-            if (!Files.exists(PlainPBPathNameUtility.getPathNameForTime(
-                    storagePlugin,
-                    pvName,
-                    start,
-                    context.getPaths(),
-                    configService.getPVNameToKeyConverter()))) {
+            if (!Files.exists(PathNameUtility.getPathNameForTime(
+                    storagePlugin, pvName, start, context.getPaths(), configService.getPVNameToKeyConverter()))) {
                 SimulationEventStream simstream =
                         new SimulationEventStream(type, new SineGenerator(phasediffindegrees), start, end, 1);
                 numberOfEvents = simstream.getNumberOfEvents();
                 storagePlugin.appendData(context, pvName, simstream);
             }
         }
-        configService.shutdownNow();
         return numberOfEvents;
     }
-
     /**
      * We generate a sine wave for the data if it does not already exist.
-     *
      * @throws IOException
      */
     public static long generateSineForPV(
-            String pvName, int phasediffindegrees, ArchDBRTypes type) throws Exception {
+            String pvName, int phasediffindegrees, ArchDBRTypes type, PlainStorageType plainStorageType)
+            throws Exception {
 
         return generateSineForPV(
                 pvName,
                 phasediffindegrees,
                 type,
+                plainStorageType,
                 TimeUtils.getStartOfYear(TimeUtils.getCurrentYear()),
                 TimeUtils.getEndOfYear(TimeUtils.getCurrentYear()));
     }
