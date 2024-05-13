@@ -1,4 +1,4 @@
-package edu.stanford.slac.archiverappliance.PlainPB.utils;
+package edu.stanford.slac.archiverappliance.plain.utils;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBTypeSystem;
 import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;

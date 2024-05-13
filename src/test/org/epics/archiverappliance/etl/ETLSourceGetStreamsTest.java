@@ -8,7 +8,7 @@
 package org.epics.archiverappliance.etl;
 
 
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.PartitionGranularity;
@@ -35,12 +35,12 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * Test the ETL source funtionality of PlainPBStoragePlugin
+ * Test the ETL source funtionality of PlainStoragePlugin
  * @author mshankar
  *
  */
 public class ETLSourceGetStreamsTest {
-	PlainPBStoragePlugin pbplugin = null;
+	PlainStoragePlugin pbplugin = null;
 	File testFolder = new File(ConfigServiceForTests.getDefaultPBTestFolder() + File.separator + "ETLSrcStreamsTest");
 	private ConfigService configService;
 
@@ -48,7 +48,7 @@ public class ETLSourceGetStreamsTest {
 	public void setUp() throws Exception {
 		testFolder.mkdirs();
 		configService = new ConfigServiceForTests(-1);
-		pbplugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=STS&rootFolder=" + testFolder + "/src&partitionGranularity=PARTITION_HOUR", configService);
+		pbplugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=STS&rootFolder=" + testFolder + "/src&partitionGranularity=PARTITION_HOUR", configService);
 	}
 
 	@AfterEach

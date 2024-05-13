@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.commons.lang3.text.StrLookup;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.logging.log4j.LogManager;
@@ -23,15 +24,14 @@ import org.epics.archiverappliance.retrieval.channelarchiver.ChannelArchiverRead
 import org.epics.archiverappliance.utils.blackhole.BlackholeStoragePlugin;
 
 import edu.stanford.slac.archiverappliance.PBOverHTTP.PBOverHTTPStoragePlugin;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 
 /**
  * Parses a URL representation of a storage plugin.
  * Storage plugins can optionally implement ETLSource, ETLDest and perhaps other interfaces.
  * This is one stop shopping for initializing all of these from a URL representation.
- * For example, <code>pb://localhost?name=LTS&amp;rootFolder=${ARCHAPPL_LONG_TERM_FOLDER}&amp;partitionGranularity=PARTITION_YEAR</code> will initialize a PlainPBStoragePlugin.
+ * For example, <code>pb://localhost?name=LTS&amp;rootFolder=${ARCHAPPL_LONG_TERM_FOLDER}&amp;partitionGranularity=PARTITION_YEAR</code> will initialize a PlainStoragePlugin.
  * <ol>
- * <li>The <code>pb</code> prefix initializes {@link edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin PlainPBStoragePlugin}.</li>
+ * <li>The <code>pb</code> prefix initializes {@link PlainStoragePlugin PlainStoragePlugin}.</li>
  * <li>The <code>pbraw</code> prefix initializes {@link edu.stanford.slac.archiverappliance.PBOverHTTP.PBOverHTTPStoragePlugin PBOverHTTPStoragePlugin}.</li>
  * <li>The <code>blackhole</code> prefix initializes {@link org.epics.archiverappliance.utils.blackhole.BlackholeStoragePlugin BlackholeStoragePlugin}.</li>
  * <li>The <code>rtree</code> prefix initializes {@link org.epics.archiverappliance.retrieval.channelarchiver.ChannelArchiverReadOnlyPlugin ChannelArchiverReadOnlyPlugin}.</li>
@@ -129,8 +129,8 @@ public class StoragePluginURLParser {
 	
 
 
-	private static PlainPBStoragePlugin parsePlainPBStoragePlugin(String srcURIStr, ConfigService configService) throws IOException {
-		PlainPBStoragePlugin ret = new PlainPBStoragePlugin();
+	private static PlainStoragePlugin parsePlainPBStoragePlugin(String srcURIStr, ConfigService configService) throws IOException {
+		PlainStoragePlugin ret = new PlainStoragePlugin();
 		ret.initialize(expandMacros(srcURIStr), configService);
 		return ret;
 	}

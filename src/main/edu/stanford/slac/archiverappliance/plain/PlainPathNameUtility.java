@@ -5,9 +5,9 @@
  * EPICS archiver appliance is distributed subject to a Software License Agreement found
  * in file LICENSE that is included with this distribution.
  *******************************************************************************/
-package edu.stanford.slac.archiverappliance.PlainPB;
+package edu.stanford.slac.archiverappliance.plain;
 
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin.CompressionMode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.PartitionGranularity;
@@ -37,11 +37,11 @@ import java.util.Iterator;
  * @author mshankar
  *
  */
-public class PlainPBPathNameUtility {
-    private static final Logger logger = LogManager.getLogger(PlainPBPathNameUtility.class);
+public class PlainPathNameUtility {
+    private static final Logger logger = LogManager.getLogger(PlainPathNameUtility.class);
 
     public static Path getPathNameForTime(
-            PlainPBStoragePlugin plugin, String pvName, Instant ts, ArchPaths paths, PVNameToKeyMapping pv2key)
+            PlainStoragePlugin plugin, String pvName, Instant ts, ArchPaths paths, PVNameToKeyMapping pv2key)
             throws IOException {
         return getPathNameForTime(
                 plugin.getRootFolder(),
@@ -66,7 +66,7 @@ public class PlainPBPathNameUtility {
                 rootFolder,
                 pvName,
                 ts,
-                PlainPBStoragePlugin.pbFileExtension,
+                PlainStoragePlugin.pbFileExtension,
                 partitionGranularity,
                 false,
                 paths,
@@ -75,7 +75,7 @@ public class PlainPBPathNameUtility {
     }
 
     public static Path getSparsifiedPathNameForTime(
-            PlainPBStoragePlugin plugin, String pvName, Instant ts, ArchPaths paths, PVNameToKeyMapping pv2key)
+            PlainStoragePlugin plugin, String pvName, Instant ts, ArchPaths paths, PVNameToKeyMapping pv2key)
             throws IOException {
         return getSparsifiedPathNameForTime(
                 plugin.getRootFolder(),
@@ -518,9 +518,9 @@ public class PlainPBPathNameUtility {
      * The PlainPBStorage plugin has a naming scheme that provides much information. This class encapsulates the
      * potential start and end times of a particular chunk.
      */
-    static class StartEndTimeFromName {
-        ZonedDateTime pathDataStartTime;
-        ZonedDateTime pathDataEndTime;
+    public static class StartEndTimeFromName {
+        public ZonedDateTime pathDataStartTime;
+        public ZonedDateTime pathDataEndTime;
 
         /**
          * Determine the chunk start anf end times from the name

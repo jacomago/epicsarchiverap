@@ -1,7 +1,7 @@
 package org.epics.archiverappliance.etl;
 
 
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,8 +51,8 @@ public class ETLPostProcessorTest {
 	private static Logger logger = LogManager.getLogger(ETLPostProcessorTest.class.getName());
 	String rootFolderName = ConfigServiceForTests.getDefaultPBTestFolder() + "/" + "ETLPostProcessorTest";
 	String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "ETLPostProcessorTest";
-	PlainPBStoragePlugin srcpbplugin;
-	PlainPBStoragePlugin destpbplugin;
+	PlainStoragePlugin srcpbplugin;
+	PlainStoragePlugin destpbplugin;
 	short currentYear = TimeUtils.getCurrentYear();
 	ArchDBRTypes type = ArchDBRTypes.DBR_SCALAR_DOUBLE;
 	final PostProcessor testPostProcessor = new FirstSamplePP();
@@ -66,8 +66,8 @@ public class ETLPostProcessorTest {
 			FileUtils.deleteDirectory(new File(rootFolderName));
 		}
 
-		srcpbplugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=STS&rootFolder=" + rootFolderName + "/src&partitionGranularity=PARTITION_HOUR", configService);
-		destpbplugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=MTS&rootFolder=" + rootFolderName + "/dest&partitionGranularity=PARTITION_DAY&pp=" + testPostProcessor.getExtension(), configService);
+		srcpbplugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=STS&rootFolder=" + rootFolderName + "/src&partitionGranularity=PARTITION_HOUR", configService);
+		destpbplugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=MTS&rootFolder=" + rootFolderName + "/dest&partitionGranularity=PARTITION_DAY&pp=" + testPostProcessor.getExtension(), configService);
 	}
 
 	@AfterEach

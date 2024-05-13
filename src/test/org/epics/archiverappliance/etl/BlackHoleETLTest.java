@@ -8,9 +8,9 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.PlainPathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin.CompressionMode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BasicContext;
@@ -60,7 +60,7 @@ public class BlackHoleETLTest {
     @MethodSource("provideBlackHoleETL")
     public void testBlackHoleETL(PartitionGranularity granularity)
             throws Exception {
-        PlainPBStoragePlugin etlSrc = new PlainPBStoragePlugin();
+        PlainStoragePlugin etlSrc = new PlainStoragePlugin();
         PBCommonSetup srcSetup = new PBCommonSetup();
         BlackholeStoragePlugin etlDest = new BlackholeStoragePlugin();
         ConfigServiceForTests configService = new ConfigServiceForTests(-1);
@@ -112,13 +112,13 @@ public class BlackHoleETLTest {
         srcSetup.deleteTestFolder();
     }
 
-    private int getFilesWithData(String pvName, PlainPBStoragePlugin etlSrc) throws Exception {
+    private int getFilesWithData(String pvName, PlainStoragePlugin etlSrc) throws Exception {
         // Check that all the files in the destination store are valid files.
-        Path[] allPaths = PlainPBPathNameUtility.getAllPathsForPV(
+        Path[] allPaths = PlainPathNameUtility.getAllPathsForPV(
                 new ArchPaths(),
                 etlSrc.getRootFolder(),
                 pvName,
-                PlainPBStoragePlugin.pbFileExtension,
+                PlainStoragePlugin.pbFileExtension,
                 etlSrc.getPartitionGranularity(),
                 CompressionMode.NONE,
                 configService.getPVNameToKeyConverter());

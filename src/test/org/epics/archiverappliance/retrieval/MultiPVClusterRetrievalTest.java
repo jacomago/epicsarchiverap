@@ -1,6 +1,6 @@
 package org.epics.archiverappliance.retrieval;
 
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,7 +49,7 @@ import java.util.NoSuchElementException;
 public class MultiPVClusterRetrievalTest {
 	private static final Logger logger = LogManager.getLogger(MultiPVClusterRetrievalTest.class.getName());
 	private final TomcatSetup tomcatSetup = new TomcatSetup();
-	private final PlainPBStoragePlugin pbplugin = new PlainPBStoragePlugin();
+	private final PlainStoragePlugin pbplugin = new PlainStoragePlugin();
 	short year = TimeUtils.getCurrentYear();
 
 	private final String pvName = "MultiPVClusterRetrievalTest:dataretrieval";

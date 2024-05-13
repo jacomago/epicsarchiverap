@@ -8,10 +8,10 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
-import edu.stanford.slac.archiverappliance.PlainPB.utils.ValidatePBFile;
+import edu.stanford.slac.archiverappliance.plain.PlainPathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.utils.ValidatePBFile;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -49,8 +49,8 @@ import java.util.stream.Stream;
  */
 public class SimpleETLTest {
     private static final Logger logger = LogManager.getLogger(SimpleETLTest.class);
-    static PlainPBStoragePlugin etlSrcPB;
-    static PlainPBStoragePlugin etlDestPB;
+    static PlainStoragePlugin etlSrcPB;
+    static PlainStoragePlugin etlDestPB;
     static PBCommonSetup srcSetup = new PBCommonSetup();
     static PBCommonSetup destSetup = new PBCommonSetup();
     static ConfigServiceForTests configService;
@@ -68,8 +68,8 @@ public class SimpleETLTest {
     @BeforeAll
     public static void setUp() throws ConfigException {
 
-        etlSrcPB = new PlainPBStoragePlugin();
-        etlDestPB = new PlainPBStoragePlugin();
+        etlSrcPB = new PlainStoragePlugin();
+        etlDestPB = new PlainStoragePlugin();
         configService = new ConfigServiceForTests(new File("./bin"), 1);
     }
 
@@ -93,8 +93,8 @@ public class SimpleETLTest {
     @MethodSource("providePartitionFileExtension")
     public void testMove(
             PartitionGranularity granularity,
-            PlainPBStoragePlugin etlSrc,
-            PlainPBStoragePlugin etlDest)
+            PlainStoragePlugin etlSrc,
+            PlainStoragePlugin etlDest)
             throws Exception {
         srcSetup.setUpRootFolder(
                 etlSrc, "SimpleETLTestSrc_" + granularity, granularity);
@@ -150,11 +150,11 @@ public class SimpleETLTest {
         logger.info("Done performing ETL");
 
         // Check that all the files in the destination store are valid files.
-        Path[] allPaths = PlainPBPathNameUtility.getAllPathsForPV(
+        Path[] allPaths = PlainPathNameUtility.getAllPathsForPV(
                 new ArchPaths(),
                 etlDest.getRootFolder(),
                 pvName,
-                PlainPBStoragePlugin.pbFileExtension,
+                PlainStoragePlugin.pbFileExtension,
                 etlDest.getPartitionGranularity(),
                 CompressionMode.NONE,
                 configService.getPVNameToKeyConverter());
