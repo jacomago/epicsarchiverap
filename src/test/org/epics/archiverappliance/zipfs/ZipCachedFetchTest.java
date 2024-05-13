@@ -4,6 +4,7 @@ import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import edu.stanford.slac.archiverappliance.plain.pb.FileBackedPBEventStream;
 import edu.stanford.slac.archiverappliance.plain.pb.MultiFilePBEventStream;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -134,7 +135,7 @@ public class ZipCachedFetchTest {
                     pvName,
                     startTime,
                     endTime,
-                    PlainStoragePlugin.pbFileExtension,
+                    PBPlainFileHandler.pbFileExtension,
                     pbplugin.getPartitionGranularity(),
                     pbplugin.getCompressionMode(),
                     configService.getPVNameToKeyConverter());
@@ -167,7 +168,7 @@ public class ZipCachedFetchTest {
                     pvName,
                     startTime,
                     endTime,
-                    PlainStoragePlugin.pbFileExtension,
+                    PBPlainFileHandler.pbFileExtension,
                     pbplugin.getPartitionGranularity(),
                     pbplugin.getCompressionMode(),
                     configService.getPVNameToKeyConverter());
