@@ -1,6 +1,7 @@
 package org.epics.archiverappliance.retrieval;
 
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,6 +48,9 @@ import java.util.NoSuchElementException;
 import static org.epics.archiverappliance.config.ConfigServiceForTests.DATA_RETRIEVAL_URL;
 import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
 
+import static org.epics.archiverappliance.config.ConfigServiceForTests.DATA_RETRIEVAL_URL;
+import static org.epics.archiverappliance.config.ConfigServiceForTests.MGMT_URL;
+
 @Tag("integration")
 public class MultiPVClusterRetrievalTest {
     private static final Logger logger = LogManager.getLogger(MultiPVClusterRetrievalTest.class.getName());
@@ -56,7 +60,22 @@ public class MultiPVClusterRetrievalTest {
     private final String ltsFolder = System.getenv("ARCHAPPL_LONG_TERM_FOLDER");
     private final File ltsPVFolder = new File(ltsFolder + File.separator + "MultiPVClusterRetrievalTest");
     short year = TimeUtils.getCurrentYear();
+    private static final Logger logger = LogManager.getLogger(MultiPVClusterRetrievalTest.class.getName());
+    private final TomcatSetup tomcatSetup = new TomcatSetup();
+    private final String pvName = "MultiPVClusterRetrievalTest:dataretrieval";
+    private final String pvName2 = "MultiPVClusterRetrievalTest:dataretrieval2";
+    private final String ltsFolder = System.getenv("ARCHAPPL_LONG_TERM_FOLDER");
+    private final File ltsPVFolder = new File(ltsFolder + File.separator + "MultiPVClusterRetrievalTest");
+    short year = TimeUtils.getCurrentYear();
 
+    @BeforeEach
+    public void setUp() throws Exception {
+        tomcatSetup.setUpClusterWithWebApps(this.getClass().getSimpleName(), 2);
+
+        if (ltsPVFolder.exists()) {
+            FileUtils.deleteDirectory(ltsPVFolder);
+        }
+    }
     @BeforeEach
     public void setUp() throws Exception {
         tomcatSetup.setUpClusterWithWebApps(this.getClass().getSimpleName(), 2);
@@ -79,13 +98,14 @@ public class MultiPVClusterRetrievalTest {
      */
     @Test
     public void multiplePvsAcrossCluster() throws Exception {
-        PlainPBStoragePlugin pbplugin = new PlainPBStoragePlugin();
+        PlainStoragePlugin pbplugin = new PlainStoragePlugin();
 
         ConfigService configService = new ConfigServiceForTests(-1);
 
         // Set up pbplugin so that data can be retrieved using the instance
         pbplugin.initialize(
-                "pb" + "://localhost?name=LTS&rootFolder=" + ltsFolder + "&partitionGranularity=PARTITION_YEAR",
+                PBPlainFileHandler.DEFAULT_PB_HANDLER.pluginIdentifier() + "://localhost?name=LTS&rootFolder="
+                        + ltsFolder + "&partitionGranularity=PARTITION_YEAR",
                 configService);
 
         // Generate an event stream to populate the PB files
@@ -136,7 +156,39 @@ public class MultiPVClusterRetrievalTest {
                 MGMT_URL + "/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8)
                         + "&override=false&createnew=true",
                 encoder.encode(pvTypeInfo1));
+        JSONEncoder<PVTypeInfo> encoder = JSONEncoder.getEncoder(PVTypeInfo.class);
 
+        pvTypeInfo1.setPaused(true);
+        pvTypeInfo1.setChunkKey(configService.getPVNameToKeyConverter().convertPVNameToKey(pvName));
+        pvTypeInfo1.setCreationTime(TimeUtils.convertFromISO8601String("2013-11-11T14:49:58.523Z"));
+        pvTypeInfo1.setModificationTime(TimeUtils.now());
+        pvTypeInfo1.setApplianceIdentity("appliance0");
+        GetUrlContent.postObjectAndGetContentAsJSONObject(
+                MGMT_URL + "/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8)
+                        + "&override=false&createnew=true",
+                encoder.encode(pvTypeInfo1));
+
+        logger.info("Added " + pvName + " to appliance0");
+
+        pvTypeInfo2.setPaused(true);
+        pvTypeInfo2.setChunkKey(configService.getPVNameToKeyConverter().convertPVNameToKey(pvName2));
+        pvTypeInfo2.setCreationTime(TimeUtils.convertFromISO8601String("2013-11-11T14:49:58.523Z"));
+        pvTypeInfo2.setModificationTime(TimeUtils.now());
+        pvTypeInfo2.setApplianceIdentity("appliance1");
+        GetUrlContent.postObjectAndGetContentAsJSONObject(
+                MGMT_URL + "/putPVTypeInfo?pv=" + URLEncoder.encode(pvName2, StandardCharsets.UTF_8)
+                        + "&override=false&createnew=true",
+                encoder.encode(pvTypeInfo2));
+        logger.info("Added " + pvName + " to appliance1");
+
+        logger.info("Finished loading " + pvName + " and " + pvName2 + " into their appliances.");
+        try {
+            Thread.sleep(5 * 1000);
+        } catch (Exception ex) {
+        }
+        short currentYear = TimeUtils.getCurrentYear();
+        String startString = currentYear + "-11-17T16:00:00.000Z";
+        String endString = currentYear + "-11-17T16:01:00.000Z";
         logger.info("Added " + pvName + " to appliance0");
 
         pvTypeInfo2.setPaused(true);
@@ -167,6 +219,9 @@ public class MultiPVClusterRetrievalTest {
         logger.info("Received response from server; now retrieving data using PBStoragePlugin Start: "
                 + TimeUtils.convertToISO8601String(start) + " End: " + TimeUtils.convertToISO8601String(end));
 
+        logger.info("Received response from server; now retrieving data using PBStoragePlugin Start: "
+                + TimeUtils.convertToISO8601String(start) + " End: " + TimeUtils.convertToISO8601String(end));
+
         try (BasicContext context = new BasicContext();
                 EventStream pv1ResultsStream =
                         new CurrentThreadWorkerEventStream(pvName, pbplugin.getDataForPV(context, pvName, start, end));
@@ -177,7 +232,42 @@ public class MultiPVClusterRetrievalTest {
             compareDataAndTimestamps(pvName2, pvToData.get(pvName2), pv2ResultsStream);
         }
     }
+                EventStream pv1ResultsStream =
+                        new CurrentThreadWorkerEventStream(pvName, pbplugin.getDataForPV(context, pvName, start, end));
+                EventStream pv2ResultsStream = new CurrentThreadWorkerEventStream(
+                        pvName2, pbplugin.getDataForPV(context, pvName2, start, end))) {
+            assert pvToData != null;
+            compareDataAndTimestamps(pvName, pvToData.get(pvName), pv1ResultsStream);
+            compareDataAndTimestamps(pvName2, pvToData.get(pvName2), pv2ResultsStream);
+        }
+    }
 
+    private Map<String, List<JSONObject>> retrieveJsonResults(String startString, String endString) throws IOException {
+        logger.info("Retrieving data using JSON/HTTP and comparing it to retrieval over PBStoragePlugin");
+
+        // Establish a connection with appliance0 -- borrowed from
+        // http://www.mkyong.com/java/how-to-send-http-request-getpost-in-java/
+        URL obj = new URL(DATA_RETRIEVAL_URL + "/data/getDataForPVs.json?pv="
+                + URLEncoder.encode(pvName, StandardCharsets.UTF_8) + "&pv="
+                + URLEncoder.encode(pvName2, StandardCharsets.UTF_8) + "&from="
+                + URLEncoder.encode(startString, StandardCharsets.UTF_8)
+                + "&to=" + URLEncoder.encode(endString, StandardCharsets.UTF_8) + "&pp=pb");
+        logger.info("Opening this URL: " + obj);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        con.setRequestMethod("GET");
+
+        // Get response code
+        int responseCode = con.getResponseCode();
+        if (responseCode != 200) {
+            logger.error("Response code was " + responseCode + "; exiting.");
+            logger.error("Message: " + con.getResponseMessage());
+            return null;
+        }
+
+        // Retrieve JSON response
+        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+        String inputLine;
+        StringBuilder content = new StringBuilder();
     private Map<String, List<JSONObject>> retrieveJsonResults(String startString, String endString) throws IOException {
         logger.info("Retrieving data using JSON/HTTP and comparing it to retrieval over PBStoragePlugin");
 

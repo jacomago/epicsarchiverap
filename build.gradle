@@ -105,8 +105,8 @@ dependencies {
 	permitUnusedDeclared("org.apache.logging.log4j:log4j-jul:2.20.0")
 	runtimeOnly("org.apache.logging.log4j:log4j-core:2.20.0")
 	runtimeOnly("org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0")
-	runtimeOnly("org.mariadb.jdbc:mariadb-java-client:3.3.3")
-	implementation("com.opencsv:opencsv:5.7.1")
+    runtimeOnly("org.mariadb.jdbc:mariadb-java-client:3.3.3")
+    implementation("com.opencsv:opencsv:5.7.1")
 	implementation("com.google.protobuf:protobuf-java:3.23.0")
 	testImplementation("commons-cli:commons-cli:1.5.0")
 	testImplementation("org.junit.jupiter:junit-jupiter-api:5.2.0")
@@ -381,6 +381,9 @@ assemble {
 
 tasks.withType(Test).configureEach {
 	doFirst {
+		delete files("${temporaryDir}/sts")
+		delete files("${temporaryDir}/mts")
+		delete files("${temporaryDir}/lts")
 		mkdir file("${temporaryDir}/sts")
 		mkdir file("${temporaryDir}/mts")
 		mkdir file("${temporaryDir}/lts")
@@ -391,19 +394,15 @@ tasks.withType(Test).configureEach {
 		includeTestsMatching "*Test"
 	}
 	maxHeapSize = "1G"
-	jvmArgs = [
-			"-Dwebdriver.gecko.driver=${libDir}/test/geckodriver-v0.24.0-linux64/geckodriver",
-			"-Dlog4j1.compatibility=\"true\""
-	]
+	jvmArgs = ["-Dwebdriver.gecko.driver=${libDir}/test/geckodriver-v0.24.0-linux64/geckodriver",
+			"-Dlog4j1.compatibility=\"true\""]
 
 	environment "ARCHAPPL_SHORT_TERM_FOLDER", "${temporaryDir}/sts"
 	environment "ARCHAPPL_MEDIUM_TERM_FOLDER", "${temporaryDir}/mts"
 	environment "ARCHAPPL_LONG_TERM_FOLDER", "${temporaryDir}/lts"
 
 	doLast {
-		delete file("${temporaryDir}/sts")
-		delete file("${temporaryDir}/mts")
-		delete file("${temporaryDir}/lts")
+		delete files(temporaryDir)
 	}
 }
 
@@ -422,8 +421,7 @@ tasks.register("flakyTests", Test) {
 	description = "Run unit tests that due to timimg or machine specifics, could fail."
 	useJUnitPlatform {
 		includeTags "flaky"
-		excludeTags "slow",
-				"integration",
+		excludeTags "integration",
 				"localEpics"
 	}
 }
@@ -461,8 +459,7 @@ tasks.register("integrationTests", Test) {
 	dependsOn("integrationTestSetup")
 	useJUnitPlatform {
 		includeTags "integration"
-		excludeTags "slow",
-				"flaky"
+		excludeTags "flaky"
 	}
 	finalizedBy "shutdownAllTomcats"
 }
@@ -480,27 +477,12 @@ tasks.register("epicsTests", Test) {
 	finalizedBy "shutdownAllTomcats"
 }
 
-tasks.register("singleForkTests", Test) {
-	group = "Test"
-	description = "Run the single fork tests. Ones that require a fork every test."
-	forkEvery 1
-	useJUnitPlatform {
-		includeTags "singleFork"
-		excludeTags "slow",
-				"flaky",
-				"integration",
-				"localEpics"
-	}
-}
-
 test {
 	group = "Test"
 	useJUnitPlatform {
 		excludeTags "integration",
 				"localEpics",
-				"flaky",
-				"singleFork",
-				"slow"
+				"flaky"
 	}
 }
 
@@ -508,7 +490,6 @@ tasks.register("allTests", Test) {
 	group = "Test"
 	description = "Run all the tests."
 	dependsOn "unitTests"
-	dependsOn "singleForkTests"
 	dependsOn "integrationTests"
 	dependsOn "flakyTests"
 }

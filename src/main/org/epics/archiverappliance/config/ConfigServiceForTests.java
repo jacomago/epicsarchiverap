@@ -49,6 +49,7 @@ public class ConfigServiceForTests extends DefaultConfigService {
     public static final String RAW_RETRIEVAL_URL = HTTP_LOCALHOST + DEFAULT_MGMT_PORT + RETRIEVAL_DATA;
     public static final String ETL_BPL = "/etl/bpl";
     public static final String ETL_URL = HTTP_LOCALHOST + DEFAULT_MGMT_PORT + ETL_BPL;
+
     protected static final String DEFAULT_PB_SHORT_TERM_TEST_DATA_FOLDER = getDefaultShortTermFolder();
     /**
      * A folder which is used to store the data for the unit tests...
@@ -73,6 +74,12 @@ public class ConfigServiceForTests extends DefaultConfigService {
     String rootFolder = ConfigServiceForTests.DEFAULT_PB_TEST_DATA_FOLDER;
     public static final int defaultSecondsDisconnect = 10;
     private File webInfClassesFolder;
+
+    public static final int defaultMinutesDisconnect = 1;
+
+    public ConfigServiceForTests(int jcaCommandThreadCount) throws ConfigException {
+        this(new File("./build/classes"), jcaCommandThreadCount);
+    }
 
     /**
      * Special Constructor for Integration tests Do not use in unit tests.

@@ -7,8 +7,8 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval.client;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.plain.PlainPathNameUtility;
+import edu.stanford.slac.archiverappliance.PB.data.PlainCommonSetup;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -52,11 +52,11 @@ public class YearSpanRetrievalTest {
         tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
     }
 
-    private void generateDataForYears(PlainPBStoragePlugin pbplugin, String pvName) throws IOException {
+    private void generateDataForYears(PlainStoragePlugin pbplugin, String pvName) throws IOException {
         // We skip generation of the file only if all the files exist.
         boolean deletefilesandgeneratedata = false;
         for (short currentyear = (short) 2010; currentyear <= (short) 2013; currentyear++) {
-            if (!PlainPathNameUtility.getPathNameForTime(
+            if (!PathNameUtility.getPathNameForTime(
                             pbplugin,
                             pvName,
                             TimeUtils.getStartOfYear(currentyear),
@@ -72,7 +72,7 @@ public class YearSpanRetrievalTest {
         // Delete all the files for the specified span
         if (deletefilesandgeneratedata) {
             for (short currentyear = (short) 2010; currentyear <= (short) 2013; currentyear++) {
-                Files.deleteIfExists(PlainPathNameUtility.getPathNameForTime(
+                Files.deleteIfExists(PathNameUtility.getPathNameForTime(
                         pbplugin,
                         pvName,
                         TimeUtils.getStartOfYear(currentyear),
@@ -100,8 +100,8 @@ public class YearSpanRetrievalTest {
 
     @Test
     public void testYearSpan() throws Exception {
-        PBCommonSetup pbSetup = new PBCommonSetup();
-        PlainPBStoragePlugin pbplugin = new PlainPBStoragePlugin();
+        PlainCommonSetup pbSetup = new PlainCommonSetup();
+        PlainStoragePlugin pbplugin = new PlainStoragePlugin();
         pbSetup.setUpRootFolder(pbplugin);
         String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "yspan";
         generateDataForYears(pbplugin, pvName);

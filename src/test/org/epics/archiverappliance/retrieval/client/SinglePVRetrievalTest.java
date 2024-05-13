@@ -56,8 +56,8 @@ public class SinglePVRetrievalTest {
     }
 
     private void testGetOneDaysDataForYear(int year, int expectedCount) throws Exception {
-        RawDataRetrievalAsEventStream rawDataRetrieval =
-                new RawDataRetrievalAsEventStream(ConfigServiceForTests.RAW_RETRIEVAL_URL);
+        RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream(
+                "http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT + "/retrieval/data/getData.raw");
         Instant start = TimeUtils.convertFromISO8601String(year + "-02-01T08:00:00.000Z");
         Instant end = TimeUtils.convertFromISO8601String(year + "-02-02T08:00:00.000Z");
 

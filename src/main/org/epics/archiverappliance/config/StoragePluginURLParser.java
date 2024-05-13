@@ -9,6 +9,7 @@ package org.epics.archiverappliance.config;
 
 import edu.stanford.slac.archiverappliance.PBOverHTTP.PBOverHTTPStoragePlugin;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.commons.lang3.text.StrLookup;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.logging.log4j.LogManager;
@@ -129,16 +130,15 @@ public class StoragePluginURLParser {
             throw new IOException(ex);
         }
 
-		return null;
-	}
-	
+        return null;
+    }
 
-
-	private static PlainStoragePlugin parsePlainPBStoragePlugin(String srcURIStr, ConfigService configService) throws IOException {
-		PlainStoragePlugin ret = new PlainStoragePlugin();
-		ret.initialize(expandMacros(srcURIStr), configService);
-		return ret;
-	}
+    private static PlainStoragePlugin parsePlainStoragePlugin(String srcURIStr, ConfigService configService)
+            throws IOException {
+        PlainStoragePlugin ret = new PlainStoragePlugin(new PBPlainFileHandler());
+        ret.initialize(expandMacros(srcURIStr), configService);
+        return ret;
+    }
 
     private static PBOverHTTPStoragePlugin parseHTTPStoragePlugin(String srcURIStr, ConfigService configService)
             throws IOException {

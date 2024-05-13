@@ -7,9 +7,9 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval;
 
-import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
+import edu.stanford.slac.archiverappliance.PB.data.PlainCommonSetup;
 import edu.stanford.slac.archiverappliance.PBOverHTTP.PBOverHTTPStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.PlainPathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,6 +39,7 @@ import java.time.Instant;
 
 /**
  * Test the simple data retrieval case.
+ * Test the simple data retrieval case.
  * @author mshankar
  *
  */
@@ -48,6 +49,15 @@ public class DataRetrievalServletTest {
     private static final Logger logger = LogManager.getLogger(DataRetrievalServletTest.class.getName());
     TomcatSetup tomcatSetup = new TomcatSetup();
 
+    private static final Logger logger = LogManager.getLogger(DataRetrievalServletTest.class.getName());
+    TomcatSetup tomcatSetup = new TomcatSetup();
+
+    short year = (short) 2011;
+
+    @BeforeEach
+    public void setUp() throws Exception {
+        tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
+    }
     short year = (short) 2011;
 
     @BeforeEach
@@ -67,9 +77,9 @@ public class DataRetrievalServletTest {
     public void testTimesAreSequential() throws Exception {
         String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "_dataretrieval";
 
-        PBCommonSetup pbSetup = new PBCommonSetup();
+        PlainCommonSetup pbSetup = new PlainCommonSetup();
 
-        PlainPBStoragePlugin pbplugin = new PlainPBStoragePlugin();
+        PlainStoragePlugin pbplugin = new PlainStoragePlugin();
         pbSetup.setUpRootFolder(pbplugin);
 
         PBOverHTTPStoragePlugin storagePlugin = new PBOverHTTPStoragePlugin();
@@ -82,7 +92,7 @@ public class DataRetrievalServletTest {
                                 StandardCharsets.UTF_8),
                 configService);
 
-        Files.deleteIfExists(PlainPathNameUtility.getPathNameForTime(
+        Files.deleteIfExists(PathNameUtility.getPathNameForTime(
                 pbplugin,
                 pvName,
                 TimeUtils.getStartOfYear(year),
@@ -129,7 +139,7 @@ public class DataRetrievalServletTest {
             logger.info("Found a total of " + totalEvents + " in " + (e - s) + "(ms)");
             Assertions.assertEquals(end.getEpochSecond() - start.getEpochSecond() + 1, totalEvents);
         }
-        Files.deleteIfExists(PlainPathNameUtility.getPathNameForTime(
+        Files.deleteIfExists(PathNameUtility.getPathNameForTime(
                 pbplugin,
                 pvName,
                 TimeUtils.getStartOfYear(year),

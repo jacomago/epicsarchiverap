@@ -1,6 +1,7 @@
 package org.epics.archiverappliance.retrieval.cluster;
 
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -82,13 +83,14 @@ public class ClusterSinglePVTest {
      */
     @Test
     public void singlePvsAcrossCluster() throws Exception {
-        PlainPBStoragePlugin pbplugin = new PlainPBStoragePlugin();
+        PlainStoragePlugin pbplugin = new PlainStoragePlugin();
 
         ConfigService configService = new ConfigServiceForTests(-1);
 
         // Set up pbplugin so that data can be retrieved using the instance
         pbplugin.initialize(
-                "pb" + "://localhost?name=LTS&rootFolder=" + ltsFolder + "&partitionGranularity=PARTITION_YEAR",
+                PBPlainFileHandler.DEFAULT_PB_HANDLER.pluginIdentifier() + "://localhost?name=LTS&rootFolder="
+                        + ltsFolder + "&partitionGranularity=PARTITION_YEAR",
                 configService);
 
         short currentYear = TimeUtils.getCurrentYear();
@@ -107,6 +109,8 @@ public class ClusterSinglePVTest {
         logger.info("Done generating data for PV in " + ltsPVFolder.getAbsolutePath());
 
         // Load a sample PVTypeInfo from a prototype file.
+        JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream(
+                "src/test/org/epics/archiverappliance/retrieval/postprocessor/data/PVTypeInfoPrototype.json")));
         JSONObject srcPVTypeInfoJSON = (JSONObject) JSONValue.parse(new InputStreamReader(new FileInputStream(
                 "src/test/org/epics/archiverappliance/retrieval/postprocessor/data/PVTypeInfoPrototype.json")));
 
@@ -129,6 +133,10 @@ public class ClusterSinglePVTest {
         pvTypeInfo1.setCreationTime(TimeUtils.convertFromISO8601String("2013-11-11T14:49:58.523Z"));
         pvTypeInfo1.setModificationTime(TimeUtils.now());
         pvTypeInfo1.setApplianceIdentity("appliance1");
+        GetUrlContent.postObjectAndGetContentAsJSONObject(
+                MGMT_URL + "/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8)
+                        + "&override=false&createnew=true",
+                encoder.encode(pvTypeInfo1));
         GetUrlContent.postObjectAndGetContentAsJSONObject(
                 MGMT_URL + "/putPVTypeInfo?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8)
                         + "&override=false&createnew=true",

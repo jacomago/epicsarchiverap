@@ -1,6 +1,7 @@
 package org.epics.archiverappliance.retrieval;
 
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -57,7 +58,8 @@ public class EventStreamWrapTest {
         }
         assert new File(shortTermFolderName).mkdirs();
         storagePluginPB = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                "pb://localhost?name=STS&rootFolder=" + shortTermFolderName + "/&partitionGranularity=PARTITION_MONTH",
+                PBPlainFileHandler.PB_PLUGIN_IDENTIFIER + "://localhost?name=STS&rootFolder=" + shortTermFolderName
+                        + "/&partitionGranularity=PARTITION_MONTH",
                 configService);
 
         logger.info("Start insert data");
@@ -82,6 +84,7 @@ public class EventStreamWrapTest {
                     new SimulationEventStream(
                             type,
                             (type, secondsIntoYear) -> new ScalarValue<Double>(1.0),
+                            (type, secondsIntoYear) -> new ScalarValue<Double>(1.0),
                             TimeUtils.getStartOfYear(currentYear - 1),
                             TimeUtils.getStartOfYear(currentYear)
                                     .plusSeconds(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk()),
@@ -101,6 +104,7 @@ public class EventStreamWrapTest {
         mean_86400.estimateMemoryConsumption(pvName, info, start, end, null);
         try (BasicContext context = new BasicContext()) {
             long t0 = System.currentTimeMillis();
+            assert storageplugin != null;
             assert storageplugin != null;
             List<Callable<EventStream>> callables = storageplugin.getDataForPV(context, pvName, start, end, mean_86400);
             for (Callable<EventStream> callable : callables) {
@@ -141,7 +145,7 @@ public class EventStreamWrapTest {
      */
     @Test
     void testMultiThreadWrapper() throws Exception {
-        PlainStoragePlugin storageplugin = storagePluginPB;
+        PlainStoragePlugin storageplugin = new PlainStoragePlugin();
 
         Instant end = TimeUtils.now();
         Instant start = TimeUtils.minusDays(end, 365);
@@ -172,6 +176,28 @@ public class EventStreamWrapTest {
             EventStream consolidatedEventStream =
                     ((PostProcessorWithConsolidatedEventStream) mean_86400).getConsolidatedEventStream();
             // In cases where the data spans year boundaries, we continue with the same stream.
+            boolean continueprocessing = true;
+            while (continueprocessing) {
+                try {
+                    for (Event e : consolidatedEventStream) {
+                        Assertions.assertEquals(
+                                1.0,
+                                e.getSampleValue().getValue().doubleValue(),
+                                0.0,
+                                "All values are 1 so mean should be 1. Instead we got "
+                                        + e.getSampleValue().getValue().doubleValue() + " at " + eventCount + " for pv "
+                                        + pvName);
+                        eventCount++;
+                    }
+                    continueprocessing = false;
+                } catch (ChangeInYearsException ex) {
+                    logger.debug("Change in years");
+                }
+                long t1 = System.currentTimeMillis();
+                executors.shutdown();
+                // assertTrue("Expecting 365 values got " + eventCount + " for pv " + pvName, eventCount == 365);
+                logger.info("Multi threaded wrapper took " + (t1 - t0) + "(ms)");
+            }
             boolean continueprocessing = true;
             while (continueprocessing) {
                 try {

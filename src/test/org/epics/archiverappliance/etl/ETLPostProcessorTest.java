@@ -1,6 +1,7 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -86,11 +87,11 @@ public class ETLPostProcessorTest {
 
         String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "ETLPostProcessorTest";
         PlainStoragePlugin srcPlainPlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                "pb" + "://localhost?name=STS&rootFolder=" + rootFolderName
-                        + "/src&partitionGranularity=PARTITION_HOUR",
+                PBPlainFileHandler.DEFAULT_PB_HANDLER.pluginIdentifier() + "://localhost?name=STS&rootFolder="
+                        + rootFolderName + "/src&partitionGranularity=PARTITION_HOUR",
                 configService);
         PlainStoragePlugin destPlainPlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                "pb" + "://localhost?name=MTS&rootFolder="
+                PBPlainFileHandler.DEFAULT_PB_HANDLER.pluginIdentifier() + "://localhost?name=MTS&rootFolder="
                         + rootFolderName + "/dest&partitionGranularity=PARTITION_DAY&pp="
                         + testPostProcessor.getExtension(),
                 configService);

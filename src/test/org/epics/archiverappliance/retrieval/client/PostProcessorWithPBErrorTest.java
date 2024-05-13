@@ -1,9 +1,9 @@
 package org.epics.archiverappliance.retrieval.client;
 
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
-import edu.stanford.slac.archiverappliance.plain.PlainPathNameUtility;
-import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -178,7 +178,8 @@ public class PostProcessorWithPBErrorTest {
     private int checkRetrieval(String retrievalPVName, int expectedAtLeastEvents, boolean exactMatch)
             throws IOException {
         long startTimeMillis = System.currentTimeMillis();
-        RawDataRetrieval rawDataRetrieval = new RawDataRetrieval(ConfigServiceForTests.RAW_RETRIEVAL_URL);
+        RawDataRetrieval rawDataRetrieval = new RawDataRetrieval(
+                "http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT + "/retrieval/data/getData.raw");
         Instant now = TimeUtils.now();
         Instant start = TimeUtils.minusDays(now, (dataGeneratedForYears + 1) * 366);
         int eventCount = 0;
@@ -224,13 +225,12 @@ public class PostProcessorWithPBErrorTest {
 
     private void corruptSomeData() throws Exception {
         try (BasicContext context = new BasicContext()) {
-            Path[] paths = PlainPathNameUtility.getAllPathsForPV(
+            Path[] paths = PathNameUtility.getAllPathsForPV(
                     context.getPaths(),
                     ltsFolderName,
                     pvName,
-                    PlainStoragePlugin.pbFileExtension,
-                    PartitionGranularity.PARTITION_DAY,
-                    PlainStoragePlugin.CompressionMode.NONE,
+                    PBPlainFileHandler.DEFAULT_PB_HANDLER.getExtensionString(),
+                    CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());
             Assertions.assertTrue(true);
             Assertions.assertTrue(paths.length > 0);

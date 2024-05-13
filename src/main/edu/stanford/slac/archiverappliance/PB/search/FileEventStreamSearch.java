@@ -8,7 +8,7 @@
 package edu.stanford.slac.archiverappliance.PB.search;
 
 import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
-import edu.stanford.slac.archiverappliance.plain.ComparePBEvent;
+import edu.stanford.slac.archiverappliance.plain.CompareEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.YearSecondTimestamp;
@@ -70,7 +70,7 @@ public class FileEventStreamSearch {
     private long startPosition = 0;
 
     /**
-     * @param path Path
+     * @param path      Path
      * @param startPosn a starting position of search PB files
      */
     public FileEventStreamSearch(Path path, long startPosn) {
@@ -95,17 +95,18 @@ public class FileEventStreamSearch {
      * @param dbrtype ArchDBRType the enumeration type
      * @param yearSecondTimestamp Search seconds into year
      * @throws IOException  &emsp;
-     * @see ComparePBEvent
+     * @see CompareEvent
      */
     public boolean seekToTime(ArchDBRTypes dbrtype, YearSecondTimestamp yearSecondTimestamp) throws IOException {
-        ComparePBEvent comparefunction = new ComparePBEvent(dbrtype, yearSecondTimestamp);
+        CompareEvent comparefunction = new CompareEvent(dbrtype, yearSecondTimestamp);
         return seekToTime(comparefunction);
     }
 
     /**
      * This should only be used by the unit tests.
+     *
      * @param comparefunction CompareEventLine
-     * @return  <code>true</code> or <code>false</code>
+     * @return <code>true</code> or <code>false</code>
      * @throws IOException when parsing the absolute path
      */
     public boolean seekToTime(CompareEventLine comparefunction) throws IOException {
@@ -172,18 +173,16 @@ public class FileEventStreamSearch {
 
                     CompareEventLine.NextStep nextStep = comparefunction.compare(line1, line2);
                     switch (nextStep) {
-                        case GO_LEFT:
-                            max = mid - 1;
-                            break;
-                        case GO_RIGHT:
+                        case GO_LEFT -> max = mid - 1;
+                        case GO_RIGHT -> {
                             lastgoright = mid;
                             min = mid + 1;
-                            break;
-                        case STAY_WHERE_YOU_ARE:
+                        }
+                        case STAY_WHERE_YOU_ARE -> {
                             foundPosition = mid;
                             return true;
-                        default:
-                            logger.error("Compare function returned something unexpeected " + nextStep);
+                        }
+                        default -> logger.error("Compare function returned something unexpeected " + nextStep);
                     }
 
                     maxIterations--;
