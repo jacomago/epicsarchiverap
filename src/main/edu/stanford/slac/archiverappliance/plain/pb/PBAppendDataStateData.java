@@ -3,6 +3,7 @@ package edu.stanford.slac.archiverappliance.plain.pb;
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
 import edu.stanford.slac.archiverappliance.PB.utils.LineEscaper;
 import edu.stanford.slac.archiverappliance.plain.AppendDataStateData;
+import edu.stanford.slac.archiverappliance.plain.CompressionMode;
 import edu.stanford.slac.archiverappliance.plain.FileInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,7 +50,7 @@ public class PBAppendDataStateData extends AppendDataStateData {
             String rootFolder,
             String desc,
             Instant lastKnownTimestamp,
-            PBCompressionMode compressionMode,
+            CompressionMode compressionMode,
             PVNameToKeyMapping pv2key) {
         super(partitionGranularity, rootFolder, desc, lastKnownTimestamp, pv2key, compressionMode);
     }
@@ -230,7 +231,7 @@ public class PBAppendDataStateData extends AppendDataStateData {
         // The preparePartition should have created the needed file; so we only append
         assert pvPath != null;
         try (ByteChannel destChannel = Files.newByteChannel(pvPath, StandardOpenOption.APPEND);
-             ReadableByteChannel srcChannel = byteStream.getByteChannel(context)) {
+                ReadableByteChannel srcChannel = byteStream.getByteChannel(context)) {
             logger.debug("ETL bulk appends for pv " + pvName);
             ByteBuffer buf = ByteBuffer.allocate(1024 * 1024);
             int bytesRead = srcChannel.read(buf);
