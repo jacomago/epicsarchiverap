@@ -7,9 +7,9 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PB.data;
 
-import edu.stanford.slac.archiverappliance.plain.FileStreamCreator;
-import edu.stanford.slac.archiverappliance.plain.PlainPathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import gov.aps.jca.dbr.DBR;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -104,6 +104,7 @@ public class DBRTypeTest {
     @ParameterizedTest
     @MethodSource("provideFileExtensionDBRType")
     public void testPopulateAndRead(ArchDBRTypes dbrType) {
+
         EventStream retrievedStrm = null;
         try {
             BoundaryConditionsSimulationValueGenerator valuegenerator =
@@ -126,13 +127,13 @@ public class DBRTypeTest {
             }
             logger.info("Done appending data. Now checking the read.");
             // Now test the data.
-            Path path = PlainPathNameUtility.getPathNameForTime(
+            Path path = PathNameUtility.getPathNameForTime(
                     pbplugin,
                     pvName,
                     TimeUtils.getStartOfYear(currentYear),
                     new ArchPaths(),
                     configService.getPVNameToKeyConverter());
-            retrievedStrm = FileStreamCreator.getStream(pvName, path, dbrType);
+            retrievedStrm = pbplugin.getPlainFileHandler().getStream(pvName, path, dbrType);
 
             Instant expectedTime = startTime;
             long start = System.currentTimeMillis();
@@ -227,13 +228,13 @@ public class DBRTypeTest {
                 // EventStream retrievedStrm = pbplugin.getDataForPV(dbrType.name(),
                 // TimeStamp.time(startOfCurrentYearInSeconds, 0),
                 // TimeStamp.time(startOfCurrentYearInSeconds+SimulationEventStreamIterator.SECONDS_IN_YEAR, 0));
-                Path path = PlainPathNameUtility.getPathNameForTime(
+                Path path = PathNameUtility.getPathNameForTime(
                         pbplugin,
                         pvName,
                         startTime,
                         new ArchPaths(),
                         configService.getPVNameToKeyConverter());
-                retrievedStrm = FileStreamCreator.getStream(pvName, path, dbrType);
+                retrievedStrm = pbplugin.getPlainFileHandler().getStream(pvName, path, dbrType);
 
                 Instant expectedTime = startTime;
                 long start = System.currentTimeMillis();

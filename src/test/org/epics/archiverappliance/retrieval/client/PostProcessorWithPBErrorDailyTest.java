@@ -1,8 +1,10 @@
 package org.epics.archiverappliance.retrieval.client;
 
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
-import edu.stanford.slac.archiverappliance.plain.PlainPathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -222,13 +224,12 @@ public class PostProcessorWithPBErrorDailyTest {
 
     private void corruptSomeData() throws Exception {
         try (BasicContext context = new BasicContext()) {
-            Path[] paths = PlainPathNameUtility.getAllPathsForPV(
+            Path[] paths = PathNameUtility.getAllPathsForPV(
                     context.getPaths(),
                     mtsFolderName,
                     pvName,
-                    PlainPBStoragePlugin.pbFileExtension,
-                    PartitionGranularity.PARTITION_DAY,
-                    PlainPBStoragePlugin.CompressionMode.NONE,
+                    PBPlainFileHandler.pbFileExtension,
+                    CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());
             Assertions.assertNotNull(paths);
             Assertions.assertTrue(paths.length > 0);

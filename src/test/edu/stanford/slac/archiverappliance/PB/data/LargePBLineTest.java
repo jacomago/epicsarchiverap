@@ -7,11 +7,13 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PB.data;
 
+import edu.stanford.slac.archiverappliance.plain.PlainFileHandler;
 import edu.stanford.slac.archiverappliance.plain.pb.PBFileInfo;
-import edu.stanford.slac.archiverappliance.plain.PlainPathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin.CompressionMode;
-import edu.stanford.slac.archiverappliance.plain.utils.ValidatePBFile;
+import edu.stanford.slac.archiverappliance.plain.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
+import edu.stanford.slac.archiverappliance.plain.utils.ValidatePlainFile;
 import gov.aps.jca.dbr.DBR_TIME_Double;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
@@ -78,12 +80,11 @@ public class LargePBLineTest {
             Assertions.fail(ex.getMessage());
         }
 
-        Path[] allPaths = PlainPathNameUtility.getAllPathsForPV(
+        Path[] allPaths = PathNameUtility.getAllPathsForPV(
                 new ArchPaths(),
                 storagePlugin.getRootFolder(),
                 pvName,
-                PlainStoragePlugin.pbFileExtension,
-                storagePlugin.getPartitionGranularity(),
+                PBPlainFileHandler.pbFileExtension,
                 CompressionMode.NONE,
                 configService.getPVNameToKeyConverter());
         Assertions.assertNotNull(allPaths, "testLargeLines returns null for getAllFilesForPV for " + pvName);
@@ -94,7 +95,7 @@ public class LargePBLineTest {
             try {
                 new PBFileInfo(destPath);
                 Assertions.assertTrue(
-                        ValidatePBFile.validatePBFile(destPath, false),
+                        ValidatePlainFile.validatePlainFile(destPath, false, PBPlainFileHandler.DEFAULT_PB_HANDLER),
                         "File validation failed for " + destPath.toAbsolutePath());
             } catch (Exception ex) {
                 logger.error("Exception parsing file" + destPath.toAbsolutePath(), ex);

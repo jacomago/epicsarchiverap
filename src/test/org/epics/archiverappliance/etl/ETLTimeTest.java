@@ -1,6 +1,8 @@
 package org.epics.archiverappliance.etl;
 
+import edu.stanford.slac.archiverappliance.plain.CompressionMode;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.pb.PBCompressionMode;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,6 +36,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.text.DecimalFormat;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -59,13 +62,13 @@ public class ETLTimeTest {
 
     private static Stream<Arguments> provideTestTime() {
         return Stream.of(
-                Arguments.of(PlainPBStoragePlugin.CompressionMode.NONE, PlainPBStoragePlugin.CompressionMode.NONE),
+                Arguments.of(CompressionMode.NONE, CompressionMode.NONE),
                 Arguments.of(
-                        PlainPBStoragePlugin.CompressionMode.NONE,
-                        PlainPBStoragePlugin.CompressionMode.valueOf("ZIP_PER_PV")),
+                        CompressionMode.NONE,
+                        CompressionMode.valueOf("ZIP_PER_PV")),
                 Arguments.of(
-                        PlainPBStoragePlugin.CompressionMode.valueOf("ZIP_PER_PV"),
-                        PlainPBStoragePlugin.CompressionMode.valueOf("ZIP_PER_PV")));
+                        CompressionMode.valueOf("ZIP_PER_PV"),
+                        CompressionMode.valueOf("ZIP_PER_PV")));
     }
 
     private static double getDataSizeInGBPerHour(CountFiles stsSizeVisitor) {
@@ -94,17 +97,17 @@ public class ETLTimeTest {
     @ParameterizedTest
     @MethodSource("provideTestTime")
     public void testTime(
-            PlainPBStoragePlugin.CompressionMode srcCompression, PlainPBStoragePlugin.CompressionMode destCompression)
+            CompressionMode srcCompression, CompressionMode destCompression)
             throws Exception {
-        PlainPBStoragePlugin stsStoragePlugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        PlainStoragePlugin stsStoragePlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 "pb://localhost?name=STS&rootFolder="
                         + shortTermFolderName + "&partitionGranularity=PARTITION_HOUR&compress="
-                        + srcCompression,
+                        + srcCompression.toURLString(),
                 configService);
-        PlainPBStoragePlugin mtsStoragePlugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        PlainStoragePlugin mtsStoragePlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 "pb://localhost?name=MTS&rootFolder="
                         + mediumTermFolderName + "&partitionGranularity=PARTITION_YEAR&compress="
-                        + destCompression,
+                        + destCompression.toURLString(),
                 configService);
         short currentYear = TimeUtils.getCurrentYear();
 
@@ -176,7 +179,7 @@ public class ETLTimeTest {
         logger.info("File size left in dest folder " + getDataSizeInGBPerHour(postETLDestVisitor));
 
         Assertions.assertEquals(
-                srcCompression != PlainPBStoragePlugin.CompressionMode.ZIP_PER_PV ? 0 : pvs.size(),
+                !Objects.equals(srcCompression, new CompressionMode(PBCompressionMode.ZIP_PER_PV)) ? 0 : pvs.size(),
                 postETLSrcVisitor.filesPresent,
                 "We have some files that have not moved " + postETLSrcVisitor.filesPresent);
         int expectedFiles = pvs.size();

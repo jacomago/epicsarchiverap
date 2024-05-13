@@ -8,9 +8,9 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.plain.PlainPathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.CompressionMode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -147,13 +147,12 @@ public class ETLWithRecurringFilesTest {
         String tempFileExtension = ".etltest" + etlTestPlugins.src().pluginIdentifier();
         // We should now have some data in the src root folder...
         // Make a copy of these files so that we can restore them back later after ETL.
-        Path[] allSrcPaths = PlainPathNameUtility.getAllPathsForPV(
+        Path[] allSrcPaths = PathNameUtility.getAllPathsForPV(
                 new ArchPaths(),
                 etlTestPlugins.src().getRootFolder(),
                 pvName,
                 etlTestPlugins.src().getExtensionString(),
-                etlTestPlugins.src().getPartitionGranularity(),
-                PlainPBStoragePlugin.CompressionMode.NONE,
+                CompressionMode.NONE,
                 configService.getPVNameToKeyConverter());
         for (Path srcPath : allSrcPaths) {
             Path destPath = srcPath.resolveSibling(srcPath.getFileName()

@@ -8,10 +8,11 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.plain.PlainPathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin.CompressionMode;
-import edu.stanford.slac.archiverappliance.plain.utils.ValidatePBFile;
+import edu.stanford.slac.archiverappliance.plain.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
+import edu.stanford.slac.archiverappliance.plain.utils.ValidatePlainFile;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -142,13 +143,12 @@ public class SimpleETLTest {
         logger.info("Done performing ETL");
 
         // Check that all the files in the destination store are valid files.
-        Path[] allPaths = PlainPathNameUtility.getAllPathsForPV(
+        Path[] allPaths = PathNameUtility.getAllPathsForPV(
                 new ArchPaths(),
                 testPlugins.dest().getRootFolder(),
                 pvName,
                 testPlugins.dest().getExtensionString(),
-                testPlugins.dest().getPartitionGranularity(),
-                PlainPBStoragePlugin.CompressionMode.NONE,
+                CompressionMode.NONE,
                 configService.getPVNameToKeyConverter());
         Assertions.assertNotNull(allPaths, "PlainPBFileNameUtility returns null for getAllFilesForPV for " + pvName);
         Assertions.assertTrue(
@@ -158,7 +158,7 @@ public class SimpleETLTest {
 
         for (Path destPath : allPaths) {
             Assertions.assertTrue(
-                    ValidatePBFile.validatePBFile(destPath, true),
+                    ValidatePlainFile.validatePlainFile(destPath, true, testPlugins.dest().getPlainFileHandler()),
                     "File validation failed for " + destPath.toAbsolutePath());
         }
 

@@ -3,7 +3,8 @@ package org.epics.archiverappliance.zipfs;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import edu.stanford.slac.archiverappliance.plain.pb.FileBackedPBEventStream;
 import edu.stanford.slac.archiverappliance.plain.pb.MultiFilePBEventStream;
-import edu.stanford.slac.archiverappliance.plain.PlainPathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -128,13 +129,13 @@ public class ZipCachedFetchTest {
     private void testSerialFetch(Instant startTime, Instant endTime, int months) throws Exception {
         try (BasicContext context = new BasicContext()) {
             long st0 = System.currentTimeMillis();
-            Path[] paths = PlainPathNameUtility.getPathsWithData(
+            Path[] paths = PathNameUtility.getPathsWithData(
                     context.getPaths(),
                     pbplugin.getRootFolder(),
                     pvName,
                     startTime,
                     endTime,
-                    PlainStoragePlugin.pbFileExtension,
+                    PBPlainFileHandler.pbFileExtension,
                     pbplugin.getPartitionGranularity(),
                     pbplugin.getCompressionMode(),
                     configService.getPVNameToKeyConverter());
@@ -161,13 +162,13 @@ public class ZipCachedFetchTest {
         logger.info("The parallelism in the pool is " + forkJoinPool.getParallelism());
         try (BasicContext context = new BasicContext()) {
             long st0 = System.currentTimeMillis();
-            Path[] paths = PlainPathNameUtility.getPathsWithData(
+            Path[] paths = PathNameUtility.getPathsWithData(
                     context.getPaths(),
                     pbplugin.getRootFolder(),
                     pvName,
                     startTime,
                     endTime,
-                    PlainStoragePlugin.pbFileExtension,
+                    PBPlainFileHandler.pbFileExtension,
                     pbplugin.getPartitionGranularity(),
                     pbplugin.getCompressionMode(),
                     configService.getPVNameToKeyConverter());

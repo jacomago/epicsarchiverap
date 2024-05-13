@@ -7,9 +7,10 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import edu.stanford.slac.archiverappliance.plain.PlainPathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.utils.ValidatePBFile;
+import edu.stanford.slac.archiverappliance.plain.utils.ValidatePlainFile;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -185,7 +186,7 @@ public class NamedFlagETLTest {
         String shortTermFolderName = configService.getPBRootFolder() + "/shortTerm";
         String mediumTermFolderName = configService.getPBRootFolder() + "/mediumTerm";
 
-        PlainPtoragePlugin etlSrc = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+        PlainStoragePlugin etlSrc = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 "pb://localhost?name=STS&rootFolder=" + shortTermFolderName + "/&partitionGranularity=PARTITION_DAY"
                         + appendToSourceURL,
                 configService);
@@ -250,19 +251,18 @@ public class NamedFlagETLTest {
         Instant endOfRequest = TimeUtils.plusDays(TimeUtils.now(), 366);
 
         // Check that all the files in the destination store are valid files.
-        Path[] allPaths = PlainPathNameUtility.getAllPathsForPV(
+        Path[] allPaths = PathNameUtility.getAllPathsForPV(
                 new ArchPaths(),
                 etlDest.getRootFolder(),
                 pvName,
                 etlDest.getExtensionString(),
-                etlDest.getPartitionGranularity(),
-                PlainPBStoragePlugin.CompressionMode.NONE,
+                CompressionMode.NONE,
                 configService.getPVNameToKeyConverter());
         Assertions.assertNotNull(allPaths, "PlainPBFileNameUtility returns null for getAllFilesForPV for " + pvName);
 
         for (Path destPath : allPaths) {
             Assertions.assertTrue(
-                    ValidatePBFile.validatePBFile(destPath, true),
+                    ValidatePlainFile.validatePlainFile(destPath, true, etlDest.getPlainFileHandler()),
                     "File validation failed for " + destPath.toAbsolutePath());
         }
 
