@@ -1,7 +1,8 @@
-package edu.stanford.slac.archiverappliance.PlainPB;
+package edu.stanford.slac.archiverappliance.plain;
 
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent;
 import edu.stanford.slac.archiverappliance.PB.utils.LineEscaper;
+import edu.stanford.slac.archiverappliance.plain.pb.PBFileInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.ByteArray;
@@ -26,7 +27,7 @@ import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 
 /**
- * Companion class to PlainPBStoragePlugin that handles the appending of event streams in a partition-aware fashion.
+ * Companion class to PlainStoragePlugin that handles the appending of event streams in a partition-aware fashion.
  * This is used both by the engine and by ETL.
  *
  * @author mshankar
@@ -39,7 +40,7 @@ public class AppendDataStateData {
     private final String rootFolder;
 
     private OutputStream os = null;
-    private final PlainPBStoragePlugin.CompressionMode compressionMode;
+    private final PlainStoragePlugin.CompressionMode compressionMode;
     protected short previousYear = -1;
     protected Instant lastKnownTimeStamp = Instant.ofEpochSecond(0);
     private Instant nextPartitionFirstSecond = Instant.ofEpochSecond(0);
@@ -65,7 +66,7 @@ public class AppendDataStateData {
             String desc,
             Instant lastKnownTimestamp,
             PVNameToKeyMapping pv2key,
-            PlainPBStoragePlugin.CompressionMode compressionMode) {
+            PlainStoragePlugin.CompressionMode compressionMode) {
         this.partitionGranularity = partitionGranularity;
         this.rootFolder = rootFolder;
         this.desc = desc;
@@ -145,11 +146,11 @@ public class AppendDataStateData {
             String pvName,
             String extension,
             Instant ts,
-            PlainPBStoragePlugin.CompressionMode compressionMode)
+            PlainStoragePlugin.CompressionMode compressionMode)
             throws IOException {
 
         if (ts.equals(this.nextPartitionFirstSecond) || ts.isAfter(this.nextPartitionFirstSecond)) {
-            Path nextPath = PlainPBPathNameUtility.getFileName(
+            Path nextPath = PlainPathNameUtility.getFileName(
                     this.rootFolder,
                     pvName,
                     ts,
@@ -251,10 +252,10 @@ public class AppendDataStateData {
             String extensionToCopyFrom,
             Instant ts,
             Path pvPath,
-            PlainPBStoragePlugin.CompressionMode compressionMode)
+            PlainStoragePlugin.CompressionMode compressionMode)
             throws IOException {
         if (pvPath == null) {
-            pvPath = PlainPBPathNameUtility.getFileName(
+            pvPath = PlainPathNameUtility.getFileName(
                     this.rootFolder,
                     pvName,
                     ts,
