@@ -29,6 +29,34 @@ import javax.servlet.http.HttpServletRequest;
  */
 public abstract class SummaryStatsPostProcessor
         implements PostProcessor, PostProcessorWithConsolidatedEventStream, FillNoFillSupport {
+    private static Logger logger = LogManager.getLogger(SummaryStatsPostProcessor.class.getName());
+    protected LinkedHashMap<Long, SummaryValue> consolidatedData = new LinkedHashMap<Long, SummaryValue>();
+    int intervalSecs = PostProcessors.DEFAULT_SUMMARIZING_INTERVAL;
+    long firstBin = 0;
+    long lastBin = Long.MAX_VALUE;
+    long currentBin = -1;
+    int currentMaxSeverity = 0;
+    boolean currentConnectionChangedEvents = false;
+    private Instant previousEventTimestamp = Instant.ofEpochMilli(1);
+    SummaryStatsCollector currentBinCollector = null;
+    RemotableEventStreamDesc srcDesc = null;
+    Event lastSampleBeforeStart = null;
+    boolean lastSampleBeforeStartAdded = false;
+    private Instant start = Instant.MIN;
+    private Instant end = Instant.MAX;
+    private boolean inheritValuesFromPreviousBins = true;
+
+    public static LinkedList<TimeSpan> getBinTimestamps(long firstBin, long lastBin, int intervalSecs) {
+        LinkedList<TimeSpan> ret = new LinkedList<TimeSpan>();
+        long previousBinEpochSeconds = firstBin * intervalSecs;
+        for (long currentBin = firstBin + 1; currentBin <= lastBin; currentBin++) {
+            long currentBinEpochSeconds = currentBin * intervalSecs;
+            ret.add(new TimeSpan(previousBinEpochSeconds, currentBinEpochSeconds));
+            previousBinEpochSeconds = currentBinEpochSeconds;
+        }
+        return ret;
+    }
+
     @Override
     public abstract String getIdentity();
 
@@ -47,70 +75,6 @@ public abstract class SummaryStatsPostProcessor
     public int getElementCount() {
         return 1;
     }
-
-    private Instant start = Instant.MIN;
-    private Instant end = Instant.MAX;
-
-    private static Logger logger = LogManager.getLogger(SummaryStatsPostProcessor.class.getName());
-    int intervalSecs = PostProcessors.DEFAULT_SUMMARIZING_INTERVAL;
-    private Instant previousEventTimestamp = Instant.ofEpochMilli(1);
-
-    static class SummaryValue {
-        /**
-         * The summary value
-         */
-        double value;
-        /**
-         * Maximize severity
-         */
-        int severity;
-        /**
-         * Do we have any connection changed events
-         */
-        boolean connectionChanged;
-
-        HashMap<String, String> additionalCols = null;
-
-        /**
-         * Summary values
-         */
-        List<Double> values;
-
-        public SummaryValue(double value, int severity, boolean connectionChanged) {
-            this.value = value;
-            this.severity = severity;
-            this.connectionChanged = connectionChanged;
-        }
-
-        public SummaryValue(List<Double> values, int severity, boolean connectionChanged) {
-            this.values = values;
-            this.value = Double.NaN;
-            this.severity = severity;
-            this.connectionChanged = connectionChanged;
-        }
-
-        public void addAdditionalColumn(HashMap<String, String> additionalColumns) {
-            for (String name : additionalColumns.keySet()) {
-                String value = additionalColumns.get(name);
-                if (this.additionalCols == null) {
-                    this.additionalCols = new HashMap<String, String>();
-                }
-                this.additionalCols.put(name, value);
-            }
-        }
-    }
-
-    protected LinkedHashMap<Long, SummaryValue> consolidatedData = new LinkedHashMap<Long, SummaryValue>();
-    long firstBin = 0;
-    long lastBin = Long.MAX_VALUE;
-    long currentBin = -1;
-    int currentMaxSeverity = 0;
-    boolean currentConnectionChangedEvents = false;
-    SummaryStatsCollector currentBinCollector = null;
-    RemotableEventStreamDesc srcDesc = null;
-    private boolean inheritValuesFromPreviousBins = true;
-    Event lastSampleBeforeStart = null;
-    boolean lastSampleBeforeStartAdded = false;
 
     @Override
     public void initialize(String userarg, String pvName) throws IOException {
@@ -265,7 +229,7 @@ public abstract class SummaryStatsPostProcessor
         if (intervalSecs == PostProcessors.DEFAULT_SUMMARIZING_INTERVAL) {
             return identity;
         } else {
-            return identity + "_" + Integer.toString(intervalSecs);
+            return identity + "_" + intervalSecs;
         }
     }
 
@@ -311,6 +275,7 @@ public abstract class SummaryStatsPostProcessor
                     getElementCount());
         }
     }
+
     /* (non-Javadoc)
      * @see org.epics.archiverappliance.retrieval.postprocessors.PostProcessorWithConsolidatedEventStream#getStartBinEpochSeconds()
      */
@@ -318,6 +283,7 @@ public abstract class SummaryStatsPostProcessor
     public long getStartBinEpochSeconds() {
         return this.firstBin * this.intervalSecs;
     }
+
     /* (non-Javadoc)
      * @see org.epics.archiverappliance.retrieval.postprocessors.PostProcessorWithConsolidatedEventStream#getEndBinEpochSeconds()
      */
@@ -325,23 +291,13 @@ public abstract class SummaryStatsPostProcessor
     public long getEndBinEpochSeconds() {
         return this.lastBin * this.intervalSecs;
     }
+
     /* (non-Javadoc)
      * @see org.epics.archiverappliance.retrieval.postprocessors.PostProcessorWithConsolidatedEventStream#getBinTimestamps()
      */
     @Override
     public LinkedList<TimeSpan> getBinTimestamps() {
         return getBinTimestamps(this.firstBin, this.lastBin, this.intervalSecs);
-    }
-
-    public static LinkedList<TimeSpan> getBinTimestamps(long firstBin, long lastBin, int intervalSecs) {
-        LinkedList<TimeSpan> ret = new LinkedList<TimeSpan>();
-        long previousBinEpochSeconds = firstBin * intervalSecs;
-        for (long currentBin = firstBin + 1; currentBin <= lastBin; currentBin++) {
-            long currentBinEpochSeconds = currentBin * intervalSecs;
-            ret.add(new TimeSpan(previousBinEpochSeconds, currentBinEpochSeconds));
-            previousBinEpochSeconds = currentBinEpochSeconds;
-        }
-        return ret;
     }
 
     @Override
@@ -352,5 +308,50 @@ public abstract class SummaryStatsPostProcessor
     @Override
     public boolean zeroOutEmptyBins() {
         return false;
+    }
+
+    static class SummaryValue {
+        /**
+         * The summary value
+         */
+        double value;
+        /**
+         * Maximize severity
+         */
+        int severity;
+        /**
+         * Do we have any connection changed events
+         */
+        boolean connectionChanged;
+
+        HashMap<String, String> additionalCols = null;
+
+        /**
+         * Summary values
+         */
+        List<Double> values;
+
+        public SummaryValue(double value, int severity, boolean connectionChanged) {
+            this.value = value;
+            this.severity = severity;
+            this.connectionChanged = connectionChanged;
+        }
+
+        public SummaryValue(List<Double> values, int severity, boolean connectionChanged) {
+            this.values = values;
+            this.value = Double.NaN;
+            this.severity = severity;
+            this.connectionChanged = connectionChanged;
+        }
+
+        public void addAdditionalColumn(HashMap<String, String> additionalColumns) {
+            for (String name : additionalColumns.keySet()) {
+                String value = additionalColumns.get(name);
+                if (this.additionalCols == null) {
+                    this.additionalCols = new HashMap<String, String>();
+                }
+                this.additionalCols.put(name, value);
+            }
+        }
     }
 }
