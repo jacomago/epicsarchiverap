@@ -1,6 +1,6 @@
 package org.epics.archiverappliance.retrieval.cluster;
 
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,7 +50,7 @@ public class ClusterSinglePVTest {
     private static final Logger logger = LogManager.getLogger(ClusterSinglePVTest.class.getName());
     private final TomcatSetup tomcatSetup = new TomcatSetup();
     private final String ltsFolder = System.getenv("ARCHAPPL_LONG_TERM_FOLDER");
-    private final PlainPBStoragePlugin pbplugin = new PlainPBStoragePlugin();
+    private final PlainStoragePlugin pbplugin = new PlainStoragePlugin();
     private final String prefixPvName = ClusterSinglePVTest.class.getSimpleName();
     private final String pvName = prefixPvName + ":dataretrieval";
     private final File ltsPVFolder = new File(ltsFolder + File.separator + prefixPvName);

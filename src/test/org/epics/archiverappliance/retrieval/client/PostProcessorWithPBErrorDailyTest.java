@@ -1,8 +1,8 @@
 package org.epics.archiverappliance.retrieval.client;
 
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.PlainPathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin.CompressionMode;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -42,7 +42,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Random;
 
-import static edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.pbFileExtension;
+import static edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin.pbFileExtension;
 
 /**
  * Generate known amount of data for a PV; corrupt known number of the values.
@@ -199,7 +199,7 @@ public class PostProcessorWithPBErrorDailyTest {
 	
 	private void corruptSomeData() throws Exception { 
 		try(BasicContext context = new BasicContext()) {
-            Path[] paths = PlainPBPathNameUtility.getAllPathsForPV(
+            Path[] paths = PlainPathNameUtility.getAllPathsForPV(
                     context.getPaths(),
                     mtsFolderName,
                     pvName,

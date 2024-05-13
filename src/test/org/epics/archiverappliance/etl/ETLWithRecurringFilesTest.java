@@ -8,9 +8,9 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.PlainPathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin.CompressionMode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -75,11 +75,11 @@ public class ETLWithRecurringFilesTest {
             boolean backUpFiles,
             boolean useNewDest)
             throws Exception {
-        PlainPBStoragePlugin etlSrc = new PlainPBStoragePlugin();
+        PlainStoragePlugin etlSrc = new PlainStoragePlugin();
         PBCommonSetup srcSetup = new PBCommonSetup();
-        PlainPBStoragePlugin etlDest = new PlainPBStoragePlugin();
+        PlainStoragePlugin etlDest = new PlainStoragePlugin();
         PBCommonSetup destSetup = new PBCommonSetup();
-        PlainPBStoragePlugin etlNewDest = new PlainPBStoragePlugin();
+        PlainStoragePlugin etlNewDest = new PlainStoragePlugin();
         PBCommonSetup newDestSetup = new PBCommonSetup();
         ConfigServiceForTests configService = new ConfigServiceForTests(1);
         etlDest.setBackupFilesBeforeETL(backUpFiles);
@@ -129,17 +129,17 @@ public class ETLWithRecurringFilesTest {
 
         // We should now have some data in the src root folder...
         // Make a copy of these files so that we can restore them back later after ETL.
-        Path[] allSrcPaths = PlainPBPathNameUtility.getAllPathsForPV(
+        Path[] allSrcPaths = PlainPathNameUtility.getAllPathsForPV(
                 new ArchPaths(),
                 etlSrc.getRootFolder(),
                 pvName,
-                PlainPBStoragePlugin.pbFileExtension,
+                PlainStoragePlugin.pbFileExtension,
                 etlSrc.getPartitionGranularity(),
                 CompressionMode.NONE,
                 configService.getPVNameToKeyConverter());
         for (Path srcPath : allSrcPaths) {
             Path destPath =
-                    srcPath.resolveSibling(srcPath.getFileName().toString().replace(PlainPBStoragePlugin.pbFileExtension, ".etltest"));
+                    srcPath.resolveSibling(srcPath.getFileName().toString().replace(PlainStoragePlugin.pbFileExtension, ".etltest"));
             logger.debug("Path for backup is " + destPath);
             Files.copy(srcPath, destPath, StandardCopyOption.REPLACE_EXISTING);
         }
@@ -155,7 +155,7 @@ public class ETLWithRecurringFilesTest {
             Assertions.assertFalse(
                     srcPath.toFile().exists(), srcPath.toAbsolutePath() + " was not deleted in the last run");
             Path destPath =
-                    srcPath.resolveSibling(srcPath.getFileName().toString().replace(PlainPBStoragePlugin.pbFileExtension, ".etltest"));
+                    srcPath.resolveSibling(srcPath.getFileName().toString().replace(PlainStoragePlugin.pbFileExtension, ".etltest"));
             Files.copy(destPath, srcPath, StandardCopyOption.COPY_ATTRIBUTES);
         }
 
@@ -203,8 +203,8 @@ public class ETLWithRecurringFilesTest {
 
     private void checkDataValidity(
             String pvName,
-            PlainPBStoragePlugin etlSrc,
-            PlainPBStoragePlugin etlDest,
+            PlainStoragePlugin etlSrc,
+            PlainStoragePlugin etlDest,
             Instant start,
             int incrementSeconds,
             int eventsGenerated,

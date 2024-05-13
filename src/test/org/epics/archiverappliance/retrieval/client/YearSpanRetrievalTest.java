@@ -8,8 +8,8 @@
 package org.epics.archiverappliance.retrieval.client;
 
 import edu.stanford.slac.archiverappliance.PB.data.PBCommonSetup;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainPathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -31,7 +31,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Instant;
@@ -47,7 +46,7 @@ public class YearSpanRetrievalTest {
     private static final Logger logger = LogManager.getLogger(YearSpanRetrievalTest.class.getName());
     static long previousEpochSeconds = 0;
     PBCommonSetup pbSetup = new PBCommonSetup();
-    PlainPBStoragePlugin pbplugin = new PlainPBStoragePlugin();
+    PlainStoragePlugin pbplugin = new PlainStoragePlugin();
     TomcatSetup tomcatSetup = new TomcatSetup();
     private ConfigService configService;
 
@@ -63,7 +62,7 @@ public class YearSpanRetrievalTest {
         // We skip generation of the file only if all the files exist.
         boolean deletefilesandgeneratedata = false;
         for (short currentyear = (short) 2010; currentyear <= (short) 2013; currentyear++) {
-            if (!PlainPBPathNameUtility.getPathNameForTime(
+            if (!PlainPathNameUtility.getPathNameForTime(
                             pbplugin,
                             "--ArchUnitTestyspan",
                             TimeUtils.getStartOfYear(currentyear),
@@ -79,7 +78,7 @@ public class YearSpanRetrievalTest {
         // Delete all the files for the specified span
         if (deletefilesandgeneratedata) {
             for (short currentyear = (short) 2010; currentyear <= (short) 2013; currentyear++) {
-                Files.deleteIfExists(PlainPBPathNameUtility.getPathNameForTime(
+                Files.deleteIfExists(PlainPathNameUtility.getPathNameForTime(
                         pbplugin,
                         "--ArchUnitTestyspan",
                         TimeUtils.getStartOfYear(currentyear),
