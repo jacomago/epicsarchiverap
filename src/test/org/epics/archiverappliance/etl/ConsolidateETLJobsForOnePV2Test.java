@@ -8,8 +8,6 @@
 package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,29 +31,21 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.zip.ZipEntry;
-
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * test for consolidate all pb files from short term storage and medium term storage to long term storage
+ *  test for consolidate all pb files from short term storage to medium term storage
  * @author Luofeng Li
  *
  */
-public class ConsolidateETLJobsForOnePVTest {
+public class ConsolidateETLJobsForOnePV2Test {
 
-    private static final Logger logger = LogManager.getLogger(ConsolidateETLJobsForOnePVTest.class.getName());
-    String rootFolderName = ConfigServiceForTests.getDefaultPBTestFolder() + "/" + "ConsolidateETLJobsForOnePVTest";
+    private static final Logger logger = LogManager.getLogger(ConsolidateETLJobsForOnePV2Test.class.getName());
+    String rootFolderName = ConfigServiceForTests.getDefaultPBTestFolder() + "/" + "ConsolidateETLJobsForOnePV2Test";
     String shortTermFolderName = rootFolderName + "/shortTerm";
     String mediumTermFolderName = rootFolderName + "/mediumTerm";
     String longTermFolderName = rootFolderName + "/longTerm";
-    String pvName = "ArchUnitTest" + "ConsolidateETLJobsForOnePVTest";
+    String pvName = "ArchUnitTest" + "ConsolidateETLJobsForOnePV2Test";
     PlainStoragePlugin storageplugin1;
     PlainStoragePlugin storageplugin2;
     PlainStoragePlugin storageplugin3;
@@ -75,11 +65,11 @@ public class ConsolidateETLJobsForOnePVTest {
                 configService);
         storageplugin2 = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 "pb://localhost?name=MTS&rootFolder=" + mediumTermFolderName
-                        + "/&partitionGranularity=PARTITION_DAY&hold=5&gather=3",
+                        + "/&partitionGranularity=PARTITION_HOUR&hold=5&gather=3",
                 configService);
         storageplugin3 = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 "pb://localhost?name=LTS&rootFolder=" + longTermFolderName
-                        + "/&partitionGranularity=PARTITION_DAY&compress=ZIP_PER_PV",
+                        + "/&partitionGranularity=PARTITION_HOUR&compress=ZIP_PER_PV",
                 configService);
     }
 
@@ -94,12 +84,10 @@ public class ConsolidateETLJobsForOnePVTest {
         try {
             consolidate();
         } catch (AlreadyRegisteredException | IOException | InterruptedException e) {
-            fail();
-            logger.error("Exception consolidating storage", e);
+            logger.error(e);
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void consolidate() throws AlreadyRegisteredException, IOException, InterruptedException {
         PVTypeInfo typeInfo = new PVTypeInfo(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
         String[] dataStores = new String[] {
@@ -114,18 +102,18 @@ public class ConsolidateETLJobsForOnePVTest {
         // generate datas of 10 days PB file 2012_01_01.pb  to 2012_01_10.pb
         int dayCount = 10;
         for (int day = 0; day < dayCount; day++) {
-            logger.debug("Generating data for day " + 1);
+            logger.info("Generating data for day " + 1);
             int startofdayinseconds = day * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
             int runsperday = 12;
             int eventsperrun = PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() / runsperday;
             for (int currentrun = 0; currentrun < runsperday; currentrun++) {
                 try (BasicContext context = new BasicContext()) {
-                    logger.debug("Generating data for run " + currentrun);
+                    logger.info("Generating data for run " + currentrun);
 
                     YearSecondTimestamp yts = new YearSecondTimestamp(
                             currentYear, (day + 1) * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), 0);
                     Instant etlTime = TimeUtils.convertFromYearSecondTimestamp(yts);
-                    logger.debug("Running ETL as if it were " + TimeUtils.convertToHumanReadableString(etlTime));
+                    logger.info("Running ETL as if it were " + TimeUtils.convertToHumanReadableString(etlTime));
                     ETLExecutor.runETLs(configService, etlTime);
                     ArrayListEventStream testData = new ArrayListEventStream(
                             eventsperrun, new RemotableEventStreamDesc(type, pvName, currentYear));
@@ -134,12 +122,12 @@ public class ConsolidateETLJobsForOnePVTest {
                                 startofdayinseconds + currentrun * eventsperrun + secondsinrun,
                                 currentYear,
                                 type,
-                                new ScalarValue<Double>((double) secondsinrun)));
+                                new ScalarValue<>((double) secondsinrun)));
                     }
                     storageplugin1.appendData(context, pvName, testData);
                 }
-                // Sleep for a couple of seconds so that the modification times are different.
-                Thread.sleep(2);
+                // Sleep for a couple of milliseconds so that the modification times are different.
+                Thread.sleep(10);
             }
         } // end for
 
@@ -149,38 +137,24 @@ public class ConsolidateETLJobsForOnePVTest {
 
         String[] filesShortTerm = shortTermFIle.list();
         String[] filesMediumTerm = mediumTermFIle.list();
-        assert filesShortTerm != null;
         Assertions.assertTrue(
                 filesShortTerm.length != 0, "there should be PB files int short term storage but there is no ");
-        assert filesMediumTerm != null;
         Assertions.assertTrue(
                 filesMediumTerm.length != 0, "there should be PB files int medium term storage but there is no ");
         // ArchUnitTestConsolidateETLJobsForOnePVTest+_pb.zip
-        String zip_suffix = "+_pb.zip";
-        File zipFileOflongTermFile = new File(longTermFolderName + "/" + pvName + zip_suffix);
+        File zipFileOflongTermFile = new File(longTermFolderName + "/" + pvName + "+_pb.zip");
         Assertions.assertTrue(
                 zipFileOflongTermFile.exists(),
                 longTermFolderName + "/" + pvName + "+_pb.zip shoule exist but it doesn't");
-        ZipFile lastZipFile1 = new ZipFile(zipFileOflongTermFile);
-        Enumeration<ZipArchiveEntry> enumeration1 = lastZipFile1.getEntries();
-        int ss = 0;
-        while (enumeration1.hasMoreElements()) {
-            enumeration1.nextElement();
-            ss++;
-        }
-        Assertions.assertTrue(
-                ss < dayCount,
-                "the zip file of " + longTermFolderName + "/" + pvName + "+_pb.zip should contain pb files less than "
-                        + dayCount + ",but the number is " + ss);
+
         // consolidate
-        String storageName = "LTS";
+        // String storageName="LTS";
+        // pbraw://MTS
+        String storageName = "MTS";
         Instant oneYearLaterTimeStamp = TimeUtils.convertFromEpochSeconds(
                 TimeUtils.getCurrentEpochSeconds()
                         + 365L * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(),
                 0);
-        // The ConfigServiceForTests automatically adds a ETL Job for each PV. For consolidate, we need to have "paused"
-        // the PV; we fake this by deleting the jobs.
-        configService.getETLLookup().deleteETLJobs(pvName);
         ETLExecutor.runPvETLsBeforeOneStorage(configService, oneYearLaterTimeStamp, pvName, storageName);
         // make sure there are no pb files in short term storage , medium term storage and all files in long term
         // storage
@@ -192,55 +166,32 @@ public class ConsolidateETLJobsForOnePVTest {
                 filesShortTerm2.length,
                 "there should be no files int short term storage but there are still " + filesShortTerm2.length
                         + "PB files");
-        Assertions.assertEquals(
-                0,
-                filesMediumTerm2.length,
-                "there should be no files int medium term storage but there are still " + filesMediumTerm2.length
-                        + "PB files");
-        // ArchUnitTestConsolidateETLJobsForOnePVTest+_pb.zip
-        File zipFileOflongTermFile2 = new File(longTermFolderName + "/" + pvName + zip_suffix);
-        Assertions.assertTrue(
-                zipFileOflongTermFile2.exists(),
-                longTermFolderName + "/" + pvName + "+_pb.zip shoule exist but it doesn't");
 
-        ZipFile lastZipFile = new ZipFile(zipFileOflongTermFile2);
-        Enumeration<ZipArchiveEntry> enumeration = lastZipFile.getEntries();
-        ZipEntry zipEntry = null;
-        HashMap<String, String> fileNameMap = new HashMap<String, String>();
-        while (enumeration.hasMoreElements()) {
-            zipEntry = enumeration.nextElement();
+        // check the file of short term storage come into medium storage
+        for (String fileShortTermTemp1 : filesShortTerm) {
+            boolean exits = false;
+            for (String filesMediumTermTemp1 : filesMediumTerm2) {
+                if (fileShortTermTemp1.equals(filesMediumTermTemp1)) {
+                    exits = true;
+                    break;
+                }
+            }
 
-            String fileNameTemp = zipEntry.getName();
-            logger.info("fileName1=" + fileNameTemp);
-
-            int indexPB = fileNameTemp.indexOf(".pb");
-            int indexDate = indexPB - 5;
-            String dateFileName = fileNameTemp.substring(indexDate, indexPB);
-            fileNameMap.put(dateFileName, dateFileName);
-            logger.info("fileName=" + dateFileName);
+            Assertions.assertTrue(
+                    exits, "the file " + fileShortTermTemp1 + " doesn't exist in " + mediumTermFolderName);
         }
 
-        Assertions.assertEquals(
-                dayCount,
-                fileNameMap.size(),
-                "The number of files should be " + dayCount + ", actually, it is " + fileNameMap.size());
-        Date beinningDate = new Date();
-        beinningDate.setYear(currentYear - 1);
-        beinningDate.setMonth(Calendar.DECEMBER);
-        beinningDate.setDate(31);
-        logger.info("currentYear=" + currentYear);
-        logger.info("beinningDate=" + beinningDate);
-        Calendar calendarBeingining = Calendar.getInstance();
-        calendarBeingining.setTime(beinningDate);
-        SimpleDateFormat df = new SimpleDateFormat("MM_dd");
-        for (int m = 0; m < dayCount; m++) {
-            calendarBeingining.add(Calendar.DAY_OF_MONTH, 1);
-            String fileNameTemp1 = df.format(calendarBeingining.getTime());
-            logger.info("fileNameTemp1=" + fileNameTemp1);
-            Assertions.assertNotNull(
-                    fileNameMap.get(fileNameTemp1),
-                    "the file  whose name is like " + pvName + ":" + currentYear + "_" + fileNameTemp1
-                            + ".pb should exist,but it doesn't");
+        for (String filesMediumTermTemp3 : filesMediumTerm) {
+            boolean exits = false;
+            for (String filesMediumTermTemp2 : filesMediumTerm2) {
+                if (filesMediumTermTemp3.equals(filesMediumTermTemp2)) {
+                    exits = true;
+                    break;
+                }
+            }
+
+            Assertions.assertTrue(
+                    exits, "the file " + filesMediumTermTemp3 + " doesn't exist in " + mediumTermFolderName);
         }
     }
 }

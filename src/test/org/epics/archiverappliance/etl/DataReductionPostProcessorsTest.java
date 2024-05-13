@@ -64,26 +64,27 @@ public class DataReductionPostProcessorsTest {
 
     public static Stream<Arguments> provideReduceDataUsing() {
         return Stream.of(
-                // No fill versions
-                Arguments.of("lastSample_3600"),
-                Arguments.of("firstSample_3600"),
-                Arguments.of("firstSample_600"),
-                Arguments.of("lastSample_600"),
-                Arguments.of("meanSample_3600"),
-                Arguments.of("meanSample_600"),
-                Arguments.of("meanSample_1800"),
-                Arguments.of("minSample_3600"),
-                Arguments.of("maxSample_3600"),
-                Arguments.of("medianSample_3600"),
-                // Fill versions)
-                Arguments.of("mean_3600"),
-                Arguments.of("mean_600"),
-                Arguments.of("mean_1800"),
-                Arguments.of("min_3600"),
-                Arguments.of("max_3600"),
-                Arguments.of("median_3600"),
-                Arguments.of("firstFill_3600"),
-                Arguments.of("lastFill_3600"));
+                        // No fill versions
+                        "lastSample_3600",
+                        "firstSample_3600",
+                        "firstSample_600",
+                        "lastSample_600",
+                        "meanSample_3600",
+                        "meanSample_600",
+                        "meanSample_1800",
+                        "minSample_3600",
+                        "maxSample_3600",
+                        "medianSample_3600",
+                        // Fill versions)
+                        "mean_3600",
+                        "mean_600",
+                        "mean_1800",
+                        "min_3600",
+                        "max_3600",
+                        "median_3600",
+                        "firstFill_3600",
+                        "lastFill_3600")
+                .map(Arguments::of);
     }
 
     @AfterAll
@@ -116,8 +117,7 @@ public class DataReductionPostProcessorsTest {
         logger.info("Testing for " + reduceDataUsing);
         final String rawPVName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX
                 + DataReductionPostProcessorsTest.class.getSimpleName()
-                + reduceDataUsing
-                + PlainStoragePlugin.pbFileSuffix;
+                + reduceDataUsing;
         final String reducedPVName = rawPVName + "reduced";
 
         String shortTermFolderName =
@@ -135,11 +135,10 @@ public class DataReductionPostProcessorsTest {
                 "pb://localhost?name=MTS&rootFolder=" + mediumTermFolderName + "/&partitionGranularity=PARTITION_DAY",
                 configService);
         PlainStoragePlugin etlLTSRaw = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                PlainStoragePlugin.pbFileSuffix + "://localhost?name=LTS&rootFolder=" + longTermFolderName
-                        + "/&partitionGranularity=PARTITION_YEAR",
+                "pb://localhost?name=LTS&rootFolder=" + longTermFolderName + "/&partitionGranularity=PARTITION_YEAR",
                 configService);
         PlainStoragePlugin etlLTSReduced = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                PlainStoragePlugin.pbFileSuffix + "://localhost?name=LTS&rootFolder=" + longTermFolderName
+                "pb://localhost?name=LTS&rootFolder=" + longTermFolderName
                         + "/&partitionGranularity=PARTITION_YEAR&reducedata=" + reduceDataUsing,
                 configService);
         {

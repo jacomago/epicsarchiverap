@@ -21,6 +21,10 @@ import java.io.IOException;
  */
 public interface StoragePlugin extends Reader, Writer {
     /**
+     * Returns the key for specifying what the prefix in the storage plugin url is.
+     */
+    String pluginIdentifier();
+    /**
      * Multiple PVs will probably use the same storage area and we identify the area using the name.
      * This is principally used in capacity planning/load balancing to identify the storage area for the PV.
      * We should make sure that storage's with similar lifetimes have the same name in all the appliances.
@@ -32,6 +36,7 @@ public interface StoragePlugin extends Reader, Writer {
 
     /**
      * Get a string description of this plugin; one that can potentially be used in log messages and provide context.
+     *
      * @return description
      */
     public String getDescription();
@@ -45,10 +50,11 @@ public interface StoragePlugin extends Reader, Writer {
      * <li>Calls initialize with the complete URL.</li>
      * </ol>
      * The storage plugin is expected to use the parameters in the URL to initialize itself.
-     * @param configURL The complete URL
+     *
+     * @param configURL     The complete URL
      * @param configService &emsp;
+     * @throws IOException &emsp;
      * @see org.epics.archiverappliance.config.StoragePluginURLParser
-     * @throws IOException  &emsp;
      */
     public void initialize(String configURL, ConfigService configService) throws IOException;
 
@@ -57,7 +63,8 @@ public interface StoragePlugin extends Reader, Writer {
      * This method is used to change the name of the PV in any of the datasets for PV <code>oldName</code>.
      * For example, in PB files, the name of the PV is encoded in the file names and is also stored in the header. In this case, we expect the plugin to move the data to new files names and change the PV name in the file header.
      * To avoid getting into issues about data changing when renaming files, the PV can be assumed to be in a paused state.
-     * @param context  &emsp;
+     *
+     * @param context &emsp;
      * @param oldName The old PV name
      * @param newName The new PV name
      * @throws IOException &emsp;
@@ -75,9 +82,9 @@ public interface StoragePlugin extends Reader, Writer {
      * So, when/if implementing the conversion function, make sure we respect the typical expectations within the archiver - monotonically increasing timestamps and so on.
      * To avoid getting into issues about data changing when converting, the PV can be assumed to be in a paused state.
      *
-     * @param context &emsp;
-     * @param pvName The PV name
-     * @param conversionFuntion  &emsp;
+     * @param context           &emsp;
+     * @param pvName            The PV name
+     * @param conversionFuntion &emsp;
      * @throws IOException &emsp;
      */
     public void convert(BasicContext context, String pvName, ConversionFunction conversionFuntion) throws IOException;

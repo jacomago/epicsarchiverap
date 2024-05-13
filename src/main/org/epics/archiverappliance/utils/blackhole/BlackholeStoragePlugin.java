@@ -41,6 +41,7 @@ import java.util.concurrent.Callable;
  */
 public class BlackholeStoragePlugin implements StoragePlugin, ETLDest {
     private static Logger logger = LogManager.getLogger(BlackholeStoragePlugin.class.getName());
+    private String name = "blackhole";
 
     @Override
     public List<Callable<EventStream>> getDataForPV(
@@ -64,12 +65,6 @@ public class BlackholeStoragePlugin implements StoragePlugin, ETLDest {
     @Override
     public Event getFirstKnownEvent(BasicContext context, String pvName) throws IOException {
         return null;
-    }
-
-    @Override
-    public boolean prepareForNewPartition(String pvName, Event ev, ArchDBRTypes archDBRType, ETLContext context)
-            throws IOException {
-        return true;
     }
 
     @Override
@@ -109,8 +104,6 @@ public class BlackholeStoragePlugin implements StoragePlugin, ETLDest {
         return ret.toString();
     }
 
-    private String name = "blackhole";
-
     @Override
     public void initialize(String configURL, ConfigService configService) throws IOException {
         try {
@@ -125,6 +118,13 @@ public class BlackholeStoragePlugin implements StoragePlugin, ETLDest {
         } catch (URISyntaxException ex) {
             throw new IOException(ex);
         }
+    }
+
+    public static final String BLACKHOLE_PLUGIN_IDENTIFIER = "blackhole";
+
+    @Override
+    public String pluginIdentifier() {
+        return BLACKHOLE_PLUGIN_IDENTIFIER;
     }
 
     @Override
