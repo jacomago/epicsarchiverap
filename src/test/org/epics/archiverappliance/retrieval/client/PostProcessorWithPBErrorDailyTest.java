@@ -1,9 +1,8 @@
 package org.epics.archiverappliance.retrieval.client;
 
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.CompressionMode;
+import edu.stanford.slac.archiverappliance.plain.PlainPathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -44,7 +43,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Random;
 
-import static edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin.pbFileExtension;
+import static edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin.pbFileExtension;
 
 /**
  * Generate known amount of data for a PV; corrupt known number of the values.
@@ -79,14 +78,14 @@ public class PostProcessorWithPBErrorDailyTest {
 
 	@BeforeEach
 	public void setUp() throws Exception {
-		if(mtsFolder.exists()) { 
+		if(mtsFolder.exists()) {
 			FileUtils.deleteDirectory(mtsFolder);
 		}
 
 		configService = new ConfigServiceForTests(-1);
-		System.getProperties().put("ARCHAPPL_SHORT_TERM_FOLDER",  "../sts"); 
-		System.getProperties().put("ARCHAPPL_MEDIUM_TERM_FOLDER", "../mts"); 
-		System.getProperties().put("ARCHAPPL_LONG_TERM_FOLDER",   "../lts"); 
+		System.getProperties().put("ARCHAPPL_SHORT_TERM_FOLDER",  "../sts");
+		System.getProperties().put("ARCHAPPL_MEDIUM_TERM_FOLDER", "../mts");
+		System.getProperties().put("ARCHAPPL_LONG_TERM_FOLDER",   "../lts");
 		storageplugin = StoragePluginURLParser.parseStoragePlugin("pb://localhost?name=MTS&rootFolder=" + mtsFolderName + "&partitionGranularity=PARTITION_DAY", configService);
 		siocSetup.startSIOCWithDefaultDB();
 		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
@@ -99,7 +98,7 @@ public class PostProcessorWithPBErrorDailyTest {
 		tomcatSetup.tearDown();
 		siocSetup.stopSIOC();
 
-		if(mtsFolder.exists()) { 
+		if(mtsFolder.exists()) {
 			FileUtils.deleteDirectory(mtsFolder);
 		}
 	}
@@ -126,8 +125,8 @@ public class PostProcessorWithPBErrorDailyTest {
 		Assertions.assertEquals(expectedPVStatus, pvArchiveStatusObtainedFromTable, "Expecting PV archive status to be " + expectedPVStatus + "; instead it is " + pvArchiveStatusObtainedFromTable);
 		 Thread.sleep(60 * 1000);
 
-		try(BasicContext context = new BasicContext()) { 
-			for(short y = dataGeneratedForYears; y > 0; y--) { 
+		try(BasicContext context = new BasicContext()) {
+			for(short y = dataGeneratedForYears; y > 0; y--) {
 				short year = (short)(currentYear - y);
 				for(int day = 0; day < 365; day++) {
 					ArrayListEventStream testData = new ArrayListEventStream(24*60*60, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, year));
@@ -140,12 +139,12 @@ public class PostProcessorWithPBErrorDailyTest {
 				}
 			}
 		}
-		logger.info("Done generating data in " + Paths.get(((PlainPBStoragePlugin)storageplugin).getRootFolder()).toAbsolutePath());
+		logger.info("Done generating data in " + Paths.get(((PlainStoragePlugin)storageplugin).getRootFolder()).toAbsolutePath());
 
-		 
+
 		 int totalCount = checkRetrieval(pvName, dataGeneratedForYears*365*24*60, true);
 		 corruptSomeData();
-		 
+
 		 // We have now archived this PV, get some data and validate we got the expected number of events
 		 // We generated data for dataGeneratedForYears years; one sample every minute
 		 // We should get 365*24*60 events if things were ok.
@@ -162,7 +161,7 @@ public class PostProcessorWithPBErrorDailyTest {
         Instant start = TimeUtils.minusDays(now, (dataGeneratedForYears + 1) * 366);
 		int eventCount = 0;
 
-		 final HashMap<String, String> metaFields = new HashMap<String, String>(); 
+		 final HashMap<String, String> metaFields = new HashMap<String, String>();
 		 // Make sure we get the EGU as part of a regular VAL call.
         try (GenMsgIterator strm = rawDataRetrieval.getDataForPV(retrievalPVName, TimeUtils.toSQLTimeStamp(start), TimeUtils.toSQLTimeStamp(now), false, null)) {
 			 PayloadInfo info = null;
@@ -179,48 +178,54 @@ public class PostProcessorWithPBErrorDailyTest {
 
 			 long endTimeMillis =  System.currentTimeMillis();
 
-			 
+
 			 for(@SuppressWarnings("unused") EpicsMessage dbrevent : strm) {
 				 eventCount++;
 			 }
-			 
+
 			 logger.info("Retrival for " + retrievalPVName + "=" + (endTimeMillis - startTimeMillis) + "(ms)");
 		 }
 
-		 logger.info("For " + retrievalPVName + " we were expecting " + expectedAtLeastEvents + "events. We got " + eventCount);
-		 Assertions.assertTrue(eventCount >= expectedAtLeastEvents, "For " + retrievalPVName + ", expecting " + expectedAtLeastEvents + "events. We got " + eventCount);
-		 if(exactMatch) {
-			 Assertions.assertEquals(eventCount, expectedAtLeastEvents, "For " + retrievalPVName + ", Expecting " + expectedAtLeastEvents + "events. We got " + eventCount);
-		 }
-		 
-		 return eventCount;
-	}
-	
-	private static void mergeHeaders(PayloadInfo info, HashMap<String, String> headers) { 
+        logger.info("For " + retrievalPVName + " we were expecting " + expectedAtLeastEvents + "events. We got "
+                + eventCount);
+        Assertions.assertTrue(
+                eventCount >= expectedAtLeastEvents,
+                "For " + retrievalPVName + ", expecting " + expectedAtLeastEvents + "events. We got " + eventCount);
+        if (exactMatch) {
+            Assertions.assertEquals(
+                    eventCount,
+                    expectedAtLeastEvents,
+                    "For " + retrievalPVName + ", Expecting " + expectedAtLeastEvents + "events. We got " + eventCount);
+        }
+
+        return eventCount;
+    }
+
+	private static void mergeHeaders(PayloadInfo info, HashMap<String, String> headers) {
 		 int headerCount = info.getHeadersCount();
-		 for(int i = 0; i < headerCount; i++) { 
+		 for(int i = 0; i < headerCount; i++) {
 			 String headerName = info.getHeaders(i).getName();
 			 String headerValue = info.getHeaders(i).getVal();
 			 logger.debug("Adding header " + headerName + " = " + headerValue);
 			 headers.put(headerName, headerValue);
 		 }
 	}
-	
-	
-	private void corruptSomeData() throws Exception { 
+
+
+	private void corruptSomeData() throws Exception {
 		try(BasicContext context = new BasicContext()) {
-            Path[] paths = PlainPBPathNameUtility.getAllPathsForPV(
+            Path[] paths = PlainPathNameUtility.getAllPathsForPV(
                     context.getPaths(),
                     mtsFolderName,
                     pvName,
 		            pbFileExtension,
                     PartitionGranularity.PARTITION_DAY,
-                    CompressionMode.NONE,
+                    PlainStoragePlugin.CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());
 			Assertions.assertNotNull(paths);
 			Assertions.assertTrue(paths.length > 0);
 			// Corrupt each file
-			for(Path path : paths) { 
+			for(Path path : paths) {
 				try(SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.WRITE)) {
 					Random random = new Random();
 					// Seek to a well defined spot.
@@ -237,7 +242,7 @@ public class PostProcessorWithPBErrorDailyTest {
 				}
 			}
 		}
-		
+
 		// Don't really want to see the client side exception here just yet
 		java.util.logging.Logger.getLogger(InputStreamBackedGenMsg.class.getName()).setLevel(java.util.logging.Level.OFF);
 	}
