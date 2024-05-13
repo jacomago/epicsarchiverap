@@ -28,22 +28,19 @@ import java.util.Iterator;
  *
  */
 public class MultiFilePBEventStreamIterator implements Iterator<Event> {
-    private static Logger logger = LogManager.getLogger(MultiFilePBEventStreamIterator.class.getName());
+    private static final Logger logger = LogManager.getLogger(MultiFilePBEventStreamIterator.class.getName());
     private short year = 0;
-    private ArchDBRTypes type;
-    private DBR2PBTypeMapping mapping;
-    private Constructor<? extends DBRTimeEvent> unmarshallingConstructor;
-    private LineByteStreamCreator istreams[];
+    private final Constructor<? extends DBRTimeEvent> unmarshallingConstructor;
+    private final LineByteStreamCreator[] istreams;
     private int currentStreamIndex = 0;
     private LineByteStream currentLis;
     private byte[] nextLine = null;
 
     public MultiFilePBEventStreamIterator(
-            LineByteStreamCreator istreams[], String pvName, short year, ArchDBRTypes type) throws IOException {
+            LineByteStreamCreator[] istreams, String pvName, short year, ArchDBRTypes type) throws IOException {
         this.istreams = istreams;
-        this.type = type;
         this.year = year;
-        mapping = DBR2PBTypeMapping.getPBClassFor(this.type);
+        DBR2PBTypeMapping mapping = DBR2PBTypeMapping.getPBClassFor(type);
         unmarshallingConstructor = mapping.getUnmarshallingFromByteArrayConstructor();
         currentLis = istreams[currentStreamIndex].getLineByteStream();
     }

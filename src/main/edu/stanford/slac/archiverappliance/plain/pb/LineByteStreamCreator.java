@@ -5,7 +5,11 @@
  * EPICS archiver appliance is distributed subject to a Software License Agreement found
  * in file LICENSE that is included with this distribution.
  *******************************************************************************/
+<<<<<<<< HEAD:src/main/edu/stanford/slac/archiverappliance/plain/LineByteStreamCreator.java
 package edu.stanford.slac.archiverappliance.plain;
+========
+package edu.stanford.slac.archiverappliance.plain.pb;
+>>>>>>>> de1d0dec (Split up functionality of dealing with PB files):src/main/edu/stanford/slac/archiverappliance/plain/pb/LineByteStreamCreator.java
 
 import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
 import edu.stanford.slac.archiverappliance.plain.pb.PBFileInfo;
@@ -28,9 +32,10 @@ public class LineByteStreamCreator {
 
     /**
      * In this case we get a correctly positioned LIS
-     * @param lis The line bytes stream
+     *
+     * @param lis    The line bytes stream
      * @param pvName the PV name
-     * @param type  Enum ArchDBRTypes
+     * @param type   Enum ArchDBRTypes
      */
     public LineByteStreamCreator(LineByteStream lis, String pvName, ArchDBRTypes type) {
         this.lis = lis;
@@ -41,9 +46,10 @@ public class LineByteStreamCreator {
     /**
      * In this case, we get a whole file
      * We need to position the lis past the header before returning.
-     * @param path Path
+     *
+     * @param path   Path
      * @param pvName The PV name
-     * @param type  Enum ArchDBRTypes
+     * @param type   Enum ArchDBRTypes
      */
     public LineByteStreamCreator(Path path, String pvName, ArchDBRTypes type) {
         this.path = path;
