@@ -5,10 +5,10 @@
  * EPICS archiver appliance is distributed subject to a Software License Agreement found
  * in file LICENSE that is included with this distribution.
  *******************************************************************************/
-package edu.stanford.slac.archiverappliance.PlainPB;
+package edu.stanford.slac.archiverappliance.plain;
 
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent;
-import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility.StartEndTimeFromName;
+import edu.stanford.slac.archiverappliance.plain.pb.PBFileInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -142,8 +142,8 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
  * @author mshankar
  *
  */
-public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, StorageMetrics {
-    private static final Logger logger = LogManager.getLogger(PlainPBStoragePlugin.class.getName());
+public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, StorageMetrics {
+    private static final Logger logger = LogManager.getLogger(PlainStoragePlugin.class.getName());
     private final String append_extension;
 
     public static final String pbFileSuffix = "pb";
@@ -211,7 +211,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
 
     private String etlOutofStoreIf;
 
-    public PlainPBStoragePlugin() {
+    public PlainStoragePlugin() {
         this.append_extension = pbFileExtension + "append";
     }
 
@@ -224,7 +224,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
 
     @Override
     public String toString() {
-        return "PlainPBStoragePlugin{" + "append_extension='"
+        return "PlainStoragePlugin{" + "append_extension='"
                 + append_extension + '\'' + ", appendDataStates="
                 + appendDataStates + ", partitionGranularity="
                 + partitionGranularity + ", rootFolder='"
@@ -285,7 +285,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
             // If this is not the case, we should switch to the more accurate algorithm.
             if (userWantsRawData) {
                 logger.debug("User wants raw data.");
-                paths = PlainPBPathNameUtility.getPathsWithData(
+                paths = PlainPathNameUtility.getPathsWithData(
                         context.getPaths(),
                         rootFolder,
                         pvName,
@@ -296,7 +296,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
                         this.compressionMode,
                         this.pv2key);
             } else {
-                paths = PlainPBPathNameUtility.getPathsWithData(
+                paths = PlainPathNameUtility.getPathsWithData(
                         context.getPaths(),
                         rootFolder,
                         pvName,
@@ -310,7 +310,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
                     logger.info("Did not find any cached entries for " + pvName + " for post processor " + extension
                             + ". Defaulting to using the raw streams and computing the data at runtime.");
                     askingForProcessedDataButAbsentInCache = true;
-                    paths = PlainPBPathNameUtility.getPathsWithData(
+                    paths = PlainPathNameUtility.getPathsWithData(
                             context.getPaths(),
                             rootFolder,
                             pvName,
@@ -398,7 +398,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
             PostProcessor postProcessor,
             boolean askingForProcessedDataButAbsentInCache)
             throws Exception {
-        Path mostRecentPath = PlainPBPathNameUtility.getPreviousPartitionBeforeTime(
+        Path mostRecentPath = PlainPathNameUtility.getPreviousPartitionBeforeTime(
                 context.getPaths(),
                 rootFolder,
                 pvName,
@@ -722,7 +722,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
             }
         }
 
-        Path[] paths = PlainPBPathNameUtility.getPathsBeforeCurrentPartition(
+        Path[] paths = PlainPathNameUtility.getPathsBeforeCurrentPartition(
                 context.getPaths(),
                 rootFolder,
                 pvName,
@@ -878,7 +878,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
     @Override
     public Event getLastKnownEvent(BasicContext context, String pvName) throws IOException {
         try {
-            Path[] paths = PlainPBPathNameUtility.getAllPathsForPV(
+            Path[] paths = PlainPathNameUtility.getAllPathsForPV(
                     context.getPaths(),
                     rootFolder,
                     pvName,
@@ -917,7 +917,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
     @Override
     public Event getFirstKnownEvent(BasicContext context, String pvName) throws IOException {
         try {
-            Path[] paths = PlainPBPathNameUtility.getAllPathsForPV(
+            Path[] paths = PlainPathNameUtility.getAllPathsForPV(
                     context.getPaths(),
                     rootFolder,
                     pvName,
@@ -971,7 +971,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
     public boolean commitETLAppendData(String pvName, ETLContext context) throws IOException {
         if (compressionMode == CompressionMode.NONE && backupFilesBeforeETL) {
             // Get all append data files for the specified PV name and partition granularity.
-            Path[] appendDataPaths = PlainPBPathNameUtility.getAllPathsForPV(
+            Path[] appendDataPaths = PlainPathNameUtility.getAllPathsForPV(
                     context.getPaths(),
                     rootFolder,
                     pvName,
@@ -1103,7 +1103,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
     @Override
     public long spaceConsumedByPV(String pvName) throws IOException {
         // Using a blank extension should fetch everything?
-        Path[] rawPaths = PlainPBPathNameUtility.getAllPathsForPV(
+        Path[] rawPaths = PlainPathNameUtility.getAllPathsForPV(
                 new ArchPaths(), rootFolder, pvName, "", partitionGranularity, this.compressionMode, this.pv2key);
         long spaceConsumed = 0;
         for (Path f : rawPaths) {
@@ -1121,7 +1121,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
             BasicContext context, String pvName, PostProcessor postProcessor) throws IOException {
         String ppExt = "." + postProcessor.getExtension();
         logger.debug("Looking for missing " + ppExt + " paths based on the list of " + pbFileExtension + " paths");
-        Path[] rawPaths = PlainPBPathNameUtility.getAllPathsForPV(
+        Path[] rawPaths = PlainPathNameUtility.getAllPathsForPV(
                 context.getPaths(),
                 this.rootFolder,
                 pvName,
@@ -1129,7 +1129,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
                 this.partitionGranularity,
                 this.compressionMode,
                 this.pv2key);
-        Path[] ppPaths = PlainPBPathNameUtility.getAllPathsForPV(
+        Path[] ppPaths = PlainPathNameUtility.getAllPathsForPV(
                 context.getPaths(),
                 this.rootFolder,
                 pvName,
@@ -1195,7 +1195,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
     public void renamePV(BasicContext context, String oldName, String newName) throws IOException {
         // Copy data for the main pb file.
         {
-            Path[] paths = PlainPBPathNameUtility.getAllPathsForPV(
+            Path[] paths = PlainPathNameUtility.getAllPathsForPV(
                     context.getPaths(),
                     rootFolder,
                     oldName,
@@ -1212,7 +1212,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
 
         // Copy data for the post processors...
         for (String ppExt : getPPExtensions()) {
-            Path[] paths = PlainPBPathNameUtility.getAllPathsForPV(
+            Path[] paths = PlainPathNameUtility.getAllPathsForPV(
                     context.getPaths(),
                     rootFolder,
                     oldName,
@@ -1258,7 +1258,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
     }
 
     private void deleteTempFiles(BasicContext context, String pvName, String randSuffix) throws IOException {
-        Path[] paths = PlainPBPathNameUtility.getAllPathsForPV(
+        Path[] paths = PlainPathNameUtility.getAllPathsForPV(
                 context.getPaths(),
                 rootFolder,
                 pvName,
@@ -1280,7 +1280,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
     }
 
     private void movePaths(BasicContext context, String pvName, String randSuffix, String suffix) throws IOException {
-        Path[] paths = PlainPBPathNameUtility.getAllPathsForPV(
+        Path[] paths = PlainPathNameUtility.getAllPathsForPV(
                 context.getPaths(),
                 rootFolder,
                 pvName,
@@ -1304,7 +1304,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
             throws IOException {
         // Convert data for the post processors...
         for (String ppExt : postProcessors) {
-            Path[] paths = PlainPBPathNameUtility.getAllPathsForPV(
+            Path[] paths = PlainPathNameUtility.getAllPathsForPV(
                     context.getPaths(),
                     rootFolder,
                     pvName,
@@ -1314,7 +1314,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
                     this.pv2key);
             for (Path path : paths) {
                 logger.info("Converting data in " + path.toString() + " for pv " + pvName + " for extension " + ppExt);
-                StartEndTimeFromName setimes = PlainPBPathNameUtility.determineTimesFromFileName(
+                PlainPathNameUtility.StartEndTimeFromName setimes = PlainPathNameUtility.determineTimesFromFileName(
                         pvName, path.getFileName().toString(), partitionGranularity, this.pv2key);
                 PBFileInfo info = new PBFileInfo(path);
                 if (conversionFuntion.shouldConvert(

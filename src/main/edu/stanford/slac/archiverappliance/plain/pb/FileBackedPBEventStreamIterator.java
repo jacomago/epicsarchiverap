@@ -1,4 +1,4 @@
-package edu.stanford.slac.archiverappliance.PlainPB;
+package edu.stanford.slac.archiverappliance.plain.pb;
 
 import org.epics.archiverappliance.Event;
 

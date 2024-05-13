@@ -5,40 +5,42 @@
  * EPICS archiver appliance is distributed subject to a Software License Agreement found
  * in file LICENSE that is included with this distribution.
  *******************************************************************************/
-package edu.stanford.slac.archiverappliance.PlainPB.utils;
+package edu.stanford.slac.archiverappliance.plain.utils;
 
-import edu.stanford.slac.archiverappliance.PlainPB.FileBackedPBEventStream;
-import edu.stanford.slac.archiverappliance.PlainPB.PBFileInfo;
+import edu.stanford.slac.archiverappliance.plain.pb.FileBackedPBEventStream;
+import edu.stanford.slac.archiverappliance.plain.pb.PBFileInfo;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 
 /**
  * @author mshankar
  *	Print all the times in a PB file.
  */
-public class PrintTimes {
+public class PrintExtraFields {
     public static void main(String[] args) throws Exception {
-        if (args == null || args.length < 1) {
-            System.err.println("Usage: java edu.stanford.slac.archiverappliance.PlainPB.utils.PrintTimes <PBFiles>");
-            return;
-        }
-
         for (String fileName : args) {
             Path path = Paths.get(fileName);
             System.out.println(
-                    "Printing times for file " + path.toAbsolutePath().toString());
+                    "Printing extra fields for file " + path.toAbsolutePath().toString());
             PBFileInfo info = new PBFileInfo(path);
             try (FileBackedPBEventStream strm = new FileBackedPBEventStream(info.getPVName(), path, info.getType())) {
                 for (Event ev : strm) {
-                    System.out.println(TimeUtils.convertToISO8601String(((DBRTimeEvent) ev).getEventTimeStamp())
-                            + "\t" + TimeUtils.convertToHumanReadableString((((DBRTimeEvent) ev).getEventTimeStamp()))
-                            + "\t" + ev.getSampleValue().toString()
-                            + "\t" + (((DBRTimeEvent) ev).getSeverity())
-                            + "\t" + (((DBRTimeEvent) ev).getStatus()));
+                    DBRTimeEvent tev = (DBRTimeEvent) ev;
+                    if (tev.hasFieldValues()) {
+                        System.out.println(TimeUtils.convertToISO8601String(((DBRTimeEvent) ev).getEventTimeStamp())
+                                + "\t"
+                                + TimeUtils.convertToHumanReadableString((((DBRTimeEvent) ev).getEventTimeStamp()))
+                                + "\t" + ev.getSampleValue().toString());
+                        HashMap<String, String> extraFields = tev.getFields();
+                        for (String name : extraFields.keySet()) {
+                            System.out.println("\t" + name + "\t" + extraFields.get(name));
+                        }
+                    }
                 }
             }
         }

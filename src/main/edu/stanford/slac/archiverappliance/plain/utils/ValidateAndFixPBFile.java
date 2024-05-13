@@ -5,12 +5,12 @@
  * EPICS archiver appliance is distributed subject to a Software License Agreement found
  * in file LICENSE that is included with this distribution.
  *******************************************************************************/
-package edu.stanford.slac.archiverappliance.PlainPB.utils;
+package edu.stanford.slac.archiverappliance.plain.utils;
 
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
 import edu.stanford.slac.archiverappliance.PB.utils.LineEscaper;
-import edu.stanford.slac.archiverappliance.PlainPB.FileBackedPBEventStream;
-import edu.stanford.slac.archiverappliance.PlainPB.PBFileInfo;
+import edu.stanford.slac.archiverappliance.plain.pb.FileBackedPBEventStream;
+import edu.stanford.slac.archiverappliance.plain.pb.PBFileInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.ByteArray;
@@ -154,7 +154,7 @@ public class ValidateAndFixPBFile {
                 long eventnum = 0;
                 try (FileBackedPBEventStream strm =
                                 new FileBackedPBEventStream(info.getPVName(), path, info.getType());
-                        OutputStream os = new BufferedOutputStream(Files.newOutputStream(
+                     OutputStream os = new BufferedOutputStream(Files.newOutputStream(
                                 tempPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
                     byte[] headerBytes = LineEscaper.escapeNewLines(PayloadInfo.newBuilder()
                             .setPvname(info.getPVName())
