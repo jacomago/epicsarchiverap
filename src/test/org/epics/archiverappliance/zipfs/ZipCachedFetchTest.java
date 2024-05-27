@@ -1,9 +1,9 @@
 package org.epics.archiverappliance.zipfs;
 
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import edu.stanford.slac.archiverappliance.plain.pb.FileBackedPBEventStream;
 import edu.stanford.slac.archiverappliance.plain.pb.MultiFilePBEventStream;
-import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.BasicContext;
+import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigService;
@@ -51,35 +52,6 @@ public class ZipCachedFetchTest {
     short currentYear = TimeUtils.getCurrentYear();
     private ConfigService configService;
 
-    private static class ZipCachedFetchEventStream extends ArrayListEventStream implements Callable<EventStream> {
-        @Serial
-        private static final long serialVersionUID = 8076901507481457453L;
-
-        EventStream srcStream;
-
-        ZipCachedFetchEventStream(EventStream srcStream) {
-            super(0, (RemotableEventStreamDesc) srcStream.getDescription());
-            this.srcStream = srcStream;
-        }
-
-        @Override
-        public EventStream call() {
-            long previousEpochSeconds = 0L;
-            for (Event e : srcStream) {
-                long currEpochSeconds = e.getEpochSeconds();
-                if (currEpochSeconds - previousEpochSeconds > 60 * 60) {
-                    this.add(e);
-                    previousEpochSeconds = currEpochSeconds;
-                }
-            }
-            try {
-                srcStream.close();
-            } catch (Exception ignored) {
-            }
-            return this;
-        }
-    }
-
     @BeforeEach
     public void setUp() throws Exception {
         configService = new ConfigServiceForTests(-1);
@@ -93,36 +65,19 @@ public class ZipCachedFetchTest {
         ArchDBRTypes type = ArchDBRTypes.DBR_SCALAR_DOUBLE;
         try (BasicContext context = new BasicContext()) {
             for (int day = 0; day < 365; day++) {
-                ArrayListEventStream testData =
-                        new ArrayListEventStream(24 * 60 * 60, new RemotableEventStreamDesc(type, pvName, currentYear));
-                int startofdayinseconds = day * 24 * 60 * 60;
-                for (int secondintoday = 0; secondintoday < 24 * 60 * 60; secondintoday++) {
+                ArrayListEventStream testData = new ArrayListEventStream(
+                        PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(),
+                        new RemotableEventStreamDesc(type, pvName, currentYear));
+                int startofdayinseconds = day * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
+                for (int secondintoday = 0;
+                        secondintoday < PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
+                        secondintoday++) {
                     testData.add(new SimulationEvent(
                             startofdayinseconds + secondintoday, currentYear, type, new ScalarValue<Double>((double)
                                     secondintoday)));
                 }
                 pbplugin.appendData(context, pvName, testData);
             }
-        }
-    }
-
-    @AfterEach
-    public void tearDown() throws Exception {
-        FileUtils.deleteDirectory(new File(rootFolderName));
-    }
-
-    @Test
-    public void test() throws Exception {
-        DecimalFormat format = new DecimalFormat("00");
-        for (int months = 2; months <= 9; months++) {
-            int startMonth = 2;
-            int endMonth = startMonth + months;
-            Instant startTime = TimeUtils.convertFromISO8601String(
-                    currentYear + "-" + format.format(startMonth) + "-01T00:00:00.000Z");
-            Instant endTime = TimeUtils.convertFromISO8601String(
-                    currentYear + "-" + format.format(endMonth) + "-30T00:00:00.000Z");
-            testParallelFetch(startTime, endTime, months);
-            testSerialFetch(startTime, endTime, months);
         }
     }
 
@@ -145,7 +100,8 @@ public class ZipCachedFetchTest {
                     new MultiFilePBEventStream(paths, pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, startTime, endTime)) {
                 for (Event e : st) {
                     long currEpochSeconds = e.getEpochSeconds();
-                    if (currEpochSeconds - previousEpochSeconds > 60 * 60) {
+                    if (currEpochSeconds - previousEpochSeconds
+                            > PartitionGranularity.PARTITION_HOUR.getApproxSecondsPerChunk()) {
                         eventCount++;
                         previousEpochSeconds = currEpochSeconds;
                     }
@@ -154,6 +110,26 @@ public class ZipCachedFetchTest {
             long st1 = System.currentTimeMillis();
             logger.info("Time takes for serial fetch is " + (st1 - st0) + "(ms) return " + eventCount + " events for "
                     + (months + 1) + " months");
+        }
+    }
+
+    @AfterEach
+    public void tearDown() throws Exception {
+        FileUtils.deleteDirectory(new File(rootFolderName));
+    }
+
+    @Test
+    public void test() throws Exception {
+        DecimalFormat format = new DecimalFormat("00");
+        for (int months = 2; months <= 9; months++) {
+            int startMonth = 2;
+            int endMonth = startMonth + months;
+            Instant startTime = TimeUtils.convertFromISO8601String(
+                    currentYear + "-" + format.format(startMonth) + "-01T00:00:00.000Z");
+            Instant endTime = TimeUtils.convertFromISO8601String(
+                    currentYear + "-" + format.format(endMonth) + "-30T00:00:00.000Z");
+            testParallelFetch(startTime, endTime, months);
+            testSerialFetch(startTime, endTime, months);
         }
     }
 
@@ -210,6 +186,36 @@ public class ZipCachedFetchTest {
                     + longestWaitTime + " (ms) " + " and a total wait time of " + totalWaitTime + " (ms) ");
 
             forkJoinPool.shutdown();
+        }
+    }
+
+    private static class ZipCachedFetchEventStream extends ArrayListEventStream implements Callable<EventStream> {
+        @Serial
+        private static final long serialVersionUID = 8076901507481457453L;
+
+        EventStream srcStream;
+
+        ZipCachedFetchEventStream(EventStream srcStream) {
+            super(0, (RemotableEventStreamDesc) srcStream.getDescription());
+            this.srcStream = srcStream;
+        }
+
+        @Override
+        public EventStream call() {
+            long previousEpochSeconds = 0L;
+            for (Event e : srcStream) {
+                long currEpochSeconds = e.getEpochSeconds();
+                if (currEpochSeconds - previousEpochSeconds
+                        > PartitionGranularity.PARTITION_HOUR.getApproxSecondsPerChunk()) {
+                    this.add(e);
+                    previousEpochSeconds = currEpochSeconds;
+                }
+            }
+            try {
+                srcStream.close();
+            } catch (Exception ignored) {
+            }
+            return this;
         }
     }
 }
