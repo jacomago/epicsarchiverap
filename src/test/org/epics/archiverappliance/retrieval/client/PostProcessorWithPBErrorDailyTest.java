@@ -1,7 +1,7 @@
 package org.epics.archiverappliance.retrieval.client;
 
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
-import edu.stanford.slac.archiverappliance.plain.PlainPathNameUtility;
+import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.commons.io.FileUtils;
@@ -201,20 +201,19 @@ public class PostProcessorWithPBErrorDailyTest {
         return eventCount;
     }
 
-	private static void mergeHeaders(PayloadInfo info, HashMap<String, String> headers) {
-		 int headerCount = info.getHeadersCount();
-		 for(int i = 0; i < headerCount; i++) {
-			 String headerName = info.getHeaders(i).getName();
-			 String headerValue = info.getHeaders(i).getVal();
-			 logger.debug("Adding header " + headerName + " = " + headerValue);
-			 headers.put(headerName, headerValue);
-		 }
-	}
+    private static void mergeHeaders(PayloadInfo info, HashMap<String, String> headers) {
+        int headerCount = info.getHeadersCount();
+        for(int i = 0; i < headerCount; i++) {
+            String headerName = info.getHeaders(i).getName();
+            String headerValue = info.getHeaders(i).getVal();
+            logger.debug("Adding header " + headerName + " = " + headerValue);
+            headers.put(headerName, headerValue);
+        }
+    }
 
-
-	private void corruptSomeData() throws Exception {
-		try(BasicContext context = new BasicContext()) {
-            Path[] paths = PlainPathNameUtility.getAllPathsForPV(
+    private void corruptSomeData() throws Exception {
+        try (BasicContext context = new BasicContext()) {
+            Path[] paths = PathNameUtility.getAllPathsForPV(
                     context.getPaths(),
                     mtsFolderName,
                     pvName,
