@@ -151,7 +151,7 @@ public class FileBackedPBEventStreamTest {
 
         try (BasicContext context = new BasicContext()) {
             long startMs = System.currentTimeMillis();
-            Path path = PlainPathNameUtility.getPathNameForTime(
+            Path path = PathNameUtility.getPathNameForTime(
                     storagePlugin,
                     pvName,
                     oneWeekIntoYear,
@@ -176,7 +176,7 @@ public class FileBackedPBEventStreamTest {
         PlainStoragePlugin storagePlugin = getStoragePlugin();
 
         try (BasicContext context = new BasicContext()) {
-            Path path = PlainPathNameUtility.getPathNameForTime(
+            Path path = PathNameUtility.getPathNameForTime(
                     storagePlugin,
                     pvName,
                     oneWeekIntoYear,
@@ -194,7 +194,7 @@ public class FileBackedPBEventStreamTest {
         }
 
         try (BasicContext context = new BasicContext()) {
-            Path path = PlainPathNameUtility.getPathNameForTime(
+            Path path = PathNameUtility.getPathNameForTime(
                     storagePlugin,
                     pvName,
                     oneWeekIntoYear,
@@ -219,7 +219,7 @@ public class FileBackedPBEventStreamTest {
 
         PlainStoragePlugin storagePlugin = getStoragePlugin();
         try (BasicContext context = new BasicContext()) {
-            Path path = PlainPathNameUtility.getPathNameForTime(
+            Path path = PathNameUtility.getPathNameForTime(
                     storagePlugin,
                     pvName,
                     oneWeekIntoYear,
@@ -254,7 +254,7 @@ public class FileBackedPBEventStreamTest {
         PlainStoragePlugin storagePlugin = getStoragePlugin();
 
         try (BasicContext context = new BasicContext()) {
-            Path path = PlainPathNameUtility.getPathNameForTime(
+            Path path = PathNameUtility.getPathNameForTime(
                     storagePlugin,
                     pvName,
                     oneWeekIntoYear,
@@ -299,7 +299,7 @@ public class FileBackedPBEventStreamTest {
         PlainStoragePlugin storagePlugin = getStoragePlugin();
 
         try (BasicContext context = new BasicContext()) {
-            Path path = PlainPathNameUtility.getPathNameForTime(
+            Path path = PathNameUtility.getPathNameForTime(
                     storagePlugin,
                     pvName,
                     oneWeekIntoYear,
@@ -379,7 +379,7 @@ public class FileBackedPBEventStreamTest {
         Instant endTime = convertFromEpochSeconds(requestEpochSeconds, 999999999);
 
         try (BasicContext context = new BasicContext()) {
-            Path path = PlainPathNameUtility.getPathNameForTime(
+            Path path = PathNameUtility.getPathNameForTime(
                     highRatePlugin,
                     highRatePVName,
                     oneWeekIntoYear,
