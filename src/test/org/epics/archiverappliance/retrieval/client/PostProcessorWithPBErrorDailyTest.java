@@ -218,7 +218,7 @@ public class PostProcessorWithPBErrorDailyTest {
                     context.getPaths(),
                     mtsFolderName,
                     pvName,
-		            pbFileExtension,
+                    PlainStoragePlugin.pbFileExtension,
                     PartitionGranularity.PARTITION_DAY,
                     PlainStoragePlugin.CompressionMode.NONE,
                     configService.getPVNameToKeyConverter());
