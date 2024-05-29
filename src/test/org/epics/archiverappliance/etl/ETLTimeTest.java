@@ -201,7 +201,7 @@ public class ETLTimeTest {
                 expectedFiles,
                 "Dest file count " + postETLDestVisitor.filesPresent + " is not the same as PV count " + pvs.size());
 
-        logger.info(ApplianceMetricsDetails.getETLMetricsDetails(configService));
+        logger.info(configService.getETLLookup().getApplianceMetrics().details(configService));
     }
 
     private static CountFiles getCountFiles(ArrayList<String> pvs, PlainStoragePlugin storagePlugin)
