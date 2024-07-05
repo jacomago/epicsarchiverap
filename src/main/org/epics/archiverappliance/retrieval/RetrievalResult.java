@@ -7,11 +7,11 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval;
 
+import org.epics.archiverappliance.EventStream;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
-
-import org.epics.archiverappliance.EventStream;
 
 /**
  * Result of a retrieval.
@@ -20,25 +20,25 @@ import org.epics.archiverappliance.EventStream;
  *
  */
 public class RetrievalResult {
-	private List<Callable<EventStream>> resultStreams;
-	private UnitOfRetrieval retrievalRequest;
-	
-	public List<Callable<EventStream>> getResultStreams() {
-		return resultStreams;
-	}
-	
-	public UnitOfRetrieval getRetrievalRequest() {
-		return retrievalRequest;
-	}
-	
-	public RetrievalResult(List<Callable<EventStream>> strms, UnitOfRetrieval retrievalRequest) throws IOException {
-		this.resultStreams = strms;
-		this.retrievalRequest = retrievalRequest;
-	}
-	
-	public boolean hasNoData() {
-		if(resultStreams == null) return true;
-		
-		return false;
-	}
+    private List<Callable<EventStream>> resultStreams;
+    private UnitOfRetrieval retrievalRequest;
+
+    public List<Callable<EventStream>> getResultStreams() {
+        return resultStreams;
+    }
+
+    public UnitOfRetrieval getRetrievalRequest() {
+        return retrievalRequest;
+    }
+
+    public RetrievalResult(List<Callable<EventStream>> strms, UnitOfRetrieval retrievalRequest) throws IOException {
+        this.resultStreams = strms;
+        this.retrievalRequest = retrievalRequest;
+    }
+
+    public boolean hasNoData() {
+        if (resultStreams == null) return true;
+
+        return false;
+    }
 }

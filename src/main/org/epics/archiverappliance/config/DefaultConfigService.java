@@ -66,8 +66,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.management.ManagementFactory;
-import java.lang.management.PlatformLoggingMXBean;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URL;
@@ -317,8 +315,6 @@ public class DefaultConfigService implements ConfigService {
                 this.runTimeFields.add(rf.trim());
             }
         }
-
-
 
         switch (contextPath) {
             case "/mgmt":
@@ -1334,7 +1330,10 @@ public class DefaultConfigService implements ConfigService {
 
     @Override
     public int getInitialDelayBeforeStartingArchiveRequestWorkflow() {
-        int initialDelayInSeconds = Integer.parseInt(this.getInstallationProperties().getProperty("org.epics.archiverappliance.mgmt.MgmtRuntimeState.initialDelayBeforeStartingArchiveRequests", "10"));
+        int initialDelayInSeconds = Integer.parseInt(this.getInstallationProperties()
+                .getProperty(
+                        "org.epics.archiverappliance.mgmt.MgmtRuntimeState.initialDelayBeforeStartingArchiveRequests",
+                        "10"));
         return initialDelayInSeconds;
     }
 
@@ -1379,7 +1378,7 @@ public class DefaultConfigService implements ConfigService {
     }
 
     @Override
-    public List<String> getAliasesForRealName(String realName) { 
+    public List<String> getAliasesForRealName(String realName) {
         try {
             return persistanceLayer.getAliasNamesForRealName(realName);
         } catch (IOException ex) {

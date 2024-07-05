@@ -15,11 +15,11 @@ import org.epics.archiverappliance.EventStreamDesc;
  *
  */
 public interface RetrievalEventProcessor {
-	/**
-	 * Called when we are transitioning into another PV's data in the stream.
-	 * This is where we can perform actions like switching buffers, reseting the vertical transforms, moveTo's to the origin etc.  
-	 * A newPVOnStream is also send on the first PV in the stream as well.
-	 * @param desc EventStreamDesc
-	 */
-	public void newPVOnStream(EventStreamDesc desc);
+    /**
+     * Called when we are transitioning into another PV's data in the stream.
+     * This is where we can perform actions like switching buffers, reseting the vertical transforms, moveTo's to the origin etc.
+     * A newPVOnStream is also send on the first PV in the stream as well.
+     * @param desc EventStreamDesc
+     */
+    public void newPVOnStream(EventStreamDesc desc);
 }

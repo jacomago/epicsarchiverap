@@ -9,13 +9,11 @@ package org.epics.archiverappliance;
 
 import java.io.Closeable;
 
-
-
 /**
  * An event stream is a sequence of events in temporal order.
- * The events in the stream come oldest events first. 
+ * The events in the stream come oldest events first.
  * Implementations of EventStream (<i>should</i>) try their best to support streaming data transfers.
- * <div style="margin-top: 2.0em;"> 
+ * <div style="margin-top: 2.0em;">
  * EventStreams are typically backed by objects that consume system resources (like file handles, database connections etc).
  * So, clients <b>must</b> close the EventStream once they are done with it.
  * We strongly encourage the use of the Java 1.7 try-with-resources for this purpose.
@@ -30,7 +28,7 @@ import java.io.Closeable;
  * </pre>
  * </div>
  * <div>
- * EventStreams are typically backed by streams (InputStreams, XMLStreams, database cursors) etc. 
+ * EventStreams are typically backed by streams (InputStreams, XMLStreams, database cursors) etc.
  * While there may be one or two implementations that let you get multiple iterators out of a single EventStream, this is the exception rather than the norm.
  * For most implementation, assume that you can only get one iterator and once that iterator is finished, the EventStream is done.
  * Again, we strongly encourage the use of the Java 1.7 try-with-resources which automatically forces this usage.
@@ -45,12 +43,12 @@ import java.io.Closeable;
  * </code>
  * </pre>
  * However, Iterable&lt;Event&gt; does not permit us to throw IOExceptions.
- * This is not ideal in that EventStreams are almost always backed by objects doing I/O and therefore can throw IOExceptions at all points. 
+ * This is not ideal in that EventStreams are almost always backed by objects doing I/O and therefore can throw IOExceptions at all points.
  * So, sometimes these are wrapped into subclasses of RuntimeException
  * </div>
  * @author mshankar
  *
  */
 public interface EventStream extends Iterable<Event>, Closeable {
-	public EventStreamDesc getDescription();
+    public EventStreamDesc getDescription();
 }
