@@ -64,7 +64,7 @@ function createReportTableDATA(json, url, tabledivname, coldefs, rowdefs) {
   reportTable.data("url", url);
   reporttablediv.append(reportTable);
 
-  getJSONDataAndRefreshTable(reportTable, json === undefined ? "GET": "POST");
+  getJSONDataAndRefreshTable(reportTable, json === undefined ? "GET" : "POST");
 
   reportTable.data("paging", { pagesize: 25, currentpage: 0 });
 

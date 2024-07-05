@@ -14,5 +14,5 @@ package org.epics.archiverappliance.retrieval;
  *
  */
 public interface RemotableOverRaw {
-	public RemotableEventStreamDesc getDescription();
+    public RemotableEventStreamDesc getDescription();
 }

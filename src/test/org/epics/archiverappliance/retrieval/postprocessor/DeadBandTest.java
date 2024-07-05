@@ -136,7 +136,11 @@ public class DeadBandTest {
         final HashMap<String, String> metaFields = new HashMap<String, String>();
         // Make sure we get the EGU as part of a regular VAL call.
         try (GenMsgIterator strm = rawDataRetrieval.getDataForPVs(
-                Arrays.asList(retrievalPVName), TimeUtils.toSQLTimeStamp(start), TimeUtils.toSQLTimeStamp(end), false, null)) {
+                Arrays.asList(retrievalPVName),
+                TimeUtils.toSQLTimeStamp(start),
+                TimeUtils.toSQLTimeStamp(end),
+                false,
+                null)) {
             PayloadInfo info = null;
             Assertions.assertTrue(
                     strm != null,
@@ -183,7 +187,11 @@ public class DeadBandTest {
         final HashMap<String, String> metaFields = new HashMap<String, String>();
         // Make sure we get the EGU as part of a regular VAL call.
         try (GenMsgIterator strm = rawDataRetrieval.getDataForPVs(
-            Arrays.asList(retrievalPVName), TimeUtils.toSQLTimeStamp(start), TimeUtils.toSQLTimeStamp(end), false, null)) {
+                Arrays.asList(retrievalPVName),
+                TimeUtils.toSQLTimeStamp(start),
+                TimeUtils.toSQLTimeStamp(end),
+                false,
+                null)) {
             PayloadInfo info = null;
             Assertions.assertTrue(
                     strm != null,

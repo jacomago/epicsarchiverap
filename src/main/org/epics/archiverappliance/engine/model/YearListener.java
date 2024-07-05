@@ -1,5 +1,3 @@
-
-
 /*******************************************************************************
  * Copyright (c) 2011 The Board of Trustees of the Leland Stanford Junior University
  * as Operator of the SLAC National Accelerator Laboratory.
@@ -15,6 +13,5 @@ package org.epics.archiverappliance.engine.model;
  */
 public interface YearListener {
 
-	public void yearChanged(SampleBuffer sampleBuffer);
-
+    public void yearChanged(SampleBuffer sampleBuffer);
 }

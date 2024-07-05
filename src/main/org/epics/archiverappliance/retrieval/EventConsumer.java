@@ -14,5 +14,5 @@ import org.epics.archiverappliance.Event;
  * An interface for an entity that consumes events one at a time.
  */
 public interface EventConsumer {
-	public void consumeEvent(Event e) throws Exception;
+    public void consumeEvent(Event e) throws Exception;
 }

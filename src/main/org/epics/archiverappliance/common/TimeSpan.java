@@ -19,35 +19,35 @@ public class TimeSpan {
     Instant endTime;
 
     public TimeSpan(Instant startTime, Instant endTime) {
-		this.startTime = startTime;
-		this.endTime = endTime;
-	}
+        this.startTime = startTime;
+        this.endTime = endTime;
+    }
 
     public Instant getStartTime() {
-		return startTime;
-	}
+        return startTime;
+    }
 
     public Instant getEndTime() {
-		return endTime;
-	}
+        return endTime;
+    }
 
-	public TimeSpan(long startTimeEpochSeconds, long endTimeEpochSeconds) {
-		this.startTime = TimeUtils.convertFromEpochSeconds(startTimeEpochSeconds, 0);
-		this.endTime = TimeUtils.convertFromEpochSeconds(endTimeEpochSeconds, 0);
-	}
-	
-	/**
-	 * True if this timespan completely contains the other timestamp.
-	 * @param other TimeSpan
-	 * @return boolean True or False
-	 */
-	public boolean contains(TimeSpan other) {
-        return (this.startTime.isBefore(other.startTime) || this.startTime.equals(other.startTime)) &&
-                (this.endTime.isAfter(other.endTime) || this.endTime.equals(other.endTime));
-	}
+    public TimeSpan(long startTimeEpochSeconds, long endTimeEpochSeconds) {
+        this.startTime = TimeUtils.convertFromEpochSeconds(startTimeEpochSeconds, 0);
+        this.endTime = TimeUtils.convertFromEpochSeconds(endTimeEpochSeconds, 0);
+    }
 
-	@Override
-	public String toString() {
-		return this.startTime + " - " + this.endTime;
-	}
+    /**
+     * True if this timespan completely contains the other timestamp.
+     * @param other TimeSpan
+     * @return boolean True or False
+     */
+    public boolean contains(TimeSpan other) {
+        return (this.startTime.isBefore(other.startTime) || this.startTime.equals(other.startTime))
+                && (this.endTime.isAfter(other.endTime) || this.endTime.equals(other.endTime));
+    }
+
+    @Override
+    public String toString() {
+        return this.startTime + " - " + this.endTime;
+    }
 }
