@@ -41,7 +41,7 @@ java {
 }
 
 ext {
-    runTestsSequentially = findProperty('ARCHAPPL_SEQUENTIAL_TESTS') ?: false
+	runTestsSequentially = findProperty('ARCHAPPL_SEQUENTIAL_TESTS') ?: false
 }
 
 // Allows: gradle -PprojVersion=X build
@@ -422,7 +422,7 @@ tasks.withType(Test).configureEach {
 		mkdir file("${temporaryDir}/lts")
 		logger.info("Running the tests using {} maxParallelForks", maxParallelForks)
 	}
-	
+
 	filter {
 		//include specific method in any of the tests
 		includeTestsMatching "*Test"
@@ -566,9 +566,6 @@ tasks.register("testRun", JavaExec) {
 }
 
 spotless {
-	// optional: limit format enforcement to just the files changed by this feature branch
-	ratchetFrom 'origin/master'
-
 	format 'misc', {
 		// define the files to apply `misc` to
 		target '*.gradle', '*.md', '.gitignore'
@@ -595,5 +592,7 @@ spotless {
 		formatAnnotations()
 	}
 }
+
+compileJava.dependsOn("spotlessApply")
 
 defaultTasks "buildRelease"
