@@ -176,14 +176,7 @@ public class ETLJob implements Runnable {
 
                     try (EventStream stream = infoItem.getEv()) {
                         long time2 = System.currentTimeMillis();
-                        boolean partitionPrepareResult = curETLDest.prepareForNewPartition(
-                                pvName, infoItem.getFirstEvent(), infoItem.getType(), etlContext);
                         time4prepareForNewPartition = time4prepareForNewPartition + System.currentTimeMillis() - time2;
-                        if (logger.isDebugEnabled()) {
-                            if (!partitionPrepareResult)
-                                logger.debug("Destination partition already prepared for PV " + pvName + " with key = "
-                                        + infoItem.getKey());
-                        }
                         long time3 = System.currentTimeMillis();
                         boolean status = curETLDest.appendToETLAppendData(pvName, stream, etlContext);
                         movedList.add(infoItem);
