@@ -111,7 +111,7 @@ public class ZeroedFileEventStreamTest {
                     rootFolderName,
                     pvName,
                     PBPlainFileHandler.DEFAULT_PB_HANDLER.getExtensionString(),
-                    CompressionMode.NONE,
+                    PathResolver.BASE_PATH_RESOLVER,
                     configService.getPVNameToKeyConverter());
         }
 
@@ -179,7 +179,7 @@ public class ZeroedFileEventStreamTest {
                     rootFolderName,
                     pvName,
                     srcPlugin.getExtensionString(),
-                    CompressionMode.NONE,
+                    PathResolver.BASE_PATH_RESOLVER,
                     configService.getPVNameToKeyConverter());
         }
 
@@ -242,7 +242,7 @@ public class ZeroedFileEventStreamTest {
                     rootFolderName + "Dest",
                     pvName,
                     srcPlugin.getExtensionString(),
-                    CompressionMode.NONE,
+                    PathResolver.BASE_PATH_RESOLVER,
                     configService.getPVNameToKeyConverter());
         }
 
@@ -328,7 +328,7 @@ public class ZeroedFileEventStreamTest {
                     destPlugin.getRootFolder(),
                     pvName,
                     destPlugin.getExtensionString(),
-                    CompressionMode.NONE,
+                    PathResolver.BASE_PATH_RESOLVER,
                     configService.getPVNameToKeyConverter());
         }
 
@@ -407,7 +407,7 @@ public class ZeroedFileEventStreamTest {
                     destPlugin.getRootFolder(),
                     pvName,
                     destPlugin.getExtensionString(),
-                    CompressionMode.NONE,
+                    PathResolver.BASE_PATH_RESOLVER,
                     configService.getPVNameToKeyConverter());
         }
 
@@ -464,7 +464,7 @@ public class ZeroedFileEventStreamTest {
                     rootFolderName,
                     pvName,
                     storagePlugin.getExtensionString(),
-                    CompressionMode.NONE,
+                    PathResolver.BASE_PATH_RESOLVER,
                     configService.getPVNameToKeyConverter());
         }
 
@@ -528,7 +528,7 @@ public class ZeroedFileEventStreamTest {
                     rootFolderName,
                     pvName,
                     storagePlugin.getExtensionString(),
-                    CompressionMode.NONE,
+                    PathResolver.BASE_PATH_RESOLVER,
                     configService.getPVNameToKeyConverter());
         }
 
