@@ -32,8 +32,7 @@ import java.util.LinkedList;
  * @author mshankar
  */
 public class MergePBFile {
-    private static Logger logger = LogManager.getLogger(MergePBFile.class.getName());
-    private static boolean verboseMode = false;
+    private static final Logger logger = LogManager.getLogger(MergePBFile.class.getName());
 
     /**
      * @param args &emsp;
@@ -47,9 +46,7 @@ public class MergePBFile {
 
         LinkedList<String> argsAfterOptions = new LinkedList<String>();
         for (String arg : args) {
-            if (arg.equals("-v")) {
-                verboseMode = true;
-            } else if (arg.equals("-h")) {
+             if (arg.equals("-h")) {
                 printHelpMsg();
                 return;
             } else {
@@ -128,10 +125,10 @@ public class MergePBFile {
             PBFileInfo info0 = new PBFileInfo(srcPath0), info1 = new PBFileInfo(srcPath1);
             try (FileBackedPBEventStream strm0 =
                             new FileBackedPBEventStream(info0.getPVName(), srcPath0, info0.getType());
-                 FileBackedPBEventStream strm1 =
+                    FileBackedPBEventStream strm1 =
                             new FileBackedPBEventStream(info1.getPVName(), srcPath1, info1.getType());
-                 MergeDedupEventStream mergestream = new MergeDedupEventStream(strm0, strm1);
-                 OutputStream os = new BufferedOutputStream(Files.newOutputStream(
+                    MergeDedupEventStream mergestream = new MergeDedupEventStream(strm0, strm1);
+                    OutputStream os = new BufferedOutputStream(Files.newOutputStream(
                             destPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
                 byte[] headerBytes = LineEscaper.escapeNewLines(PayloadInfo.newBuilder()
                         .setPvname(info0.getPVName())

@@ -33,14 +33,13 @@ import java.util.Arrays;
  * Note that this is completely different from renaming the PV; this applies only to the specified PB files and is meant to address bugs/typo's in PV names etc
  *
  * @author mshankar
- *
  */
 public class ChangePVName {
-    private static Logger logger = LogManager.getLogger(ChangePVName.class.getName());
+    private static final Logger logger = LogManager.getLogger(ChangePVName.class.getName());
 
     /**
-     * @param args  &emsp;
-     * @throws Exception  &emsp;
+     * @param args &emsp;
+     * @throws Exception &emsp;
      */
     public static void main(String[] args) throws Exception {
         if (args == null || args.length <= 2) {
@@ -83,7 +82,7 @@ public class ChangePVName {
             try {
                 try (FileBackedPBEventStream strm =
                                 new FileBackedPBEventStream(info.getPVName(), path, info.getType());
-                     OutputStream os = new BufferedOutputStream(Files.newOutputStream(
+                        OutputStream os = new BufferedOutputStream(Files.newOutputStream(
                                 tempPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
                     byte[] headerBytes = LineEscaper.escapeNewLines(PayloadInfo.newBuilder()
                             .setPvname(newPVName)
