@@ -23,15 +23,5 @@ public interface ETLBulkStream extends EventStream {
 	 * @throws IOException  &emsp;
 	 */
 	public Event getFirstEvent(BasicContext context) throws IOException;
-	
-	
-	/**
-	 * Get a byte channel positioned at the first event (after the header).
-	 * @param context  BasicContext  
-	 * @return ReadableByteChannel A channel that can read bytes. 
-	 * @throws IOException &emsp;
-	 * @see  <a href="https://docs.oracle.com/javase/8/docs/api/java/nio/channels/ReadableByteChannel.html">java.nio.channels.ReadableByteChannel</a>
-	 */
-	public ReadableByteChannel getByteChannel(BasicContext context) throws IOException;
 
 }

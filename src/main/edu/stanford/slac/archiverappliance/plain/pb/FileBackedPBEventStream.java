@@ -10,6 +10,7 @@ package edu.stanford.slac.archiverappliance.plain.pb;
 import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
 import edu.stanford.slac.archiverappliance.PB.search.FileEventStreamSearch;
 import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
+import edu.stanford.slac.archiverappliance.plain.EventStreamIterator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.ByteArray;
@@ -17,13 +18,12 @@ import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.BiDirectionalIterable;
+import org.epics.archiverappliance.common.BiDirectionalIterable.IterationDirection;
 import org.epics.archiverappliance.common.EmptyEventIterator;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.YearSecondTimestamp;
-import org.epics.archiverappliance.common.BiDirectionalIterable.IterationDirection;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
-import org.epics.archiverappliance.etl.ETLBulkStream;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.retrieval.RemotableOverRaw;
 
@@ -44,7 +44,7 @@ import java.util.Iterator;
  * @author mshankar
  *
  */
-public class FileBackedPBEventStream implements EventStream, RemotableOverRaw, ETLBulkStream {
+public class FileBackedPBEventStream implements EventStream, RemotableOverRaw, ETLPBByteStream {
     private static final Logger logger = LogManager.getLogger(FileBackedPBEventStream.class.getName());
     private final String pvName;
     private final ArchDBRTypes type;
@@ -55,7 +55,7 @@ public class FileBackedPBEventStream implements EventStream, RemotableOverRaw, E
     private Instant endTime = null;
     private boolean positionBoundaries = true;
     private boolean nodata = false;
-    private FileBackedPBEventStreamIterator theIterator = null;
+    private EventStreamIterator theIterator = null;
     private RemotableEventStreamDesc desc;
     private PBFileInfo fileInfo = null;
     private BiDirectionalIterable.IterationDirection direction = null;
@@ -123,15 +123,18 @@ public class FileBackedPBEventStream implements EventStream, RemotableOverRaw, E
             // We use a search to locate the boundaries of the data and the constrain based on position.
             try {
                 seekToTimes(path, dbrtype, startTime, endTime);
-            } catch(IOException ex) {
-                logger.error("Exception seeking to time in file " + path.toAbsolutePath().toString() + ". Defaulting to linear search; this will impact performance.", ex);
+            } catch (IOException ex) {
+                logger.error(
+                        "Exception seeking to time in file "
+                                + path.toAbsolutePath().toString()
+                                + ". Defaulting to linear search; this will impact performance.",
+                        ex);
                 this.positionBoundaries = false;
                 this.startTime = startTime;
-                this.endTime = endTime;    
+                this.endTime = endTime;
             }
         }
     }
-
 
     /**
      * Used for unlimited iteration.
@@ -143,7 +146,11 @@ public class FileBackedPBEventStream implements EventStream, RemotableOverRaw, E
      * @throws IOException  &emsp;
      */
     public FileBackedPBEventStream(
-            String pvname, Path path, ArchDBRTypes dbrtype, Instant startAtTime, BiDirectionalIterable.IterationDirection direction)
+            String pvname,
+            Path path,
+            ArchDBRTypes dbrtype,
+            Instant startAtTime,
+            BiDirectionalIterable.IterationDirection direction)
             throws IOException {
         this.pvName = pvname;
         this.path = path;
@@ -152,18 +159,17 @@ public class FileBackedPBEventStream implements EventStream, RemotableOverRaw, E
         this.startTime = startAtTime;
         this.endTime = startAtTime;
         this.readPayLoadInfo();
-        if(direction == IterationDirection.FORWARDS) {
+        if (direction == IterationDirection.FORWARDS) {
             this.startFilePos = this.seekToStartTime(path, dbrtype, startAtTime);
             this.endFilePos = Files.size(path);
         } else {
             this.startFilePos = this.fileInfo.positionOfFirstSample;
             this.endFilePos = this.seekToEndTime(path, dbrtype, startAtTime);
-            if(this.endFilePos <=0) {
+            if (this.endFilePos <= 0) {
                 this.endFilePos = Files.size(path);
             }
         }
     }
-
 
     @Override
     public Iterator<Event> iterator() {
@@ -181,21 +187,25 @@ public class FileBackedPBEventStream implements EventStream, RemotableOverRaw, E
                 readPayLoadInfo();
             }
 
-            if(this.direction != null) {
-                if(this.direction == BiDirectionalIterable.IterationDirection.BACKWARDS) {
-                    // If I am going backwards and the first event in this file is after the startAtTime, we don't have any data in this file for the iteration
-                    if(fileInfo.getFirstEvent().getEventTimeStamp().isAfter(this.endTime)) {
+            if (this.direction != null) {
+                if (this.direction == BiDirectionalIterable.IterationDirection.BACKWARDS) {
+                    // If I am going backwards and the first event in this file is after the startAtTime, we don't have
+                    // any data in this file for the iteration
+                    if (fileInfo.getFirstEvent().getEventTimeStamp().isAfter(this.endTime)) {
                         logger.info("Returning an empty iterator as the time in file is after endtime");
                         return new EmptyEventIterator();
                     }
-                    theIterator = new PBEventStreamPositionBasedReverseIterator(path, startFilePos, endFilePos, desc.getYear(), type);
+                    theIterator = new PBEventStreamPositionBasedReverseIterator(
+                            path, startFilePos, endFilePos, desc.getYear(), type);
                 } else {
-                    // If I am going forwards and the last event in the file is before the startAtTime, we don't have any data in this file for the iteration
-                    if(fileInfo.getLastEvent().getEventTimeStamp().isBefore(this.startTime)) {
+                    // If I am going forwards and the last event in the file is before the startAtTime, we don't have
+                    // any data in this file for the iteration
+                    if (fileInfo.getLastEvent().getEventTimeStamp().isBefore(this.startTime)) {
                         logger.info("Returning an empty iterator as the time in file is before starttime");
                         return new EmptyEventIterator();
                     }
-                    theIterator = new FileBackedPBEventStreamPositionBasedIterator(path, startFilePos, endFilePos, desc.getYear(), type);
+                    theIterator = new FileBackedPBEventStreamPositionBasedIterator(
+                            path, startFilePos, endFilePos, desc.getYear(), type);
                 }
                 return theIterator;
             }
@@ -204,6 +214,7 @@ public class FileBackedPBEventStream implements EventStream, RemotableOverRaw, E
                 theIterator = new FileBackedPBEventStreamPositionBasedIterator(
                         path, startFilePos, endFilePos, desc.getYear(), type);
             } else {
+
                 theIterator =
                         new FileBackedPBEventStreamTimeBasedIterator(path, startTime, endTime, desc.getYear(), type);
             }
