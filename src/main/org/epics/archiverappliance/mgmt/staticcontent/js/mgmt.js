@@ -207,11 +207,19 @@ function archivePVsWithDetails() {
     if (!pvQuery) return;
     HTTPMethod = "POST";
     pvQuery = JSON.parse(pvQuery);
-    pvQuery.forEach(function(pv){
-      if(samplingPeriodParam != "") { pv["samplingperiod"] = samplingPeriod };
-      if(samplingMethodParam != "") { pv["samplingmethod"] = samplingMethod };
-      if(controllingPVParam != "") { pv["controllingPV"] = controllingPV };
-      if(policyParam != "") { pv["policy"] = policySelected.trim() };
+    pvQuery.forEach(function (pv) {
+      if (samplingPeriodParam != "") {
+        pv["samplingperiod"] = samplingPeriod;
+      }
+      if (samplingMethodParam != "") {
+        pv["samplingmethod"] = samplingMethod;
+      }
+      if (controllingPVParam != "") {
+        pv["controllingPV"] = controllingPV;
+      }
+      if (policyParam != "") {
+        pv["policy"] = policySelected.trim();
+      }
     });
     $.ajax({
       url: "../bpl/archivePV",

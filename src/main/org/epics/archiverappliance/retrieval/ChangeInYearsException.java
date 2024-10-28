@@ -18,26 +18,26 @@ package org.epics.archiverappliance.retrieval;
  *
  */
 public class ChangeInYearsException extends RuntimeException {
-	private static final long serialVersionUID = 379741610493225449L;
-	private short previousYear;
-	private short currentYear;
-	
-	public ChangeInYearsException(short previousYear, short currentYear) { 
-		this.previousYear = previousYear;
-		this.currentYear = currentYear;
-	}
+    private static final long serialVersionUID = 379741610493225449L;
+    private short previousYear;
+    private short currentYear;
 
-	/**
-	 * @return the previousYear
-	 */
-	public short getPreviousYear() {
-		return previousYear;
-	}
+    public ChangeInYearsException(short previousYear, short currentYear) {
+        this.previousYear = previousYear;
+        this.currentYear = currentYear;
+    }
 
-	/**
-	 * @return the currentYear
-	 */
-	public short getCurrentYear() {
-		return currentYear;
-	}
+    /**
+     * @return the previousYear
+     */
+    public short getPreviousYear() {
+        return previousYear;
+    }
+
+    /**
+     * @return the currentYear
+     */
+    public short getCurrentYear() {
+        return currentYear;
+    }
 }

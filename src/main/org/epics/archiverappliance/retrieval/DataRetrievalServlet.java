@@ -1402,7 +1402,11 @@ public class DataRetrievalServlet extends HttpServlet {
         try {
             // It may be beneficial to support both and choose based on where the client in calling from or perhaps from
             // a header?
-            boolean redirect = Boolean.parseBoolean(configService.getInstallationProperties().getProperty("org.epics.archiverappliance.retrieval.DataRetrievalServlet.proxyRetrievalRequest", "false"));
+            boolean redirect = Boolean.parseBoolean(configService
+                    .getInstallationProperties()
+                    .getProperty(
+                            "org.epics.archiverappliance.retrieval.DataRetrievalServlet.proxyRetrievalRequest",
+                            "false"));
             if (redirect) {
                 logger.info(
                         "Data for pv " + pvName + "is elsewhere. Redirecting to appliance " + dataRetrievalURLForPV);

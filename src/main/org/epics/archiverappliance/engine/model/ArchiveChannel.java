@@ -154,9 +154,9 @@ public abstract class ArchiveChannel {
     private boolean enabled = true;
 
     /**
-     * Is this channel currently paused? The source of truth for this is the PVTypeInfo in the database. 
+     * Is this channel currently paused? The source of truth for this is the PVTypeInfo in the database.
      * But we cache this value here as a performance optimization for CapacityPlanning/EngineMetrics.
-     * By default, this is false because in DefaultConfigService.archivePVSonStartup, we skip starting PV's that are paused. 
+     * By default, this is false because in DefaultConfigService.archivePVSonStartup, we skip starting PV's that are paused.
      */
     private boolean paused = false;
 
@@ -200,7 +200,9 @@ public abstract class ArchiveChannel {
             final boolean usePVAccess)
             throws Exception {
         this.name = name;
-        this.SERVER_IOC_DRIFT_SECONDS = Integer.parseInt(configservice.getInstallationProperties().getProperty("org.epics.archiverappliance.engine.epics.server_ioc_drift_seconds", "1800"));
+        this.SERVER_IOC_DRIFT_SECONDS = Integer.parseInt(configservice
+                .getInstallationProperties()
+                .getProperty("org.epics.archiverappliance.engine.epics.server_ioc_drift_seconds", "1800"));
         this.controlPVname = controlPVname;
         this.writer = writer;
         this.enablement = enablement;
@@ -526,10 +528,10 @@ public abstract class ArchiveChannel {
             need_first_sample = true;
         }
 
-        if(need_first_sample) {
+        if (need_first_sample) {
             addValueToBuffer(timeevent);
             need_first_sample = false;
-            return true;    
+            return true;
         }
 
         return false; // I did not handle this; subclasses should handle the second sample and onwards.
@@ -660,20 +662,20 @@ public abstract class ArchiveChannel {
             return true;
         }
 
-        if(!this.need_first_sample) {
+        if (!this.need_first_sample) {
             // Second sample onwards
             Instant pastCutOffTimeStamp =
-                TimeUtils.convertFromEpochSeconds(TimeUtils.getCurrentEpochSeconds() - SERVER_IOC_DRIFT_SECONDS, 0);
+                    TimeUtils.convertFromEpochSeconds(TimeUtils.getCurrentEpochSeconds() - SERVER_IOC_DRIFT_SECONDS, 0);
             if (currentEventTimeStamp.isBefore(pastCutOffTimeStamp)) {
-                if(logger.isDebugEnabled()) {
-                    logger.debug("For {}: timestamp {} ( second sample onwards ) is too far in the past {} ",
-                    getName(),
-                    TimeUtils.convertToHumanReadableString(currentEventTimeStamp),
-                    TimeUtils.convertToHumanReadableString(pastCutOffTimeStamp)
-                    );
+                if (logger.isDebugEnabled()) {
+                    logger.debug(
+                            "For {}: timestamp {} ( second sample onwards ) is too far in the past {} ",
+                            getName(),
+                            TimeUtils.convertToHumanReadableString(currentEventTimeStamp),
+                            TimeUtils.convertToHumanReadableString(pastCutOffTimeStamp));
                 }
                 return true;
-            }    
+            }
         }
 
         Instant futureCutOffTimeStamp =
@@ -860,7 +862,7 @@ public abstract class ArchiveChannel {
         this.paused = pausedVal;
     }
 
-    public boolean isPaused() { 
+    public boolean isPaused() {
         return this.paused;
     }
 }
