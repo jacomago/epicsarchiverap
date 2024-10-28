@@ -23,15 +23,17 @@ import java.util.concurrent.Callable;
  *
  */
 public interface Reader {
-	List<Callable<EventStream>> getDataForPV(BasicContext context, String pvName, Instant startTime, Instant endTime, PostProcessor postProcessor) throws IOException;
+    List<Callable<EventStream>> getDataForPV(
+            BasicContext context, String pvName, Instant startTime, Instant endTime, PostProcessor postProcessor)
+            throws IOException;
 
-	/**
-	 * Get the first event for this PV.
-	 * This call is used to optimize away calls to other readers that have older data.
-	 * @param context  &emsp;
-	 * @param pvName The PV name 
-	 * @return Event The first event of pvName
-	 * @throws IOException  &emsp;
-	 */
-	public Event getFirstKnownEvent(BasicContext context, String pvName) throws IOException;
+    /**
+     * Get the first event for this PV.
+     * This call is used to optimize away calls to other readers that have older data.
+     * @param context  &emsp;
+     * @param pvName The PV name
+     * @return Event The first event of pvName
+     * @throws IOException  &emsp;
+     */
+    public Event getFirstKnownEvent(BasicContext context, String pvName) throws IOException;
 }

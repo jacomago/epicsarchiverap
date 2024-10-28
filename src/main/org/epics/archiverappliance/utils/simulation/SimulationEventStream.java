@@ -32,7 +32,9 @@ public class SimulationEventStream implements EventStream, RemotableOverRaw {
 
     public SimulationEventStream(
             ArchDBRTypes type,
-            SimulationValueGenerator valueGenerator, Instant start, Instant end,
+            SimulationValueGenerator valueGenerator,
+            Instant start,
+            Instant end,
             int periodInSeconds) {
         this.type = type;
         this.valueGenerator = valueGenerator;
@@ -40,7 +42,6 @@ public class SimulationEventStream implements EventStream, RemotableOverRaw {
         this.end = end;
         this.periodInSeconds = periodInSeconds;
     }
-
 
     @Override
     public Iterator<Event> iterator() {

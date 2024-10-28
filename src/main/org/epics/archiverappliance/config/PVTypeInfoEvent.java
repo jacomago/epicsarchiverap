@@ -6,26 +6,31 @@ package org.epics.archiverappliance.config;
  *
  */
 public class PVTypeInfoEvent {
-	public enum ChangeType { TYPEINFO_ADDED, TYPEINFO_MODIFIED, TYPEINFO_DELETED}
-	private String pvName;
-	private PVTypeInfo typeInfo;
-	private ChangeType changeType;
-	
-	public PVTypeInfoEvent(String pvName, PVTypeInfo typeInfo, ChangeType changeType) {
-		this.pvName = pvName;
-		this.typeInfo = typeInfo;
-		this.changeType = changeType;
-	}
+    public enum ChangeType {
+        TYPEINFO_ADDED,
+        TYPEINFO_MODIFIED,
+        TYPEINFO_DELETED
+    }
 
-	public String getPvName() {
-		return pvName;
-	}
+    private String pvName;
+    private PVTypeInfo typeInfo;
+    private ChangeType changeType;
 
-	public PVTypeInfo getTypeInfo() {
-		return typeInfo;
-	}
+    public PVTypeInfoEvent(String pvName, PVTypeInfo typeInfo, ChangeType changeType) {
+        this.pvName = pvName;
+        this.typeInfo = typeInfo;
+        this.changeType = changeType;
+    }
 
-	public ChangeType getChangeType() {
-		return changeType;
-	}
+    public String getPvName() {
+        return pvName;
+    }
+
+    public PVTypeInfo getTypeInfo() {
+        return typeInfo;
+    }
+
+    public ChangeType getChangeType() {
+        return changeType;
+    }
 }

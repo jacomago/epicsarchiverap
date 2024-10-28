@@ -1,6 +1,5 @@
 package org.epics.archiverappliance.mgmt.bpl.reports;
 
-import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
@@ -13,9 +12,6 @@ import org.json.simple.JSONValue;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.management.ManagementFactory;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.LinkedList;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -36,9 +32,11 @@ public class InstanceReport implements BPLAction {
                 JSONObject mgmtMetrics =
                         GetUrlContent.getURLContentAsJSONObject(info.getMgmtURL() + "/getMgmtMetricsForAppliance");
                 applianceInfo.put(
-                        "MGMT_uptime",((String) mgmtMetrics.get("uptime")).substring(2)
-                        .replaceAll("(\\d[HMS])(?!$)", "$1 ")
-                        .toLowerCase());
+                        "MGMT_uptime",
+                        ((String) mgmtMetrics.get("uptime"))
+                                .substring(2)
+                                .replaceAll("(\\d[HMS])(?!$)", "$1 ")
+                                .toLowerCase());
 
                 // The getApplianceMetrics here is not a typo. We redisplay some of the appliance metrics in this page.
                 JSONObject engineMetrics =

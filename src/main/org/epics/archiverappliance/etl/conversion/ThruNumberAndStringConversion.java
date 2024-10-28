@@ -37,8 +37,8 @@ public class ThruNumberAndStringConversion implements ConversionFunction {
     }
 
     @Override
-    public EventStream convertStream(
-            final EventStream srcEventStream, Instant streamStartTime, Instant streamEndTime) throws IOException {
+    public EventStream convertStream(final EventStream srcEventStream, Instant streamStartTime, Instant streamEndTime)
+            throws IOException {
         return new ThruNumStrConversionWrapper(srcEventStream);
     }
 

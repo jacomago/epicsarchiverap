@@ -15,13 +15,15 @@ import org.epics.archiverappliance.config.ApplianceInfo;
  *
  */
 public class AlreadyRegisteredException extends ConfigException {
-	private static final long serialVersionUID = 2624876692955916732L;
-	private ApplianceInfo currentlyRegisteredAppliance;
-	public AlreadyRegisteredException(ApplianceInfo currentlyRegisteredAppliance) {
-		super();
-		this.currentlyRegisteredAppliance = currentlyRegisteredAppliance;
-	}
-	public ApplianceInfo getCurrentlyRegisteredAppliance() {
-		return currentlyRegisteredAppliance;
-	}
+    private static final long serialVersionUID = 2624876692955916732L;
+    private ApplianceInfo currentlyRegisteredAppliance;
+
+    public AlreadyRegisteredException(ApplianceInfo currentlyRegisteredAppliance) {
+        super();
+        this.currentlyRegisteredAppliance = currentlyRegisteredAppliance;
+    }
+
+    public ApplianceInfo getCurrentlyRegisteredAppliance() {
+        return currentlyRegisteredAppliance;
+    }
 }

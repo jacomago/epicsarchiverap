@@ -16,7 +16,7 @@ import java.io.IOException;
  */
 @SuppressWarnings("serial")
 public class NoDataException extends IOException {
-	public NoDataException(String message) {
-		super(message);
-	}
+    public NoDataException(String message) {
+        super(message);
+    }
 }

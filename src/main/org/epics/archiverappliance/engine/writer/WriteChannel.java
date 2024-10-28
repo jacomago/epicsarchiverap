@@ -8,11 +8,10 @@
 package org.epics.archiverappliance.engine.writer;
 
 /** Interface for writing samples to a channel in the archive
- * 
+ *
  *  @author Kay Kasemir
  */
-public interface WriteChannel
-{
-	/** @return Name of the channel */
-	public String getName();
+public interface WriteChannel {
+    /** @return Name of the channel */
+    public String getName();
 }

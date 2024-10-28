@@ -18,70 +18,84 @@ import java.time.Instant;
 
 /**
  * An ArchiveChannel that stores each incoming value.
- * 
+ *
  * @author Kay Kasemir
  * @version Initial version:CSS
  * @version 4-Jun-2012, Luofeng Li:added codes to support for the new archiver
  */
 @SuppressWarnings("nls")
 public class MonitoredArchiveChannel extends ArchiveChannel {
-	private static final Logger logger = LogManager.getLogger(MonitoredArchiveChannel.class);
-	/** Estimated period of change in seconds */
-	final private double period_estimate;
+    private static final Logger logger = LogManager.getLogger(MonitoredArchiveChannel.class);
+    /** Estimated period of change in seconds */
+    private final double period_estimate;
 
-       /** @see ArchiveChannel#ArchiveChannel
-	 * @param name pv's name
-	 * @param writer the writer for this pv
-	 * @param enablement  start or stop archiving this pv when channel is created
-	 * @param buffer_capacity the sample buffer's capacity for this pv
-	 * @param last_archived_timestamp the last time stamp when this pv was archived
-	 * @param period_estimate  &emsp;
-	 * @param configservice the configservice of new archiver
-	 * @param archdbrtype the archiving dbr type
-	 * @param controlPVname the pv's name who control this pv to start archiving or stop archiving
-	 * @param commandThreadID - this is the index into the array of JCA command threads that processes this context.
-	 * @param usePVAccess - Should we use PVAccess to connect to this PV.
-	 * @throws Exception error when creating archive channel for this pv
-	 */
-	public MonitoredArchiveChannel(final String name, final Writer writer,
-			final Enablement enablement, final int buffer_capacity,
-                                   final Instant last_archived_timestamp,
-			final double period_estimate, final ConfigService configservice,
-			final ArchDBRTypes archdbrtype, final String controlPVname,
-			final int commandThreadID, final boolean usePVAccess) throws Exception {
-		super(name, writer, enablement, buffer_capacity,
-				last_archived_timestamp, configservice, archdbrtype,
-				controlPVname, commandThreadID, usePVAccess);
-		this.period_estimate = period_estimate;
-		this.pvMetrics.setSamplingPeriod(period_estimate);
-		this.pvMetrics.setMonitor(true);
-	}
+    /** @see ArchiveChannel#ArchiveChannel
+     * @param name pv's name
+     * @param writer the writer for this pv
+     * @param enablement  start or stop archiving this pv when channel is created
+     * @param buffer_capacity the sample buffer's capacity for this pv
+     * @param last_archived_timestamp the last time stamp when this pv was archived
+     * @param period_estimate  &emsp;
+     * @param configservice the configservice of new archiver
+     * @param archdbrtype the archiving dbr type
+     * @param controlPVname the pv's name who control this pv to start archiving or stop archiving
+     * @param commandThreadID - this is the index into the array of JCA command threads that processes this context.
+     * @param usePVAccess - Should we use PVAccess to connect to this PV.
+     * @throws Exception error when creating archive channel for this pv
+     */
+    public MonitoredArchiveChannel(
+            final String name,
+            final Writer writer,
+            final Enablement enablement,
+            final int buffer_capacity,
+            final Instant last_archived_timestamp,
+            final double period_estimate,
+            final ConfigService configservice,
+            final ArchDBRTypes archdbrtype,
+            final String controlPVname,
+            final int commandThreadID,
+            final boolean usePVAccess)
+            throws Exception {
+        super(
+                name,
+                writer,
+                enablement,
+                buffer_capacity,
+                last_archived_timestamp,
+                configservice,
+                archdbrtype,
+                controlPVname,
+                commandThreadID,
+                usePVAccess);
+        this.period_estimate = period_estimate;
+        this.pvMetrics.setSamplingPeriod(period_estimate);
+        this.pvMetrics.setMonitor(true);
+    }
 
-	@Override
-	public String getMechanism() {
-		return "on change [" + PeriodFormat.formatSeconds(period_estimate)
-				+ "]";
-	}
+    @Override
+    public String getMechanism() {
+        return "on change [" + PeriodFormat.formatSeconds(period_estimate) + "]";
+    }
 
-	/** Attempt to add each new value to the buffer. */
-	@Override
-	protected boolean handleNewValue(final DBRTimeEvent timeevent) {
-		try {
-			if (super.handleNewValue(timeevent)) {
+    /** Attempt to add each new value to the buffer. */
+    @Override
+    protected boolean handleNewValue(final DBRTimeEvent timeevent) {
+        try {
+            if (super.handleNewValue(timeevent)) {
 
-				return true;
-			}
-		} catch (Exception e) {
-			logger.error("exception in handleNewValue for pv" + this.getName(), e);
-		}
-		if (isEnabled()) {
-			try {
-				addValueToBuffer(timeevent);
-			} catch (Exception e) {
-				logger.error("exception in handleNewValue for pv " + this.getName(), e);
-			}
-			return true;
-		}
-		return false;
-	}
+                return true;
+            }
+        } catch (Exception e) {
+            logger.error("exception in handleNewValue for pv" + this.getName(), e);
+        }
+        if (isEnabled()) {
+            try {
+                addValueToBuffer(timeevent);
+            } catch (Exception e) {
+                logger.error("exception in handleNewValue for pv " + this.getName(), e);
+            }
+            return true;
+        }
+        return false;
+    }
 }

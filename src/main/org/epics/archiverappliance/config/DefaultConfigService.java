@@ -17,16 +17,15 @@ import com.google.common.eventbus.Subscribe;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.cluster.Cluster;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
-import com.hazelcast.topic.ITopic;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
@@ -34,7 +33,7 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
-
+import com.hazelcast.topic.ITopic;
 import edu.stanford.slac.archiverappliance.PB.data.PBTypeSystem;
 import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.logging.log4j.LogManager;
@@ -322,8 +321,6 @@ public class DefaultConfigService implements ConfigService {
             }
         }
 
-
-
         switch (contextPath) {
             case "/mgmt":
                 warFile = WAR_FILE.MGMT;
@@ -474,7 +471,7 @@ public class DefaultConfigService implements ConfigService {
                 config.getProperties().putAll(hzThreadCounts);
             }
 
-            config.setProperty( "hazelcast.logging.type", "log4j2" );
+            config.setProperty("hazelcast.logging.type", "log4j2");
 
             try {
                 String[] myAddrParts = myApplianceInfo.getClusterInetPort().split(":");
@@ -539,8 +536,8 @@ public class DefaultConfigService implements ConfigService {
                  */
                 ClientConfig clientConfig = new XmlClientConfigBuilder().build();
                 clientConfig.setClusterName(ARCHAPPL_NAME);
-                clientConfig.setInstanceName(myIdentity+"_"+this.warFile);
-                clientConfig.setProperty( "hazelcast.logging.type", "log4j2" );
+                clientConfig.setInstanceName(myIdentity + "_" + this.warFile);
+                clientConfig.setProperty("hazelcast.logging.type", "log4j2");
 
                 // Non mgmt client can only connect to their MGMT webapp.
                 String[] myAddrParts = myApplianceInfo.getClusterInetPort().split(":");
@@ -553,8 +550,8 @@ public class DefaultConfigService implements ConfigService {
                 }
                 int myClusterPort = Integer.parseInt(myAddrParts[1]);
 
-                logger.debug(this.warFile + " connecting as a native client to " + myInetAddr.getHostAddress()
-                        + ":" + myClusterPort);
+                logger.debug(this.warFile + " connecting as a native client to " + myInetAddr.getHostAddress() + ":"
+                        + myClusterPort);
                 clientConfig.getNetworkConfig().addAddress(myInetAddr.getHostAddress() + ":" + myClusterPort);
 
                 if (!hzThreadCounts.isEmpty()) {
@@ -922,9 +919,15 @@ public class DefaultConfigService implements ConfigService {
         configlogger.debug(() -> "Start archiving PVs from persistence.");
         // To prevent broadcast storms, we pause for pausePerGroup seconds for every pausePerGroup PVs
         int currentPVCount = 0;
-        int pausePerGroupPVCount = Integer.parseInt(this.getInstallationProperties().getProperty("org.epics.archiverappliance.engine.archivePVSonStartup.pausePerGroupPVCount", "2000"));
-        int pausePerGroupPauseTimeInSeconds = Integer.parseInt(this.getInstallationProperties().getProperty("org.epics.archiverappliance.engine.archivePVSonStartup.pausePerGroupPauseTimeInSeconds", "2"));
-        boolean determineLastKnownEventFromStores = Boolean.parseBoolean(this.getInstallationProperties().getProperty("org.epics.archiverappliance.engine.archivePVSonStartup.determineLastKnownEventFromStores", "true"));
+        int pausePerGroupPVCount = Integer.parseInt(this.getInstallationProperties()
+                .getProperty("org.epics.archiverappliance.engine.archivePVSonStartup.pausePerGroupPVCount", "2000"));
+        int pausePerGroupPauseTimeInSeconds = Integer.parseInt(this.getInstallationProperties()
+                .getProperty(
+                        "org.epics.archiverappliance.engine.archivePVSonStartup.pausePerGroupPauseTimeInSeconds", "2"));
+        boolean determineLastKnownEventFromStores = Boolean.parseBoolean(this.getInstallationProperties()
+                .getProperty(
+                        "org.epics.archiverappliance.engine.archivePVSonStartup.determineLastKnownEventFromStores",
+                        "true"));
 
         for (String pvName : this.getPVsForThisAppliance()) {
             try {
@@ -946,11 +949,13 @@ public class DefaultConfigService implements ConfigService {
                 StoragePlugin firstDest = StoragePluginURLParser.parseStoragePlugin(typeInfo.getDataStores()[0], this);
 
                 Instant lastKnownTimestamp = null;
-                if(determineLastKnownEventFromStores) {
+                if (determineLastKnownEventFromStores) {
                     lastKnownTimestamp = typeInfo.determineLastKnownEventFromStores(this);
-                    if(logger.isDebugEnabled()) {
-                        logger.debug("Last known timestamp from ETL stores is for pv {} is {} ", pvName,
-                            TimeUtils.convertToHumanReadableString(lastKnownTimestamp));
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(
+                                "Last known timestamp from ETL stores is for pv {} is {} ",
+                                pvName,
+                                TimeUtils.convertToHumanReadableString(lastKnownTimestamp));
                     }
                 }
 
@@ -1077,7 +1082,7 @@ public class DefaultConfigService implements ConfigService {
             logger.debug(() -> "Generating the list of PVs for this appliance from pv2appliancemapping");
             ConcurrentSkipListSet<String> retval = new ConcurrentSkipListSet<String>();
             for (Map.Entry<String, ApplianceInfo> entry : pv2appliancemapping.entrySet()) {
-                if(entry.getValue().getIdentity().equals(this.myIdentity)) {
+                if (entry.getValue().getIdentity().equals(this.myIdentity)) {
                     retval.add(entry.getKey());
                 }
             }
@@ -1086,7 +1091,8 @@ public class DefaultConfigService implements ConfigService {
     }
 
     @Override
-	public <T> Collection<T> projectPVTypeInfos(Set<String> pvNames, Projection<Map.Entry<String, PVTypeInfo>, T> projection) {
+    public <T> Collection<T> projectPVTypeInfos(
+            Set<String> pvNames, Projection<Map.Entry<String, PVTypeInfo>, T> projection) {
         IMap<String, PVTypeInfo> hztypeinfos = hzinstance.getMap(TYPEINFO);
         EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
         Predicate<String, PVTypeInfo> predicate = e.key().in(pvNames.toArray(new String[0]));
@@ -1341,7 +1347,10 @@ public class DefaultConfigService implements ConfigService {
 
     @Override
     public int getInitialDelayBeforeStartingArchiveRequestWorkflow() {
-        int initialDelayInSeconds = Integer.parseInt(this.getInstallationProperties().getProperty("org.epics.archiverappliance.mgmt.MgmtRuntimeState.initialDelayBeforeStartingArchiveRequests", "10"));
+        int initialDelayInSeconds = Integer.parseInt(this.getInstallationProperties()
+                .getProperty(
+                        "org.epics.archiverappliance.mgmt.MgmtRuntimeState.initialDelayBeforeStartingArchiveRequests",
+                        "10"));
         return initialDelayInSeconds;
     }
 
@@ -1386,7 +1395,7 @@ public class DefaultConfigService implements ConfigService {
     }
 
     @Override
-    public List<String> getAliasesForRealName(String realName) { 
+    public List<String> getAliasesForRealName(String realName) {
         try {
             return persistanceLayer.getAliasNamesForRealName(realName);
         } catch (IOException ex) {

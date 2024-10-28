@@ -1,4 +1,3 @@
-
 /*******************************************************************************
  * Copyright (c) 2011 The Board of Trustees of the Leland Stanford Junior University
  * as Operator of the SLAC National Accelerator Laboratory.
@@ -10,7 +9,6 @@ package org.epics.archiverappliance.engine.metadata;
 
 import org.epics.archiverappliance.config.MetaInfo;
 
-
 /**
  * Callback once we determine various attributes of the PV.
  * @author Luofeng Li
@@ -18,7 +16,5 @@ import org.epics.archiverappliance.config.MetaInfo;
  */
 public interface MetaCompletedListener {
 
-	
-
-	public void completed( MetaInfo metaInfo);
+    public void completed(MetaInfo metaInfo);
 }

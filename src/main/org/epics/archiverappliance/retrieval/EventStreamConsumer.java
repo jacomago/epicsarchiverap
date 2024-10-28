@@ -15,5 +15,5 @@ import org.epics.archiverappliance.EventStream;
  * An interface for an entity that consumes events from a stream all at once.
  */
 public interface EventStreamConsumer {
-	public void consumeEventStream(EventStream e) throws Exception;
+    public void consumeEventStream(EventStream e) throws Exception;
 }

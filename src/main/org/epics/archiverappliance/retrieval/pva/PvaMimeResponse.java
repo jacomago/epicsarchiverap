@@ -38,7 +38,6 @@ import org.epics.pva.data.nt.PVATimeStamp;
 
 import java.io.OutputStream;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -68,14 +67,21 @@ public class PvaMimeResponse implements MimeResponse {
         PVAScalar.Builder builder;
 
         switch (streamDBRType) {
-            case DBR_SCALAR_FLOAT -> builder = PVAScalar.floatScalarBuilder(evnt.getSampleValue().getValue().floatValue());
-            case DBR_SCALAR_DOUBLE -> builder = PVAScalar.doubleScalarBuilder(evnt.getSampleValue().getValue().doubleValue());
-            case DBR_SCALAR_BYTE -> builder = PVAScalar.byteScalarBuilder(false, evnt.getSampleValue().getValue().byteValue());
-            case DBR_SCALAR_SHORT -> builder = PVAScalar.shortScalarBuilder(false, evnt.getSampleValue().getValue().shortValue());
-            case DBR_SCALAR_INT -> builder = PVAScalar.intScalarBuilder(evnt.getSampleValue().getValue().intValue());
-            case DBR_SCALAR_STRING -> builder = PVAScalar.stringScalarBuilder(evnt.getSampleValue().toString());
+            case DBR_SCALAR_FLOAT -> builder = PVAScalar.floatScalarBuilder(
+                    evnt.getSampleValue().getValue().floatValue());
+            case DBR_SCALAR_DOUBLE -> builder = PVAScalar.doubleScalarBuilder(
+                    evnt.getSampleValue().getValue().doubleValue());
+            case DBR_SCALAR_BYTE -> builder = PVAScalar.byteScalarBuilder(
+                    false, evnt.getSampleValue().getValue().byteValue());
+            case DBR_SCALAR_SHORT -> builder = PVAScalar.shortScalarBuilder(
+                    false, evnt.getSampleValue().getValue().shortValue());
+            case DBR_SCALAR_INT -> builder =
+                    PVAScalar.intScalarBuilder(evnt.getSampleValue().getValue().intValue());
+            case DBR_SCALAR_STRING -> builder =
+                    PVAScalar.stringScalarBuilder(evnt.getSampleValue().toString());
             case DBR_SCALAR_ENUM -> {
-                PVAEnum pvaEnum = new PVAEnum("value", evnt.getSampleValue().getValue().intValue(), new String[]{});
+                PVAEnum pvaEnum =
+                        new PVAEnum("value", evnt.getSampleValue().getValue().intValue(), new String[] {});
                 builder = (new PVAScalar.Builder<PVAEnum>()).value(pvaEnum);
             }
             case DBR_WAVEFORM_FLOAT -> {
@@ -102,7 +108,8 @@ public class PvaMimeResponse implements MimeResponse {
                 List<String> values = evnt.getSampleValue().getValues();
                 builder = PVAScalar.stringArrayScalarBuilder(values.toArray(new String[values.size()]));
             }
-            case DBR_WAVEFORM_ENUM, DBR_V4_GENERIC_BYTES -> throw new UnsupportedOperationException("Unsupported DBR type " + streamDBRType);
+            case DBR_WAVEFORM_ENUM, DBR_V4_GENERIC_BYTES -> throw new UnsupportedOperationException(
+                    "Unsupported DBR type " + streamDBRType);
 
             default -> throw new UnsupportedOperationException("Unknown DBR type " + streamDBRType);
         }
@@ -119,7 +126,8 @@ public class PvaMimeResponse implements MimeResponse {
 
     private PVAAlarm alarmInfo(DBRTimeEvent evnt) {
         // convert the alarm info
-        return new PVAAlarm(new PVAInt("severity", evnt.getSeverity()),
+        return new PVAAlarm(
+                new PVAInt("severity", evnt.getSeverity()),
                 new PVAInt("status", evnt.getStatus()),
                 new PVAString("message"));
     }
@@ -135,27 +143,27 @@ public class PvaMimeResponse implements MimeResponse {
     }
 
     @Override
-	public void close() {
-	}
+    public void close() {}
 
-	@Override
-    public void processingPV(BasicContext retrievalContext, String pv, Instant start, Instant end, EventStreamDesc streamDesc) {
-		if (firstPV) {
-			firstPV = false;
-		}
-		RemotableEventStreamDesc remoteDesc = (RemotableEventStreamDesc) streamDesc;
-		this.streamDBRType = remoteDesc.getArchDBRType();
+    @Override
+    public void processingPV(
+            BasicContext retrievalContext, String pv, Instant start, Instant end, EventStreamDesc streamDesc) {
+        if (firstPV) {
+            firstPV = false;
+        }
+        RemotableEventStreamDesc remoteDesc = (RemotableEventStreamDesc) streamDesc;
+        this.streamDBRType = remoteDesc.getArchDBRType();
 
-		// Process the stream description to create the appropriate label/s
-		PVAStringArray labels = resultStruct.get("labels");
+        // Process the stream description to create the appropriate label/s
+        PVAStringArray labels = resultStruct.get("labels");
         appendStringArray(labels, pv);
 
-		PVAAnyArray value = resultStruct.get("value");
-		this.pvValueStruct = new PVAny("any");
+        PVAAnyArray value = resultStruct.get("value");
+        this.pvValueStruct = new PVAny("any");
         extendPVAnyArray(value, this.pvValueStruct);
 
-		closePV = true;
-	}
+        closePV = true;
+    }
 
     private void appendStringArray(PVAStringArray pvaStringArray, String newString) {
         String[] elements = pvaStringArray.get();
@@ -163,7 +171,8 @@ public class PvaMimeResponse implements MimeResponse {
         pvaStringArray.set(newElements);
     }
 
-    private void appendStructureArray(PVAStructureArray pvaStructureArray, PVAStructure newStructure) throws ElementTypeException {
+    private void appendStructureArray(PVAStructureArray pvaStructureArray, PVAStructure newStructure)
+            throws ElementTypeException {
         PVAStructure[] elements = pvaStructureArray.get();
         PVAStructure[] newElements = ArrayUtils.add(elements, newStructure);
         pvaStructureArray.set(newElements);
@@ -175,12 +184,11 @@ public class PvaMimeResponse implements MimeResponse {
         pvaAnyArray.set(newElements);
     }
 
-	public void swicthingToStream(EventStream strm) {
-		// Not much to do here for now.
-	}
+    public void swicthingToStream(EventStream strm) {
+        // Not much to do here for now.
+    }
 
     public void setOutputStruct(PVAStructure resultStruct) {
         this.resultStruct = resultStruct;
     }
-
 }

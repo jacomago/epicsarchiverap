@@ -9,5 +9,5 @@ import org.epics.archiverappliance.EventStream;
  *
  */
 public interface AfterAllStreams {
-	public EventStream anyFinalData();
+    public EventStream anyFinalData();
 }

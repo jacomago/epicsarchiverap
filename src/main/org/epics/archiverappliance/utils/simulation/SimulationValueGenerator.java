@@ -11,18 +11,18 @@ import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.data.SampleValue;
 
 /**
- * Simple interface for a class that can be used to generate event streams based on some function. 
+ * Simple interface for a class that can be used to generate event streams based on some function.
  * @author mshankar
  *
  */
 public interface SimulationValueGenerator {
 
-	/**
-	 * Get the value at a particular point in time. 
-	 * Many unit tests rely on the value being returned being absolutely reproducible given the time.
-	 * @param type ArchDBRTypes  
-	 * @param secondsIntoYear  &emsp; 
-	 * @return Sample value  &emsp; 
-	 */
-	public SampleValue getSampleValue(ArchDBRTypes type, int secondsIntoYear) ;
+    /**
+     * Get the value at a particular point in time.
+     * Many unit tests rely on the value being returned being absolutely reproducible given the time.
+     * @param type ArchDBRTypes
+     * @param secondsIntoYear  &emsp;
+     * @return Sample value  &emsp;
+     */
+    public SampleValue getSampleValue(ArchDBRTypes type, int secondsIntoYear);
 }

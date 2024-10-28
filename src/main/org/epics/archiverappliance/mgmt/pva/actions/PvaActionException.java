@@ -8,9 +8,11 @@ public class PvaActionException extends Exception {
     public PvaActionException(Exception e) {
         super(e);
     }
+
     public PvaActionException(Throwable e) {
         super(e);
     }
+
     public PvaActionException(String msg) {
         super(msg);
     }
@@ -18,6 +20,7 @@ public class PvaActionException extends Exception {
     public PvaActionException(String msg, Exception ex) {
         super(msg, ex);
     }
+
     public PvaActionException(String msg, Throwable ex) {
         super(msg, ex);
     }

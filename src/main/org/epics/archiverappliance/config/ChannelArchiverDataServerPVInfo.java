@@ -14,46 +14,46 @@ import java.util.List;
  *
  */
 public class ChannelArchiverDataServerPVInfo implements Serializable {
-	private static final long serialVersionUID = -1423395893486840642L;
-	private ChannelArchiverDataServerInfo serverInfo;
-	private long startSec;
-	private long endSec;
-	public ChannelArchiverDataServerPVInfo(ChannelArchiverDataServerInfo serverInfo, long startSec, long endSec) {
-		this.serverInfo = serverInfo;
-		this.startSec = startSec;
-		this.endSec = endSec;
-	}
-	
-	public static void sortServersBasedOnStartAndEndSecs(List<ChannelArchiverDataServerPVInfo> caPVInfos) { 
-		Collections.sort(caPVInfos, new Comparator<ChannelArchiverDataServerPVInfo>() {
-			@Override
-			public int compare(ChannelArchiverDataServerPVInfo o1, ChannelArchiverDataServerPVInfo o2) {
-				if(o1.endSec == o2.endSec) { 
-					return 0;
-				} else if(o1.endSec > o2.endSec) { 
-					return -1;
-				} else { 
-					return 1;
-				}
-			}
-		});
-	}
+    private static final long serialVersionUID = -1423395893486840642L;
+    private ChannelArchiverDataServerInfo serverInfo;
+    private long startSec;
+    private long endSec;
 
-	public ChannelArchiverDataServerInfo getServerInfo() {
-		return serverInfo;
-	}
+    public ChannelArchiverDataServerPVInfo(ChannelArchiverDataServerInfo serverInfo, long startSec, long endSec) {
+        this.serverInfo = serverInfo;
+        this.startSec = startSec;
+        this.endSec = endSec;
+    }
 
-	public long getStartSec() {
-		return startSec;
-	}
+    public static void sortServersBasedOnStartAndEndSecs(List<ChannelArchiverDataServerPVInfo> caPVInfos) {
+        Collections.sort(caPVInfos, new Comparator<ChannelArchiverDataServerPVInfo>() {
+            @Override
+            public int compare(ChannelArchiverDataServerPVInfo o1, ChannelArchiverDataServerPVInfo o2) {
+                if (o1.endSec == o2.endSec) {
+                    return 0;
+                } else if (o1.endSec > o2.endSec) {
+                    return -1;
+                } else {
+                    return 1;
+                }
+            }
+        });
+    }
 
-	public long getEndSec() {
-		return endSec;
-	}
+    public ChannelArchiverDataServerInfo getServerInfo() {
+        return serverInfo;
+    }
 
-	@Override
-	public String toString() {
-		return serverInfo.toString();
-	}
+    public long getStartSec() {
+        return startSec;
+    }
 
+    public long getEndSec() {
+        return endSec;
+    }
+
+    @Override
+    public String toString() {
+        return serverInfo.toString();
+    }
 }

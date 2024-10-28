@@ -2,7 +2,6 @@ package org.epics.archiverappliance.config;
 
 import gov.aps.jca.dbr.DBR;
 import gov.aps.jca.dbr.DBRType;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -49,8 +48,7 @@ public enum JCA2ArchDBRType {
         var res = Arrays.stream(JCA2ArchDBRType.values())
                 .filter(t -> t.waveform == isVector && t.dbrtype.equals(dt))
                 .findFirst();
-        if (res.isPresent())
-            return res.get().archDBRType;
+        if (res.isPresent()) return res.get().archDBRType;
         logger.error("Cannot determine ArchDBRType for DBRType " + (dt != null ? dt.getName() : "null") + " and count "
                 + d.getCount());
         return null;

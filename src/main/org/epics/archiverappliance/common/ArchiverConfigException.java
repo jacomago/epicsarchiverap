@@ -7,21 +7,19 @@
  *******************************************************************************/
 package org.epics.archiverappliance.common;
 
-
 /**
- * Use this to throw configuration related exceptions. 
+ * Use this to throw configuration related exceptions.
  * @author mshankar
  *
  */
 public class ArchiverConfigException extends Exception {
-	public ArchiverConfigException(String arg0, Throwable arg1) {
-		super(arg0, arg1);
-	}
+    public ArchiverConfigException(String arg0, Throwable arg1) {
+        super(arg0, arg1);
+    }
 
-	public ArchiverConfigException(String arg0) {
-		super(arg0);
-	}
+    public ArchiverConfigException(String arg0) {
+        super(arg0);
+    }
 
-	private static final long serialVersionUID = -8779828706258704029L;
-
+    private static final long serialVersionUID = -8779828706258704029L;
 }

@@ -7,14 +7,6 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import java.io.IOException;
-import java.util.HashMap;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
@@ -34,6 +26,13 @@ import org.epics.archiverappliance.etl.bpl.reports.PVsByStorageConsumed;
 import org.epics.archiverappliance.etl.bpl.reports.StorageDetailsForAppliance;
 import org.epics.archiverappliance.etl.bpl.reports.StorageMetricsForAppliance;
 
+import java.io.IOException;
+import java.util.HashMap;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * The main business logic servlet for ETL. All BPLActions are registered here.
  * @author mshankar
@@ -41,52 +40,52 @@ import org.epics.archiverappliance.etl.bpl.reports.StorageMetricsForAppliance;
  */
 @SuppressWarnings("serial")
 public class BPLServlet extends HttpServlet {
-	private static final Logger logger = LogManager.getLogger(BPLServlet.class);
+    private static final Logger logger = LogManager.getLogger(BPLServlet.class);
 
-	private static HashMap<String, Class<? extends BPLAction>> getActions = new HashMap<String, Class<? extends BPLAction>>();
-	static {
-		getActions.put("/getPVDetails", PVDetails.class);
-		getActions.put("/getApplianceMetrics", ApplianceMetrics.class);
-		getActions.put("/getApplianceMetricsForAppliance", ApplianceMetricsDetails.class);
-		getActions.put("/getStorageMetricsForAppliance", StorageMetricsForAppliance.class);
-		getActions.put("/getStorageDetailsForAppliance", StorageDetailsForAppliance.class);
-		getActions.put("/getPVsByStorageConsumed", PVsByStorageConsumed.class);
-		getActions.put("/getInstanceMetricsForAppliance", InstanceReportDetails.class);
-		getActions.put("/getLastKnownEvent", GetLastKnownEventTimeStamp.class);
-		getActions.put("/consolidateDataForPV", ConsolidatePBFilesForOnePV.class);
-		getActions.put("/pauseArchivingPV", PauseArchivingPV.class);
-		getActions.put("/deletePV", DeletePV.class);
-		getActions.put("/getProcessMetrics", ProcessMetricsReport.class);
-		getActions.put("/getVersion", GetVersion.class);
-	}
+    private static HashMap<String, Class<? extends BPLAction>> getActions =
+            new HashMap<String, Class<? extends BPLAction>>();
 
+    static {
+        getActions.put("/getPVDetails", PVDetails.class);
+        getActions.put("/getApplianceMetrics", ApplianceMetrics.class);
+        getActions.put("/getApplianceMetricsForAppliance", ApplianceMetricsDetails.class);
+        getActions.put("/getStorageMetricsForAppliance", StorageMetricsForAppliance.class);
+        getActions.put("/getStorageDetailsForAppliance", StorageDetailsForAppliance.class);
+        getActions.put("/getPVsByStorageConsumed", PVsByStorageConsumed.class);
+        getActions.put("/getInstanceMetricsForAppliance", InstanceReportDetails.class);
+        getActions.put("/getLastKnownEvent", GetLastKnownEventTimeStamp.class);
+        getActions.put("/consolidateDataForPV", ConsolidatePBFilesForOnePV.class);
+        getActions.put("/pauseArchivingPV", PauseArchivingPV.class);
+        getActions.put("/deletePV", DeletePV.class);
+        getActions.put("/getProcessMetrics", ProcessMetricsReport.class);
+        getActions.put("/getVersion", GetVersion.class);
+    }
 
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        BasicDispatcher.dispatch(req, resp, configService, getActions);
+    }
 
-	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-			throws ServletException, IOException {
-		BasicDispatcher.dispatch(req, resp, configService, getActions);
-	}
+    private static HashMap<String, Class<? extends BPLAction>> postActions =
+            new HashMap<String, Class<? extends BPLAction>>();
 
-	private static HashMap<String, Class<? extends BPLAction>> postActions = new HashMap<String, Class<? extends BPLAction>>();
-	static {
-		postActions.put("/pauseArchivingPV", PauseArchivingPV.class);
-	}
-	
-	@Override
-	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-		logger.info("Beginning POST request into ETL servlet " + req.getPathInfo());
-		BasicDispatcher.dispatch(req, resp, configService, postActions);
-	}
+    static {
+        postActions.put("/pauseArchivingPV", PauseArchivingPV.class);
+    }
 
-	
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        logger.info("Beginning POST request into ETL servlet " + req.getPathInfo());
+        BasicDispatcher.dispatch(req, resp, configService, postActions);
+    }
 
-	@Override
-	public void init() throws ServletException {
-		super.init();
-		configService = (ConfigService) getServletConfig().getServletContext().getAttribute(ConfigService.CONFIG_SERVICE_NAME);
-		logger.info("Done initializing ETL servlet");
-	}
+    @Override
+    public void init() throws ServletException {
+        super.init();
+        configService =
+                (ConfigService) getServletConfig().getServletContext().getAttribute(ConfigService.CONFIG_SERVICE_NAME);
+        logger.info("Done initializing ETL servlet");
+    }
 
-	private ConfigService configService;
+    private ConfigService configService;
 }

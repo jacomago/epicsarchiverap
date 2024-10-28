@@ -7,7 +7,6 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval;
 
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.EventStream;
@@ -29,82 +28,83 @@ import java.util.concurrent.Callable;
  * Some variation of a ExecutorService is expected to be used to launch the UnitOfRetrievals in parallel and then push the event streams into the consumer.
  */
 public class UnitOfRetrieval implements Callable<RetrievalResult> {
-	private static final Logger logger = LogManager.getLogger(UnitOfRetrieval.class.getName());
-	private final String description;
-	private final Reader reader;
-	private final String pvName;
-	private final String pvNameFromRequest;
-	private final Instant start;
-	private final Instant end;
-	private final PostProcessor postProcessor;
-	private final BasicContext context;
-	private List<Callable<EventStream>> failoverStrms;
+    private static final Logger logger = LogManager.getLogger(UnitOfRetrieval.class.getName());
+    private final String description;
+    private final Reader reader;
+    private final String pvName;
+    private final String pvNameFromRequest;
+    private final Instant start;
+    private final Instant end;
+    private final PostProcessor postProcessor;
+    private final BasicContext context;
+    private List<Callable<EventStream>> failoverStrms;
 
+    public UnitOfRetrieval(
+            String desc,
+            Reader reader,
+            String pvName,
+            String pvNameFromRequest,
+            Instant start,
+            Instant end,
+            PostProcessor postProcessor,
+            BasicContext context) {
+        this.description = desc;
+        this.reader = reader;
+        this.pvName = pvName;
+        this.pvNameFromRequest = pvNameFromRequest;
+        this.start = start;
+        this.end = end;
+        this.postProcessor = postProcessor;
+        this.context = context;
+    }
 
-    public UnitOfRetrieval(String desc, Reader reader, String pvName, String pvNameFromRequest, Instant start, Instant end, PostProcessor postProcessor, BasicContext context) {
-		this.description = desc;
-		this.reader = reader;
-		this.pvName = pvName;
-		this.pvNameFromRequest = pvNameFromRequest;
-		this.start = start;
-		this.end = end;
-		this.postProcessor = postProcessor;
-		this.context = context;
-	}
+    @Override
+    public RetrievalResult call() throws IOException {
+        try {
+            logger.debug("Starting get Data for " + pvName + " from " + description);
+            List<Callable<EventStream>> strms = reader.getDataForPV(context, pvName, start, end, postProcessor);
+            logger.debug("Done getting data for " + pvName + " from " + description);
+            if (strms != null && failoverStrms != null) {
+                logger.debug("Wrapping and merging retrieval with failover data for " + this.pvName);
+                MergeDedupWithCallablesEventStream mret = new MergeDedupWithCallablesEventStream(strms, failoverStrms);
+                return new RetrievalResult(CallableEventStream.makeOneStreamCallableList(mret), this);
+            } else if (strms != null) {
+                logger.debug("Returning only local streams for " + this.pvName);
+                return new RetrievalResult(strms, this);
+            } else if (failoverStrms != null) {
+                logger.debug("Returning only failover streams for " + this.pvName);
+                return new RetrievalResult(failoverStrms, this);
+            } else {
+                logger.error("No data for " + this.pvName);
+                return new RetrievalResult(null, this);
+            }
+        } catch (NoDataException ex) {
+            logger.debug("No data from " + description + " " + ex.getMessage());
+            return new RetrievalResult(null, this);
+        }
+    }
 
+    public String getDescription() {
+        return description;
+    }
 
-	@Override
-	public RetrievalResult call() throws IOException {
-		try {
-			logger.debug("Starting get Data for " + pvName + " from " + description);
-			List<Callable<EventStream>> strms = reader.getDataForPV(context, pvName, start, end, postProcessor);
-			logger.debug("Done getting data for " + pvName + " from " + description);
-			if(strms != null && failoverStrms != null) {
-				logger.debug("Wrapping and merging retrieval with failover data for " + this.pvName);
-				MergeDedupWithCallablesEventStream mret = new MergeDedupWithCallablesEventStream(strms, failoverStrms);
-				return new RetrievalResult(CallableEventStream.makeOneStreamCallableList(mret), this);
-			} else if(strms != null) {
-				logger.debug("Returning only local streams for " + this.pvName);
-				return new RetrievalResult(strms, this);
-			} else if(failoverStrms != null) {
-				logger.debug("Returning only failover streams for " + this.pvName);
-				return new RetrievalResult(failoverStrms, this);
-			} else {
-				logger.error("No data for " + this.pvName);
-				return new RetrievalResult(null, this);
-			}
-		} catch(NoDataException ex) {
-			logger.debug("No data from " + description + " " + ex.getMessage());
-			return new RetrievalResult(null, this);
-		}
-	}
-
-
-	public String getDescription() {
-		return description;
-	}
-
-
-	public String getPvName() {
-		return pvName;
-	}
-
+    public String getPvName() {
+        return pvName;
+    }
 
     public Instant getStart() {
-		return start;
-	}
-
+        return start;
+    }
 
     public Instant getEnd() {
-		return end;
-	}
+        return end;
+    }
 
+    public String getPvNameFromRequest() {
+        return pvNameFromRequest;
+    }
 
-	public String getPvNameFromRequest() {
-		return pvNameFromRequest;
-	}
-	
-	public void wrapWithFailoverStreams(List<Callable<EventStream>> failoverStrms) {
-		this.failoverStrms = failoverStrms;
-	}
+    public void wrapWithFailoverStreams(List<Callable<EventStream>> failoverStrms) {
+        this.failoverStrms = failoverStrms;
+    }
 }

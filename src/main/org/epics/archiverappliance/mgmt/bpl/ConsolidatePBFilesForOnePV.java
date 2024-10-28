@@ -19,9 +19,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.sql.Time;
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -52,7 +49,7 @@ public class ConsolidatePBFilesForOnePV implements BPLAction {
         }
 
         String date = req.getParameter("date");
-        if(date == null || date.equals("")) {
+        if (date == null || date.isEmpty()) {
             date = TimeUtils.convertToISO8601String(TimeUtils.plusDays(TimeUtils.now(), 366));
         }
 

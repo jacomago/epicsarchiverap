@@ -11,39 +11,38 @@ import java.util.concurrent.TimeUnit;
  *
  */
 public class CurrentThreadExecutorService extends AbstractExecutorService {
-	boolean shutdown = false;
+    boolean shutdown = false;
 
-	@Override
-	public void shutdown() {
-		// Not much to do; we are not spawning other threads
-		shutdown = true;
-	}
+    @Override
+    public void shutdown() {
+        // Not much to do; we are not spawning other threads
+        shutdown = true;
+    }
 
-	@Override
-	public List<Runnable> shutdownNow() {
-		// Not much to do; we are not spawning other threads
-		shutdown = true;
-		return null;
-	}
+    @Override
+    public List<Runnable> shutdownNow() {
+        // Not much to do; we are not spawning other threads
+        shutdown = true;
+        return null;
+    }
 
-	@Override
-	public boolean isShutdown() {
-		return shutdown;
-	}
+    @Override
+    public boolean isShutdown() {
+        return shutdown;
+    }
 
-	@Override
-	public boolean isTerminated() {
-		return shutdown;
-	}
+    @Override
+    public boolean isTerminated() {
+        return shutdown;
+    }
 
-	@Override
-	public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-		return true;
-	}
+    @Override
+    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+        return true;
+    }
 
-	@Override
-	public void execute(Runnable command) {
-		command.run();
-	}
-
+    @Override
+    public void execute(Runnable command) {
+        command.run();
+    }
 }
