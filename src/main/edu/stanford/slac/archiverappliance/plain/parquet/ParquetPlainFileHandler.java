@@ -6,6 +6,7 @@ import edu.stanford.slac.archiverappliance.plain.FileInfo;
 import edu.stanford.slac.archiverappliance.plain.PlainFileHandler;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.BasicContext;
+import org.epics.archiverappliance.common.BiDirectionalIterable;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.PVNameToKeyMapping;
@@ -55,6 +56,11 @@ public class ParquetPlainFileHandler implements PlainFileHandler {
     @Override
     public EventStream getStream(String pvName, Path path, ArchDBRTypes dbrType) throws IOException {
         return new ParquetBackedPBEventFileStream(pvName, path, dbrType);
+    }
+
+    @Override
+    public EventStream getStreamForIteration(String pvName, Path path, Instant startAtTime, ArchDBRTypes type, BiDirectionalIterable.IterationDirection direction) throws IOException {
+        return null;
     }
 
     @Override
