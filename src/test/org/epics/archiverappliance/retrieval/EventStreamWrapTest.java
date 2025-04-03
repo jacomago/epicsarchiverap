@@ -221,9 +221,14 @@ public class EventStreamWrapTest {
         }
     }
 
-    @Test
-    void testOptimizedWithMultiThreadWrapper() throws Exception {
-        PlainPBStoragePlugin storageplugin = storagePluginPB;
+    /**
+     * We wrap a thread around each source event stream. Since the source data is generated using month partitions, we
+     * should get about 12 source event streams.
+     */
+    @ParameterizedTest
+    @EnumSource(PlainStorageType.class)
+    void testOptimizedWithMultiThreadWrapper(PlainStorageType plainStorageType) throws Exception {
+        PlainStoragePlugin storageplugin = storagePlugin(plainStorageType);
 
         Instant end = TimeUtils.now();
         Instant start = TimeUtils.minusDays(end, 365);
