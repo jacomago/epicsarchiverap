@@ -20,6 +20,7 @@ import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.cluster.Cluster;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -88,6 +89,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -117,7 +119,6 @@ public class DefaultConfigService implements ConfigService {
     public static final String CLUSTER_INET_2_APPLIANCE_IDENTITY = "clusterInet2ApplianceIdentity";
     private static final Logger logger = LogManager.getLogger(DefaultConfigService.class.getName());
     private static final Logger configlogger = LogManager.getLogger("config." + DefaultConfigService.class.getName());
-    private static final Logger clusterLogger = LogManager.getLogger("cluster." + DefaultConfigService.class.getName());
 
     static {
         System.getProperties().setProperty("log4j1.compatibility", "true");
@@ -148,6 +149,7 @@ public class DefaultConfigService implements ConfigService {
     protected Map<String, List<ChannelArchiverDataServerPVInfo>> pv2ChannelArchiverDataServer = null;
     protected ITopic<PubSubEvent> pubSub = null;
     protected Map<String, Boolean> namedFlags = null;
+    protected Boolean storeAllAppliancesTypeInfo = false;
     // Configuration state ends here.
 
     // Runtime state begins here
@@ -322,7 +324,10 @@ public class DefaultConfigService implements ConfigService {
             }
         }
 
-
+        String storeAllTypeInfosStr = this.getInstallationProperties().getProperty("org.epics.archiverappliance.config.StoreAllTypeInfos");
+        if (storeAllTypeInfosStr != null && !storeAllTypeInfosStr.isEmpty()) {
+            this.storeAllAppliancesTypeInfo = Boolean.parseBoolean(storeAllTypeInfosStr);
+        }
 
         switch (contextPath) {
             case "/mgmt":
@@ -589,7 +594,7 @@ public class DefaultConfigService implements ConfigService {
         pubSub = hzinstance.getTopic("pubSub");
 
         final HazelcastInstance shutdownHzInstance = hzinstance;
-        shutdownHooks.add(0, () -> {
+        shutdownHooks.addFirst(() -> {
             logger.debug(() -> "Shutting down clustering instance in webapp " + warFile.toString());
             shutdownHzInstance.shutdown();
         });
@@ -757,53 +762,17 @@ public class DefaultConfigService implements ConfigService {
         hzinstance
                 .getMap(TYPEINFO)
                 .addEntryListener(
-                        (EntryAddedListener<Object, Object>) entryEvent -> {
-                            logger.debug(() -> "Received entryAdded for pvTypeInfo");
-                            PVTypeInfo typeInfo = (PVTypeInfo) entryEvent.getValue();
-                            String pvName = typeInfo.getPvName();
-                            eventBus.post(new PVTypeInfoEvent(pvName, typeInfo, ChangeType.TYPEINFO_ADDED));
-                            if (persistanceLayer != null) {
-                                try {
-                                    persistanceLayer.putTypeInfo(pvName, typeInfo);
-                                } catch (Exception ex) {
-                                    logger.error("Exception persisting pvTypeInfo for pv " + pvName, ex);
-                                }
-                            }
-                        },
+                        (EntryAddedListener<Object, Object>) this::typeInfoAddedListener,
                         true);
         hzinstance
                 .getMap(TYPEINFO)
                 .addEntryListener(
-                        (EntryRemovedListener<Object, Object>) entryEvent -> {
-                            PVTypeInfo typeInfo = (PVTypeInfo) entryEvent.getOldValue();
-                            String pvName = typeInfo.getPvName();
-                            logger.info("Received entryRemoved for pvTypeInfo " + pvName);
-                            eventBus.post(new PVTypeInfoEvent(pvName, typeInfo, ChangeType.TYPEINFO_DELETED));
-                            if (persistanceLayer != null) {
-                                try {
-                                    persistanceLayer.deleteTypeInfo(pvName);
-                                } catch (Exception ex) {
-                                    logger.error("Exception deleting pvTypeInfo for pv " + pvName, ex);
-                                }
-                            }
-                        },
+                        (EntryRemovedListener<Object, Object>) this::typeInfoRemovedListener,
                         true);
         hzinstance
                 .getMap(TYPEINFO)
                 .addEntryListener(
-                        (EntryUpdatedListener<Object, Object>) entryEvent -> {
-                            PVTypeInfo typeInfo = (PVTypeInfo) entryEvent.getValue();
-                            String pvName = typeInfo.getPvName();
-                            eventBus.post(new PVTypeInfoEvent(pvName, typeInfo, ChangeType.TYPEINFO_MODIFIED));
-                            logger.debug(() -> "Received entryUpdated for pvTypeInfo");
-                            if (persistanceLayer != null) {
-                                try {
-                                    persistanceLayer.putTypeInfo(pvName, typeInfo);
-                                } catch (Exception ex) {
-                                    logger.error("Exception persisting pvTypeInfo for pv " + pvName, ex);
-                                }
-                            }
-                        },
+                        (EntryUpdatedListener<Object, Object>) this::typeInfoUpdatedListener,
                         true);
 
         eventBus.register(this);
@@ -836,6 +805,56 @@ public class DefaultConfigService implements ConfigService {
 
         this.startupState = STARTUP_SEQUENCE.STARTUP_COMPLETE;
         configlogger.info("Start complete for webapp " + this.warFile);
+    }
+
+    private void typeInfoUpdatedListener(EntryEvent<Object, Object> entryEvent) {
+        PVTypeInfo typeInfo = (PVTypeInfo) entryEvent.getValue();
+        String pvName = typeInfo.getPvName();
+        eventBus.post(new PVTypeInfoEvent(pvName, typeInfo, ChangeType.TYPEINFO_MODIFIED));
+        logger.debug(() -> "Received entryUpdated for pvTypeInfo");
+        if (storeTypeInfoChangeInPersistance(typeInfo)) {
+            try {
+                persistanceLayer.putTypeInfo(pvName, typeInfo);
+            } catch (Exception ex) {
+                logger.error("Exception persisting pvTypeInfo for pv " + pvName, ex);
+            }
+        }
+    }
+
+    private boolean isOnThisAppliance(PVTypeInfo typeInfo) {
+        return Objects.equals(typeInfo.getApplianceIdentity(), this.myIdentity);
+    }
+
+    private void typeInfoRemovedListener(EntryEvent<Object, Object> entryEvent) {
+        PVTypeInfo typeInfo = (PVTypeInfo) entryEvent.getOldValue();
+        String pvName = typeInfo.getPvName();
+        logger.info("Received entryRemoved for pvTypeInfo " + pvName);
+        eventBus.post(new PVTypeInfoEvent(pvName, typeInfo, ChangeType.TYPEINFO_DELETED));
+        if (storeTypeInfoChangeInPersistance(typeInfo)) {
+            try {
+                persistanceLayer.deleteTypeInfo(pvName);
+            } catch (Exception ex) {
+                logger.error("Exception deleting pvTypeInfo for pv " + pvName, ex);
+            }
+        }
+    }
+
+    private void typeInfoAddedListener(EntryEvent<Object, Object> entryEvent) {
+        logger.debug(() -> "Received entryAdded for pvTypeInfo");
+        PVTypeInfo typeInfo = (PVTypeInfo) entryEvent.getValue();
+        String pvName = typeInfo.getPvName();
+        eventBus.post(new PVTypeInfoEvent(pvName, typeInfo, ChangeType.TYPEINFO_ADDED));
+        if (storeTypeInfoChangeInPersistance(typeInfo)) {
+            try {
+                persistanceLayer.putTypeInfo(pvName, typeInfo);
+            } catch (Exception ex) {
+                logger.error("Exception persisting pvTypeInfo for pv " + pvName, ex);
+            }
+        }
+    }
+
+    private boolean storeTypeInfoChangeInPersistance(PVTypeInfo typeInfo) {
+        return persistanceLayer != null && (!this.storeAllAppliancesTypeInfo || isOnThisAppliance(typeInfo));
     }
 
     @Override
@@ -891,26 +910,6 @@ public class DefaultConfigService implements ConfigService {
                     }
                 }
             }
-        }
-    }
-
-    @Subscribe
-    public void publishEventIntoCluster(PubSubEvent pubSubEvent) {
-        if (pubSubEvent.isSourceCluster()) {
-            logger.debug(() -> "Skipping publishing events from the cluster back into the cluster "
-                    + pubSubEvent.generateEventDescription());
-            return;
-        }
-
-        if (pubSubEvent.getDestination().startsWith(myIdentity)
-                && pubSubEvent.getDestination().endsWith(this.warFile.toString())) {
-            logger.debug(this.warFile + " - Skipping publishing event " + pubSubEvent.generateEventDescription()
-                    + " meant for myself " + this.warFile.toString());
-        } else {
-            pubSubEvent.setSource(myIdentity);
-            logger.debug(this.warFile + " - Publishing event from local event bus onto cluster "
-                    + pubSubEvent.generateEventDescription());
-            pubSub.publish(pubSubEvent);
         }
     }
 
@@ -1832,8 +1831,8 @@ public class DefaultConfigService implements ConfigService {
                 if (objectCount > 1000) {
                     this.typeInfos.putAll(newTypeInfos);
                     this.pv2appliancemapping.putAll(newPVMappings);
-                    for (String pvName : newTypeInfos.keySet()) {
-                        applianceAggregateInfo.addInfoForPV(pvName, newTypeInfos.get(pvName), this);
+                    for (Map.Entry<String, PVTypeInfo> nameTypeInfo : newTypeInfos.entrySet()) {
+                        applianceAggregateInfo.addInfoForPV(nameTypeInfo.getKey(), nameTypeInfo.getValue(), this);
                     }
                     clusterPVCount += newTypeInfos.size();
                     newTypeInfos = new HashMap<String, PVTypeInfo>();
@@ -1847,8 +1846,8 @@ public class DefaultConfigService implements ConfigService {
                 logger.debug(() -> "Adding final batch of PVs from persistence");
                 this.typeInfos.putAll(newTypeInfos);
                 this.pv2appliancemapping.putAll(newPVMappings);
-                for (String pvName : newTypeInfos.keySet()) {
-                    applianceAggregateInfo.addInfoForPV(pvName, newTypeInfos.get(pvName), this);
+                for (Map.Entry<String, PVTypeInfo> nameTypeInfo : newTypeInfos.entrySet()) {
+                    applianceAggregateInfo.addInfoForPV(nameTypeInfo.getKey(), nameTypeInfo.getValue(), this);
                 }
                 clusterPVCount += newTypeInfos.size();
             }
