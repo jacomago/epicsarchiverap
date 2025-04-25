@@ -1,5 +1,6 @@
 package org.epics.archiverappliance.config.persistence;
 
+import java.beans.IntrospectionException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -8,9 +9,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -35,15 +37,15 @@ import org.json.simple.JSONValue;
  *
  */
 public class MySQLPersistence implements ConfigPersistence {
-	private static Logger configlogger = LogManager.getLogger("config." + MySQLPersistence.class.getName());
-	private static Logger logger = LogManager.getLogger(MySQLPersistence.class.getName());
-	private DataSource theDataSource;
+	private static final Logger configlogger = LogManager.getLogger("config." + MySQLPersistence.class.getName());
+	private static final Logger logger = LogManager.getLogger(MySQLPersistence.class.getName());
+	private final DataSource theDataSource;
 
-	private static enum dialect_t {
+	private enum dialect_t {
 		MySQL,
 		SQLite,
-	};
-	private dialect_t dialect;
+	}
+	private final dialect_t dialect;
 	
 	public MySQLPersistence() throws ConfigException {
 		try {
@@ -52,15 +54,15 @@ public class MySQLPersistence implements ConfigPersistence {
 			Context envContext  = (Context) initContext.lookup("java:/comp/env");
 
             String dbname = System.getenv().get("ARCHAPPL_DB_NAME");
-            if ( dbname != null && dbname.length() > 0 ) {
+            if ( dbname != null && !dbname.isEmpty() ) {
                 configlogger.info("Using DB name from environment variable:" + dbname);
             }
             else {
                 configlogger.info("Using default MySQL database name.");
                 dbname = "archappl";
             }
-            String db_string = "jdbc/" +  dbname;
-			theDataSource = (DataSource)envContext.lookup(db_string);
+            String dbString = "jdbc/" +  dbname;
+			theDataSource = (DataSource)envContext.lookup(dbString);
 			configlogger.info("Found datasource called jdbc/archappl in the java:/comp/env namespace using JDNI");
 
 			// test RDB connection and probe type
@@ -76,7 +78,7 @@ public class MySQLPersistence implements ConfigPersistence {
 				} else {
 					dialect = dialect_t.MySQL;
 				}
-				configlogger.info(String.format("SQL Dialect %s", dialect.toString()));
+				configlogger.info(String.format("SQL Dialect %s", dialect));
 			}
 		} catch(Exception ex) {
 			throw new ConfigException("Exception initializing MySQLPersistence ", ex);
@@ -86,10 +88,6 @@ public class MySQLPersistence implements ConfigPersistence {
 	@Override
 	public List<String> getTypeInfoKeys() throws IOException {
 		return getKeys("SELECT pvName AS pvName FROM PVTypeInfo ORDER BY pvName;", "getTypeInfoKeys");
-	}
-	
-	private static boolean regexmatch(String typeInfoStr, Pattern instanceIDMatcher) {
-		return instanceIDMatcher.matcher(typeInfoStr).matches();
 	}
 
 	private static boolean attrmatch(PVTypeInfo typeInfo, String instanceIdentity) {
@@ -109,8 +107,30 @@ public class MySQLPersistence implements ConfigPersistence {
 	
 	@Override
 	public List<PVTypeInfo> getAllTypeInfosForAppliance(String applianceIdentity) throws IOException {
+		List<String> typeInfoStrs = getTypeInfoStrs(applianceIdentity);
+
+		try (ForkJoinPool customThreadPool = new ForkJoinPool(Math.max(Runtime.getRuntime().availableProcessors() / 2, 1))) {
+			JSONDecoder<PVTypeInfo> decoder = JSONDecoder.getDecoder(PVTypeInfo.class);
+
+			return customThreadPool.submit(
+				() -> typeInfoStrs.parallelStream()
+					.map(x -> parseTypeInfo(x, decoder))
+					.filter(x -> attrmatch(x, applianceIdentity))
+					.toList()).get();
+		} catch (RejectedExecutionException | ExecutionException | IntrospectionException |
+                 NoSuchMethodException ex) {
+			throw new IOException("Exception loading all typeinfos into memory", ex);
+
+		} catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+	private List<String> getTypeInfoStrs(String applianceIdentity) throws IOException {
+		List<String> typeInfoStrs = new LinkedList<>();
+
 		try {
-			List<String> typeInfoStrs = new LinkedList<String>();
 			try(Connection conn = theDataSource.getConnection()) {
 				try(PreparedStatement stmt = conn.prepareStatement("SELECT typeInfoJSON AS typeInfoJSON FROM PVTypeInfo WHERE JSON_EXTRACT(typeInfoJSON, '$.applianceIdentity') = ?;")) {
 					stmt.setString(1, applianceIdentity);
@@ -122,20 +142,10 @@ public class MySQLPersistence implements ConfigPersistence {
 				}
 			}
 
-			Pattern inst = Pattern.compile(".*\\\"" + applianceIdentity + "\\\".*");
-			JSONDecoder<PVTypeInfo> decoder = JSONDecoder.getDecoder(PVTypeInfo.class);
-			ForkJoinPool customThreadPool = new ForkJoinPool(Math.max(Runtime.getRuntime().availableProcessors()/2, 1));
-			List<PVTypeInfo> typeInfos = customThreadPool.submit(
-			    () -> typeInfoStrs.parallelStream()
-			    	.filter(x -> regexmatch(x, inst))
-			    	.map(x -> parseTypeInfo(x, decoder))
-			    	.filter(x -> attrmatch(x, applianceIdentity))
-			    	.collect(Collectors.toList())).get();
-			customThreadPool.shutdown();
-			return typeInfos;
-		} catch(Exception ex) {
-			throw new IOException("Exception getting all typeinfos", ex);
+		} catch(SQLException ex) {
+			throw new IOException("Exception loading all typeinfos from persistance", ex);
 		}
+		return typeInfoStrs;
 	}
 
 	@Override
@@ -145,17 +155,13 @@ public class MySQLPersistence implements ConfigPersistence {
 
 	@Override
 	public void putTypeInfo(String pvName, PVTypeInfo typeInfo) throws IOException {
-		String sql;
-		switch(dialect) {
-		default:
-		case MySQL:
-			sql = "INSERT INTO PVTypeInfo (pvName, typeInfoJSON) VALUES (?, ?) ON DUPLICATE KEY UPDATE typeInfoJSON = ?;";
-			break;
-		case SQLite:
-			sql = "INSERT INTO PVTypeInfo (pvName, typeInfoJSON) VALUES (?, ?) ON CONFLICT(pvName) DO UPDATE SET typeInfoJSON = ?;";
-			break;
-		}
-		putValueForKey(sql, pvName, typeInfo, PVTypeInfo.class, "putTypeInfo");
+		String sql = switch (dialect) {
+            default ->
+                "INSERT INTO PVTypeInfo (pvName, typeInfoJSON) VALUES (?, ?) ON DUPLICATE KEY UPDATE typeInfoJSON = ?;";
+            case SQLite ->
+                "INSERT INTO PVTypeInfo (pvName, typeInfoJSON) VALUES (?, ?) ON CONFLICT(pvName) DO UPDATE SET typeInfoJSON = ?;";
+        };
+        putValueForKey(sql, pvName, typeInfo, PVTypeInfo.class, "putTypeInfo");
 	}
 
 	@Override
@@ -242,17 +248,12 @@ public class MySQLPersistence implements ConfigPersistence {
 
 	@Override
 	public void putAliasNamesToRealName(String pvName, String realName) throws IOException {
-		String sql;
-		switch(dialect) {
-		default:
-		case MySQL:
-			sql = "INSERT INTO PVAliases (pvName, realName) VALUES (?, ?) ON DUPLICATE KEY UPDATE realName = ?;";
-			break;
-		case SQLite:
-			sql = "INSERT INTO PVAliases (pvName, realName) VALUES (?, ?) ON CONFLICT(pvName) DO UPDATE SET realName = ?;";
-			break;
-		}
-		putStringValueForKey(sql, pvName, realName, "putAliasNamesToRealName");
+		String sql = switch (dialect) {
+            default -> "INSERT INTO PVAliases (pvName, realName) VALUES (?, ?) ON DUPLICATE KEY UPDATE realName = ?;";
+            case SQLite ->
+                "INSERT INTO PVAliases (pvName, realName) VALUES (?, ?) ON CONFLICT(pvName) DO UPDATE SET realName = ?;";
+        };
+        putStringValueForKey(sql, pvName, realName, "putAliasNamesToRealName");
 	}
 
 	@Override
@@ -281,7 +282,7 @@ public class MySQLPersistence implements ConfigPersistence {
 	}
 
 	private <T> T getValueForKey(String sql, String key, T obj, Class<T> clazz, String msg) throws IOException {
-		if(key == null || key.equals("")) return null;
+		if(key == null || key.isEmpty()) return null;
 
 		try(Connection conn = theDataSource.getConnection()) {
 			try(PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -304,7 +305,7 @@ public class MySQLPersistence implements ConfigPersistence {
 	}
 
 	private String getStringValueForKey(String sql, String key, String msg) throws IOException {
-		if(key == null || key.equals("")) return null;
+		if(key == null || key.isEmpty()) return null;
 
 		try(Connection conn = theDataSource.getConnection()) {
 			try(PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -324,7 +325,7 @@ public class MySQLPersistence implements ConfigPersistence {
 
 	private List<String> getStringListValueForKey(String sql, String key, String msg) throws IOException {
 		LinkedList<String> ret = new LinkedList<String>();
-		if(key == null || key.equals("")) return ret;
+		if(key == null || key.isEmpty()) return ret;
 
 		try(Connection conn = theDataSource.getConnection()) {
 			try(PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -343,7 +344,7 @@ public class MySQLPersistence implements ConfigPersistence {
 	}
 
 	private <T> void putValueForKey(String sql, String key, T obj, Class<T> clazz, String msg) throws IOException {
-		if(key == null || key.equals("")) throw new IOException("key cannot be null when persisting " + msg);
+		if(key == null || key.isEmpty()) throw new IOException("key cannot be null when persisting " + msg);
 		if(obj == null || obj.equals("")) throw new IOException("value cannot be null when persisting " + msg);
 
 		try(Connection conn = theDataSource.getConnection()) {
@@ -369,8 +370,8 @@ public class MySQLPersistence implements ConfigPersistence {
 
 
 	private void putStringValueForKey(String sql, String key, String value, String msg) throws IOException {
-		if(key == null || key.equals("")) throw new IOException("key cannot be null when persisting " + msg);
-		if(value == null || value.equals("")) throw new IOException("value cannot be null when persisting " + msg);
+		if(key == null || key.isEmpty()) throw new IOException("key cannot be null when persisting " + msg);
+		if(value == null || value.isEmpty()) throw new IOException("value cannot be null when persisting " + msg);
 
 		try(Connection conn = theDataSource.getConnection()) {
 			try(PreparedStatement stmt = conn.prepareStatement(sql)) {
