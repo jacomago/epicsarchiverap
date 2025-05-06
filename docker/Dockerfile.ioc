@@ -1,0 +1,74 @@
+# syntax=docker/dockerfile:1
+
+
+# Stage 1: Download and Extract EPICS
+FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS epics-download-extract
+
+ARG EPICSVERSION=7.0.8.1
+SHELL ["/bin/bash", "-c"]
+# Install ca-certificates for ADD HTTPS
+RUN apt-get update && \
+    apt-get install -yq --no-install-recommends ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+WORKDIR /var/cache
+# Use ADD to download the EPICS tarball
+ADD https://epics.anl.gov/download/base/base-$EPICSVERSION.tar.gz /var/cache/base-$EPICSVERSION.tar.gz
+RUN mkdir /epics && \
+    tar -xf base-$EPICSVERSION.tar.gz -C /epics && \
+    rm base-$EPICSVERSION.tar.gz
+
+# Stage 2: Base images for different architectures
+FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS base
+
+FROM base AS base-amd64
+ENV EPICS_HOST_ARCH=linux-x86_64
+
+FROM base AS base-386
+ENV EPICS_HOST_ARCH=linux-x86
+
+FROM base AS base-arm64
+ENV EPICS_HOST_ARCH=linux-arm
+
+FROM base AS base-arm
+ENV EPICS_HOST_ARCH=linux-arm
+
+# Stage 3: Build EPICS
+# Now finally choose the right base image:
+FROM base-$TARGETARCH AS build-epics
+SHELL ["/bin/bash", "-c"]
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    apt-get install --no-install-recommends -yq \
+        build-essential \
+        ca-certificates \
+        curl \
+        libreadline-dev \
+        telnet && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    rm -rf /var/cache/apt
+
+WORKDIR /epics
+COPY --from=epics-download-extract /epics /epics
+
+ARG EPICSVERSION=7.0.8.1
+# EPICSVERSION ARG is inherited globally
+RUN mv base-$EPICSVERSION base && cd base && make -j$(nproc)
+
+# Stage 4: Runtime image
+FROM base-$TARGETARCH AS runtime
+
+COPY --from=build-epics /epics /epics
+# Epics env
+ENV EPICS_ROOT=/epics \
+    EPICS_BASE=${EPICS_ROOT}/base \
+    EPICS_BASE_BIN=${EPICS_ROOT}/base/bin/${EPICS_HOST_ARCH} \
+    EPICS_BASE_LIB=${EPICS_ROOT}/base/lib/${EPICS_HOST_ARCH} \
+    LD_LIBRARY_PATH=${EPICS_ROOT}/base/lib/${EPICS_HOST_ARCH}:${LD_LIBRARY_PATH} \
+    PATH=${PATH}:${EPICS_ROOT}/base/bin/${EPICS_HOST_ARCH}
+
+# Note: The CMD or ENTRYPOINT for running the IOC would typically be here.
+# For example:
+# WORKDIR /usr/test
+# CMD ["softIocPVA", "-m", "P=test", "-d", "/usr/test/UnitTestPVs.db"]

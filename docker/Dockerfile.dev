@@ -1,15 +1,22 @@
+# syntax=docker/dockerfile:1
 
-# Download Epics
+# Stage 1: Download and Extract EPICS
 FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS epics-download-extract
-SHELL ["/bin/bash", "-c"]
-RUN apt-get update && apt-get install -yq wget git
-WORKDIR /var/cache
 ARG EPICSVERSION=7.0.8.1
-RUN wget -q --show-progress https://epics.anl.gov/download/base/base-$EPICSVERSION.tar.gz \
-&& mkdir /epics/ \
-&& tar -xf base-$EPICSVERSION.tar.gz -C /epics \
-&& rm base-$EPICSVERSION.tar.gz
+SHELL ["/bin/bash", "-c"]
+# Install ca-certificates for ADD HTTPS, wget is no longer needed for this stage's build process
+RUN apt-get update && \
+    apt-get install -yq --no-install-recommends ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+WORKDIR /var/cache
+# Use ADD to download the EPICS tarball
+ADD https://epics.anl.gov/download/base/base-$EPICSVERSION.tar.gz /var/cache/base-$EPICSVERSION.tar.gz
+RUN mkdir /epics && \
+    tar -xf /var/cache/base-$EPICSVERSION.tar.gz -C /epics && \
+    rm /var/cache/base-$EPICSVERSION.tar.gz
 
+# Stage 2: Base images for different architectures
 FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS base
 
 FROM base AS base-amd64
@@ -24,46 +31,68 @@ ENV EPICS_HOST_ARCH=linux-arm
 FROM base AS base-arm
 ENV EPICS_HOST_ARCH=linux-arm
 
-# Now finally choose the right base image:
+# Stage 3: Build EPICS
 FROM base-$TARGETARCH AS build-epics
 SHELL ["/bin/bash", "-c"]
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update \
- && apt-get install --no-install-recommends -yq \
-  build-essential \
-  ca-certificates \
-  curl \
-  libreadline-dev \
-  telnet \
- && apt-get clean && rm -rf /var/lib/apt/lists/* && rm -rf /var/cache/apt
-
+RUN apt-get update && \
+    apt-get install --no-install-recommends -yq \
+        build-essential \
+        ca-certificates \
+        curl \
+        libreadline-dev \
+        telnet && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    rm -rf /var/cache/apt
 WORKDIR /epics
 COPY --from=epics-download-extract /epics /epics
 ARG EPICSVERSION=7.0.8.1
-RUN mv base-$EPICSVERSION base
-RUN cd base && make -j$(nproc)
+RUN mv base-$EPICSVERSION base && cd base && make -j$(nproc)
 
-
-FROM debian:bookworm-slim  AS tomcat-download-extract
-SHELL ["/bin/bash", "-c"]
-RUN apt-get update && apt-get install -yq wget git
-WORKDIR /var/cache
-RUN mkdir /tomcat-download
-RUN mkdir /tomcat
+# Stage 4: Download and Extract Tomcat
+FROM debian:bookworm-slim AS tomcat-download-extract
 ARG TOMCAT_VERSION=9.0.79
-RUN wget https://archive.apache.org/dist/tomcat/tomcat-9/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz -O /tmp/tomcat.tar.gz
-RUN tar -xf /tmp/tomcat.tar.gz -C /tomcat-download
-RUN cp -Rv /tomcat-download/apache-tomcat-$TOMCAT_VERSION/* /tomcat/
 
-# syntax=docker/dockerfile:1
+SHELL ["/bin/bash", "-c"]
+# Install ca-certificates for ADD HTTPS, wget is no longer needed for this stage's build process
+RUN apt-get update && \
+    apt-get install -yq --no-install-recommends ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+WORKDIR /var/cache
+RUN mkdir -p /tomcat-download /tomcat
+# Use ADD to download the Tomcat tarball
+ADD https://archive.apache.org/dist/tomcat/tomcat-9/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz /tmp/tomcat.tar.gz
+RUN tar -xf /tmp/tomcat.tar.gz -C /tomcat-download && \
+    cp -Rv /tomcat-download/apache-tomcat-$TOMCAT_VERSION/* /tomcat/ && \
+    rm /tmp/tomcat.tar.gz && \
+    rm -rf /tomcat-download/apache-tomcat-$TOMCAT_VERSION
 
+# Stage 5: Gradle base development environment
 FROM base-$TARGETARCH AS gradle-base
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -yq git libreadline-dev wget apt-transport-https
-# install java
-RUN wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /etc/apt/trusted.gpg.d/adoptium.asc
-RUN echo "deb https://packages.adoptium.net/artifactory/deb bullseye main" | tee /etc/apt/sources.list.d/adoptium.list
-RUN apt-get update && apt-get install -yq temurin-21-jdk
+# Install base development tools (including wget as it's a dev environment)
+RUN apt-get update && \
+    apt-get install -yq --no-install-recommends \
+        git \
+        libreadline-dev \
+        wget \
+        apt-transport-https \
+        ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Java
+# Use ADD to download the GPG key
+ADD https://packages.adoptium.net/artifactory/api/gpg/key/public /etc/apt/trusted.gpg.d/adoptium.asc
+RUN echo "deb https://packages.adoptium.net/artifactory/deb bullseye main" > /etc/apt/sources.list.d/adoptium.list && \
+    apt-get update && \
+    apt-get install -yq --no-install-recommends temurin-21-jdk && \
+    # Clean up
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY --from=tomcat-download-extract /tomcat /tomcat
 ENV TOMCAT_HOME=/tomcat
@@ -72,9 +101,9 @@ COPY --from=build-epics /epics /epics
 # Epics env
 ENV EPICS_ROOT=/epics
 ENV EPICS_BASE=${EPICS_ROOT}/base
-ENV EPICS_BASE_BIN=${EPICS_BASE}/bin/${EPICS_HOST_ARCH} \
-    EPICS_BASE_LIB=${EPICS_BASE}/lib/${EPICS_HOST_ARCH} \
-    LD_LIBRARY_PATH=${EPICS_BASE_LIB}:${LD_LIBRARY_PATH}
+ENV EPICS_BASE_BIN=${EPICS_BASE}/bin/${EPICS_HOST_ARCH}
+ENV EPICS_BASE_LIB=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
+ENV LD_LIBRARY_PATH=${EPICS_BASE_LIB}:${LD_LIBRARY_PATH}
 ENV PATH=${PATH}:${EPICS_BASE_BIN}
 
 LABEL org.opencontainers.image.source=https://github.com/archiver-appliance/epicsarchiverap
