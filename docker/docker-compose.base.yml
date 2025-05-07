@@ -1,0 +1,55 @@
+# /Users/skybrewer/git/archiver-appliance/epicsarchiverap/docker/docker-compose.base.yml
+version: '3.7'
+
+services:
+  # --- MariaDB Base Template ---
+  mariadb-base-template:
+    image: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: archappl
+      MYSQL_DATABASE: archappl
+      MYSQL_USER: archappl
+      MYSQL_PASSWORD: archappl
+    volumes:
+      - ./archappl/conf/sql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # --- Archiver Appliance - Common Build Definition ---
+  archappl-build-common-template:
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    networks:
+      - archapplnet
+    volumes:
+      - ./archappl/conf:/usr/local/tomcat/archappl_conf
+
+  # --- Archiver Appliance - Single Tomcat Target Base ---
+  archappl-singletomcat-base-template:
+    extends:
+      service: archappl-build-common-template
+    build:
+      target: singletomcat
+
+  # --- Archiver Appliance - Individual WebApp Target Base ---
+  archappl-individual-webapp-base-template:
+    extends:
+      service: archappl-build-common-template
+
+  # --- Example IOC (Custom Build) Base Template ---
+  # This is the new default, building from Dockerfile.ioc
+  example-ioc-base-template:
+    build:
+      # Context is relative to the final docker-compose file being used.
+      # Assuming it's in the same directory as Dockerfile.ioc
+      context: .
+      dockerfile: Dockerfile.ioc
+    networks:
+      - archapplnet
+    tty: true
+    restart: always

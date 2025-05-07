@@ -1,123 +1,80 @@
 version: '3.7'
 
 services:
-  # Base service definitions (not intended to be run directly but serve as templates)
-  mariadb-base-template:
-    image: mariadb
-    environment:
-      MYSQL_ROOT_PASSWORD: archappl
-      MYSQL_DATABASE: archappl
-      MYSQL_USER: archappl
-      MYSQL_PASSWORD: archappl
-    volumes:
-      # Changed to a direct bind mount
-      - ./archappl/conf/sql:/docker-entrypoint-initdb.d
-    healthcheck:
-      # Test command to check if MariaDB is responsive
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u$$MYSQL_USER", "-p$$MYSQL_PASSWORD"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s # Allow time for MariaDB to initialize, especially on first run
-
-  archappl-base-template:
-    build:
-      context: ../ # Assuming docker-compose.yml is in the 'docker' subdirectory
-      dockerfile: Dockerfile
-      target: singletomcat
-    environment:
-      # Common environment variable, specific identity will be set per service
-      ARCHAPPL_APPLIANCES: /usr/local/tomcat/archappl_conf/multipleappliances.xml
-    volumes:
-      # Changed to a direct bind mount
-      - ./archappl/conf:/usr/local/tomcat/archappl_conf
-    networks:
-      # All archappl instances connect to the common archapplnet
-      - archapplnet
-
-  # Actual service definitions
   mariadb0:
     extends:
+      file: docker-compose.base.yml
       service: mariadb-base-template
-    hostname: mariadb0 # Unique hostname for this instance
+    hostname: mariadb
     networks:
-      # Network specific to this MariaDB and its archappl instance
       - archappl0net
     ports:
-      - "3306:3306" # Expose MariaDB on host port 3306
+      - "3306:3306"
     volumes:
-      # Specific data volume for this instance (merges with volumes from base template)
       - archappldata0:/var/lib/mysql
 
   archappl0:
     extends:
-      service: archappl-base-template
+      file: docker-compose.base.yml
+      service: archappl-singletomcat-base-template
     hostname: archappl0
     networks:
-      # Connects to its dedicated MariaDB network (merges with networks from base template)
+      - archapplnet
       - archappl0net
     ports:
-      - "8080:8080" # Expose Tomcat on host port 8080
+      - "8080:8080"
     environment:
-      # Specific identity for this appliance instance (merges with environment from base template)
       ARCHAPPL_MYIDENTITY: archappl0
+      ARCHAPPL_APPLIANCES: /usr/local/tomcat/archappl_conf/multipleappliances.xml
     volumes:
-      # Specific storage volume for this instance (merges with volumes from base template)
       - archapplstorage0:/usr/local/tomcat/storage/
-    depends_on: # depends_on is not inherited by 'extends'
+    depends_on:
       mariadb0:
-        condition: service_healthy # Wait for mariadb0 to be healthy
+        condition: service_healthy
 
   mariadb1:
     extends:
+      file: docker-compose.base.yml
       service: mariadb-base-template
-    hostname: mariadb1
+    hostname: mariadb
     networks:
       - archappl1net
     ports:
-      - "3307:3306" # Expose MariaDB on host port 3307
+      - "3307:3306"
     volumes:
       - archappldata1:/var/lib/mysql
 
   archappl1:
     extends:
-      service: archappl-base-template
+      file: docker-compose.base.yml
+      service: archappl-singletomcat-base-template
     hostname: archappl1
     networks:
+      - archapplnet
       - archappl1net
     ports:
-      - "8081:8080" # Expose Tomcat on host port 8081
+      - "8081:8080"
     environment:
       ARCHAPPL_MYIDENTITY: archappl1
+      ARCHAPPL_APPLIANCES: /usr/local/tomcat/archappl_conf/multipleappliances.xml
     volumes:
       - archapplstorage1:/usr/local/tomcat/storage/
-    depends_on: # depends_on is not inherited by 'extends'
+    depends_on:
       mariadb1:
         condition: service_healthy
 
   example-ioc:
-    build:
-      context: . # Build context is the current directory (where docker-compose.yml is)
-      dockerfile: Dockerfile.ioc
-    networks:
-      - archapplnet
-    stdin_open: true # Keep STDIN open
-    tty: true        # Allocate a pseudo-TTY
-    restart: always  # Always restart the IOC if it stops
-    volumes:
-      # Changed to a direct bind mount
-      - ./ioc:/usr/ioc
-    command: softIocPVA -m P=test -d /usr/ioc/UnitTestPVs.db
+    extends:
+      file: docker-compose.base.yml
+      service: example-ioc-base-template # Updated to use the new base
 
 networks:
-  archapplnet:    # Common network for inter-appliance communication and IOC
-  archappl0net:   # Isolated network for archappl0 and mariadb0
-  archappl1net:   # Isolated network for archappl1 and mariadb1
+  archapplnet:
+  archappl0net:
+  archappl1net:
 
 volumes:
-  archappldata0:    # Persistent data for mariadb0
-  archappldata1:    # Persistent data for mariadb1
-  archapplstorage0: # Persistent storage for archappl0
-  archapplstorage1: # Persistent storage for archappl1
-  # mariainit, archapplconfig, and ioc are no longer defined here as named volumes
-  # as they are now direct bind mounts in the service definitions.
+  archappldata0:
+  archappldata1:
+  archapplstorage0:
+  archapplstorage1:
