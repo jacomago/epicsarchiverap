@@ -326,6 +326,8 @@ public class DefaultConfigService implements ConfigService {
         String storeAllTypeInfosStr = this.getInstallationProperties().getProperty("org.epics.archiverappliance.config.StoreAllTypeInfos");
         if (storeAllTypeInfosStr != null && !storeAllTypeInfosStr.isEmpty()) {
             this.storeAllAppliancesTypeInfo = Boolean.parseBoolean(storeAllTypeInfosStr);
+        } else {
+            this.storeAllAppliancesTypeInfo = false;
         }
 
         switch (contextPath) {
@@ -841,7 +843,7 @@ public class DefaultConfigService implements ConfigService {
     }
 
     private boolean storeTypeInfoChangeInPersistance(PVTypeInfo typeInfo) {
-        return persistanceLayer != null && (!this.storeAllAppliancesTypeInfo || isOnThisAppliance(typeInfo));
+        return persistanceLayer != null && (this.storeAllAppliancesTypeInfo || isOnThisAppliance(typeInfo));
     }
 
     @Override
