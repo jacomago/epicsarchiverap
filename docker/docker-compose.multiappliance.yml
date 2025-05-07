@@ -1,3 +1,4 @@
+version: '3.7'
 
 services:
   # Base service definitions (not intended to be run directly but serve as templates)
@@ -9,8 +10,8 @@ services:
       MYSQL_USER: archappl
       MYSQL_PASSWORD: archappl
     volumes:
-      # Common initialization scripts for all MariaDB instances
-      - mariainit:/docker-entrypoint-initdb.d
+      # Changed to a direct bind mount
+      - ./archappl/conf/sql:/docker-entrypoint-initdb.d
     healthcheck:
       # Test command to check if MariaDB is responsive
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u$$MYSQL_USER", "-p$$MYSQL_PASSWORD"]
@@ -28,8 +29,8 @@ services:
       # Common environment variable, specific identity will be set per service
       ARCHAPPL_APPLIANCES: /usr/local/tomcat/archappl_conf/multipleappliances.xml
     volumes:
-      # Common configuration volume
-      - archapplconfig:/usr/local/tomcat/archappl_conf
+      # Changed to a direct bind mount
+      - ./archappl/conf:/usr/local/tomcat/archappl_conf
     networks:
       # All archappl instances connect to the common archapplnet
       - archapplnet
@@ -104,8 +105,8 @@ services:
     tty: true        # Allocate a pseudo-TTY
     restart: always  # Always restart the IOC if it stops
     volumes:
-      # Mount test resources for the IOC
-      - ioc:/usr/ioc
+      # Changed to a direct bind mount
+      - ./ioc:/usr/ioc
     command: softIocPVA -m P=test -d /usr/ioc/UnitTestPVs.db
 
 networks:
@@ -118,18 +119,5 @@ volumes:
   archappldata1:    # Persistent data for mariadb1
   archapplstorage0: # Persistent storage for archappl0
   archapplstorage1: # Persistent storage for archappl1
-  mariainit:        # Shared SQL initialization scripts for MariaDB
-    driver_opts:
-      type: none
-      device: ./archappl/conf/sql # Path relative to docker-compose.yml
-      o: bind
-  archapplconfig:   # Shared configuration files for archappl instances
-    driver_opts:
-      type: none
-      device: ./archappl/conf     # Path relative to docker-compose.yml
-      o: bind
-  ioc:             # Test resources for the example-ioc
-    driver_opts:
-      type: none
-      device: ./ioc
-      o: bind
+  # mariainit, archapplconfig, and ioc are no longer defined here as named volumes
+  # as they are now direct bind mounts in the service definitions.
