@@ -350,7 +350,6 @@ public class PVNames {
             logger.error("Channel " + channelName + " is invalid. Ends with '.'");
             return false;
         }
-        logger.info(channelNamePattern.pattern());
 
         Matcher matcher = channelNamePattern.matcher(channelName);
         if (!matcher.find()) {
