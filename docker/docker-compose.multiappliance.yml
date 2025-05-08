@@ -5,9 +5,9 @@ services:
     extends:
       file: docker-compose.base.yml
       service: mariadb-base-template
-    hostname: mariadb
+    hostname: mariadb0
     networks:
-      - archappl0net
+      - archapplnet
     ports:
       - "3306:3306"
     volumes:
@@ -20,12 +20,12 @@ services:
     hostname: archappl0
     networks:
       - archapplnet
-      - archappl0net
     ports:
       - "8080:8080"
     environment:
       ARCHAPPL_MYIDENTITY: archappl0
       ARCHAPPL_APPLIANCES: /usr/local/tomcat/archappl_conf/multipleappliances.xml
+      MARIADB_URL: "jdbc:mariadb://mariadb0:3306/archappl"
     volumes:
       - archapplstorage0:/usr/local/tomcat/storage/
     depends_on:
@@ -38,7 +38,7 @@ services:
       service: mariadb-base-template
     hostname: mariadb
     networks:
-      - archappl1net
+      - archapplnet
     ports:
       - "3307:3306"
     volumes:
@@ -51,12 +51,12 @@ services:
     hostname: archappl1
     networks:
       - archapplnet
-      - archappl1net
     ports:
       - "8081:8080"
     environment:
       ARCHAPPL_MYIDENTITY: archappl1
       ARCHAPPL_APPLIANCES: /usr/local/tomcat/archappl_conf/multipleappliances.xml
+      MARIADB_URL: "jdbc:mariadb://mariadb1:3306/archappl"
     volumes:
       - archapplstorage1:/usr/local/tomcat/storage/
     depends_on:
@@ -67,11 +67,11 @@ services:
     extends:
       file: docker-compose.base.yml
       service: example-ioc-base-template # Updated to use the new base
+    networks:
+      - archapplnet
 
 networks:
   archapplnet:
-  archappl0net:
-  archappl1net:
 
 volumes:
   archappldata0:
