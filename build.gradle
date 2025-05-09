@@ -162,7 +162,6 @@ tasks.register("generateBPLActionsMappings", JavaExec) {
 tasks.register("generateJavaDocTagletScriptables", JavaExec) {
     group = "Documentation"
     dependsOn "generateBPLActionsMappings"
-    dependsOn tasks.named('copyDocsToApiDocsForStage')
     mainClass = "org.epics.archiverappliance.common.taglets.ProcessMgmtScriptables"
     inputs.file(baseApiDocsDir.file("mgmt_scriptables.txt"))
     outputs.file(baseApiDocsDir.file("mgmt_scriptables.html"))
@@ -267,7 +266,6 @@ tasks.register("stage") {
     description = "Prepares all static content and necessary files in the staging directory."
     dependsOn(
             "javadoc",
-            "copyDocsToApiDocsForStage",
             "copyCommStaticContentToStage",
             "copyRetrievalStaticContentToStage",
             "copyMgmtStaticContentToStage",
@@ -327,10 +325,10 @@ tasks.register("mgmtWar", War) {
         include "*.sql"
         into "install"
     }
-    from(baseDocsDir.dir("docs/docs/build")) {
+    from(baseDocsDir.dir("docs/build")) {
         into "ui/help"
     }
-    from(baseDocsDir.dir("docs/docs/source/samples")) {
+    from(baseDocsDir.dir("docs/source/samples")) {
         include "deployMultipleTomcats.py"
         into "install"
     }
@@ -392,8 +390,8 @@ tasks.register("buildRelease", Tar) {
         def distributionsDir = layout.buildDirectory.dir("distributions")
 
         if (distributionsDir.get().asFile.exists()) {
-            logger.lifecycle("Deleting distributions directory: ${distributionsDir.get().asFile.absolutePath}.")
-            delete(distributionsDir)
+            logger.lifecycle("Deleting files in distributions directory: ${distributionsDir.get().asFile.absolutePath}.")
+            distributionsDir.get().files().forEach { it.delete() }
         } else {
             logger.info("Distributions directory ${distributionsDir.get().asFile.absolutePath} does not exist.")
         }
