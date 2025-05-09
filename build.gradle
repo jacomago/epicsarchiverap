@@ -222,14 +222,6 @@ tasks.register("stageSvgViewer", Zip) {
     destinationDirectory = baseStageDir.dir("org/epics/archiverappliance/retrieval/staticcontent")
 }
 
-// --- Staging Copy Tasks ---
-tasks.register("copyDocsToApiDocsForStage", Copy) {
-    group = "Staging Support"
-    description = "Copies general docs to the API docs directory for staging."
-    from baseDocsDir.files("*.{html,css,js,txt,json}") // More specific, adjust as needed
-    into baseApiDocsDir
-}
-
 tasks.register("copyCommStaticContentToStage", Copy) {
     group = "Staging Support"
     description = "Copies common static content to the staging area."
@@ -300,7 +292,7 @@ tasks.register("sphinx", Exec) {
     description = "Generate the documentation site."
     dependsOn "javadoc"
     workingDir baseDocsDir.asFile
-    outputs.dir(baseDocsDir.dir("docs/build")) // Corrected path
+    outputs.dir(baseDocsDir.dir("docs/build"))
     if (System.getProperty('os.name').toLowerCase().contains('windows')) {
         commandLine 'cmd', '/c', 'build_docs.bat'
     } else {
@@ -327,6 +319,7 @@ tasks.withType(War).configureEach {
 tasks.register("mgmtWar", War) {
     group = "Wars"
     dependsOn "sphinx"
+    dependsOn "stage"
     from(baseStageDir.dir("org/epics/archiverappliance/mgmt/staticcontent")) {
         into "ui"
     }
@@ -394,6 +387,18 @@ tasks.register("buildRelease", Tar) {
 
     archiveFileName = "archappl_v${project.version}.tar.gz" // Use project.version
     compression = Compression.GZIP
+
+    doFirst {
+        def distributionsDir = layout.buildDirectory.dir("distributions")
+
+        if (distributionsDir.get().asFile.exists()) {
+            logger.lifecycle("Deleting distributions directory: ${distributionsDir.get().asFile.absolutePath}.")
+            delete(distributionsDir)
+        } else {
+            logger.info("Distributions directory ${distributionsDir.get().asFile.absolutePath} does not exist.")
+        }
+    }
+
     from(layout.buildDirectory.file("libs/mgmt.war"))
     from(layout.buildDirectory.file("libs/engine.war"))
     from(layout.buildDirectory.file("libs/etl.war"))
