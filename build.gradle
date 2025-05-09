@@ -423,6 +423,10 @@ tasks.withType(Test).configureEach {
 	maxParallelForks = runTestsSequentially.toBoolean() ? 1 : ( Runtime.runtime.availableProcessors().intdiv(2) ?: 1 )
 
 	doFirst {
+		// Use WebDriverManager to setup geckodriver
+		// This will download and cache the driver executable
+		System.setProperty("webdriver.gecko.driver", io.github.bonigarcia.wdm.WebDriverManager.firefoxdriver().setup());
+
 		mkdir file("${temporaryDir}/sts")
 		mkdir file("${temporaryDir}/mts")
 		mkdir file("${temporaryDir}/lts")
@@ -440,7 +444,6 @@ tasks.withType(Test).configureEach {
 
 	maxHeapSize = "1G"
 	jvmArgs = [
-			"-Dwebdriver.gecko.driver=${libDir}/test/geckodriver-v0.24.0-linux64/geckodriver",
 			"-Dlog4j1.compatibility=\"true\""
 	]
 
