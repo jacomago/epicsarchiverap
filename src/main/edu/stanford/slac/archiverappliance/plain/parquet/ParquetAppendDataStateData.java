@@ -1,15 +1,21 @@
 package edu.stanford.slac.archiverappliance.plain.parquet;
 
+import com.google.protobuf.Message;
 import edu.stanford.slac.archiverappliance.PB.data.DBR2PBMessageTypeMapping;
 import edu.stanford.slac.archiverappliance.plain.AppendDataStateData;
 import edu.stanford.slac.archiverappliance.plain.PathResolver;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.parquet.ParquetReadOptions;
+import org.apache.parquet.conf.ParquetConfiguration;
+import org.apache.parquet.conf.PlainParquetConfiguration;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.hadoop.rewrite.ParquetRewriter;
 import org.apache.parquet.hadoop.rewrite.RewriteOptions;
+import org.apache.parquet.io.InputFile;
+import org.apache.parquet.io.LocalInputFile;
+import org.apache.parquet.io.LocalOutputFile;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.BasicContext;
@@ -29,14 +35,14 @@ import java.util.List;
 /**
  * ParquetAppendDataStateData extends AppendDataStateData to support writing data to Parquet files.
  */
-public class ParquetAppendDataStateData extends AppendDataStateData {
+public class ParquetAppendDataStateData<T extends Message> extends AppendDataStateData {
     private static final Logger logger = LogManager.getLogger(ParquetAppendDataStateData.class.getName());
     private static final String TEMP_FILE_PREFIX = "~";
-    private final Configuration configuration;
+    private final ParquetReadOptions readOptions;
     private final CompressionCodecName compressionCodecName;
-    EpicsParquetWriter.Builder<Object> writerBuilder;
+    EpicsParquetWriter.Builder writerBuilder;
     private Path tempFile;
-    private ParquetWriter<Object> writer;
+    private ParquetWriter<Message> writer;
 
     /**
      * ParquetAppendDataStateData extends AppendDataStateData to support writing data to Parquet files.
@@ -56,11 +62,11 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
             Instant lastKnownTimestamp,
             CompressionCodecName compressionCodecName,
             PVNameToKeyMapping pv2key,
-            Configuration configuration,
+            ParquetReadOptions readOptions,
             PathResolver pathResolver) {
         super(partitionGranularity, rootFolder, desc, lastKnownTimestamp, pv2key, pathResolver);
         this.compressionCodecName = compressionCodecName;
-        this.configuration = configuration;
+        this.readOptions = readOptions;
     }
 
     /**
@@ -78,9 +84,9 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
         if (inPaths.contains(outTempPath)) {
             outTempPath = getOutTempPath(outTempPath);
         }
-        List<org.apache.hadoop.fs.Path> rewriteInPaths = new ArrayList<>();
+        List<InputFile> rewriteInPaths = new ArrayList<>();
         if (Files.exists(outPath)) {
-            if (new ParquetInfo(outPath, this.configuration).getFirstEvent() == null) {
+            if (new ParquetInfo(outPath, this.readOptions).getFirstEvent() == null) {
                 // if the file is effectively empty, delete it
                 Files.delete(outPath);
                 Path outCheckSumPath = getCheckSumPath(outPath);
@@ -92,23 +98,21 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
                     return;
                 }
             } else {
-                rewriteInPaths.add(new org.apache.hadoop.fs.Path(outPath.toUri()));
+                rewriteInPaths.add(new LocalInputFile(outPath));
             }
         }
         rewriteInPaths.addAll(inPaths.stream()
-                .map(p -> new org.apache.hadoop.fs.Path(p.toUri()))
+                .map(LocalInputFile::new)
                 .toList());
-        Configuration conf = new Configuration();
+        ParquetConfiguration conf = new PlainParquetConfiguration();
         RewriteOptions.Builder rewriteOptionsBuilder =
-                new RewriteOptions.Builder(conf, rewriteInPaths, new org.apache.hadoop.fs.Path(outTempPath.toUri()));
+                new RewriteOptions.Builder(conf, rewriteInPaths, new LocalOutputFile(outTempPath));
         if (recompress) {
             rewriteOptionsBuilder = rewriteOptionsBuilder.transform(compressionCodecName);
         }
         RewriteOptions rewriteOptions = rewriteOptionsBuilder.build();
-        try {
-            ParquetRewriter rewriter = new ParquetRewriter(rewriteOptions);
+        try (ParquetRewriter rewriter = new ParquetRewriter(rewriteOptions)){
             rewriter.processBlocks();
-            rewriter.close();
         } catch (Exception e) {
             logger.error("Failed to combine files {}", rewriteInPaths, e);
             throw e;
@@ -134,7 +138,7 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
     public void updateStateBasedOnExistingFile(String pvName, Path currentPVFilePath) throws IOException {
         logger.debug("parquet updateStateBasedOnExistingFile  pv {} pvPath {} ", pvName, currentPVFilePath);
 
-        ParquetInfo info = new ParquetInfo(currentPVFilePath, configuration);
+        ParquetInfo info = new ParquetInfo(currentPVFilePath, readOptions);
         if (!info.getPVName().equals(pvName))
             throw new IOException("Trying to append data for " + pvName + " to a file " + currentPVFilePath
                     + " that has data for " + info.getPVName());
@@ -173,11 +177,11 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
                 + " of type " + stream.getDescription().getArchDBRType()
                 + " of PBPayload "
                 + stream.getDescription().getArchDBRType().getPBPayloadType());
-        var hadoopPath = new org.apache.hadoop.fs.Path(pvPath.toUri());
+        var localOutputFile = new LocalOutputFile(pvPath);
         var messageClass =
                 DBR2PBMessageTypeMapping.getMessageClass(stream.getDescription().getArchDBRType());
         assert messageClass != null;
-        this.writerBuilder = EpicsParquetWriter.builder(hadoopPath)
+        this.writerBuilder = EpicsParquetWriter.builder(localOutputFile)
                 .withMessage(messageClass)
                 .withPVName(pvName)
                 .withYear(this.currentEventsYear)
@@ -236,15 +240,15 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
         }
     }
 
-    public EpicsParquetWriter.Builder<Object> buildWriterExistingFile(Path currentPVPath, ParquetInfo info) {
+    public EpicsParquetWriter.Builder buildWriterExistingFile(Path currentPVPath, ParquetInfo info) {
         logger.debug("parquet buildWriterExistingFile  pvPath {} fileInfo {} ", currentPVPath, info);
         var tempCurrentPVPath = Path.of(
                 currentPVPath.toAbsolutePath().getParent().toString(), TEMP_FILE_PREFIX + currentPVPath.getFileName());
         this.tempFile = tempCurrentPVPath;
-        var newHadoopPath = new org.apache.hadoop.fs.Path(tempCurrentPVPath.toUri());
+        var newOutputFile = new LocalOutputFile(tempCurrentPVPath);
         var messageClass = DBR2PBMessageTypeMapping.getMessageClass(info.getType());
 
-        return EpicsParquetWriter.builder(newHadoopPath)
+        return EpicsParquetWriter.builder(newOutputFile)
                 .withMessage(messageClass)
                 .withPVName(info.getPVName())
                 .withYear(info.getDataYear())
@@ -324,8 +328,8 @@ public class ParquetAppendDataStateData extends AppendDataStateData {
 
     @Override
     public String toString() {
-        return "ParquetAppendDataStateData{" + "configuration="
-                + configuration + ", writerBuilder="
+        return "ParquetAppendDataStateData{" + "readOptions="
+                + readOptions + ", writerBuilder="
                 + writerBuilder + ", tempFile="
                 + tempFile + ", writer="
                 + writer + ", rootFolder='"
