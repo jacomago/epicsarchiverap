@@ -177,6 +177,8 @@ dependencies {
 	testImplementation(":pbrawclient:0.2.2")
 	testImplementation("org.apache.tomcat:tomcat-servlet-api:${findProperty("tomcatVersion")}")
 	testImplementation("org.mockito:mockito-core:5.21.0")
+	testImplementation("org.apache.tomcat.embed:tomcat-embed-core:${findProperty("tomcatVersion")}")
+	testImplementation("org.apache.tomcat.embed:tomcat-embed-jasper:${findProperty("tomcatVersion")}")
 }
 
 // =================================================================
