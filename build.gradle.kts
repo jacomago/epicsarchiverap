@@ -597,20 +597,6 @@ tasks.register<Test>("flakyTests") {
 	}
 }
 
-tasks.register<Exec>("shutdownAllTomcats") {
-	group = "Test"
-	description = "Task to shut down all tomcats after running integration tests, if they didn't shut down correctly."
-	setIgnoreExitValue(true)
-	// pkill is not available on Windows, so only run this on non-Windows systems.
-	if (!Os.isFamily(Os.FAMILY_WINDOWS)) {
-		commandLine("pkill", "-9", "-f", "Deaatag=eaatesttm")
-	} else {
-		doFirst {
-			logger.warn("pkill for tomcat shutdown is not supported on Windows. Skipping.")
-		}
-	}
-}
-
 tasks.register("integrationTestSetup") {
 	group = "Test"
 	description = "Setup for Integration Tests by backing up Tomcat's conf directory."
@@ -652,7 +638,6 @@ tasks.register<Test>("integrationTests") {
 		includeTags("integration")
 		excludeTags("slow", "flaky")
 	}
-	finalizedBy("shutdownAllTomcats")
 }
 
 tasks.register<Test>("epicsTests") {
@@ -698,7 +683,6 @@ tasks.register<Test>("automationTests") {
 	useJUnitPlatform {
 		// No include/exclude means run all tests
 	}
-	finalizedBy("shutdownAllTomcats")
 }
 
 tasks.register<JavaExec>("testRun") {
