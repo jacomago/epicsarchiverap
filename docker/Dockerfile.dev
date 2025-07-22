@@ -44,21 +44,6 @@ COPY --from=epics-download-extract /epics /epics
 RUN mv "base-${EPICSVERSION}" base
 RUN cd base && make -j$(nproc)
 
-# Stage: Download and extract Tomcat
-# This stage is responsible only for getting the Tomcat binaries.
-FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS tomcat-download-extract
-ARG TOMCAT_VERSION=9.0.79
-SHELL ["/bin/bash", "-c"]
-RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certificates \
-    && mkdir /tomcat \
-    && wget -q --show-progress "https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz" -O /tmp/tomcat.tar.gz \
-    # Use --strip-components=1 to avoid the nested apache-tomcat-* directory
-    && tar -xf /tmp/tomcat.tar.gz -C /tomcat --strip-components=1 \
-    && rm /tmp/tomcat.tar.gz \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Stage: Final development image
-# This stage assembles the final image with Java, EPICS, Tomcat, and other tools.
 FROM base-$TARGETARCH AS gradle-base
 
 # Combine all package installations into a single RUN layer to reduce image size
@@ -79,8 +64,6 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy artifacts from previous stages
-COPY --from=tomcat-download-extract /tomcat /tomcat
 COPY --from=build-epics /epics /epics
 
 # Set up environment variables
