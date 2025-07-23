@@ -27,6 +27,7 @@ import org.json.simple.JSONValue;
 
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -255,11 +256,7 @@ public class MetaGet implements Runnable {
             for (int i = 0; i < elementCount; i++) {
                 byte byteValue = vectorValue.getValue(i).byteValue();
                 if (byteValue == 0) {
-                    try {
-                        nameDollar = new String(namebuf, 0, i, "UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                        logger.fatal(e.getMessage(), e);
-                    }
+                    nameDollar = new String(namebuf, 0, i, StandardCharsets.UTF_8);
                     break;
                 }
                 namebuf[i] = byteValue;

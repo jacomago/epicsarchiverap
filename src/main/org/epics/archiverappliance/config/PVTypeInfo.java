@@ -424,7 +424,7 @@ public class PVTypeInfo implements Serializable {
 		}
 		HashMap<String, String> otherMetaInfo = metaInfo.getOtherMetaInfo();
 		for(String extraName : otherMetaInfo.keySet()) {
-			extraFields.put(extraName, otherMetaInfo.get(extraName).toString());
+			extraFields.put(extraName, otherMetaInfo.get(extraName));
 		}
 	}
 
@@ -515,10 +515,8 @@ public class PVTypeInfo implements Serializable {
 		if(fieldName.equals("VAL")) return;
 
 		HashSet<String> newFields = new HashSet<String>();
-		if(this.archiveFields != null) { 
-			for(String fieldBeingArchived : this.archiveFields) {
-				newFields.add(fieldBeingArchived);
-			}
+		if(this.archiveFields != null) {
+            newFields.addAll(Arrays.asList(this.archiveFields));
 		}
 		newFields.add(fieldName);
 		this.archiveFields = newFields.toArray(new String[0]);

@@ -36,12 +36,12 @@ import java.util.concurrent.TimeUnit;
  *
  */
 public class MgmtRuntimeState {
-	private ConfigService configService;
-	private Map<String, ArchivePVState> currentPVRequests = Collections.synchronizedMap(new HashMap<String, ArchivePVState>());
-	private static Logger logger = LogManager.getLogger(MgmtRuntimeState.class.getName());
-	private static Logger configlogger = LogManager.getLogger("config." + MgmtRuntimeState.class.getName());
-	private String myIdentity;
-	private ConcurrentSkipListSet<WAR_FILE> componentsThatHaveCompletedStartup = new ConcurrentSkipListSet<WAR_FILE>();
+	private final ConfigService configService;
+	private final Map<String, ArchivePVState> currentPVRequests = Collections.synchronizedMap(new HashMap<String, ArchivePVState>());
+	private static final Logger logger = LogManager.getLogger(MgmtRuntimeState.class.getName());
+	private static final Logger configlogger = LogManager.getLogger("config." + MgmtRuntimeState.class.getName());
+	private final String myIdentity;
+	private final ConcurrentSkipListSet<WAR_FILE> componentsThatHaveCompletedStartup = new ConcurrentSkipListSet<WAR_FILE>();
 	/**
 	 * Throttle the archive PV workflow to this many PV's at a time. 
 	 * This seems to control the resource consumption during archive requests well
@@ -98,26 +98,18 @@ public class MgmtRuntimeState {
 	
 	
 	private static int threadNumber = 1;
-	ScheduledExecutorService archivePVWorkflow = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-		@Override
-		public Thread newThread(Runnable r) {
-			Thread t = new Thread(r);
-			t.setName("MgmtArchivePVWorkflow" + threadNumber++);
-			return t;
-		}
-	});
+	ScheduledExecutorService archivePVWorkflow = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r);
+        t.setName("MgmtArchivePVWorkflow" + threadNumber++);
+        return t;
+    });
 	
 	private ScheduledFuture<?> theArchiveWorkflow = null;
 	
 	public MgmtRuntimeState(final ConfigService configService) {
 		this.configService = configService;
 		myIdentity = this.configService.getMyApplianceInfo().getIdentity();
-		configService.addShutdownHook(new Runnable() {
-			@Override
-			public void run() {
-				archivePVWorkflow.shutdown();
-			}
-		});
+		configService.addShutdownHook(() -> archivePVWorkflow.shutdown());
 		configService.getEventBus().register(this);
 		Properties installationProperties = configService.getInstallationProperties();
 		String batchSizeName = "org.epics.archiverappliance.mgmt.MgmtRuntimeState.archivePVWorkflowBatchSize";
@@ -147,58 +139,51 @@ public class MgmtRuntimeState {
 	}
 	
 	private void startArchivePVWorkflow(int initialDelayInSeconds) {
-		theArchiveWorkflow = archivePVWorkflow.scheduleAtFixedRate(new Runnable() {
+		theArchiveWorkflow = archivePVWorkflow.scheduleAtFixedRate(() -> {
+            try {
+                if(!configService.hasClusterFinishedInitialization()) {
+                    // If you have defined spare appliances in the appliances.xml that will never come up; you should remove them
+                    // This seems to be one of the few ways we can prevent split brain clusters from messing up the pv <-> appliance mapping.
+                    configlogger.info("Waiting for all the appliances listed in appliances.xml to finish loading up their PVs into the cluster");
+                    return;
+                }
+                LinkedList<ArchivePVState> archivePVStates = new LinkedList<ArchivePVState>(currentPVRequests.values());
+                logger.info("Running the archive PV workflow with " + archivePVStates.size() + " requests pending");
+                archivePVStates.sort((state0, state1) -> {
+                    if (state0.getStartOfWorkflow().equals(state1.getStartOfWorkflow())) {
+                        return state0.getPvName().compareTo(state1.getPvName());
+                    } else {
+                        return state0.getStartOfWorkflow().compareTo(state1.getStartOfWorkflow());
+                    }
+                });
+                int totRequests = archivePVStates.size();
+                int maxRequestsToProcess = Math.min(archivePVWorkflowBatchSize, totRequests);
+                int pvCount = 0;
+                while(pvCount < maxRequestsToProcess) {
+                    ArchivePVState runWorkFlowForPV = archivePVStates.pop();
+                    String pvName = runWorkFlowForPV.getPvName();
+                    // It takes a few minutes for the workflow to complete; so you should be setting this to a reasonably high value.
+                    if(abortArchiveWorkflowInMins > 0
+                            && ( runWorkFlowForPV.getCurrentState() != ArchivePVStateMachine.START )
+                            && runWorkFlowForPV.getMetaInfoRequestedSubmitted() != null
+&& (TimeUtils.now().toEpochMilli() - runWorkFlowForPV.getMetaInfoRequestedSubmitted().toEpochMilli()) > abortArchiveWorkflowInMins * 60 * 1000) {
+                        try {
+                            runWorkFlowForPV.setAbortReason("Aborting PV after user specified timeout " + TimeUtils.convertToHumanReadableString(runWorkFlowForPV.getMetaInfoRequestedSubmitted()));
+                            abortPVWorkflow(pvName);
+                        } catch(Exception ex) {
+                            logger.error("Exception aborting PV after timeout " + pvName, ex);
+                        }
+                    } else {
+                        logger.debug("Running the next step in the workflow for PV " + pvName);
+                        runWorkFlowForPV.nextStep();
+                    }
+                    pvCount++;
+                }
+            } catch(Throwable t) {
+                logger.error("Exception processing next step in archive PV workflow", t);
+            }
 
-			@Override
-			public void run() {
-				try {
-					if(!configService.hasClusterFinishedInitialization()) {
-						// If you have defined spare appliances in the appliances.xml that will never come up; you should remove them
-						// This seems to be one of the few ways we can prevent split brain clusters from messing up the pv <-> appliance mapping.
-						configlogger.info("Waiting for all the appliances listed in appliances.xml to finish loading up their PVs into the cluster");
-						return;
-					}
-					LinkedList<ArchivePVState> archivePVStates = new LinkedList<ArchivePVState>(currentPVRequests.values());
-					logger.info("Running the archive PV workflow with " + archivePVStates.size() + " requests pending");
-					Collections.sort(archivePVStates, new Comparator<ArchivePVState>() {
-						@Override
-						public int compare(ArchivePVState state0, ArchivePVState state1) {
-							if(state0.getStartOfWorkflow().equals(state1.getStartOfWorkflow())) {
-								return state0.getPvName().compareTo(state1.getPvName());
-							} else {
-								return state0.getStartOfWorkflow().compareTo(state1.getStartOfWorkflow());
-							}
-						}
-					});
-					int totRequests = archivePVStates.size();
-					int maxRequestsToProcess = Math.min(archivePVWorkflowBatchSize, totRequests);
-					int pvCount = 0;
-					while(pvCount < maxRequestsToProcess) {
-						ArchivePVState runWorkFlowForPV = archivePVStates.pop();
-						String pvName = runWorkFlowForPV.getPvName();
-						// It takes a few minutes for the workflow to complete; so you should be setting this to a reasonably high value.
-						if(abortArchiveWorkflowInMins > 0
-								&& ( runWorkFlowForPV.getCurrentState() != ArchivePVStateMachine.START )
-								&& runWorkFlowForPV.getMetaInfoRequestedSubmitted() != null
-                                && (TimeUtils.now().toEpochMilli() - runWorkFlowForPV.getMetaInfoRequestedSubmitted().toEpochMilli()) > abortArchiveWorkflowInMins * 60 * 1000) {
-							try {
-								runWorkFlowForPV.setAbortReason("Aborting PV after user specified timeout " + TimeUtils.convertToHumanReadableString(runWorkFlowForPV.getMetaInfoRequestedSubmitted()));
-								abortPVWorkflow(pvName);
-							} catch(Exception ex) {
-								logger.error("Exception aborting PV after timeout " + pvName, ex);
-							}
-						} else {
-							logger.debug("Running the next step in the workflow for PV " + pvName);
-							runWorkFlowForPV.nextStep();
-						}
-						pvCount++;
-					}
-				} catch(Throwable t) {
-					logger.error("Exception processing next step in archive PV workflow", t);
-				}
-
-			}
-		}, initialDelayInSeconds, archivePVWorkflowTickSeconds, TimeUnit.SECONDS);
+        }, initialDelayInSeconds, archivePVWorkflowTickSeconds, TimeUnit.SECONDS);
 	}
 	
 	public List<NeverConnectedRequestState> getNeverConnectedRequests() {
@@ -217,40 +202,45 @@ public class MgmtRuntimeState {
 	}	
 	
 	
-	@Subscribe public void computeMetaInfo(PubSubEvent pubSubEvent) {
+	@Subscribe
+	public void computeMetaInfo(PubSubEvent pubSubEvent) {
 		if(pubSubEvent.getDestination().equals("ALL") 
 				|| (pubSubEvent.getDestination().startsWith(myIdentity) && pubSubEvent.getDestination().endsWith(ConfigService.WAR_FILE.MGMT.toString()))) {
-			if(pubSubEvent.getType().equals("MetaInfoRequested")) {
-				String pvName = pubSubEvent.getPvName();
-				logger.debug("MetaInfoRequested for " + pvName);
-				ArchivePVState pvState = currentPVRequests.get(pvName);
-				if(pvState != null) {
-					pvState.metaInfoRequestAcknowledged();
-				}
-			} else if (pubSubEvent.getType().equals("MetaInfoFinished")) {
-				String pvName = pubSubEvent.getPvName();
-				logger.debug("MetaInfoFinished for " + pvName);
-				ArchivePVState pvState = currentPVRequests.get(pvName);
-				if(pvState != null) {
-					try {
-						MetaInfo metaInfo = new MetaInfo();
-						JSONObject metaInfoObj = (JSONObject) JSONValue.parse(pubSubEvent.getEventData());
-						JSONDecoder<MetaInfo> decoder = JSONDecoder.getDecoder(MetaInfo.class);
-						decoder.decode(metaInfoObj, metaInfo);
-						pvState.metaInfoObtained(metaInfo);
-					} catch(Exception ex) {
-						logger.error("Exception processing metainfo for pv " + pvName, ex);
-						pvState.errorGettingMetaInfo();
-					}
-				}
-			} else if (pubSubEvent.getType().equals("StartedArchivingPV")) {
-				String pvName = pubSubEvent.getPvName();
-				logger.debug("Stared archiving pv confirmation for " + pvName);
-				ArchivePVState pvState = currentPVRequests.get(pvName);
-				if(pvState != null) {
-					pvState.confirmedStartedArchivingPV();
-				}
-			}
+            switch (pubSubEvent.getType()) {
+                case "MetaInfoRequested" -> {
+                    String pvName = pubSubEvent.getPvName();
+                    logger.debug("MetaInfoRequested for " + pvName);
+                    ArchivePVState pvState = currentPVRequests.get(pvName);
+                    if (pvState != null) {
+                        pvState.metaInfoRequestAcknowledged();
+                    }
+                }
+                case "MetaInfoFinished" -> {
+                    String pvName = pubSubEvent.getPvName();
+                    logger.debug("MetaInfoFinished for " + pvName);
+                    ArchivePVState pvState = currentPVRequests.get(pvName);
+                    if (pvState != null) {
+                        try {
+                            MetaInfo metaInfo = new MetaInfo();
+                            JSONObject metaInfoObj = (JSONObject) JSONValue.parse(pubSubEvent.getEventData());
+                            JSONDecoder<MetaInfo> decoder = JSONDecoder.getDecoder(MetaInfo.class);
+                            decoder.decode(metaInfoObj, metaInfo);
+                            pvState.metaInfoObtained(metaInfo);
+                        } catch (Exception ex) {
+                            logger.error("Exception processing metainfo for pv " + pvName, ex);
+                            pvState.errorGettingMetaInfo();
+                        }
+                    }
+                }
+                case "StartedArchivingPV" -> {
+                    String pvName = pubSubEvent.getPvName();
+                    logger.debug("Stared archiving pv confirmation for " + pvName);
+                    ArchivePVState pvState = currentPVRequests.get(pvName);
+                    if (pvState != null) {
+                        pvState.confirmedStartedArchivingPV();
+                    }
+                }
+            }
 		} else {
 			logger.debug("Skipping processing event meant for " + pubSubEvent.getDestination());
 		}
@@ -284,7 +274,7 @@ public class MgmtRuntimeState {
 		logger.info("Done starting archive requests");
 	}
 
-	public class NeverConnectedRequestState {
+	public static class NeverConnectedRequestState {
 		String pvName;
         Instant metInfoRequestSubmitted;
         Instant startOfWorkflow;

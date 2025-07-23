@@ -64,7 +64,7 @@ public class DbdArchiveTest {
             String archivePVURL = mgmtUrl + "archivePV?pv=";
 
             GetUrlContent.getURLContentAsJSONArray(archivePVURL + pvURLName);
-            waitForStatusChange(fullPVName, "Being archived", 60, mgmtUrl, 10);
+            waitForStatusChange(fullPVName, "Being archived", 60, mgmtUrl, 5);
 
             SIOCSetup.caput(pvName, 0);
             SIOCSetup.caput(pvName, 0.1);

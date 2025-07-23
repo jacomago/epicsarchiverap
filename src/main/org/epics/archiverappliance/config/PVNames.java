@@ -142,6 +142,8 @@ public class PVNames {
             }
             return newName;
         }
+        if (channelName.endsWith("."))
+            return channelName.substring(0, channelName.length() - 1);
         return channelName;
     }
 
@@ -172,7 +174,7 @@ public class PVNames {
         if (isFieldOrFieldModifier(srcName)) {
             return normalizePVNameWithField(destName, getGroupMatch(srcName, GROUP_FIELD_NAME));
         } else {
-            return destName;
+            return normalizeChannelName(destName);
         }
     }
 

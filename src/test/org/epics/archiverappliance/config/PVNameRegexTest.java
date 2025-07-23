@@ -1,6 +1,7 @@
 package org.epics.archiverappliance.config;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -8,6 +9,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 import java.util.stream.Stream;
+
+import static org.epics.archiverappliance.config.PVNames.channelNamePVName;
+import static org.epics.archiverappliance.config.PVNames.transferField;
 
 /**
  * Small unit test to make sure the regex that checks for valid pv names does something reasonable
@@ -100,5 +104,24 @@ public class PVNameRegexTest {
         Assertions.assertFalse(PVNames.isValidChannelName(pvName), "Invalid pvName is deemed valid " + pvName);
 
         Assertions.assertFalse(PVNames.isValidChannelName(null), "null is deemed invalid");
+    }
+
+    @Test
+    void testChannelNamePVName() {
+        validPVNames.forEach(
+            pvName -> validFieldNames.forEach(
+                fieldName -> Assertions.assertEquals(pvName, channelNamePVName(pvName + fieldName))
+            )
+        );
+    }
+    @Test
+    void testTransferField() {
+        validPVNames.forEach(
+            pvName -> validFieldNames.forEach(
+                fieldName -> Assertions.assertEquals(pvName + fieldName, transferField("blank" + fieldName, pvName))
+            )
+        );
+        Assertions.assertEquals("pvName", transferField("blank.", "pvName"));
+        Assertions.assertEquals("pvName", transferField("blank", "pvName."));
     }
 }
