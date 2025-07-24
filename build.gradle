@@ -124,7 +124,7 @@ dependencies {
 	permitUnusedDeclared("org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0")
 	implementation("org.apache.logging.log4j:log4j-jul:2.20.0")
 	permitUnusedDeclared("org.apache.logging.log4j:log4j-jul:2.20.0")
-	runtimeOnly("org.apache.logging.log4j:log4j-core:2.20.0")
+	implementation("org.apache.logging.log4j:log4j-core:2.20.0")
 	runtimeOnly("org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0")
 	implementation("com.lmax:disruptor:3.4.4") // Needed for async logging, needs to be in sync with log4j2
 	runtimeOnly("org.mariadb.jdbc:mariadb-java-client:3.3.3")
@@ -136,6 +136,8 @@ dependencies {
 	testImplementation('org.awaitility:awaitility:4.2.0')
 	implementation("org.phoebus:core-pva:5.0.2")
 	runtimeOnly("org.mariadb.jdbc:mariadb-java-client:3.1.4")
+	testImplementation 'org.apache.tomcat.embed:tomcat-embed-core:9.0.79'
+	testImplementation 'org.apache.tomcat.embed:tomcat-embed-jasper:9.0.79'
 }
 
 tasks.register("cleanApiDocs", Delete) {
@@ -349,7 +351,7 @@ tasks.register("engineWar", War) {
 	webXml = file("${srcDir}/org/epics/archiverappliance/engine/WEB-INF/web.xml")
 }
 
-tasks.register("retreivalWar", War) {
+tasks.register("retrievalWar", War) {
 	group = "Wars"
 	dependsOn "stageSvgViewer"
 	from("${stageDir}/org/epics/archiverappliance/retrieval/staticcontent") {
@@ -364,7 +366,7 @@ tasks.register("buildRelease", Tar) {
 	group = "Wars"
 	description = "Builds a full release and zips up in a tar file."
 	dependsOn "mgmtWar"
-	dependsOn "retreivalWar"
+	dependsOn "retrievalWar"
 	dependsOn "etlWar"
 	dependsOn "engineWar"
 	dependsOn "generateReleaseNotes"
@@ -451,6 +453,34 @@ tasks.withType(Test).configureEach {
 	}
 }
 
+tasks.register("explodeMgmt", Copy) {
+	group = "wars"
+	dependsOn("mgmtWar")
+	doNotTrackState("ignore executable files")
+	into layout.buildDirectory.file("exploded/mgmt")
+	from project.zipTree(mgmtWar.archiveFile)
+}
+tasks.register("explodeEngine", Sync) {
+	group = "wars"
+	dependsOn("engineWar")
+	into layout.buildDirectory.file("exploded/engine")
+	from project.zipTree(engineWar.archiveFile)
+}
+tasks.register("explodeRetrieval", Sync) {
+	group = "wars"
+	dependsOn("retrievalWar")
+	into layout.buildDirectory.file("exploded/retrieval")
+	from project.zipTree(retrievalWar.archiveFile)
+}
+tasks.register("explodeETL", Sync) {
+	group = "wars"
+	dependsOn("etlWar")
+	into layout.buildDirectory.file("exploded/etl")
+	from project.zipTree(etlWar.archiveFile)
+}
+tasks.register("explodeWars") {
+	dependsOn("explodeMgmt", "explodeEngine", "explodeRetrieval", "explodeETL")
+}
 tasks.register("unitTests", Test) {
 	group = "Test"
 	description = "Run all unit tests."
@@ -472,30 +502,10 @@ tasks.register("flakyTests", Test) {
 	}
 }
 
-tasks.register("shutdownAllTomcats", Exec) {
-	group = "test"
-	description "task to shut down all tomcats after running integration tests," +
-			" if they didn't shut down correctly."
-	ignoreExitValue true
-	commandLine "echo", "This is where we kill any lingering tomcats using a special tag"
-	commandLine "pkill", "-9", "-f", "Deaatag=eaatesttm"
-}
-
 tasks.register("integrationTestSetup", Copy) {
 	group = "Test"
 	description = "Setup for Integration Tests."
-	dependsOn("buildRelease")
-	it.inputs.dir("$System.env.TOMCAT_HOME/conf")
-	it.outputs.dir("$System.env.TOMCAT_HOME/conf_original")
-	// backup the original tomcat conf folder
-	// if not already done. See org.epics.archiverappliance.TomcatSetup
-	def catalinaConf = file("$System.env.TOMCAT_HOME/conf_original")
-	if (!catalinaConf.exists()) {
-		copy {
-			from "$System.env.TOMCAT_HOME/conf"
-			into "$System.env.TOMCAT_HOME/conf_original"
-		}
-	}
+	dependsOn("explodeWars")
 }
 
 tasks.register("integrationTests", Test) {
@@ -509,7 +519,6 @@ tasks.register("integrationTests", Test) {
 		excludeTags "slow",
 				"flaky"
 	}
-	finalizedBy "shutdownAllTomcats"
 }
 
 tasks.register("epicsTests", Test) {
@@ -564,7 +573,6 @@ tasks.register("automationTests", Test) {
 	dependsOn("integrationTestSetup")
 	useJUnitPlatform {
 	}
-	finalizedBy "shutdownAllTomcats"
 }
 
 
