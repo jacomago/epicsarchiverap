@@ -181,10 +181,10 @@ public class TomcatSetup {
         tomcat.getConnector();
 
         // Deploy all webapps
-        tomcat.addWebapp("/mgmt", new File("./build/libs/mgmt.war").getAbsolutePath());
-        tomcat.addWebapp("/retrieval", new File("./build/libs/retrieval.war").getAbsolutePath());
-        tomcat.addWebapp("/etl", new File("./build/libs/etl.war").getAbsolutePath());
-        tomcat.addWebapp("/engine", new File("./build/libs/engine.war").getAbsolutePath());
+        tomcat.addWebapp("/mgmt", new File("./build/exploded/mgmt").getAbsolutePath());
+        tomcat.addWebapp("/retrieval", new File("./build/exploded/retrieval").getAbsolutePath());
+        tomcat.addWebapp("/etl", new File("./build/exploded/etl").getAbsolutePath());
+        tomcat.addWebapp("/engine", new File("./build/exploded/engine").getAbsolutePath());
 
         // Configure system properties for this instance before starting
         configureSystemPropertiesForInstance(testName, applianceName, appliancesXML);

@@ -571,6 +571,35 @@ tasks.withType<Test>().configureEach {
 	}
 }
 
+tasks.register<Copy>("explodeMgmt") {
+	group = "wars"
+	dependsOn("mgmtWar")
+	doNotTrackState("ignore executable files")
+	into(layout.buildDirectory.file("exploded/mgmt"))
+	from(project.zipTree(tasks.named<War>("mgmtWar").get().archiveFile))
+}
+tasks.register<Sync>("explodeEngine") {
+	group = "wars"
+	dependsOn("engineWar")
+	into(layout.buildDirectory.file("exploded/engine"))
+	from(project.zipTree(tasks.named<War>("engineWar").get().archiveFile))
+}
+tasks.register<Sync>("explodeRetrieval") {
+	group = "wars"
+	dependsOn("retrievalWar")
+	into(layout.buildDirectory.file("exploded/retrieval"))
+	from(project.zipTree(tasks.named<War>("retrievalWar").get().archiveFile))
+}
+tasks.register<Sync>("explodeETL") {
+	group = "wars"
+	dependsOn("etlWar")
+	into(layout.buildDirectory.file("exploded/etl"))
+	from(project.zipTree(tasks.named<War>("etlWar").get().archiveFile))
+}
+tasks.register("explodeWars") {
+	dependsOn("explodeMgmt", "explodeEngine", "explodeRetrieval", "explodeETL")
+}
+
 tasks.named<ProcessResources>("processTestResources") {
 	from(layout.projectDirectory.file("src/sitespecific/tests/classpathfiles"))
 	from(layout.projectDirectory.file("src/resources/test")) {
@@ -601,31 +630,6 @@ tasks.register("integrationTestSetup") {
 	group = "Test"
 	description = "Setup for Integration Tests by backing up Tomcat's conf directory."
 	dependsOn("buildRelease")
-
-	val tomcatHome = System.getenv("TOMCAT_HOME")
-	// Only configure and run this task if TOMCAT_HOME is set.
-	onlyIf {
-		if (tomcatHome == null) {
-			logger.warn("TOMCAT_HOME environment variable is not set. Skipping integration test setup.")
-			false
-		} else {
-			true
-		}
-	}
-
-	doLast {
-		// This logic is deferred to the execution phase, which is safer.
-		val tomcatConfOriginal = file("$tomcatHome/conf_original")
-		if (!tomcatConfOriginal.exists()) {
-			logger.lifecycle("Backing up Tomcat configuration to $tomcatConfOriginal")
-			project.copy {
-				from("$tomcatHome/conf")
-				into(tomcatConfOriginal)
-			}
-		} else {
-			logger.info("Tomcat configuration backup already exists at $tomcatConfOriginal")
-		}
-	}
 }
 
 tasks.register<Test>("integrationTests") {
