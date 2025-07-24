@@ -351,7 +351,7 @@ tasks.register("engineWar", War) {
 	webXml = file("${srcDir}/org/epics/archiverappliance/engine/WEB-INF/web.xml")
 }
 
-tasks.register("retreivalWar", War) {
+tasks.register("retrievalWar", War) {
 	group = "Wars"
 	dependsOn "stageSvgViewer"
 	from("${stageDir}/org/epics/archiverappliance/retrieval/staticcontent") {
@@ -366,7 +366,7 @@ tasks.register("buildRelease", Tar) {
 	group = "Wars"
 	description = "Builds a full release and zips up in a tar file."
 	dependsOn "mgmtWar"
-	dependsOn "retreivalWar"
+	dependsOn "retrievalWar"
 	dependsOn "etlWar"
 	dependsOn "engineWar"
 	dependsOn "generateReleaseNotes"
