@@ -1,9 +1,9 @@
 package org.epics.archiverappliance.config;
 
+import static org.epics.archiverappliance.config.ConvertPVNameToKey.SITE_NAME_SPACE_TERMINATOR;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import static org.epics.archiverappliance.config.ConvertPVNameToKey.SITE_NAME_SPACE_TERMINATOR;
 
 public class PVNameToKeyConverterTest {
 

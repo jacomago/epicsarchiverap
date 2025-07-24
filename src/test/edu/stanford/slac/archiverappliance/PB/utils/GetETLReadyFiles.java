@@ -9,7 +9,6 @@ package edu.stanford.slac.archiverappliance.PB.utils;
 
 import static edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler.pbFileExtension;
 
-import edu.stanford.slac.archiverappliance.plain.CompressionMode;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PathResolver;
 import org.epics.archiverappliance.common.PartitionGranularity;

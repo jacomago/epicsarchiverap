@@ -1,5 +1,7 @@
 package edu.stanford.slac.archiverappliance.plain;
 
+import static org.epics.archiverappliance.config.ConvertPVNameToKey.SITE_NAME_SPACE_TERMINATOR;
+
 import edu.stanford.slac.archiverappliance.plain.parquet.ParquetBackedPBEventIterator;
 import edu.stanford.slac.archiverappliance.plain.pb.FileBackedPBEventStreamPositionBasedIterator;
 import org.apache.commons.io.FileUtils;
@@ -36,8 +38,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.stream.Stream;
-
-import static org.epics.archiverappliance.config.ConvertPVNameToKey.SITE_NAME_SPACE_TERMINATOR;
 
 /**
  * The FileBackedPBEventStream supports two iterators - one is a file-position based one and the other is a time based one.

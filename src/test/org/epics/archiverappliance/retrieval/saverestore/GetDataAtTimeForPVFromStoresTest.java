@@ -7,6 +7,8 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval.saverestore;
 
+import static org.epics.archiverappliance.retrieval.GetDataAtTime.getDataAtTimeForPVFromStores;
+
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.commons.io.FileUtils;
@@ -45,8 +47,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
-
-import static org.epics.archiverappliance.retrieval.GetDataAtTime.getDataAtTimeForPVFromStores;
 
 /**
  * Test GetDataAtTime's internal method getDataAtTimeForPVFromStores
