@@ -453,6 +453,34 @@ tasks.withType(Test).configureEach {
 	}
 }
 
+tasks.register("explodeMgmt", Copy) {
+	group = "wars"
+	dependsOn("mgmtWar")
+	doNotTrackState("ignore executable files")
+	into layout.buildDirectory.file("exploded/mgmt")
+	from project.zipTree(mgmtWar.archiveFile)
+}
+tasks.register("explodeEngine", Sync) {
+	group = "wars"
+	dependsOn("engineWar")
+	into layout.buildDirectory.file("exploded/engine")
+	from project.zipTree(engineWar.archiveFile)
+}
+tasks.register("explodeRetrieval", Sync) {
+	group = "wars"
+	dependsOn("retrievalWar")
+	into layout.buildDirectory.file("exploded/retrieval")
+	from project.zipTree(retrievalWar.archiveFile)
+}
+tasks.register("explodeETL", Sync) {
+	group = "wars"
+	dependsOn("etlWar")
+	into layout.buildDirectory.file("exploded/etl")
+	from project.zipTree(etlWar.archiveFile)
+}
+tasks.register("explodeWars") {
+	dependsOn("explodeMgmt", "explodeEngine", "explodeRetrieval", "explodeETL")
+}
 tasks.register("unitTests", Test) {
 	group = "Test"
 	description = "Run all unit tests."
@@ -477,18 +505,7 @@ tasks.register("flakyTests", Test) {
 tasks.register("integrationTestSetup", Copy) {
 	group = "Test"
 	description = "Setup for Integration Tests."
-	dependsOn("buildRelease")
-	it.inputs.dir("$System.env.TOMCAT_HOME/conf")
-	it.outputs.dir("$System.env.TOMCAT_HOME/conf_original")
-	// backup the original tomcat conf folder
-	// if not already done. See org.epics.archiverappliance.TomcatSetup
-	def catalinaConf = file("$System.env.TOMCAT_HOME/conf_original")
-	if (!catalinaConf.exists()) {
-		copy {
-			from "$System.env.TOMCAT_HOME/conf"
-			into "$System.env.TOMCAT_HOME/conf_original"
-		}
-	}
+	dependsOn("explodeWars")
 }
 
 tasks.register("integrationTests", Test) {
