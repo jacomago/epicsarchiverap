@@ -1,7 +1,7 @@
 package edu.stanford.slac.archiverappliance.plain;
 
-import static edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin.pbFileExtension;
-import static edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin.pbFileSuffix;
+import static edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler.PB_PLUGIN_IDENTIFIER;
+import static edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler.pbFileExtension;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -47,8 +47,17 @@ public class DataAroundPartitionEndTest {
             new File(ConfigServiceForTests.getDefaultPBTestFolder() + File.separator + "DataAroundPartitionEndTest");
     private static final String pvName = "DataAroundPartitionEndTest";
     private static final ConfigService configService;
+    private static final PlainStoragePlugin storagePlugin;
 
     static {
+        try {
+            storagePlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
+                    PB_PLUGIN_IDENTIFIER + "://localhost?name=DataAroundPartitionEndTest&rootFolder="
+                            + testFolder.getAbsolutePath() + "&partitionGranularity=PARTITION_DAY",
+                    DataAroundPartitionEndTest.configService);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         try {
             configService = new ConfigServiceForTests(-1);
         } catch (ConfigException e) {
@@ -69,10 +78,6 @@ public class DataAroundPartitionEndTest {
     private static void generateData() throws Exception {
         logger.info("Generating data info to " + pbFilePath);
 
-        PlainStoragePlugin storagePlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                pbFileSuffix + "://localhost?name=DataAroundPartitionEndTest&rootFolder=" + testFolder.getAbsolutePath()
-                        + "&partitionGranularity=PARTITION_DAY",
-                DataAroundPartitionEndTest.configService);
         ArrayListEventStream strm = new ArrayListEventStream(
                 PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() * 3,
                 new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvName, dataYear));
@@ -106,13 +111,15 @@ public class DataAroundPartitionEndTest {
                 pvName.replace(":", "/").replace("--", "") + ":" + dataYear + "_05_30.pb");
 
         try (BasicContext context = new BasicContext()) {
-            EventStream strm = FileStreamCreator.getTimeStream(
-                    pvName,
-                    pbFilePath,
-                    ArchDBRTypes.DBR_SCALAR_DOUBLE,
-                    Instant.parse(dataYear + "-05-30T23:59:00.00Z"),
-                    Instant.parse(dataYear + "-06-01T00:00:00.00Z"),
-                    false);
+            EventStream strm = storagePlugin
+                    .getPlainFileHandler()
+                    .getTimeStream(
+                            pvName,
+                            pbFilePath,
+                            ArchDBRTypes.DBR_SCALAR_DOUBLE,
+                            Instant.parse(dataYear + "-05-30T23:59:00.00Z"),
+                            Instant.parse(dataYear + "-06-01T00:00:00.00Z"),
+                            false);
             int totalEvents = 0;
             for (Event ev : strm) {
                 logger.debug(
@@ -126,8 +133,8 @@ public class DataAroundPartitionEndTest {
     @Test
     public void checkRetrieval() throws Exception {
         PlainStoragePlugin storagePlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                pbFileSuffix + "://localhost?name=DataAroundPartitionEndTest&rootFolder=" + testFolder.getAbsolutePath()
-                        + "&partitionGranularity=PARTITION_DAY",
+                PB_PLUGIN_IDENTIFIER + "://localhost?name=DataAroundPartitionEndTest&rootFolder="
+                        + testFolder.getAbsolutePath() + "&partitionGranularity=PARTITION_DAY",
                 DataAroundPartitionEndTest.configService);
         try (BasicContext context = new BasicContext()) {
             Instant rstart = generatedStartDate;

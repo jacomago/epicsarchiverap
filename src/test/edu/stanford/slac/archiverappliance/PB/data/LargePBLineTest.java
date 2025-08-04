@@ -7,10 +7,11 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PB.data;
 
+import static edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler.pbFileExtension;
+
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainCommonSetup;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.pb.PBCompressionMode;
 import edu.stanford.slac.archiverappliance.plain.pb.PBFileInfo;
 import edu.stanford.slac.archiverappliance.plain.utils.ValidatePlainFile;
 import gov.aps.jca.dbr.DBR_TIME_Double;
@@ -84,9 +85,8 @@ public class LargePBLineTest {
                 new ArchPaths(),
                 storagePlugin.getRootFolder(),
                 pvName,
-                PlainStoragePlugin.pbFileExtension,
-                storagePlugin.getPartitionGranularity(),
-                PBCompressionMode.NONE,
+                pbFileExtension,
+                storagePlugin.getPlainFileHandler().getPathResolver(),
                 configService.getPVNameToKeyConverter());
         Assertions.assertNotNull(allPaths, "testLargeLines returns null for getAllFilesForPV for " + pvName);
         Assertions.assertTrue(

@@ -1,14 +1,14 @@
 package org.epics.archiverappliance.retrieval.client;
 
+import static edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler.pbFileExtension;
+
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.pb.PBCompressionMode;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.SIOCSetup;
-import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.TomcatSetup;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.PartitionGranularity;
@@ -60,7 +60,7 @@ public class PostProcessorWithPBErrorTest {
     private final short dataGeneratedForYears = 5;
     TomcatSetup tomcatSetup = new TomcatSetup();
     SIOCSetup siocSetup = new SIOCSetup();
-    StoragePlugin storageplugin;
+    PlainStoragePlugin storageplugin;
     private ConfigServiceForTests configService;
 
     private static void mergeHeaders(PayloadInfo info, HashMap<String, String> headers) {
@@ -76,7 +76,7 @@ public class PostProcessorWithPBErrorTest {
     @BeforeEach
     public void setUp() throws Exception {
         configService = new ConfigServiceForTests(-1);
-        storageplugin = StoragePluginURLParser.parseStoragePlugin(
+        storageplugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
                 "pb://localhost?name=LTS&rootFolder=${ARCHAPPL_LONG_TERM_FOLDER}&partitionGranularity=PARTITION_YEAR",
                 configService);
         siocSetup.startSIOCWithDefaultDB();
@@ -199,9 +199,8 @@ public class PostProcessorWithPBErrorTest {
                     context.getPaths(),
                     ltsFolderName,
                     pvName,
-                    PlainStoragePlugin.pbFileExtension,
-                    PartitionGranularity.PARTITION_DAY,
-                    PBCompressionMode.NONE,
+                    pbFileExtension,
+                    storageplugin.getPlainFileHandler().getPathResolver(),
                     configService.getPVNameToKeyConverter());
             Assertions.assertTrue(true);
             Assertions.assertTrue(paths.length > 0);

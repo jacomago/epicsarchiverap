@@ -1,10 +1,10 @@
 package edu.stanford.slac.archiverappliance.plain;
 
-import static edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin.pbFileExtension;
-import static edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin.pbFileSuffix;
+import static edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler.pbFileExtension;
 
 import edu.stanford.slac.archiverappliance.plain.pb.FileBackedPBEventStreamPositionBasedIterator;
 import edu.stanford.slac.archiverappliance.plain.pb.PBFileInfo;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -162,8 +162,8 @@ public class FileBackedIteratorTest {
     private static void generateData() throws IOException {
         logger.info("generate Data " + pbFileExtension + " to " + pbFilePath);
         PlainStoragePlugin storagePlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                pbFileSuffix + "://localhost?name=FileBackedIteratorTest&rootFolder=" + testFolder.getAbsolutePath()
-                        + "&partitionGranularity=PARTITION_YEAR",
+                PBPlainFileHandler.PB_PLUGIN_IDENTIFIER + "://localhost?name=FileBackedIteratorTest&rootFolder="
+                        + testFolder.getAbsolutePath() + "&partitionGranularity=PARTITION_YEAR",
                 FileBackedIteratorTest.configService);
 
         // Add data with gaps every month
@@ -205,6 +205,7 @@ public class FileBackedIteratorTest {
     @ParameterizedTest
     @MethodSource("provideCorrectIterator")
     public void makeSureWeGetCorrectIterator(
+            PlainStoragePlugin storagePlugin,
             String testCase,
             Instant minQTS,
             Instant maxQTS,
@@ -220,7 +221,9 @@ public class FileBackedIteratorTest {
                 logger.debug("Checking " + testCase + " for QTS " + TimeUtils.convertToISO8601String(QTS) + " and QTE "
                         + TimeUtils.convertToISO8601String(QTE));
 
-                try (EventStream strm = FileStreamCreator.getTimeStream(pvName, pbFilePath, dbrType, QTS, QTE, false)) {
+                try (EventStream strm = storagePlugin
+                        .getPlainFileHandler()
+                        .getTimeStream(pvName, pbFilePath, dbrType, QTS, QTE, false)) {
                     Assertions.assertSame(
                             expectedIteratorClass,
                             strm.iterator().getClass(),

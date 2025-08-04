@@ -8,6 +8,7 @@ import static org.epics.archiverappliance.common.TimeUtils.getStartOfCurrentYear
 import static org.epics.archiverappliance.common.TimeUtils.getStartOfYearInSeconds;
 
 import edu.stanford.slac.archiverappliance.plain.pb.FileBackedPBEventStream;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -251,13 +252,15 @@ public class FileBackedPBEventStreamTest {
             long epochSeconds = getStartOfCurrentYearInSeconds()
                     + 7L * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
             Instant time = convertFromEpochSeconds(epochSeconds, 0);
-            try (EventStream stream = FileStreamCreator.getTimeStream(
-                    pvName,
-                    path,
-                    dbrType,
-                    time,
-                    time.plusSeconds(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() * 2L),
-                    false)) {
+            try (EventStream stream = storagePlugin
+                    .getPlainFileHandler()
+                    .getTimeStream(
+                            pvName,
+                            path,
+                            dbrType,
+                            time,
+                            time.plusSeconds(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() * 2L),
+                            false)) {
                 boolean firstEvent = true;
                 for (Event e : stream) {
                     if (firstEvent) {
@@ -428,7 +431,7 @@ public class FileBackedPBEventStreamTest {
     @Test
     public void testHighRateEndLocation() throws IOException {
         PlainStoragePlugin highRatePlugin = (PlainStoragePlugin) StoragePluginURLParser.parseStoragePlugin(
-                PlainStoragePlugin.pbFileSuffix + "://localhost?name=FileBackedPBEventStreamTest&rootFolder="
+                PBPlainFileHandler.PB_PLUGIN_IDENTIFIER + "://localhost?name=FileBackedPBEventStreamTest&rootFolder="
                         + testFolder.getAbsolutePath() + "&partitionGranularity=PARTITION_YEAR",
                 configService);
         String highRatePVName =

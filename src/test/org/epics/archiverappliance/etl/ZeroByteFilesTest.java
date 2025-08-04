@@ -9,7 +9,6 @@ package org.epics.archiverappliance.etl;
 
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.pb.PBCompressionMode;
 import edu.stanford.slac.archiverappliance.plain.utils.ValidatePlainFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -219,8 +218,7 @@ public class ZeroByteFilesTest {
                 etlDest.getRootFolder(),
                 pvName,
                 etlDest.getExtensionString(),
-                etlDest.getPartitionGranularity(),
-                PBCompressionMode.NONE,
+                etlDest.getPlainFileHandler().getPathResolver(),
                 pvNameToKeyConverter);
         Assertions.assertNotNull(allPaths, "PlainPBFileNameUtility returns null for getAllFilesForPV for " + pvName);
         Assertions.assertTrue(
