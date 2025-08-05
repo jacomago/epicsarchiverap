@@ -59,6 +59,7 @@ public class InputStreamBackedEventStreamIterator implements Iterator<Event> {
             try {
                 byte[] payloadLine = LineEscaper.unescapeNewLines(this.readLine());
                 PayloadInfo info = PayloadInfo.parseFrom(payloadLine);
+                logger.info("Payload info " + info.toString()+ " year " + info.getYear());
                 RemotableEventStreamDesc desc = new RemotableEventStreamDesc(info.getPvname(), info);
                 this.setCurrentEventStreamDesc(desc);
                 // The previous line should take care of transitions between year partitions.

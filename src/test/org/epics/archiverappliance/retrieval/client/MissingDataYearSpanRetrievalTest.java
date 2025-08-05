@@ -35,9 +35,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.temporal.TemporalAmount;
+import java.time.temporal.TemporalUnit;
 import java.util.LinkedList;
 import java.util.stream.Stream;
+
+import static org.epics.archiverappliance.retrieval.client.YearSpanPPRetrievalTest.wrapPVName;
 
 /**
  * Test retrieval across year spans when some of the data is missing.
@@ -74,33 +80,34 @@ public class MissingDataYearSpanRetrievalTest {
     }
 
     private static void generateData() throws IOException {
+        Duration day = Duration.ofDays(1);
         {
             // Generate some data for Sep 2011 - Oct 2011, one per day
             Instant sep2011 = TimeUtils.convertFromISO8601String("2011-09-01T00:00:00.000Z");
-            int sep201101secsIntoYear = TimeUtils.getSecondsIntoYear(sep2011);
-            short year = 2011;
-            generateDate(year, sep201101secsIntoYear);
+            generateDate(sep2011, day, 30);
         }
 
         {
             // Generate some data for Jun 2012 - Jul 2012, one per day
             Instant jun2012 = TimeUtils.convertFromISO8601String("2012-06-01T00:00:00.000Z");
-            int jun201201secsIntoYear = TimeUtils.getSecondsIntoYear(jun2012);
-            short year = 2012;
-            generateDate(year, jun201201secsIntoYear);
+            generateDate(jun2012, day, 30);
+        }
+        {
+            // Generate some data for Jun 2014 - Jul 2014, one per day
+            Instant jun2014 = TimeUtils.convertFromISO8601String("2014-02-01T00:00:00.000Z");
+            generateDate(jun2014, Duration.ofSeconds(1), 20000);
         }
     }
 
-    private static void generateDate(short year, int jun201201secsIntoYear) throws IOException {
+    private static void generateDate(Instant start, TemporalAmount temporalAmount, int amount) throws IOException {
+        short year = (short) start.atZone(ZoneId.of("UTC")).getYear();
         ArrayListEventStream strmPB = new ArrayListEventStream(
                 0, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pvNamePB, year));
-        for (int day = 0; day < 30; day++) {
-            YearSecondTimestamp yts = new YearSecondTimestamp(
-                    year,
-                    jun201201secsIntoYear + day * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(),
-                    111000000);
-            strmPB.add(new SimulationEvent(yts, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<>(0.0)));
-            generatedTimeStamps.add(TimeUtils.convertFromYearSecondTimestamp(yts));
+        Instant current = start.plus(Duration.ofMillis(111));
+        for (int index = 0; index < amount; index++) {
+            strmPB.add(new SimulationEvent(current, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<>(0.0)));
+            generatedTimeStamps.add(current);
+            current = current.plus(temporalAmount);
         }
         try (BasicContext context = new BasicContext()) {
             pbPlugin.appendData(context, pvNamePB, strmPB);
@@ -218,13 +225,13 @@ public class MissingDataYearSpanRetrievalTest {
     @ParameterizedTest
     @MethodSource("provideMissingDataYearSpan")
     void testRetrieval(
-            String startStr,
-            String endStr,
-            int expectedMinEventCount,
-            String firstTimeStampExpectedStr,
-            int firstTSIndex,
-            String pvName)
-            throws IOException {
+        String startStr,
+        String endStr,
+        int expectedMinEventCount,
+        String firstTimeStampExpectedStr,
+        int firstTSIndex,
+        String pvName)
+        throws IOException {
 
         Instant start = TimeUtils.convertFromISO8601String(startStr);
         Instant end = TimeUtils.convertFromISO8601String(endStr);
@@ -234,17 +241,17 @@ public class MissingDataYearSpanRetrievalTest {
         }
         if (firstTSIndex != -1) {
             Assertions.assertEquals(
-                    firstTimeStampExpected,
-                    generatedTimeStamps.get(firstTSIndex),
-                    "Incorrect specification - Str is " + firstTimeStampExpectedStr + " and from array "
-                            + TimeUtils.convertToISO8601String(generatedTimeStamps.get(firstTSIndex)));
+                firstTimeStampExpected,
+                generatedTimeStamps.get(firstTSIndex),
+                "Incorrect specification - Str is " + firstTimeStampExpectedStr + " and from array "
+                    + TimeUtils.convertToISO8601String(generatedTimeStamps.get(firstTSIndex)));
         }
         String msg = String.format(
-                "%s - %s, expected %s, first %s at %s with pv %s",
-                start, end, expectedMinEventCount, firstTimeStampExpected, firstTSIndex, pvName);
+            "%s - %s, expected %s, first %s at %s with pv %s",
+            start, end, expectedMinEventCount, firstTimeStampExpected, firstTSIndex, pvName);
 
         RawDataRetrievalAsEventStream rawDataRetrieval =
-                new RawDataRetrievalAsEventStream(ConfigServiceForTests.RAW_RETRIEVAL_URL);
+            new RawDataRetrievalAsEventStream(ConfigServiceForTests.RAW_RETRIEVAL_URL);
         Instant obtainedFirstSample = null;
         int eventCount = 0;
         try (EventStream stream = rawDataRetrieval.getDataForPVS(new String[] {pvName}, start, end, null)) {
@@ -254,14 +261,14 @@ public class MissingDataYearSpanRetrievalTest {
                         obtainedFirstSample = e.getEventTimeStamp();
                     }
                     Assertions.assertEquals(
-                            e.getEventTimeStamp(),
-                            generatedTimeStamps.get(firstTSIndex + eventCount),
-                            "Expecting sample with timestamp "
-                                    + TimeUtils.convertToISO8601String(
-                                            generatedTimeStamps.get(firstTSIndex + eventCount))
-                                    + " got "
-                                    + TimeUtils.convertToISO8601String(e.getEventTimeStamp())
-                                    + " for " + msg);
+                        e.getEventTimeStamp(),
+                        generatedTimeStamps.get(firstTSIndex + eventCount),
+                        "Expecting sample with timestamp "
+                            + TimeUtils.convertToISO8601String(
+                            generatedTimeStamps.get(firstTSIndex + eventCount))
+                            + " got "
+                            + TimeUtils.convertToISO8601String(e.getEventTimeStamp())
+                            + " for " + msg);
                     eventCount++;
                 }
             } else {
@@ -270,25 +277,144 @@ public class MissingDataYearSpanRetrievalTest {
         }
 
         Assertions.assertTrue(
-                eventCount >= expectedMinEventCount,
-                "Expecting at least " + expectedMinEventCount + " got " + eventCount + " for " + msg);
+            eventCount >= expectedMinEventCount,
+            "Expecting at least " + expectedMinEventCount + " got " + eventCount + " for " + msg);
         if (firstTimeStampExpected != null) {
             if (obtainedFirstSample == null) {
                 Assertions.fail("Expecting at least one value for " + msg);
             } else {
                 Assertions.assertEquals(
-                        firstTimeStampExpected,
-                        obtainedFirstSample,
-                        "Expecting first sample to be "
-                                + TimeUtils.convertToISO8601String(firstTimeStampExpected)
-                                + " got "
-                                + TimeUtils.convertToISO8601String(obtainedFirstSample)
-                                + " for " + msg);
+                    firstTimeStampExpected,
+                    obtainedFirstSample,
+                    "Expecting first sample to be "
+                        + TimeUtils.convertToISO8601String(firstTimeStampExpected)
+                        + " got "
+                        + TimeUtils.convertToISO8601String(obtainedFirstSample)
+                        + " for " + msg);
             }
         } else {
             if (obtainedFirstSample != null) {
                 Assertions.fail("Expecting no values for " + msg + " Got value from "
-                        + TimeUtils.convertToISO8601String(obtainedFirstSample));
+                    + TimeUtils.convertToISO8601String(obtainedFirstSample));
+            }
+        }
+    }
+
+    /**
+     * <pre>
+     * .....Sep,2011.....Oct,2011..............Jan,1,2012..........Jun,2012......Jul,2012...............Dec,2012......
+     * [] - should return no data
+     * ...[.....] should return data whose first value should be Sep 1, 2011
+     * ............[.....] should return data whose first value is start time - 1
+     * .................[...........] should return data whose first value is start time - 1
+     * ...................................[.] should return one sample for the last day of Sept, 2011
+     * ...................................[...................] should return one sample for the last day of Sept, 2011
+     * ................................................[..]  should return one sample for the last day of Sept, 2011
+     * ................................................[...............]  should return may samples with the first sample as the last day of Sept, 2011
+     * ..................................................................[......]  should return may samples all from 2012
+     * ..........................................................................................[..] should return one sample for the last day of Jun, 2012
+     * ...........................................................................................................................[..] should return one sample for the last day of Jun, 2012
+     * <pre>
+     */
+    static Stream<Arguments> providePPMissingDataYearSpan() {
+        return Stream.of(pvNamePB).flatMap(MissingDataYearSpanRetrievalTest::getPPArgumentsStream);
+    }
+
+    static Stream<Arguments> getPPArgumentsStream(String pvName) {
+        return Stream.of(
+            Arguments.of("2011-06-01T00:00:00.000Z", "2011-07-01T00:00:00.000Z", 0, null, -1, pvName, 10),
+            Arguments.of(
+                "2011-08-10T00:00:00.000Z",
+                "2011-09-15T10:00:00.000Z",
+                10,
+                "2011-09-01T00:00:00.111Z",
+                0,
+                pvName, 20),
+            Arguments.of(
+                "2013-12-01T00:00:00.000Z",
+                "2014-03-01T10:00:00.000Z",
+                10,
+                "2011-07-01T00:00:00.000Z",
+                -1,
+                pvName, 20));
+    }
+    /**
+     * @param startStr                  - Start time of request
+     * @param endStr                    - End time of request
+     * @param expectedMinEventCount     - How many events we expect at a minimum
+     * @param firstTimeStampExpectedStr - The time stamp of the first event
+     * @param firstTSIndex              - If present, the index into generatedTimeStamps for the first event. Set to -1 if you want to skip this check.
+     */
+    @ParameterizedTest
+    @MethodSource("providePPMissingDataYearSpan")
+    void testRetrievalPP(
+        String startStr,
+        String endStr,
+        int expectedMinEventCount,
+        String firstTimeStampExpectedStr,
+        int firstTSIndex,
+        String pvName,
+        int bins)
+        throws IOException {
+
+        Instant start = TimeUtils.convertFromISO8601String(startStr);
+        Instant end = TimeUtils.convertFromISO8601String(endStr);
+        Instant firstTimeStampExpected = null;
+        if (firstTimeStampExpectedStr != null) {
+            firstTimeStampExpected = TimeUtils.convertFromISO8601String(firstTimeStampExpectedStr);
+        }
+        if (firstTSIndex != -1) {
+            Assertions.assertEquals(
+                firstTimeStampExpected,
+                generatedTimeStamps.get(firstTSIndex),
+                "Incorrect specification - Str is " + firstTimeStampExpectedStr + " and from array "
+                    + TimeUtils.convertToISO8601String(generatedTimeStamps.get(firstTSIndex)));
+        }
+        String msg = String.format(
+            "%s - %s, expected %s, first %s at %s with pv %s",
+            start, end, expectedMinEventCount, firstTimeStampExpected, firstTSIndex, pvName);
+
+        RawDataRetrievalAsEventStream rawDataRetrieval =
+            new RawDataRetrievalAsEventStream(ConfigServiceForTests.RAW_RETRIEVAL_URL);
+        Instant obtainedFirstSample = null;
+        int eventCount = 0;
+        Instant previousInstant = Instant.EPOCH;
+        try (EventStream stream = rawDataRetrieval.getDataForPVS(new String[] {wrapPVName(pvName, "optimized_" + bins)}, start, end, null)) {
+            if (stream != null) {
+                for (Event e : stream) {
+                    if (obtainedFirstSample == null) {
+                        obtainedFirstSample = e.getEventTimeStamp();
+                    }
+                    Assertions.assertTrue(previousInstant.isBefore(e.getEventTimeStamp()));
+                    previousInstant = e.getEventTimeStamp();
+                    logger.info("Event x with time "+ previousInstant);
+                    eventCount++;
+                }
+            } else {
+                logger.info("Stream is null for " + msg);
+            }
+        }
+
+        Assertions.assertTrue(
+            eventCount >= expectedMinEventCount,
+            "Expecting at least " + expectedMinEventCount + " got " + eventCount + " for " + msg);
+        if (firstTimeStampExpected != null) {
+            if (obtainedFirstSample == null) {
+                Assertions.fail("Expecting at least one value for " + msg);
+            } else {
+                Assertions.assertEquals(
+                    firstTimeStampExpected,
+                    obtainedFirstSample,
+                    "Expecting first sample to be "
+                        + TimeUtils.convertToISO8601String(firstTimeStampExpected)
+                        + " got "
+                        + TimeUtils.convertToISO8601String(obtainedFirstSample)
+                        + " for " + msg);
+            }
+        } else {
+            if (obtainedFirstSample != null) {
+                Assertions.fail("Expecting no values for " + msg + " Got value from "
+                    + TimeUtils.convertToISO8601String(obtainedFirstSample));
             }
         }
     }
