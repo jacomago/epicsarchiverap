@@ -7,10 +7,11 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl;
 
-import static edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin.PB_PLUGIN_IDENTIFIER;
+import static edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler.PB_PLUGIN_IDENTIFIER;
 import static org.epics.archiverappliance.utils.ui.URIUtils.pluginString;
 
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -120,7 +121,7 @@ public class DataReductionPostProcessorsTest {
         final String rawPVName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX
                 + DataReductionPostProcessorsTest.class.getSimpleName()
                 + reduceDataUsing
-                + PlainStoragePlugin.pbFileSuffix;
+                + PBPlainFileHandler.PB_PLUGIN_IDENTIFIER;
         final String reducedPVName = rawPVName + "reduced";
 
         String shortTermFolderName =
