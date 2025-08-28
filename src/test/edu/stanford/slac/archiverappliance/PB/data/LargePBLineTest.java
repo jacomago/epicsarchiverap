@@ -12,6 +12,7 @@ import static edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler.pb
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainCommonSetup;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import edu.stanford.slac.archiverappliance.plain.pb.PBFileInfo;
 import edu.stanford.slac.archiverappliance.plain.utils.ValidatePlainFile;
 import gov.aps.jca.dbr.DBR_TIME_Double;
@@ -57,7 +58,7 @@ public class LargePBLineTest {
 
     @Test
     public void testLargeLines() throws Exception {
-        PlainStoragePlugin storagePlugin = new PlainStoragePlugin();
+        PlainStoragePlugin storagePlugin = new PlainStoragePlugin(PlainStorageType.PB);
         largeLineSetup.setUpRootFolder(storagePlugin, "largeLineTest", PartitionGranularity.PARTITION_HOUR);
 
         // We create vector doubles with a large number of elements; write it out and then test the read.

@@ -7,6 +7,7 @@ import static org.epics.archiverappliance.utils.ui.GetUrlContent.getURLContentAs
 import static org.epics.archiverappliance.utils.ui.URIUtils.pluginString;
 
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -84,7 +85,7 @@ public class ClusterSinglePVTest {
      */
     @Test
     public void singlePvsAcrossCluster() throws Exception {
-        PlainStoragePlugin pbplugin = new PlainStoragePlugin();
+        PlainStoragePlugin pbplugin = new PlainStoragePlugin(PlainStorageType.PB);
 
         ConfigService configService = new ConfigServiceForTests(-1);
 
