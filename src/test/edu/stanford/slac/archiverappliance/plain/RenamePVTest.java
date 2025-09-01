@@ -7,7 +7,8 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.plain;
 
-import static edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin.PB_PLUGIN_IDENTIFIER;
+import static edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler.PB_PLUGIN_IDENTIFIER;
+import static edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler.pbFileExtension;
 import static org.epics.archiverappliance.utils.ui.URIUtils.pluginString;
 
 import org.apache.commons.io.FileUtils;
@@ -110,7 +111,7 @@ public class RenamePVTest {
                             context.getPaths(),
                             plugin.getRootFolder(),
                             oldPVName,
-                            PlainStoragePlugin.pbFileExtension,
+                            pbFileExtension,
                             plugin.getPlainFileHandler().getPathResolver(),
                             configService.getPVNameToKeyConverter())
                     .length;
@@ -140,7 +141,7 @@ public class RenamePVTest {
                             context.getPaths(),
                             plugin.getRootFolder(),
                             newPVName,
-                            PlainStoragePlugin.pbFileExtension,
+                            pbFileExtension,
                             plugin.getPlainFileHandler().getPathResolver(),
                             configService.getPVNameToKeyConverter())
                     .length;
@@ -148,7 +149,7 @@ public class RenamePVTest {
                             context.getPaths(),
                             plugin.getRootFolder(),
                             oldPVName,
-                            PlainStoragePlugin.pbFileExtension,
+                            pbFileExtension,
                             plugin.getPlainFileHandler().getPathResolver(),
                             configService.getPVNameToKeyConverter())
                     .length;
