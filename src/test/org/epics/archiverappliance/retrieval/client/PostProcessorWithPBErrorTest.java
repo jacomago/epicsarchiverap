@@ -5,7 +5,6 @@ import static edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin.PB_PL
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
-import edu.stanford.slac.archiverappliance.plain.pb.PBCompressionMode;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -203,8 +202,7 @@ public class PostProcessorWithPBErrorTest {
                     ltsFolderName,
                     pvName,
                     PlainStoragePlugin.pbFileExtension,
-                    PartitionGranularity.PARTITION_DAY,
-                    PBCompressionMode.NONE,
+                    ((PlainStoragePlugin) storageplugin).getPlainFileHandler().getPathResolver(),
                     configService.getPVNameToKeyConverter());
             Assertions.assertTrue(true);
             Assertions.assertTrue(paths.length > 0);

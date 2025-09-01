@@ -7,10 +7,10 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PB.data;
 
-import edu.stanford.slac.archiverappliance.plain.FileStreamCreator;
 import edu.stanford.slac.archiverappliance.plain.PathNameUtility;
 import edu.stanford.slac.archiverappliance.plain.PlainCommonSetup;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
+import edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler;
 import gov.aps.jca.dbr.DBR;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -129,7 +129,7 @@ public class DBRTypeTest {
                     TimeUtils.getStartOfYear(currentYear),
                     new ArchPaths(),
                     configService.getPVNameToKeyConverter());
-            retrievedStrm = FileStreamCreator.getStream(pvName, path, dbrType);
+            retrievedStrm = pbplugin.getPlainFileHandler().getStream(pvName, path, dbrType);
 
             Instant expectedTime = startTime;
             long start = System.currentTimeMillis();
@@ -226,7 +226,7 @@ public class DBRTypeTest {
                 // TimeStamp.time(startOfCurrentYearInSeconds+SimulationEventStreamIterator.SECONDS_IN_YEAR, 0));
                 Path path = PathNameUtility.getPathNameForTime(
                         pbplugin, pvName, startTime, new ArchPaths(), configService.getPVNameToKeyConverter());
-                retrievedStrm = FileStreamCreator.getStream(pvName, path, dbrType);
+                retrievedStrm = pbplugin.getPlainFileHandler().getStream(pvName, path, dbrType);
 
                 Instant expectedTime = startTime;
                 long start = System.currentTimeMillis();
