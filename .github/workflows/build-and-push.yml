@@ -9,7 +9,7 @@ name: Build and Push
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "parquet-demo" ]
     tags:
       - '**'
 
