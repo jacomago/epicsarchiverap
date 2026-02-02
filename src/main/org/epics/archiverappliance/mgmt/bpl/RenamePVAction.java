@@ -23,6 +23,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
+ * Rename this pv to a new name. The PV needs to be paused first.
  *
  * @epics.BPLAction - Rename this pv to a new name. The PV needs to be paused first.
  * @epics.BPLActionParam pv - The current name of the PV.

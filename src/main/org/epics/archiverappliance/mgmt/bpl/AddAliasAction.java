@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
+ * Add an alias for the specified PV.
  *
  * @epics.BPLAction - Add an alias for the specified PV.
  * @epics.BPLActionParam pv - The real name of the pv.

@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
+ * Get all the aliases in the cluster and the PV's they are mapped to.
  *
  * @epics.BPLAction - Get all the aliases in the cluster and the PV's they are mapped to.
  * @epics.BPLActionEnd

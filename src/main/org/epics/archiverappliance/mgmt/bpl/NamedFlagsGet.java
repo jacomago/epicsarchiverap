@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
+ * Get the value of the named flag specified by name.
  *
  * @epics.BPLAction - Get the value of the named flag specified by name
  * @epics.BPLActionParam name - the name of the named flag.

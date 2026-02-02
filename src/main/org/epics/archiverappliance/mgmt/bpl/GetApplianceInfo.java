@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
+ * Get the appliance information for the specified appliance.
  *
  * @epics.BPLAction - Get the appliance information for the specified appliance.
  * @epics.BPLActionParam id - The identity of the appliance for which we are requesting information. This is the same string as the <code>identity</code> element in the <code>appliances.xml</code> that identifies this appliance.
