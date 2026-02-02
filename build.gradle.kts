@@ -17,28 +17,6 @@ plugins {
 // Project Configuration
 // =================================================================
 
-sourceSets {
-	main {
-		java {
-			srcDir("src/main/")
-		}
-		proto {
-			srcDir("src/proto")
-		}
-		resources {
-			setSrcDirs(emptyList<String>())
-		}
-	}
-	test {
-		java {
-			srcDir("src/test/")
-		}
-		resources {
-			setSrcDirs(emptyList<String>())
-		}
-	}
-}
-
 java {
 	toolchain {
 		languageVersion.set(JavaLanguageVersion.of(21))
@@ -67,7 +45,7 @@ try {
 }
 
 val stageDir = layout.buildDirectory.file("stage").get()
-val srcDir = layout.projectDirectory.file("src/main")
+val srcDir = layout.projectDirectory.file("src/main/resources")
 val libDir = layout.projectDirectory.file("lib")
 val apiDocsDir = layout.projectDirectory.file("docs/api")
 val archapplsite = System.getenv("ARCHAPPL_SITEID") ?: "tests"
@@ -222,7 +200,7 @@ tasks.withType<Javadoc>().configureEach {
 		copy {
 			from(
 				layout.projectDirectory.file("LICENSE"),
-				srcDir.asFile.resolve("edu/stanford/slac/archiverappliance/PB/EPICSEvent.proto")
+				layout.projectDirectory.file("src/main/proto/EPICSEvent.proto")
 			)
 			into(layout.projectDirectory.dir("docs"))
 		}
@@ -571,11 +549,6 @@ tasks.withType<Test>().configureEach {
 
 tasks.named<ProcessResources>("processTestResources") {
 	from(layout.projectDirectory.file("src/sitespecific/tests/classpathfiles"))
-	from(layout.projectDirectory.file("src/resources/test")) {
-		include("log4j2.xml")
-		include("appliances.xml.j2")
-		include("log4j2.component.properties")
-	}
 }
 
 tasks.register<Test>("unitTests") {
