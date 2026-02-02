@@ -16,6 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
+ * Get the appliance information for all the appliances in the cluster that are active.
  *
  * @epics.BPLAction - Get the appliance information for all the appliances in the cluster that are active.
  * @epics.BPLActionEnd

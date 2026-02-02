@@ -1,6 +1,15 @@
 package org.epics.archiverappliance.mgmt.bpl;
 
 import edu.stanford.slac.archiverappliance.PBOverHTTP.InputStreamBackedEventStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.net.URLEncoder;
+import java.time.Instant;
+import java.util.HashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -22,17 +31,8 @@ import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.net.URLEncoder;
-import java.time.Instant;
-import java.util.HashMap;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 /**
+ * Manually merges in data from an external appliance that is used for failover.
  *
  * @epics.BPLAction - Manually merges in data from an external appliance that is used for failover.
  * @epics.BPLActionParam pv - The name of the pv; the PV needs to be paused. It's probably also a good idea to consolidate the data to the store being used for merging.
@@ -49,11 +49,17 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class MergeInDataFromExternalStore implements BPLAction {
-    private static Logger logger = LogManager.getLogger(MergeInDataFromExternalStore.class.getName());
+
+    private static Logger logger = LogManager.getLogger(
+        MergeInDataFromExternalStore.class.getName()
+    );
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(
+        HttpServletRequest req,
+        HttpServletResponse resp,
+        ConfigService configService
+    ) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -83,14 +89,29 @@ public class MergeInDataFromExternalStore implements BPLAction {
             return;
         }
 
-        if (!info.getIdentity().equals(configService.getMyApplianceInfo().getIdentity())) {
+        if (
+            !info
+                .getIdentity()
+                .equals(configService.getMyApplianceInfo().getIdentity())
+        ) {
             // We should proxy this call to the actual appliance hosting the PV.
-            String redirectURL = info.getMgmtURL() + "/mergeInData?pv="
-                    + URLEncoder.encode(pvName, "UTF-8")
-                    + "&other=" + URLEncoder.encode(other, "UTF-8")
-                    + "&storage=" + URLEncoder.encode(storagePluginName, "UTF-8");
-            logger.debug("Routing request to the appliance hosting the PV " + pvName + " using URL " + redirectURL);
-            JSONObject status = GetUrlContent.getURLContentAsJSONObject(redirectURL);
+            String redirectURL =
+                info.getMgmtURL() +
+                "/mergeInData?pv=" +
+                URLEncoder.encode(pvName, "UTF-8") +
+                "&other=" +
+                URLEncoder.encode(other, "UTF-8") +
+                "&storage=" +
+                URLEncoder.encode(storagePluginName, "UTF-8");
+            logger.debug(
+                "Routing request to the appliance hosting the PV " +
+                    pvName +
+                    " using URL " +
+                    redirectURL
+            );
+            JSONObject status = GetUrlContent.getURLContentAsJSONObject(
+                redirectURL
+            );
             resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
             try (PrintWriter out = resp.getWriter()) {
                 out.println(JSONValue.toJSONString(status));
@@ -98,9 +119,14 @@ public class MergeInDataFromExternalStore implements BPLAction {
             return;
         }
 
-        logger.info("Merging in data for PV " + pvName + " fetching data from " + other);
+        logger.info(
+            "Merging in data for PV " + pvName + " fetching data from " + other
+        );
 
-        PVTypeInfo typeInfo = PVNames.determineAppropriatePVTypeInfo(pvName, configService);
+        PVTypeInfo typeInfo = PVNames.determineAppropriatePVTypeInfo(
+            pvName,
+            configService
+        );
         if (typeInfo == null) {
             logger.debug("Unable to find typeinfo for PV...");
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -121,72 +147,143 @@ public class MergeInDataFromExternalStore implements BPLAction {
         }
 
         class MergeInData implements ConversionFunction {
+
             @Override
-            public EventStream convertStream(EventStream srcEventStream, Instant streamStartTime, Instant streamEndTime)
-                    throws IOException {
-                if (srcEventStream.getDescription() instanceof RemotableEventStreamDesc) {
-                    RemotableEventStreamDesc desc = (RemotableEventStreamDesc) srcEventStream.getDescription();
-                    String serverURL = other + "/data/getData.raw"
-                            + "?pv=" + desc.getPvName()
-                            + "&from=" + TimeUtils.convertToISO8601String(streamStartTime)
-                            + "&to=" + TimeUtils.convertToISO8601String(streamEndTime)
-                            + "&skipExternalServers=true";
+            public EventStream convertStream(
+                EventStream srcEventStream,
+                Instant streamStartTime,
+                Instant streamEndTime
+            ) throws IOException {
+                if (
+                    srcEventStream.getDescription() instanceof
+                        RemotableEventStreamDesc
+                ) {
+                    RemotableEventStreamDesc desc =
+                        (RemotableEventStreamDesc) srcEventStream.getDescription();
+                    String serverURL =
+                        other +
+                        "/data/getData.raw" +
+                        "?pv=" +
+                        desc.getPvName() +
+                        "&from=" +
+                        TimeUtils.convertToISO8601String(streamStartTime) +
+                        "&to=" +
+                        TimeUtils.convertToISO8601String(streamEndTime) +
+                        "&skipExternalServers=true";
                     logger.info("Getting data from URL " + serverURL);
-                    InputStream is = GetUrlContent.getURLContentAsStream(serverURL);
+                    InputStream is = GetUrlContent.getURLContentAsStream(
+                        serverURL
+                    );
                     if (is != null) {
                         InputStreamBackedEventStream eis =
-                                new InputStreamBackedEventStream(new BufferedInputStream(is), streamStartTime);
+                            new InputStreamBackedEventStream(
+                                new BufferedInputStream(is),
+                                streamStartTime
+                            );
                         return new MergeDedupEventStream(srcEventStream, eis);
                     } else {
-                        logger.error("Other stream is null for " + srcEventStream.getDescription());
+                        logger.error(
+                            "Other stream is null for " +
+                                srcEventStream.getDescription()
+                        );
                     }
                 }
-                logger.error("Skipping merging in event stream " + srcEventStream.getDescription());
+                logger.error(
+                    "Skipping merging in event stream " +
+                        srcEventStream.getDescription()
+                );
                 return srcEventStream;
             }
 
             @Override
-            public boolean shouldConvert(EventStream srcEventStream, Instant streamStartTime, Instant streamEndTime)
-                    throws IOException {
-                if (srcEventStream.getDescription() instanceof RemotableEventStreamDesc) {
-                    RemotableEventStreamDesc desc = (RemotableEventStreamDesc) srcEventStream.getDescription();
-                    String serverURL = other + "/data/getData.raw"
-                            + "?pv=ncount(" + desc.getPvName() + ")"
-                            + "&from=" + TimeUtils.convertToISO8601String(streamStartTime)
-                            + "&to=" + TimeUtils.convertToISO8601String(streamEndTime)
-                            + "&skipExternalServers=true";
+            public boolean shouldConvert(
+                EventStream srcEventStream,
+                Instant streamStartTime,
+                Instant streamEndTime
+            ) throws IOException {
+                if (
+                    srcEventStream.getDescription() instanceof
+                        RemotableEventStreamDesc
+                ) {
+                    RemotableEventStreamDesc desc =
+                        (RemotableEventStreamDesc) srcEventStream.getDescription();
+                    String serverURL =
+                        other +
+                        "/data/getData.raw" +
+                        "?pv=ncount(" +
+                        desc.getPvName() +
+                        ")" +
+                        "&from=" +
+                        TimeUtils.convertToISO8601String(streamStartTime) +
+                        "&to=" +
+                        TimeUtils.convertToISO8601String(streamEndTime) +
+                        "&skipExternalServers=true";
                     logger.info("Getting data from URL " + serverURL);
-                    InputStream is = GetUrlContent.getURLContentAsStream(serverURL);
+                    InputStream is = GetUrlContent.getURLContentAsStream(
+                        serverURL
+                    );
                     if (is != null) {
-                        try (InputStreamBackedEventStream eis =
-                                new InputStreamBackedEventStream(new BufferedInputStream(is), streamStartTime)) {
+                        try (
+                            InputStreamBackedEventStream eis =
+                                new InputStreamBackedEventStream(
+                                    new BufferedInputStream(is),
+                                    streamStartTime
+                                )
+                        ) {
                             for (Event e : eis) {
-                                if (e.getSampleValue().getValue().intValue() > 0) {
-                                    logger.debug("Remote has values for " + srcEventStream.getDescription());
+                                if (
+                                    e.getSampleValue().getValue().intValue() > 0
+                                ) {
+                                    logger.debug(
+                                        "Remote has values for " +
+                                            srcEventStream.getDescription()
+                                    );
                                     return true;
                                 }
                             }
                         }
-
                     } else {
-                        logger.error("Other stream is null for " + srcEventStream.getDescription());
+                        logger.error(
+                            "Other stream is null for " +
+                                srcEventStream.getDescription()
+                        );
                     }
                 }
-                logger.debug("Remote has no data for " + srcEventStream.getDescription());
+                logger.debug(
+                    "Remote has no data for " + srcEventStream.getDescription()
+                );
                 return false;
             }
         }
 
         for (String store : typeInfo.getDataStores()) {
-            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, configService);
+            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(
+                store,
+                configService
+            );
             if (!plugin.getName().equals(storagePluginName)) {
-                logger.info("Skippng merging in storage " + plugin.getName() + " as it is not " + storagePluginName);
+                logger.info(
+                    "Skippng merging in storage " +
+                        plugin.getName() +
+                        " as it is not " +
+                        storagePluginName
+                );
                 continue;
             }
             try (BasicContext context = new BasicContext()) {
-                logger.info("Merging in data for plugin " + plugin.getName() + " for PV " + pvName);
+                logger.info(
+                    "Merging in data for plugin " +
+                        plugin.getName() +
+                        " for PV " +
+                        pvName
+                );
                 plugin.convert(context, pvName, new MergeInData());
-                logger.info("Done merging in data for plugin " + plugin.getName() + " for PV " + pvName);
+                logger.info(
+                    "Done merging in data for plugin " +
+                        plugin.getName() +
+                        " for PV " +
+                        pvName
+                );
             }
         }
 

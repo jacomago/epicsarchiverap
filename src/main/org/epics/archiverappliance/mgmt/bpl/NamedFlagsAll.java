@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
+ * Get all the named flags in the system and their values as a JSON dict.
  *
  * @epics.BPLAction - Get all the named flags in the system and their values as a JSON dict
  * @epics.BPLActionEnd

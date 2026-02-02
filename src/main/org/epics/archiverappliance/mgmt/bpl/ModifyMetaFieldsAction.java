@@ -1,5 +1,12 @@
 package org.epics.archiverappliance.mgmt.bpl;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.HashSet;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
@@ -11,15 +18,8 @@ import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.HashSet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 /**
+ * Modify the fields (HIHI, LOLO etc) being archived as part of the PV. PV needs to be paused first.
  *
  * @epics.BPLAction - Modify the fields (HIHI, LOLO etc) being archived as part of the PV. PV needs to be paused first.
  * @epics.BPLActionParam pv - The real name of the pv.
@@ -29,11 +29,17 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class ModifyMetaFieldsAction implements BPLAction {
-    private static Logger logger = LogManager.getLogger(ModifyMetaFieldsAction.class.getName());
+
+    private static Logger logger = LogManager.getLogger(
+        ModifyMetaFieldsAction.class.getName()
+    );
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(
+        HttpServletRequest req,
+        HttpServletResponse resp,
+        ConfigService configService
+    ) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -68,9 +74,15 @@ public class ModifyMetaFieldsAction implements BPLAction {
             buf.append("/modifyMetaFields?");
             buf.append(req.getQueryString());
             String redirectURL = buf.toString();
-            logger.info("Redirecting modifyMetaFields request for PV to " + infoForPV.getIdentity() + " using URL "
-                    + redirectURL);
-            JSONObject status = GetUrlContent.getURLContentAsJSONObject(redirectURL);
+            logger.info(
+                "Redirecting modifyMetaFields request for PV to " +
+                    infoForPV.getIdentity() +
+                    " using URL " +
+                    redirectURL
+            );
+            JSONObject status = GetUrlContent.getURLContentAsJSONObject(
+                redirectURL
+            );
             try (PrintWriter out = resp.getWriter()) {
                 out.println(JSONValue.toJSONString(status));
             }
@@ -117,7 +129,10 @@ public class ModifyMetaFieldsAction implements BPLAction {
 
         typeInfo.setArchiveFields(archiveFields.toArray(new String[0]));
         configService.updateTypeInfoForPV(pvName, typeInfo);
-        logger.info("Final set of archive fields " + typeInfo.obtainArchiveFieldsAsString());
+        logger.info(
+            "Final set of archive fields " +
+                typeInfo.obtainArchiveFieldsAsString()
+        );
 
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {

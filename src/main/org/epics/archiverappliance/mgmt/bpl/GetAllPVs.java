@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
+ * Get all the PVs in the cluster. Note this call can return millions of PVs.
  *
  * @epics.BPLAction - Get all the PVs in the cluster. Note this call can return millions of PVs
  * @epics.BPLActionParam pv - An optional argument that can contain a <a href="http://en.wikipedia.org/wiki/Glob_%28programming%29">GLOB</a> wildcard. We will return PVs that match this GLOB. For example, if <code>pv=KLYS*</code>, the server will return all PVs that start with the string <code>KLYS</code>. If both pv and regex are unspecified, we match against all PVs.
