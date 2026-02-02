@@ -26,6 +26,12 @@ import jakarta.servlet.http.HttpServletResponse;
 public class AreWeArchivingPV implements BPLAction {
     private static Logger logger = LogManager.getLogger(AreWeArchivingPV.class.getName());
 
+    /**
+     * Default constructor.
+     */
+    public AreWeArchivingPV() {
+    }
+
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
             throws IOException {

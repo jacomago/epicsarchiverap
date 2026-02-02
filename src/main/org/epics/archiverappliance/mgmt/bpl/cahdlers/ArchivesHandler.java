@@ -24,6 +24,12 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class ArchivesHandler extends DefaultHandler {
 	private static Logger logger = LogManager.getLogger(ArchivesHandler.class.getName());
+
+    /**
+     * Default constructor.
+     */
+    public ArchivesHandler() {
+    }
 	private boolean inStruct = false;
 	private LinkedList<HashMap<String, String>> structs = new LinkedList<HashMap<String, String>>();
 	private HashMap<String, String> currentStruct = null;

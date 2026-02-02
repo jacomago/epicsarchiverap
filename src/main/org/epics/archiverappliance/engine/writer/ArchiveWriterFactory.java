@@ -16,6 +16,12 @@ package org.epics.archiverappliance.engine.writer;
 public class ArchiveWriterFactory
 {
   
+    /**
+     * Default constructor.
+     */
+    public ArchiveWriterFactory() {
+    }
+  
 
     /** Obtain archive writer interface from plugin registry
      *  @return {@link ArchiveWriter}
