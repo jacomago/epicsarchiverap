@@ -13,12 +13,24 @@ package org.epics.archiverappliance.config.exception;
  */
 public class ConfigException extends Exception {
 	private static final long serialVersionUID = -1195048537953477832L;
+	/**
+	 * Default constructor.
+	 */
 	public ConfigException() {
 	}
 	
+	/**
+	 * Constructor.
+	 * @param msg Message
+	 */
 	public ConfigException(String msg) {
 		super(msg);
 	}
+	/**
+	 * Constructor.
+	 * @param msg Message
+	 * @param ex Cause
+	 */
 	public ConfigException(String msg, Throwable ex) {
 		super(msg, ex);
 	}

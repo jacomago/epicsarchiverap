@@ -26,26 +26,116 @@ public interface ConfigPersistence {
 		
 	}
 	
+	/**
+	 * Get type info keys.
+	 * @return Type info keys
+	 * @throws IOException If fetch fails
+	 */
 	public List<String> getTypeInfoKeys() throws IOException;
+	/**
+	 * Get type info.
+	 * @param pvName PV Name
+	 * @return Type info
+	 * @throws IOException If fetch fails
+	 */
 	public PVTypeInfo getTypeInfo(String pvName) throws IOException;
+	/**
+	 * Get all type infos for appliance.
+	 * @param applianceIdentity Appliance Identity
+	 * @return Type infos
+	 * @throws IOException If fetch fails
+	 */
 	public List<PVTypeInfo> getAllTypeInfosForAppliance(String applianceIdentity) throws IOException;
+	/**
+	 * Put type info.
+	 * @param pvName PV Name
+	 * @param typeInfo Type info
+	 * @throws IOException If put fails
+	 */
 	public void putTypeInfo(String pvName, PVTypeInfo typeInfo) throws IOException;
+	/**
+	 * Delete type info.
+	 * @param pvName PV Name
+	 * @throws IOException If delete fails
+	 */
 	public void deleteTypeInfo(String pvName) throws IOException;
 	
 	
+	/**
+	 * Get archive PV requests keys.
+	 * @return Archive PV requests keys
+	 * @throws IOException If fetch fails
+	 */
 	public List<String> getArchivePVRequestsKeys() throws IOException;
+	/**
+	 * Get archive PV request.
+	 * @param pvName PV Name
+	 * @return Archive PV request
+	 * @throws IOException If fetch fails
+	 */
 	public UserSpecifiedSamplingParams getArchivePVRequest(String pvName) throws IOException;
+	/**
+	 * Put archive PV request.
+	 * @param pvName PV Name
+	 * @param userParams User params
+	 * @throws IOException If put fails
+	 */
 	public void putArchivePVRequest(String pvName, UserSpecifiedSamplingParams userParams) throws IOException;
+	/**
+	 * Remove archive PV request.
+	 * @param pvName PV Name
+	 * @throws IOException If remove fails
+	 */
 	public void removeArchivePVRequest(String pvName) throws IOException;
 	
+	/**
+	 * Get external data servers keys.
+	 * @return External data servers keys
+	 * @throws IOException If fetch fails
+	 */
 	public List<String> getExternalDataServersKeys() throws IOException;
+	/**
+	 * Get external data server.
+	 * @param serverId Server ID
+	 * @return External data server
+	 * @throws IOException If fetch fails
+	 */
 	public String getExternalDataServer(String serverId) throws IOException;
+	/**
+	 * Put external data server.
+	 * @param serverId Server ID
+	 * @param serverInfo Server info
+	 * @throws IOException If put fails
+	 */
 	public void putExternalDataServer(String serverId, String serverInfo) throws IOException;
+	/**
+	 * Remove external data server.
+	 * @param serverId Server ID
+	 * @param serverInfo Server info
+	 * @throws IOException If remove fails
+	 */
 	public void removeExternalDataServer(String serverId, String serverInfo) throws IOException;
 	
 
+	/**
+	 * Get alias names to real names keys.
+	 * @return Keys
+	 * @throws IOException If fetch fails
+	 */
 	public List<String> getAliasNamesToRealNamesKeys() throws IOException;
+	/**
+	 * Get alias names to real name.
+	 * @param pvName PV Name
+	 * @return Real name
+	 * @throws IOException If fetch fails
+	 */
 	public String getAliasNamesToRealName(String pvName) throws IOException;
+	/**
+	 * Get alias names for real name.
+	 * @param realName Real name
+	 * @return List of alias names
+	 * @throws IOException If fetch fails
+	 */
 	default public List<String> getAliasNamesForRealName(String realName) throws IOException {
 		LinkedList<String> ret = new LinkedList<String>();
 		for(String aliasName : getAliasNamesToRealNamesKeys()) {
@@ -55,6 +145,18 @@ public interface ConfigPersistence {
 		}
 		return ret;
 	}
+	/**
+	 * Put alias names to real name.
+	 * @param pvName PV Name
+	 * @param realName Real name
+	 * @throws IOException If put fails
+	 */
 	public void putAliasNamesToRealName(String pvName, String realName) throws IOException;	
+	/**
+	 * Remove alias name.
+	 * @param pvName PV Name
+	 * @param realName Real name
+	 * @throws IOException If remove fails
+	 */
 	public void removeAliasName(String pvName, String realName) throws IOException;	
 }
