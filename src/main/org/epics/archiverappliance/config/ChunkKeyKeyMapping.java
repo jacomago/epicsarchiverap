@@ -6,6 +6,12 @@ public class ChunkKeyKeyMapping implements PVNameToKeyMapping {
     private ConfigService configService;
     private char terminatorChar = 0;
 
+    /**
+     * Default constructor.
+     */
+    public ChunkKeyKeyMapping() {
+    }
+
     @Override
     public void initialize(ConfigService configService) throws ConfigException {
         this.configService = configService;

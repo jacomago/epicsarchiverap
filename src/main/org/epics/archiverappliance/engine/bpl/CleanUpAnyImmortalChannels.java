@@ -32,6 +32,12 @@ import jakarta.servlet.http.HttpServletResponse;
 public class CleanUpAnyImmortalChannels implements BPLAction {
     private static Logger logger = LogManager.getLogger(CleanUpAnyImmortalChannels.class.getName());
 
+    /**
+     * Default constructor.
+     */
+    public CleanUpAnyImmortalChannels() {
+    }
+
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
             throws IOException {

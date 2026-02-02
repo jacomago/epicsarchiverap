@@ -9,8 +9,18 @@ import org.epics.archiverappliance.config.exception.ConfigException;
  *
  */
 public interface PVNameToKeyMapping {
+    /**
+     * Initialize.
+     * @param configService Config Service
+     * @throws ConfigException If initialization fails
+     */
     public void initialize(ConfigService configService) throws ConfigException;
 
+    /**
+     * Convert PV name to key.
+     * @param pvName PV Name
+     * @return Key
+     */
     public abstract String convertPVNameToKey(String pvName);
     /**
      * Break a PV name into parts separated by the site specific separators
@@ -20,5 +30,10 @@ public interface PVNameToKeyMapping {
      */
     public String[] breakIntoParts(String pvName);
 
+    /**
+     * Override terminator.
+     * @param terminator Terminator char
+     * @return PVNameToKeyMapping
+     */
     PVNameToKeyMapping overrideTerminator(char terminator);
 }

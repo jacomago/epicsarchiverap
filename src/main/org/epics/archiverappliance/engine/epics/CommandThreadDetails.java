@@ -22,6 +22,12 @@ import java.util.Map;
  */
 public class CommandThreadDetails implements Details {
 
+    /**
+     * Default constructor.
+     */
+    public CommandThreadDetails() {
+    }
+
     @Override
     public LinkedList<Map<String, String>> details(ConfigService configService) {
         LinkedList<Map<String, String>> details = new LinkedList<Map<String, String>>();
