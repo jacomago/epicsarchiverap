@@ -30,6 +30,10 @@ public class ChannelArchiverDataServerPVInfo implements Serializable {
 		this.endSec = endSec;
 	}
 	
+	/**
+	 * Sort servers based on start and end seconds.
+	 * @param caPVInfos List of ChannelArchiverDataServerPVInfo
+	 */
 	public static void sortServersBasedOnStartAndEndSecs(List<ChannelArchiverDataServerPVInfo> caPVInfos) { 
 		Collections.sort(caPVInfos, new Comparator<ChannelArchiverDataServerPVInfo>() {
 			@Override
@@ -53,6 +57,10 @@ public class ChannelArchiverDataServerPVInfo implements Serializable {
 		return serverInfo;
 	}
 
+	/**
+	 * Get start seconds.
+	 * @return Start seconds
+	 */
 	public long getStartSec() {
 		return startSec;
 	}

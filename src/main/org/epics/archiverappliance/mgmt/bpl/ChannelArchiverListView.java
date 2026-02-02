@@ -30,6 +30,12 @@ import jakarta.servlet.http.HttpServletResponse;
 public class ChannelArchiverListView implements BPLAction {
     private static Logger logger = LogManager.getLogger(ChannelArchiverListView.class.getName());
 
+    /**
+     * Default constructor.
+     */
+    public ChannelArchiverListView() {
+    }
+
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
             throws IOException {

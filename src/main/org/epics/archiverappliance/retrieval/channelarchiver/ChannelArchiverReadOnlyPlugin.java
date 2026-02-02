@@ -64,8 +64,16 @@ public class ChannelArchiverReadOnlyPlugin implements StoragePlugin {
     private int valuesRequested = Integer.MAX_VALUE;
     private String howStr = "3";
 
+    /**
+     * Default constructor.
+     */
     public ChannelArchiverReadOnlyPlugin() {}
 
+    /**
+     * Constructor.
+     * @param serverURL Server URL
+     * @param index Index
+     */
     public ChannelArchiverReadOnlyPlugin(String serverURL, String index) {
         this.serverURL = serverURL;
         this.archiveKey = Integer.parseInt(index);
@@ -76,6 +84,13 @@ public class ChannelArchiverReadOnlyPlugin implements StoragePlugin {
                                 : (" and no reducedArchiveKey")));
     }
 
+    /**
+     * Constructor.
+     * @param serverURL Server URL
+     * @param index Index
+     * @param valuesRequested Values requested
+     * @param howStr How string
+     */
     public ChannelArchiverReadOnlyPlugin(String serverURL, String index, int valuesRequested, String howStr) {
         this.serverURL = serverURL;
         this.archiveKey = Integer.parseInt(index);
@@ -237,6 +252,10 @@ public class ChannelArchiverReadOnlyPlugin implements StoragePlugin {
         }
     }
 
+    /**
+     * Get server URL.
+     * @return Server URL
+     */
     public String getServerURL() {
         return serverURL;
     }
@@ -245,18 +264,34 @@ public class ChannelArchiverReadOnlyPlugin implements StoragePlugin {
         this.serverURL = serverURL;
     }
 
+    /**
+     * Get archive key.
+     * @return Archive key
+     */
     public int getArchiveKey() {
         return archiveKey;
     }
 
+    /**
+     * Set archive key.
+     * @param archiveKey Archive key
+     */
     public void setArchiveKey(int archiveKey) {
         this.archiveKey = archiveKey;
     }
 
+    /**
+     * Set description.
+     * @param description Description
+     */
     public void setDescription(String description) {
         this.description = description;
     }
 
+    /**
+     * Get reduced archive key.
+     * @return Reduced archive key
+     */
     public int getReducedArchiveKey() {
         return reducedArchiveKey;
     }
@@ -275,6 +310,9 @@ public class ChannelArchiverReadOnlyPlugin implements StoragePlugin {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * RTree plugin identifier.
+     */
     public static final String RTREE_PLUGIN_IDENTIFIER = "rtree";
 
     @Override
