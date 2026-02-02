@@ -52,5 +52,9 @@ import java.io.Closeable;
  *
  */
 public interface EventStream extends Iterable<Event>, Closeable {
+	/**
+	 * Get event stream description.
+	 * @return Event stream description
+	 */
 	public EventStreamDesc getDescription();
 }

@@ -16,8 +16,21 @@ import java.io.IOException;
  */
 public interface XMLRPCStaxProcessor {
 	
+	/**
+	 * Start element.
+	 * @param localName Local name
+	 * @return True to continue processing
+	 * @throws IOException If processing fails
+	 */
 	public boolean startElement(String localName) throws IOException;
 
+	/**
+	 * End element.
+	 * @param localName Local name
+	 * @param value Value
+	 * @return True to continue processing
+	 * @throws IOException If processing fails
+	 */
 	public boolean endElement(String localName, String value) throws IOException;
 
 }

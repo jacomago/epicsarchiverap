@@ -25,10 +25,19 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  */
 public class ArchPaths implements Closeable {
+    /**
+     * Zip prefix.
+     */
     public static final String ZIP_PREFIX = "jar:file://";
     private static final Logger logger = LogManager.getLogger(ArchPaths.class.getName());
     private static final FileSystemProvider zipFSProvider = getZipFSProvider();
     private final ConcurrentHashMap<String, FileSystem> fileSystemList = new ConcurrentHashMap<String, FileSystem>();
+
+    /**
+     * Default constructor.
+     */
+    public ArchPaths() {
+    }
 
     /**
      * Returns a seekable byte channel.
@@ -102,6 +111,7 @@ public class ArchPaths implements Closeable {
     }
 
     /**
+     * Get path from URI or default file path.
      * @param uriPathOrDefautFilePath &emsp;
      * @return Path  &emsp;
      * @throws IOException &emsp;

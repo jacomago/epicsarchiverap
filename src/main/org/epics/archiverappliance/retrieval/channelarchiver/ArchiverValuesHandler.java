@@ -40,11 +40,18 @@ import javax.xml.stream.XMLStreamReader;
 public class ArchiverValuesHandler implements XMLRPCStaxProcessor, EventStream, Iterator<Event>, RemotableOverRaw {
     private static final Logger logger = LogManager.getLogger(ArchiverValuesHandler.class.getName());
 
+    /**
+     * Archiver Values Type.
+     */
     public enum ArchiverValuesType {
         // See page 43 of the Channel Archiver Manual for this...
+        /** String type */
         CHANNEL_ARCHIVER_STRING(0),
+        /** Enum type */
         CHANNEL_ARCHIVER_ENUM(1),
+        /** Int type */
         CHANNEL_ARCHIVER_INT(2),
+        /** Double type */
         CHANNEL_ARCHIVER_DOUBLE(3);
 
         final int val;
@@ -429,14 +436,26 @@ public class ArchiverValuesHandler implements XMLRPCStaxProcessor, EventStream, 
         return retVal;
     }
 
+    /**
+     * Get meta information.
+     * @return Meta information map
+     */
     public HashMap<String, String> getMetaInformation() {
         return metaInformation;
     }
 
+    /**
+     * Get value type.
+     * @return Value type
+     */
     public ArchiverValuesType getValueType() {
         return valueType;
     }
 
+    /**
+     * Get element count.
+     * @return Element count
+     */
     public int getElementCount() {
         return elementCount;
     }
