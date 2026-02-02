@@ -2,6 +2,11 @@ package org.epics.archiverappliance.config;
 
 import org.epics.archiverappliance.config.exception.ConfigException;
 
+/**
+ * Chunk key key mapping.
+ * @author mshankar
+ *
+ */
 public class ChunkKeyKeyMapping implements PVNameToKeyMapping {
     private ConfigService configService;
     private char terminatorChar = 0;
@@ -17,10 +22,19 @@ public class ChunkKeyKeyMapping implements PVNameToKeyMapping {
         this.configService = configService;
     }
 
+    /**
+     * Constructor.
+     * @param configService Config Service
+     */
     public ChunkKeyKeyMapping(ConfigService configService) {
         this.configService = configService;
     }
 
+    /**
+     * Constructor.
+     * @param configService Config Service
+     * @param terminatorChar Terminator char
+     */
     public ChunkKeyKeyMapping(ConfigService configService, char terminatorChar) {
         this.configService = configService;
         this.terminatorChar = terminatorChar;

@@ -17,9 +17,15 @@ import java.io.IOException;
  * @author mshankar
  */
 public interface CompareEventLine {
+    /**
+     * Next step enum.
+     */
     enum NextStep {
+        /** Go left */
         GO_LEFT,
+        /** Go right */
         GO_RIGHT,
+        /** Stay */
         STAY_WHERE_YOU_ARE
     }
 

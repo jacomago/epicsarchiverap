@@ -41,6 +41,12 @@ import jakarta.servlet.http.HttpServletResponse;
 public class CompareWithChannelArchiver implements BPLAction {
     private static Logger logger = LogManager.getLogger(CompareWithChannelArchiver.class.getName());
 
+    /**
+     * Default constructor.
+     */
+    public CompareWithChannelArchiver() {
+    }
+
     private static void addEventToEventList(
             LinkedList<HashMap<String, String>> retVals, DBRTimeEvent event, String src) {
         HashMap<String, String> eventData = new HashMap<String, String>();

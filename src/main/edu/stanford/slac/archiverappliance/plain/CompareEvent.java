@@ -28,6 +28,11 @@ public class CompareEvent implements CompareEventLine {
     private final YearSecondTimestamp yearSecondTimestamp;
     private final ArchDBRTypes type;
 
+    /**
+     * Constructor.
+     * @param type DBR Type
+     * @param yearSecondTimestamp Timestamp
+     */
     public CompareEvent(ArchDBRTypes type, YearSecondTimestamp yearSecondTimestamp) {
         this.type = type;
         this.yearSecondTimestamp = yearSecondTimestamp;

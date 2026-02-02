@@ -22,6 +22,12 @@ import java.util.Map;
  */
 public class CommandThreadReport implements MetricsDetails {
 
+    /**
+     * Default constructor.
+     */
+    public CommandThreadReport() {
+    }
+
     @Override
     public LinkedList<Map<String, String>> metricsDetails(ConfigService configService) {
         CommandThreadDetails ctd = new CommandThreadDetails();
