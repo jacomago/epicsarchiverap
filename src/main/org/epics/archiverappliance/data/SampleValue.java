@@ -21,16 +21,38 @@ import java.util.List;
 public interface SampleValue extends JSONAware {
     public String toString();
 
+    /**
+     * Get element count.
+     * @return Element count
+     */
     public int getElementCount();
 
+    /**
+     * Get value.
+     * @return Value
+     */
     public Number getValue();
 
+    /**
+     * Get value at index.
+     * @param index Index
+     * @return Value
+     */
     public Number getValue(int index);
 
+    /**
+     * Get string value at index.
+     * @param index Index
+     * @return String value
+     */
     public String getStringValue(int index);
 
     public String toJSONString();
 
+    /**
+     * Get values.
+     * @return Values
+     */
     @SuppressWarnings("rawtypes")
     public List getValues();
     /**

@@ -28,12 +28,21 @@ import edu.stanford.slac.archiverappliance.PB.utils.LineTooLongException;
  *
  */
 public class ByteArray {
+	/** Data */
 	public byte[] data = null;
+	/** Offset */
 	public int off = 0;
+	/** Length */
 	public int len = 0;
+	/** Unescaped Data */
 	public byte[] unescapedData = null;
+	/** Unescaped Length */
 	public int unescapedLen = 0;
 	
+	/**
+	 * Constructor.
+	 * @param size Size
+	 */
 	public ByteArray(int size) {
 		data = new byte[size];
 		off = 0;
@@ -41,6 +50,10 @@ public class ByteArray {
 		unescapedLen = 0;
 	}
 	
+	/**
+	 * Constructor.
+	 * @param src Source
+	 */
 	public ByteArray(byte[] src) {
 		data = src;
 		off = 0;
@@ -48,6 +61,9 @@ public class ByteArray {
 		unescapedLen = 0;
 	}
 	
+	/**
+	 * Reset.
+	 */
 	public void reset() { 
 		off = 0;
 		len = 0;
@@ -66,6 +82,10 @@ public class ByteArray {
 		return ret;
 	}
 	
+	/**
+	 * Get unescaped bytes.
+	 * @return Unescaped bytes
+	 */
 	public byte[] unescapedBytes() {
 		if(unescapedLen == 0) return null;
 		byte[] ret = new byte[unescapedLen];
@@ -86,10 +106,18 @@ public class ByteArray {
 		data = newData;
 	}
 	
+	/**
+	 * Is empty.
+	 * @return True if empty
+	 */
 	public boolean isEmpty() {
 		return len == 0;
 	}
 	
+	/**
+	 * In place unescape.
+	 * @return ByteArray
+	 */
 	public ByteArray inPlaceUnescape() {
 		if(len == 0) return this;
 		if(unescapedData == null || unescapedData.length != data.length) unescapedData = new byte[data.length];

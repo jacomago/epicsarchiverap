@@ -84,7 +84,12 @@ public class CapacityPlanningData {
 	}
 	
 	
-	
+	/**
+	 * Constructor.
+	 * @param configService Config Service
+	 * @param applianceInfo Appliance Info
+	 * @throws IOException If fetch fails
+	 */
 	public CapacityPlanningData(ConfigService configService, ApplianceInfo applianceInfo) throws IOException {
 		try{
 			identity = applianceInfo.getIdentity();
@@ -135,10 +140,19 @@ public class CapacityPlanningData {
 	}
 
 
+	/**
+	 * Get cached metrics for appliances.
+	 * @param configService Config Service
+	 * @return CPStaticData
+	 * @throws IOException If access fails
+	 */
 	public static CPStaticData getCachedMetricsForAppliances(ConfigService configService) throws IOException {
 		return cachedCPStaticData;
 	}
 	
+	/**
+	 * CP Static Data.
+	 */
 	public static class CPStaticData {
 		public ConcurrentHashMap<ApplianceInfo, CapacityPlanningData> cpApplianceMetrics;
         Instant timeofData;
@@ -150,6 +164,11 @@ public class CapacityPlanningData {
 	}
 
 
+	/**
+	 * Get engine write thread usage.
+	 * @param writePeriod Write period
+	 * @return Usage
+	 */
 	public float getEngineWriteThreadUsage(float writePeriod) {
 		engineWriteThreadUsage = (float) (secondsConsumedByWriter*100/writePeriod);
 		logger.debug("engineWriteThreadUsage for appliance " + identity + " is " + engineWriteThreadUsage);
@@ -157,11 +176,19 @@ public class CapacityPlanningData {
 	}
 
 
+	/**
+	 * Get ETL metrics.
+	 * @return ETL metrics
+	 */
 	public ConcurrentHashMap<String, ETLMetrics> getEtlMetrics() {
 		return etlMetrics;
 	}
 
 
+	/**
+	 * Get current total storage rate.
+	 * @return Rate
+	 */
 	public float getCurrentTotalStorageRate() {
 		return currentTotalStorageRate;
 	}

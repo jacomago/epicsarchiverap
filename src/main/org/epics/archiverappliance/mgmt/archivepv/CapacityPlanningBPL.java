@@ -42,6 +42,12 @@ public class CapacityPlanningBPL {
          */
         private static float percentageLimitation=80;
         private static Logger configlogger = LogManager.getLogger("config." + CapacityPlanningBPL.class.getName());
+
+        /**
+         * Default constructor.
+         */
+        public CapacityPlanningBPL() {
+        }
  
    /***
     * get the appliance for this pv.

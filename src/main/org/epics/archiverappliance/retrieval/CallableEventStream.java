@@ -20,6 +20,10 @@ public class CallableEventStream implements Callable<EventStream> {
 	private static Logger logger = LogManager.getLogger(CallableEventStream.class.getName());
 	private EventStream theStream = null;
 	
+	/**
+	 * Constructor.
+	 * @param st Event Stream
+	 */
 	public CallableEventStream(EventStream st) {
 		this.theStream = st;
 	}
@@ -29,12 +33,24 @@ public class CallableEventStream implements Callable<EventStream> {
 		return theStream;
 	}
 
+	/**
+	 * Make one stream callable list.
+	 * @param st Event Stream
+	 * @return List of callables
+	 */
 	public static List<Callable<EventStream>> makeOneStreamCallableList(EventStream st) {
 		List<Callable<EventStream>> ret = new ArrayList<Callable<EventStream>>();
 		ret.add(new CallableEventStream(st));
 		return ret;
 	}
 	
+	/**
+	 * Make one stream callable list.
+	 * @param st Event Stream
+	 * @param postProcessor Post Processor
+	 * @param wrapWithPostProcessor Whether to wrap with post processor
+	 * @return List of callables
+	 */
 	public static List<Callable<EventStream>> makeOneStreamCallableList(EventStream st, PostProcessor postProcessor, boolean wrapWithPostProcessor) {
 		List<Callable<EventStream>> ret = new ArrayList<Callable<EventStream>>();
 		if(wrapWithPostProcessor && postProcessor != null) {
@@ -45,6 +61,13 @@ public class CallableEventStream implements Callable<EventStream> {
 		return ret;
 	}
 	
+	/**
+	 * Make one stream callable.
+	 * @param st Event Stream
+	 * @param postProcessor Post Processor
+	 * @param wrapWithPostProcessor Whether to wrap with post processor
+	 * @return Callable
+	 */
 	public static Callable<EventStream> makeOneStreamCallable(EventStream st, PostProcessor postProcessor, boolean wrapWithPostProcessor) {
 		if(wrapWithPostProcessor) {
 			return postProcessor.wrap(new CallableEventStream(st));
@@ -54,6 +77,14 @@ public class CallableEventStream implements Callable<EventStream> {
 		}
 	}
 
+	/**
+	 * Make one event callable.
+	 * @param ev Event
+	 * @param desc Description
+	 * @param postProcessor Post Processor
+	 * @param wrapWithPostProcessor Whether to wrap with post processor
+	 * @return Callable
+	 */
 	public static Callable<EventStream> makeOneEventCallable(Event ev, RemotableEventStreamDesc desc, PostProcessor postProcessor, boolean wrapWithPostProcessor) {
 		ArrayListEventStream strm = new ArrayListEventStream(1, desc);
 		strm.add(ev);

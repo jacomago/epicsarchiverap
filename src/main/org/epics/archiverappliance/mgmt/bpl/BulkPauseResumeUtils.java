@@ -24,6 +24,12 @@ public class BulkPauseResumeUtils {
     private static Logger logger = LogManager.getLogger(BulkPauseResumeUtils.class);
 
     /**
+     * Default constructor.
+     */
+    public BulkPauseResumeUtils() {
+    }
+
+    /**
      * Get a list of PVNames based on if this is a POST or GET.
      * @param req HttpServletRequest
      * @param configService  ConfigService
@@ -41,10 +47,18 @@ public class BulkPauseResumeUtils {
         return pvNames;
     }
 
+    /**
+     * Pause or resume bulk operation.
+     */
     public static class PauseResumeBulkOperation implements EAABulkOperation<Map<String, Map<String, String>>> {
         private final Map<String, List<String>> pvNamesByAppliance;
         private final boolean askingToPausePV;
 
+        /**
+         * Constructor.
+         * @param pvNamesByAppliance PV names by appliance
+         * @param askingToPausePV Whether asking to pause
+         */
         public PauseResumeBulkOperation(Map<String, List<String>> pvNamesByAppliance, boolean askingToPausePV) {
             this.pvNamesByAppliance = pvNamesByAppliance;
             this.askingToPausePV = askingToPausePV;
@@ -92,6 +106,14 @@ public class BulkPauseResumeUtils {
         }
     }
 
+    /**
+     * Pause or resume PVs.
+     * @param pvNames List of PV names
+     * @param configService Config Service
+     * @param askingToPausePV True to pause, false to resume
+     * @return List of statuses
+     * @throws IOException If operation fails
+     */
     public static List<HashMap<String, String>> pauseResumePVs(
             List<String> pvNames, ConfigService configService, boolean askingToPausePV) throws IOException {
         List<HashMap<String, String>> retVal = new LinkedList<HashMap<String, String>>();

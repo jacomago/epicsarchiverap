@@ -42,6 +42,10 @@ public class ByteBufSampleValue implements SampleValue {
     private static final Logger logger = LogManager.getLogger(ByteBufSampleValue.class.getName());
     ByteBuffer buf;
 
+    /**
+     * Constructor.
+     * @param buf Byte buffer
+     */
     public ByteBufSampleValue(ByteBuffer buf) {
         this.buf = buf;
     }
