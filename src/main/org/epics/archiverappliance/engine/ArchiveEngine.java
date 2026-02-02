@@ -58,7 +58,6 @@ import java.util.concurrent.TimeUnit;
  * @author Luofeng Li
  *
  */
-
 public class ArchiveEngine {
 	private static final Logger logger = LogManager.getLogger(ArchiveEngine.class.getName());
 
@@ -189,6 +188,7 @@ public class ArchiveEngine {
 
 
 	/**
+	 * Archive a PV.
 	 * @param pvName Name of the channel (PV)
 	 * @param samplingPeriod The minimal sample period for channel in scan mode.  Attention: the same data with same value and timestamp is not saved again in scan mode. This period is meanlingless for channel in monitor mode.
 	 * @param mode scan or monitor
@@ -211,7 +211,8 @@ public class ArchiveEngine {
 
 
 
-	/**	 
+	/**
+	 * Archive a PV.
 	 * @param pvName Name of the channel (PV)
 	 * @param samplingPeriod The minimal sample period for channel in scan mode.  Attention: the same data with same value and timestamp is not saved again in scan mode. This period is meanlingless for channel in monitor mode.
 	 * @param mode scan or monitor
@@ -233,6 +234,7 @@ public class ArchiveEngine {
 
 
 	/**
+	 * Archive a PV.
 	 * @param pvName Name of the channel (PV)
 	 * @param samplingPeriod The minimal sample period for channel in scan mode.  Attention: the same data with same value and timestamp is not saved again in scan mode. This period is meanlingless for channel in monitor mode.
 	 * @param mode scan or monitor
@@ -359,6 +361,7 @@ public class ArchiveEngine {
 	 *
 	 * @param pvName        Name of the channel (PV)
 	 * @param configservice ConfigService
+	 * @param writer        Writer
 	 * @throws Exception error in restarting the channel .
 	 */
 
@@ -402,6 +405,8 @@ public class ArchiveEngine {
 	 * Should be called on startup or on resume of a PV that was paused on startup.
 	 * @param pvName The Name of PV.
 	 * @param configservice  ConfigService
+	 * @param typeInfo       PVTypeInfo
+	 * @param writer         Writer
 	 * @throws IOException  &emsp;
 	 * @throws Exception  &emsp;
 	 */

@@ -492,6 +492,7 @@ public class ArchivePVState {
     }
 
     /**
+     * Get the current archiving state machine state.
      * @return The current archiving state machine state
      */
     public ArchivePVStateMachine getCurrentState() {

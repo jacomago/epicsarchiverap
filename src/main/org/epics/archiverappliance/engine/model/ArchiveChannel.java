@@ -55,6 +55,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @SuppressWarnings("nls")
 public abstract class ArchiveChannel {
+    /**
+     * Period in seconds to save metadata.
+     */
     public static final int SAVE_META_DATA_PERIOD_SECS = 86400;
 
     private static final Logger logger = LogManager.getLogger(ArchiveChannel.class);
@@ -286,6 +289,14 @@ public abstract class ArchiveChannel {
         return pvMetrics;
     }
 
+    /**
+     * Initialize meta field PVs.
+     * @param metaFields Array of meta fields
+     * @param configservice Config service
+     * @param usePVAccess Whether to use PVAccess
+     * @param useDBEProperties Whether to use DBE properties
+     * @throws IOException If initialization fails
+     */
     public void initializeMetaFieldPVS(
             final String[] metaFields,
             final ConfigService configservice,
@@ -512,6 +523,9 @@ public abstract class ArchiveChannel {
         logger.debug("Done starting up monitors on the fields for pv " + this.name);
     }
 
+    /**
+     * Shutdown meta channels.
+     */
     public void shutdownMetaChannels() {
         logger.debug("Shutting down monitors on the fields for pv " + this.name);
         for (PV metaPV : metaPVs.values()) {
@@ -677,10 +691,18 @@ public abstract class ArchiveChannel {
         return null;
     }
 
+    /**
+     * Get the host name.
+     * @return Host name
+     */
     public String getHostName() {
         return pv.getHostName();
     }
 
+    /**
+     * Get low level channel state info.
+     * @param statuses List of status maps to populate
+     */
     public void getLowLevelChannelStateInfo(List<Map<String, String>> statuses) {
         this.pv.getLowLevelChannelInfo(statuses);
     }
@@ -799,16 +821,28 @@ public abstract class ArchiveChannel {
         return retVal;
     }
 
+    /**
+     * Called before writing the buffer.
+     * @param lastSample The last sample written
+     */
     public void aboutToWriteBuffer(DBRTimeEvent lastSample) {
         if (this.pv != null) {
             this.pv.aboutToWriteBuffer(lastSample);
         }
     }
 
+    /**
+     * Set paused state.
+     * @param pausedVal True to pause
+     */
     public void setPaused(boolean pausedVal) {
         this.paused = pausedVal;
     }
 
+    /**
+     * Check if paused.
+     * @return True if paused
+     */
     public boolean isPaused() {
         return this.paused;
     }
