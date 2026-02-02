@@ -80,6 +80,7 @@ public class BasicContext implements Closeable {
 	}
 
 	/**
+	 * Get retrieval expected DBR type.
 	 * @return retrievalExpectedDBRType ArchDBRTypes
 	 */
 	public ArchDBRTypes getRetrievalExpectedDBRType() {
@@ -87,6 +88,7 @@ public class BasicContext implements Closeable {
 	}
 
 	/**
+	 * Get PV name from request.
 	 * @return pvNameFromRequest  &emsp;
 	 */
 	public String getPvNameFromRequest() {
