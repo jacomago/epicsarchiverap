@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
+ * Reset the failover caches for all the retrieval components in this cluster.
  *
  * @epics.BPLAction - Reset the failover caches for all the retrieval components in this cluster.
  * @epics.BPLActionEnd

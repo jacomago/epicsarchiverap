@@ -17,7 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- *
+ * Return a list of PVs sorted by the timestamp of the last event received (descending).
  *
  * @epics.BPLAction - Return a list of PVs sorted by the timestamp of the last event received (descending).
  * @epics.BPLActionParam limit - Limit this report to this many PVs per appliance in the cluster. Optional, if unspecified, there are no limits enforced.

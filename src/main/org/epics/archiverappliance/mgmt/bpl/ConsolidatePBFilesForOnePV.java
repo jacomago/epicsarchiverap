@@ -24,6 +24,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
+ * Consolidate the data for this PV until the specified store. The PV needs to be paused first.
  *
  * @epics.BPLAction - Consolidate the data for this PV until the specified store. The PV needs to be paused first.
  * @epics.BPLActionParam pv - The name of the pv.

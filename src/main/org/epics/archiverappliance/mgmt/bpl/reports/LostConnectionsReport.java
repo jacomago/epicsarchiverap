@@ -17,7 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- *
+ * Return a list of PVs sorted by number of times we've lost/reestablished connections (descending) to the IOC hosting the PV. Can be used to determine if the IOC is being overloaded.
  *
  * @epics.BPLAction - Return a list of PVs sorted by number of times we've lost/reestablished connections (descending) to the IOC hosting the PV. Can be used to determine if the IOC is being overloaded.
  * @epics.BPLActionParam limit - Limit this report to this many PVs per appliance in the cluster. Optional, if unspecified, there are no limits enforced.

@@ -17,6 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
+ * Get a list of PVs that are currently disconnected.
  *
  * @epics.BPLAction - Get a list of PVs that are currently disconnected.
  * @epics.BPLActionEnd
