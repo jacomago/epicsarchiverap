@@ -103,6 +103,10 @@ public class BlackholeStoragePlugin implements StoragePlugin, ETLDest {
         return "A black hole plugin";
     }
 
+    /**
+     * Get URL representation.
+     * @return URL representation
+     */
     public String getURLRepresentation() {
         StringWriter ret = new StringWriter();
         ret.append(BLACKHOLE_PLUGIN_IDENTIFIER + "://localhost");
