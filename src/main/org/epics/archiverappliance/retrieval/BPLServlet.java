@@ -45,6 +45,12 @@ public class BPLServlet extends HttpServlet {
     private static final HashMap<String, Class<? extends BPLAction>> getActions =
             new HashMap<String, Class<? extends BPLAction>>();
 
+    /**
+     * Default constructor.
+     */
+    public BPLServlet() {
+    }
+
     static {
         getActions.put("/getApplianceMetrics", ApplianceMetrics.class);
         getActions.put("/getApplianceMetricsForAppliance", ApplianceMetricsDetails.class);

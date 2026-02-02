@@ -119,6 +119,12 @@ public class BPLServlet extends HttpServlet {
             new HashMap<String, Class<? extends BPLAction>>();
     private static LinkedList<String> actionsSequenceForDocs = new LinkedList<String>();
 
+    /**
+     * Default constructor.
+     */
+    public BPLServlet() {
+    }
+
     static {
         // BPL related to PVs/appliances etc
         addAction("/getAllPVs", GetAllPVs.class);
