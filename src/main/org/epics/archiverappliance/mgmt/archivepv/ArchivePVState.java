@@ -37,17 +37,25 @@ public class ArchivePVState {
      * Enum for Archive PV state machine.
      */
     public enum ArchivePVStateMachine {
+        /** Start */
         START,
+        /** Meta info requested */
         METAINFO_REQUESTED,
+        /** Meta info gathering */
         METAINFO_GATHERING,
+        /** Meta info obtained */
         METAINFO_OBTAINED,
+        /** Policy computed */
         POLICY_COMPUTED,
+        /** Type info stable */
         TYPEINFO_STABLE,
         /** Archive request submitted */
         ARCHIVE_REQUEST_SUBMITTED,
+        /** Archiving */
         ARCHIVING,
         /** Aborted */
         ABORTED,
+        /** Finished */
         FINISHED
     }
 

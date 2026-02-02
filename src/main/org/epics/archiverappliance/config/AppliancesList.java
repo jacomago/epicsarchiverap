@@ -27,6 +27,12 @@ public class AppliancesList {
     private static Logger logger = LogManager.getLogger(AppliancesList.class.getName());
 
     /**
+     * Default constructor.
+     */
+    public AppliancesList() {
+    }
+
+    /**
      * Parses the appliances.xml file and loads the appliances into the specified appliancesList
      * @param servletContext ServletContext
      * @return appliancesList &emsp;

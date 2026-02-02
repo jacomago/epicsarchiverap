@@ -14,10 +14,19 @@ package org.epics.archiverappliance.common;
  *
  */
 public class ArchiverConfigException extends Exception {
+	/**
+	 * Constructor with message and cause.
+	 * @param arg0 Message
+	 * @param arg1 Cause
+	 */
 	public ArchiverConfigException(String arg0, Throwable arg1) {
 		super(arg0, arg1);
 	}
 
+	/**
+	 * Constructor with message.
+	 * @param arg0 Message
+	 */
 	public ArchiverConfigException(String arg0) {
 		super(arg0);
 	}

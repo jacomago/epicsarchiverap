@@ -77,7 +77,16 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class ArchivePVAction implements BPLAction {
+    /**
+     * Logger
+     */
     public static final Logger logger = LogManager.getLogger(ArchivePVAction.class);
+
+    /**
+     * Default constructor.
+     */
+    public ArchivePVAction() {
+    }
 
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)

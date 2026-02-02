@@ -14,10 +14,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/*
+/**
  * Use a Hz query to determine the PV's that are being archived in this cluster.
  */
 public class ArchivedPVsInList {
+
+    /**
+     * Default constructor.
+     */
+    public ArchivedPVsInList() {
+    }
 
     private static record OnlyFields(String pvName, String[] archiveFields) implements Serializable {}
     ;
@@ -31,6 +37,13 @@ public class ArchivedPVsInList {
         }
     }
 
+    /**
+     * Get archived PVs from a list.
+     * @param pvNames List of PV names
+     * @param configService Config Service
+     * @return List of archived PV names
+     * @throws IOException If query fails
+     */
     public static List<String> getArchivedPVs(List<String> pvNames, ConfigService configService) throws IOException {
         record PVNameParts(String pvName, String plainPVName, boolean isField, String fieldName) {}
         ;

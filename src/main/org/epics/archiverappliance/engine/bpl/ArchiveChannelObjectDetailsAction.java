@@ -27,6 +27,12 @@ import jakarta.servlet.http.HttpServletResponse;
 public class ArchiveChannelObjectDetailsAction implements BPLAction {
     private static Logger logger = LogManager.getLogger(ArchiveChannelObjectDetailsAction.class.getName());
 
+    /**
+     * Default constructor.
+     */
+    public ArchiveChannelObjectDetailsAction() {
+    }
+
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
             throws IOException {
@@ -57,6 +63,14 @@ public class ArchiveChannelObjectDetailsAction implements BPLAction {
         }
     }
 
+    /**
+     * Convert object to JSON.
+     * @param pvName PV Name
+     * @param obj Object to convert
+     * @param useSuperClassFields Whether to use super class fields
+     * @return Map of object properties
+     * @throws IllegalAccessException If access fails
+     */
     public HashMap<String, Object> objectToJSON(String pvName, Object obj, boolean useSuperClassFields)
             throws IllegalAccessException {
         HashMap<String, Object> objValues = new HashMap<String, Object>();
