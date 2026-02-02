@@ -36,10 +36,18 @@ public class BasicContext implements Closeable {
 	private String pvNameFromRequest = null;
 	
 	
+	/**
+	 * Default constructor.
+	 */
 	public BasicContext() { 
 		
 	}
 	
+	/**
+	 * Constructor.
+	 * @param retrievalExpectedDBRType Expected DBR Type
+	 * @param pvNameFromRequest PV Name
+	 */
 	public BasicContext(ArchDBRTypes retrievalExpectedDBRType, String pvNameFromRequest) {
 		this.retrievalExpectedDBRType = retrievalExpectedDBRType;
 		this.pvNameFromRequest = pvNameFromRequest;

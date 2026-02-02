@@ -41,9 +41,18 @@ import java.util.concurrent.Callable;
  */
 public class BlackholeStoragePlugin implements StoragePlugin, ETLDest {
     private static Logger logger = LogManager.getLogger(BlackholeStoragePlugin.class.getName());
+    /**
+     * Blackhole plugin identifier.
+     */
     public static final String BLACKHOLE_PLUGIN_IDENTIFIER = "blackhole";
 
     private String name = BLACKHOLE_PLUGIN_IDENTIFIER;
+
+    /**
+     * Default constructor.
+     */
+    public BlackholeStoragePlugin() {
+    }
 
     @Override
     public List<Callable<EventStream>> getDataForPV(

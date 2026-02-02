@@ -23,6 +23,11 @@ import org.epics.archiverappliance.retrieval.RemotableOverRaw;
 public class ArrayListEventStream extends ArrayList<Event> implements EventStream, RemotableOverRaw {
 	private RemotableEventStreamDesc desc;
 	
+	/**
+	 * Constructor.
+	 * @param initialSize Initial size
+	 * @param desc Event stream description
+	 */
 	public ArrayListEventStream(int initialSize, RemotableEventStreamDesc desc) {
 		super(initialSize);
 		this.desc = desc;
@@ -38,11 +43,19 @@ public class ArrayListEventStream extends ArrayList<Event> implements EventStrea
 		return desc;
 	}
 	
+	/**
+	 * Get year.
+	 * @return Year
+	 */
 	public short getYear()
 	{
 		return desc.getYear();
 	}
 
+	/**
+	 * Set year.
+	 * @param year Year
+	 */
 	public void setYear(short year)
 	{
 		desc.setYear(year);

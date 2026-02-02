@@ -33,6 +33,14 @@ public class BasicDispatcher {
 
     private BasicDispatcher() {}
 
+    /**
+     * Dispatch request.
+     * @param req Request
+     * @param resp Response
+     * @param configService Config Service
+     * @param actions Actions map
+     * @throws IOException If dispatch fails
+     */
     public static void dispatch(
             HttpServletRequest req,
             HttpServletResponse resp,

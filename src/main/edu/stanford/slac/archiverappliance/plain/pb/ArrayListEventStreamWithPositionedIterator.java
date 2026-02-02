@@ -19,7 +19,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-/*
+/**
  * If we have a small enough file, we may just as well load the entire file into memory and use that as an EventStream
  * This gets around various boundary conditions and is probably more efficient.
  */
@@ -28,6 +28,15 @@ public class ArrayListEventStreamWithPositionedIterator implements EventStream, 
             LogManager.getLogger(ArrayListEventStreamWithPositionedIterator.class.getName());
     private final ArrayListEventStream thestrm;
 
+    /**
+     * Constructor.
+     * @param pvName PV Name
+     * @param path Path
+     * @param startAtTime Start time
+     * @param archDBRTypes DBR Type
+     * @param direction Direction
+     * @throws IOException If loading fails
+     */
     public ArrayListEventStreamWithPositionedIterator(
             String pvName,
             Path path,

@@ -17,6 +17,12 @@ public class Average
 
     private double average = 0.0;
 
+    /**
+     * Default constructor.
+     */
+    public Average() {
+    }
+
     /** Reset to 0 */
     public void reset()
     {

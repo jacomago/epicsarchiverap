@@ -17,6 +17,14 @@ import java.io.IOException;
  *
  */
 public interface Writer {
+    /**
+     * Append data.
+     * @param context Basic Context
+     * @param pvName PV Name
+     * @param stream Event Stream
+     * @return Number of events appended
+     * @throws IOException If append fails
+     */
     int appendData(BasicContext context, String pvName, EventStream stream) throws IOException;
 
 	/**

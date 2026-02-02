@@ -7,9 +7,17 @@ import java.time.Instant;
 import java.time.Period;
 import java.util.function.Predicate;
 
+/**
+ * Bi-directional iterable interface.
+ */
 public interface BiDirectionalIterable {
+    /**
+     * Iteration direction.
+     */
     public enum IterationDirection {
+        /** Forwards */
         FORWARDS,
+        /** Backwards */
         BACKWARDS
     };
 

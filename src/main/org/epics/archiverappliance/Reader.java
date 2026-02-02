@@ -23,6 +23,16 @@ import java.util.concurrent.Callable;
  *
  */
 public interface Reader {
+	/**
+	 * Get data for PV.
+	 * @param context Basic Context
+	 * @param pvName PV Name
+	 * @param startTime Start Time
+	 * @param endTime End Time
+	 * @param postProcessor Post Processor
+	 * @return List of callables
+	 * @throws IOException If retrieval fails
+	 */
 	List<Callable<EventStream>> getDataForPV(BasicContext context, String pvName, Instant startTime, Instant endTime, PostProcessor postProcessor) throws IOException;
 
 	/**

@@ -23,6 +23,10 @@ public class ArrayListCollectorEventStream implements EventStream, RemotableOver
 	private ArrayListEventStream sourceStream;
 	private final RemotableEventStreamDesc desc;
 	private Iterator<Event> theOneAndOnlyIterator;
+	/**
+	 * Constructor.
+	 * @param sourceStream Source stream
+	 */
 	public ArrayListCollectorEventStream(ArrayListEventStream sourceStream) {
 		this.sourceStream = sourceStream;
 		this.desc = new RemotableEventStreamDesc(sourceStream.getDescription());
