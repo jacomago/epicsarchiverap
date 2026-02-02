@@ -24,8 +24,9 @@ import java.io.IOException;
  */
 public interface ETLDest extends Writer {
 
-    /*
-     * Same as the one in StoragePlugin
+    /**
+     * Get name.
+     * @return Name
      */
     public String getName();
 
@@ -64,8 +65,16 @@ public interface ETLDest extends Writer {
      */
     public boolean runPostProcessors(String pvName, ArchDBRTypes dbrtype, ETLContext context) throws IOException;
 
+    /**
+     * Get partition granularity.
+     * @return Partition granularity
+     */
     public PartitionGranularity getPartitionGranularity();
 
+    /**
+     * Get description.
+     * @return Description
+     */
     public String getDescription();
 
     default ETLInfoListProcessor etlInfoListProcessor(ETLSource curETLSource) {
