@@ -510,7 +510,6 @@ public abstract class ArchiveChannel {
 
     /**
      * Start the metachannels
-     * <p>
      *
      * @throws Exception &emsp;
      */

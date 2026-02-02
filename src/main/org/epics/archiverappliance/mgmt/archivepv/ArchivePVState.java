@@ -33,6 +33,9 @@ import java.util.List;
 public class ArchivePVState {
     private static Logger logger = LogManager.getLogger(ArchivePVState.class.getName());
 
+    /**
+     * Enum for Archive PV state machine.
+     */
     public enum ArchivePVStateMachine {
         START,
         METAINFO_REQUESTED,
@@ -40,8 +43,10 @@ public class ArchivePVState {
         METAINFO_OBTAINED,
         POLICY_COMPUTED,
         TYPEINFO_STABLE,
+        /** Archive request submitted */
         ARCHIVE_REQUEST_SUBMITTED,
         ARCHIVING,
+        /** Aborted */
         ABORTED,
         FINISHED
     }
@@ -57,6 +62,11 @@ public class ArchivePVState {
     private String myIdentity;
     private MetaInfo metaInfo = null;
 
+    /**
+     * Constructor.
+     * @param pvName PV Name
+     * @param configService Config Service
+     */
     public ArchivePVState(String pvName, ConfigService configService) {
         this.pvName = pvName;
         this.configService = configService;
@@ -69,6 +79,9 @@ public class ArchivePVState {
         }
     }
 
+    /**
+     * Execute next step.
+     */
     public synchronized void nextStep() {
         try {
             logger.debug("Archive workflow for pv " + pvName + " in state " + currentState);
@@ -305,6 +318,10 @@ public class ArchivePVState {
         }
     }
 
+    /**
+     * Check if not connected so far.
+     * @return True if not connected
+     */
     public boolean hasNotConnectedSoFar() {
         return this.currentState.equals(ArchivePVState.ArchivePVStateMachine.START)
                 || this.currentState.equals(ArchivePVState.ArchivePVStateMachine.METAINFO_REQUESTED)
@@ -336,25 +353,42 @@ public class ArchivePVState {
         configService.getEventBus().post(pubSubEvent);
     }
 
+    /**
+     * Get start of workflow.
+     * @return Start time
+     */
     public Instant getStartOfWorkflow() {
         return startOfWorkflow;
     }
 
+    /**
+     * Meta info request acknowledged.
+     */
     public void metaInfoRequestAcknowledged() {
         metaInfoRequestedSubmitted = TimeUtils.now();
         this.currentState = ArchivePVStateMachine.METAINFO_GATHERING;
     }
 
+    /**
+     * Meta info obtained.
+     * @param metaInfo Meta info
+     */
     public void metaInfoObtained(MetaInfo metaInfo) {
         this.metaInfo = metaInfo;
         this.currentState = ArchivePVStateMachine.METAINFO_OBTAINED;
     }
 
+    /**
+     * Error getting meta info.
+     */
     public void errorGettingMetaInfo() {
         abortReason = "Error getting meta info";
         this.currentState = ArchivePVStateMachine.ABORTED;
     }
 
+    /**
+     * Confirmed started archiving PV.
+     */
     public void confirmedStartedArchivingPV() {
         this.currentState = ArchivePVStateMachine.ARCHIVING;
     }
@@ -499,18 +533,34 @@ public class ArchivePVState {
         return currentState;
     }
 
+    /**
+     * Get PV name.
+     * @return PV name
+     */
     public String getPvName() {
         return pvName;
     }
 
+    /**
+     * Get meta info requested submitted time.
+     * @return Time
+     */
     public Instant getMetaInfoRequestedSubmitted() {
         return metaInfoRequestedSubmitted;
     }
 
+    /**
+     * Get abort reason.
+     * @return Abort reason
+     */
     public String getAbortReason() {
         return abortReason;
     }
 
+    /**
+     * Set abort reason.
+     * @param abortReason Abort reason
+     */
     public void setAbortReason(String abortReason) {
         this.abortReason = abortReason;
     }
