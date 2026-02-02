@@ -23,10 +23,10 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
- * @author mshankar
  * This class encapsulates a storage plugin, a PVName, a start time and an end time (all the items needed to make a getDataForPV call).
  * The retrieval servlet creates multiple UnitOfRetrieval's, one or more for each storage plugin.
  * Some variation of a ExecutorService is expected to be used to launch the UnitOfRetrievals in parallel and then push the event streams into the consumer.
+ * @author mshankar
  */
 public class UnitOfRetrieval implements Callable<RetrievalResult> {
 	private static final Logger logger = LogManager.getLogger(UnitOfRetrieval.class.getName());

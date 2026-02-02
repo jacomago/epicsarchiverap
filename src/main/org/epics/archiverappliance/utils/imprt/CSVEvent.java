@@ -28,7 +28,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 /**
- *
+ * Represents an event imported from a CSV file.
  * @author mshankar
  *
  */

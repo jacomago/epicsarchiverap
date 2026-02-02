@@ -24,6 +24,7 @@ import java.util.LinkedList;
  * Generate something that converts a POJO into JSON using bean introspection.
  * Underlying framework is still json-simple.
  * This has a giant switch statement that does things based on types; so please add unit tests as part of adding new fields to objects that use JSONEncoder. 
+ * @param <T> The type of the object to encode
  * @author mshankar
  *
  */

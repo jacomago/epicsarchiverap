@@ -31,7 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * <li>org.epics.archiverappliance.config.ConvertPVNameToKey.siteNameSpaceSeparators - This is a list of characters that separate the components of the PV name. The syntax for this must satisfy Java's {@link String#replaceAll(String, String) replaceAll} regex requirements. So to specify a list containing the ":" and the "-" characters, we have to use <code>[\\:\\-]</code></li>
  * <li>org.epics.archiverappliance.config.ConvertPVNameToKey.siteNameSpaceTerminator - This is the character used as the terminator of the PV name portion of the key.</li>
  * </ol>
- * <p>
  * @author mshankar
  */
 public class ConvertPVNameToKey implements PVNameToKeyMapping {

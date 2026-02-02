@@ -36,8 +36,8 @@ import java.util.concurrent.Callable;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
- * @author mshankar
  * Class for resolving data sources
+ * @author mshankar
  */
 public class DataSourceResolution {
     private static final Logger logger = LogManager.getLogger(DataSourceResolution.class.getName());

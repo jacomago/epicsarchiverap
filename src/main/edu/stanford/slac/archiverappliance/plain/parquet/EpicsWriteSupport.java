@@ -15,7 +15,7 @@ import java.util.Map;
 /**
  * A Parquet write support for EPICS Archiver Appliance data.
  *
- * @param <T>
+ * @param <T> The type of the Protobuf message
  */
 public class EpicsWriteSupport<T extends Message> extends WriteSupport<T> {
 

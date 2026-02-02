@@ -8,8 +8,8 @@
 package org.epics.archiverappliance.config.exception;
 
 /**
- * @author mshankar
  * Generic super class for all config service exceptions.
+ * @author mshankar
  */
 public class ConfigException extends Exception {
 	private static final long serialVersionUID = -1195048537953477832L;

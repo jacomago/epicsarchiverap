@@ -30,7 +30,6 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 
 /** this class is used for getting the meta data
- *  <p>
  *  @author luofeng li
  */
 

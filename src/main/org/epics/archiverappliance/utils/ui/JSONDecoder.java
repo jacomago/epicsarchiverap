@@ -24,6 +24,7 @@ import java.util.Map;
  * Generate something that marshalls JSON into a POJO using bean introspection.
  * Underlying framework is still json-simple.
  * This has a giant switch statement that does things based on types; so please add unit tests as part of adding new fields to objects that use JSONDecoder. 
+ * @param <T> The type of the object to decode
  * @author mshankar
  *
  */
