@@ -360,6 +360,13 @@ public class CAPlotBinning implements PostProcessor, PostProcessorWithConsolidat
         return getBinTimestamps(this.firstBin, this.lastBin, this.intervalSecs);
     }
 
+    /**
+     * Get bin timestamps.
+     * @param firstBin First bin
+     * @param lastBin Last bin
+     * @param intervalSecs Interval in seconds
+     * @return List of time spans
+     */
     public static LinkedList<TimeSpan> getBinTimestamps(long firstBin, long lastBin, int intervalSecs) {
         LinkedList<TimeSpan> ret = new LinkedList<TimeSpan>();
         long previousBinEpochSeconds = firstBin * intervalSecs;

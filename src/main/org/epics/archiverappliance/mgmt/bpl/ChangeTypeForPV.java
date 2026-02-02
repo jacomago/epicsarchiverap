@@ -39,6 +39,12 @@ import jakarta.servlet.http.HttpServletResponse;
 public class ChangeTypeForPV implements BPLAction {
     private static Logger logger = LogManager.getLogger(ChangeTypeForPV.class.getName());
 
+    /**
+     * Default constructor.
+     */
+    public ChangeTypeForPV() {
+    }
+
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
             throws IOException {

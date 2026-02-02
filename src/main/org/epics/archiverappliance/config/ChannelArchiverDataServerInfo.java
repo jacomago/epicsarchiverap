@@ -24,13 +24,26 @@ public class ChannelArchiverDataServerInfo implements Serializable {
 	private String serverURL;
 	private String index;
 	
+	/**
+	 * Constructor.
+	 * @param serverURL Server URL
+	 * @param index Index
+	 */
 	public ChannelArchiverDataServerInfo(String serverURL, String index) {
 		this.serverURL = serverURL;
 		this.index = index;
 	}
+	/**
+	 * Get index.
+	 * @return Index
+	 */
 	public String getIndex() {
 		return index;
 	}
+	/**
+	 * Get server URL.
+	 * @return Server URL
+	 */
 	public String getServerURL() {
 		return serverURL;
 	}
@@ -49,10 +62,20 @@ public class ChannelArchiverDataServerInfo implements Serializable {
 		return "ChannelArchiver server " + serverURL + " using index " + index;
 	}
 	
+	/**
+	 * Get plugin.
+	 * @return Plugin
+	 */
 	public ChannelArchiverReadOnlyPlugin getPlugin() {
 		return new ChannelArchiverReadOnlyPlugin(this.serverURL, this.index);  
 	}
 	
+	/**
+	 * Get plugin.
+	 * @param count Count
+	 * @param howStr How string
+	 * @return Plugin
+	 */
 	public ChannelArchiverReadOnlyPlugin getPlugin(int count, String howStr) {
 		logger.debug("Creating ca plugin for " + serverURL + " using index " + index + " asking for " + count + " values " + " and method " + howStr);
 		return new ChannelArchiverReadOnlyPlugin(this.serverURL, this.index, count, howStr);  

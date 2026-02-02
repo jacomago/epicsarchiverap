@@ -18,6 +18,12 @@ public class ChannelArchiverDataServerPVInfo implements Serializable {
 	private ChannelArchiverDataServerInfo serverInfo;
 	private long startSec;
 	private long endSec;
+	/**
+	 * Constructor.
+	 * @param serverInfo Server info
+	 * @param startSec Start seconds
+	 * @param endSec End seconds
+	 */
 	public ChannelArchiverDataServerPVInfo(ChannelArchiverDataServerInfo serverInfo, long startSec, long endSec) {
 		this.serverInfo = serverInfo;
 		this.startSec = startSec;
@@ -39,6 +45,10 @@ public class ChannelArchiverDataServerPVInfo implements Serializable {
 		});
 	}
 
+	/**
+	 * Get server info.
+	 * @return Server info
+	 */
 	public ChannelArchiverDataServerInfo getServerInfo() {
 		return serverInfo;
 	}
@@ -47,6 +57,10 @@ public class ChannelArchiverDataServerPVInfo implements Serializable {
 		return startSec;
 	}
 
+	/**
+	 * Get end seconds.
+	 * @return End seconds
+	 */
 	public long getEndSec() {
 		return endSec;
 	}

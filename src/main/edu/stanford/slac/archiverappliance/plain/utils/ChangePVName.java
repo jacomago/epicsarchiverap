@@ -39,6 +39,12 @@ public class ChangePVName {
     private static Logger logger = LogManager.getLogger(ChangePVName.class.getName());
 
     /**
+     * Default constructor.
+     */
+    public ChangePVName() {
+    }
+
+    /**
      * Main method.
      * @param args  &emsp;
      * @throws Exception  &emsp;
@@ -70,6 +76,11 @@ public class ChangePVName {
         }
     }
 
+    /**
+     * Fix PB file.
+     * @param path Path to file
+     * @param newPVName New PV name
+     */
     public static void fixPBFile(Path path, String newPVName) {
         try (ArchPaths contexts = new ArchPaths()) {
             PBFileInfo info = new PBFileInfo(path);
