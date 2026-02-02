@@ -391,6 +391,7 @@ public abstract class ArchiveChannel {
     }
 
     /**
+     * Get the name of the channel.
      * @return Name of channel
      */
     public final String getName() {
@@ -398,11 +399,15 @@ public abstract class ArchiveChannel {
     }
 
     /**
+     * Get the mechanism.
      * @return Short description of sample mechanism
      */
     public abstract String getMechanism();
 
-    /** @return <code>true</code> if connected */
+    /**
+     * Is connected.
+     * @return <code>true</code> if connected
+     */
     public final boolean isConnected() {
         return pv.isConnected();
     }
@@ -433,7 +438,10 @@ public abstract class ArchiveChannel {
         pvMetrics.setEnable(false);
     }
 
-    /** @return Last value written to archive */
+    /**
+     * Get the last archived value.
+     * @return Last value written to archive
+     */
     public final DBRTimeEvent getLastArchivedValue() {
         synchronized (this) {
             return lastDBRTimeEvent;
@@ -441,6 +449,7 @@ public abstract class ArchiveChannel {
     }
 
     /**
+     * Get the sample buffer.
      * @return Sample buffer
      */
     public final SampleBuffer getSampleBuffer() {
@@ -513,7 +522,6 @@ public abstract class ArchiveChannel {
 
     /**
      * Handle a disconnect event.
-     * <p>
      * Base class clears the <code>most_recent_value</code> and adds a
      * 'disconnected' info sample. Subclasses may override, but must call
      * <code>super()</code>.
@@ -752,6 +760,7 @@ public abstract class ArchiveChannel {
     }
 
     /**
+     * Get the JCA Command Thread ID.
      * @return int the jCACommandThreadID
      */
     public int getJCACommandThreadID() {

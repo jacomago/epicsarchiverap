@@ -35,7 +35,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * This is the superclass for such a framework.
  * Subclass this and then register the subclass in the BPL...
  * @author mshankar
- *
+ * @param <T> The type of the metric
  */
 public class GenericPVMetricsReport<T extends Number> implements BPLAction {
     private static final Logger logger = LogManager.getLogger(GenericPVMetricsReport.class);

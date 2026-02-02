@@ -24,10 +24,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * @author mshankar
  * Sends the event data as a JSON response.
  * The response is a array of PV elements, each PV has a meta and data section.
- * The data section has timestamp in epoch seconds and the value
+ * The data section has timestamp in epoch seconds and the value.
+ * @author mshankar
  */
 public class JSONResponse implements MimeResponse {
 	private PrintWriter out;

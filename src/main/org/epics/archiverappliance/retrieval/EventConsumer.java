@@ -10,8 +10,8 @@ package org.epics.archiverappliance.retrieval;
 import org.epics.archiverappliance.Event;
 
 /**
- * @author mshankar
  * An interface for an entity that consumes events one at a time.
+ * @author mshankar
  */
 public interface EventConsumer {
 	public void consumeEvent(Event e) throws Exception;

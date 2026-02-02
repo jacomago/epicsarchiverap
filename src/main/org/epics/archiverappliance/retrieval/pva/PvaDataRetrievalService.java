@@ -12,7 +12,7 @@ import org.epics.pva.data.nt.PVAURI;
 import org.epics.pva.server.RPCService;
 
 /**
- * 
+ * Service for retrieving data using PVA.
  * @author Kunal Shroff
  *
  */

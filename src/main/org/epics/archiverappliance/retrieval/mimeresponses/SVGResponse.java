@@ -18,8 +18,8 @@ import java.time.Instant;
 import java.util.HashMap;
 
 /**
- * @author mshankar
  * Extremely simplistic SVG mime response.
+ * @author mshankar
  */
 public class SVGResponse implements MimeResponse {
 	

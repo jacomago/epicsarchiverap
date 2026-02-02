@@ -10,9 +10,8 @@ package org.epics.archiverappliance.retrieval;
 import org.epics.archiverappliance.EventStream;
 
 /**
- * @author mshankar
- *
  * An interface for an entity that consumes events from a stream all at once.
+ * @author mshankar
  */
 public interface EventStreamConsumer {
 	public void consumeEventStream(EventStream e) throws Exception;

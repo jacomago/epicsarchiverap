@@ -23,10 +23,10 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 /**
- * @author mshankar
  * This is intended solely for the quick chart.
  * Today, this is a variation of the JSON response; it may transition into a binary response soon.
  * So, please don't use this for integration purposes; there are no guarantees for backward compatibility.  
+ * @author mshankar
  */
 public class QWResponse implements MimeResponse {
 	private PrintWriter out;

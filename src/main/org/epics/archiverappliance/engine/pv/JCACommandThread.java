@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *
+ * JCA Command Thread.
  * @author Kay Kasemir
  * @version Initial version:CSS
  * @version 4-Jun-2012, Luofeng Li:added codes to support for the new archiver

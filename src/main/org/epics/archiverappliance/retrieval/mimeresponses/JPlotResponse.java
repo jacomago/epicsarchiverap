@@ -19,11 +19,11 @@ import java.time.ZoneId;
 import java.util.HashMap;
 
 /**
- * @author mshankar
  * Sends the event data as a JSON response tailored to JPlot, which is used in the test page..
  * The response is a array of array of data series: [ series1, series2, ... ]
  * A series can either be raw data or an object with properties. 
  * The raw data format is an array of points: [ [x1, y1], [x2, y2], ... ] E.g. [ [1, 3], [2, 14.01], [3.5, 3.14] ]
+ * @author mshankar
  */
 public class JPlotResponse implements MimeResponse {
 	private PrintWriter out;
