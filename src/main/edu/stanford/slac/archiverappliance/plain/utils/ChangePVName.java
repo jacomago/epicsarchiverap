@@ -39,6 +39,7 @@ public class ChangePVName {
     private static Logger logger = LogManager.getLogger(ChangePVName.class.getName());
 
     /**
+     * Main method.
      * @param args  &emsp;
      * @throws Exception  &emsp;
      */

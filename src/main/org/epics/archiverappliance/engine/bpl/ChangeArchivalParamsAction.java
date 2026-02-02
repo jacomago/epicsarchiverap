@@ -20,6 +20,12 @@ import jakarta.servlet.http.HttpServletResponse;
 public class ChangeArchivalParamsAction implements BPLAction {
     private static Logger logger = LogManager.getLogger(ChangeArchivalParamsAction.class.getName());
 
+    /**
+     * Default constructor.
+     */
+    public ChangeArchivalParamsAction() {
+    }
+
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
             throws IOException {

@@ -22,12 +22,18 @@ public class ChangeInYearsException extends RuntimeException {
 	private short previousYear;
 	private short currentYear;
 	
+	/**
+	 * Constructor.
+	 * @param previousYear Previous year
+	 * @param currentYear Current year
+	 */
 	public ChangeInYearsException(short previousYear, short currentYear) { 
 		this.previousYear = previousYear;
 		this.currentYear = currentYear;
 	}
 
 	/**
+	 * Get previous year.
 	 * @return the previousYear
 	 */
 	public short getPreviousYear() {
@@ -35,6 +41,7 @@ public class ChangeInYearsException extends RuntimeException {
 	}
 
 	/**
+	 * Get current year.
 	 * @return the currentYear
 	 */
 	public short getCurrentYear() {

@@ -14,8 +14,24 @@ import org.epics.archiverappliance.common.TimeSpan;
  *
  */
 public interface PostProcessorWithConsolidatedEventStream {
+	/**
+	 * Get consolidated event stream.
+	 * @return Event Stream
+	 */
 	EventStream getConsolidatedEventStream();
+	/**
+	 * Get start bin epoch seconds.
+	 * @return Start bin epoch seconds
+	 */
 	long getStartBinEpochSeconds();
+	/**
+	 * Get end bin epoch seconds.
+	 * @return End bin epoch seconds
+	 */
 	long getEndBinEpochSeconds();
+	/**
+	 * Get bin timestamps.
+	 * @return Bin timestamps
+	 */
 	LinkedList<TimeSpan> getBinTimestamps();
 }

@@ -47,6 +47,12 @@ public class CAPlotBinning implements PostProcessor, PostProcessorWithConsolidat
         return "caplotbinning";
     }
 
+    /**
+     * Default constructor.
+     */
+    public CAPlotBinning() {
+    }
+
     enum SampleLocation {
         ASIS,
         FIRSTSAMPLE,
