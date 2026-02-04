@@ -154,6 +154,7 @@ dependencies {
 	implementation("org.apache.logging.log4j:log4j-jul:${findProperty("log4jVersion")}")
 	"permitUnusedDeclared"("org.apache.logging.log4j:log4j-jul:${findProperty("log4jVersion")}")
 	runtimeOnly("org.apache.logging.log4j:log4j-core:${findProperty("log4jVersion")}")
+	testImplementation("org.apache.logging.log4j:log4j-core:${findProperty("log4jVersion")}")
 	runtimeOnly("com.lmax:disruptor:3.4.4") // Needed for async logging
 
 	// Parquet support
