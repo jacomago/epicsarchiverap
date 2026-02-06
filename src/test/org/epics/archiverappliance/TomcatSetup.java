@@ -91,10 +91,11 @@ public class TomcatSetup {
     public void setUpFailoverWithWebApps(String testName) throws Exception {
         initialSetup(testName);
         logger.info("Starting up dest appliance");
-        // We are in the tomcat logs folder...
-        System.getProperties().put("ARCHAPPL_SHORT_TERM_FOLDER", "../sts");
-        System.getProperties().put("ARCHAPPL_MEDIUM_TERM_FOLDER", "../mts");
-        System.getProperties().put("ARCHAPPL_LONG_TERM_FOLDER", "../lts");
+        
+        File testFolder = new File("build/tomcats/tomcat_" + testName);
+        System.setProperty("ARCHAPPL_SHORT_TERM_FOLDER", new File(testFolder, "sts").getAbsolutePath());
+        System.setProperty("ARCHAPPL_MEDIUM_TERM_FOLDER", new File(testFolder, "mts").getAbsolutePath());
+        System.setProperty("ARCHAPPL_LONG_TERM_FOLDER", new File(testFolder, "lts").getAbsolutePath());
 
         createAndStartTomcatInstance(
             testName,
@@ -121,7 +122,9 @@ public class TomcatSetup {
         if (testFolder.exists()) {
             FileUtils.deleteDirectory(testFolder);
         }
-        assert testFolder.mkdirs();
+        if (!testFolder.mkdirs()) {
+            throw new IOException("Could not create test folder: " + testFolder.getAbsolutePath());
+        }
         cleanupFolders.add(testFolder);
     }
 
@@ -181,10 +184,10 @@ public class TomcatSetup {
         tomcat.getConnector();
 
         // Deploy all webapps
-        tomcat.addWebapp("/mgmt", new File("./build/exploded/mgmt").getAbsolutePath());
-        tomcat.addWebapp("/retrieval", new File("./build/exploded/retrieval").getAbsolutePath());
-        tomcat.addWebapp("/etl", new File("./build/exploded/etl").getAbsolutePath());
-        tomcat.addWebapp("/engine", new File("./build/exploded/engine").getAbsolutePath());
+        addWebapp(tomcat, "/mgmt", "./build/exploded/mgmt");
+        addWebapp(tomcat, "/retrieval", "./build/exploded/retrieval");
+        addWebapp(tomcat, "/etl", "./build/exploded/etl");
+        addWebapp(tomcat, "/engine", "./build/exploded/engine");
 
         // Configure system properties for this instance before starting
         configureSystemPropertiesForInstance(testName, applianceName, appliancesXML);
@@ -222,11 +225,20 @@ public class TomcatSetup {
         }
     }
 
+    private void addWebapp(Tomcat tomcat, String contextPath, String docBase) throws IOException {
+        File docBaseFile = new File(docBase);
+        if (!docBaseFile.exists()) {
+            throw new IOException("Exploded webapp not found at " + docBaseFile.getAbsolutePath() + 
+                ". Ensure 'explodeWars' task is run.");
+        }
+        tomcat.addWebapp(contextPath, docBaseFile.getAbsolutePath());
+    }
+
     private File makeTomcatFolders(String testName, String applianceName) throws IOException {
         File testFolder = new File("build/tomcats/tomcat_" + testName);
-        assert (testFolder.exists());
+        if (!testFolder.exists()) throw new IOException("Test folder does not exist: " + testFolder);
         File workFolder = new File(testFolder, applianceName);
-        assert (workFolder.mkdir());
+        if (!workFolder.mkdir()) throw new IOException("Could not create work folder: " + workFolder);
 
         // Tomcat needs these directories to exist
         new File(workFolder, "webapps").mkdir();

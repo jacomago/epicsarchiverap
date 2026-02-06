@@ -630,7 +630,7 @@ tasks.register<Test>("flakyTests") {
 tasks.register("integrationTestSetup") {
 	group = "Test"
 	description = "Setup for Integration Tests by backing up Tomcat's conf directory."
-	dependsOn("buildRelease")
+	dependsOn("explodeWars")
 }
 
 tasks.register<Test>("integrationTests") {
