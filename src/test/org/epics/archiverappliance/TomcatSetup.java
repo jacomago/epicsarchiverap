@@ -54,10 +54,10 @@ public class TomcatSetup {
     public void setUpWebApps(String testName) throws Exception {
         initialSetup(testName);
         AppliancesXMLGenerator.ApplianceXMLConfig applianceXMLConfig =
-            new AppliancesXMLGenerator.ApplianceXMLConfig(testName, 1);
+                new AppliancesXMLGenerator.ApplianceXMLConfig(testName, 1);
         Path xml = applianceXMLConfig.writeAppliancesXML();
         AppliancesXMLGenerator.AppliancePorts ports =
-            applianceXMLConfig.appliancePortsList().get(0);
+                applianceXMLConfig.appliancePortsList().get(0);
         createAndStartTomcatInstance(testName, ports.identity(), ports.retrievalPort(), ports.serverStartUpPort(), xml);
     }
 
@@ -69,16 +69,16 @@ public class TomcatSetup {
     public void setUpClusterWithWebApps(String testName, int clusterCount) throws Exception {
         initialSetup(testName);
         AppliancesXMLGenerator.ApplianceXMLConfig applianceXMLConfig =
-            new AppliancesXMLGenerator.ApplianceXMLConfig(testName, clusterCount);
+                new AppliancesXMLGenerator.ApplianceXMLConfig(testName, clusterCount);
         Path xml = applianceXMLConfig.writeAppliancesXML();
         for (AppliancesXMLGenerator.AppliancePorts appliancePorts : applianceXMLConfig.appliancePortsList()) {
             logger.info(String.format("Starting up %s", appliancePorts.identity()));
             createAndStartTomcatInstance(
-                testName,
-                appliancePorts.identity(),
-                appliancePorts.retrievalPort(),
-                appliancePorts.serverStartUpPort(),
-                xml);
+                    testName,
+                    appliancePorts.identity(),
+                    appliancePorts.retrievalPort(),
+                    appliancePorts.serverStartUpPort(),
+                    xml);
             logger.info(String.format("Done starting up %s", appliancePorts.identity()));
         }
     }
@@ -91,26 +91,26 @@ public class TomcatSetup {
     public void setUpFailoverWithWebApps(String testName) throws Exception {
         initialSetup(testName);
         logger.info("Starting up dest appliance");
-        
+
         File testFolder = new File("build/tomcats/tomcat_" + testName);
         System.setProperty("ARCHAPPL_SHORT_TERM_FOLDER", new File(testFolder, "sts").getAbsolutePath());
         System.setProperty("ARCHAPPL_MEDIUM_TERM_FOLDER", new File(testFolder, "mts").getAbsolutePath());
         System.setProperty("ARCHAPPL_LONG_TERM_FOLDER", new File(testFolder, "lts").getAbsolutePath());
 
         createAndStartTomcatInstance(
-            testName,
-            "dest_appliance",
-            ConfigServiceForTests.RETRIEVAL_TEST_PORT,
-            DEFAULT_SERVER_STARTUP_PORT,
-            Path.of("src/sitespecific/tests/classpathfiles/failover_dest.xml"));
+                testName,
+                "dest_appliance",
+                ConfigServiceForTests.RETRIEVAL_TEST_PORT,
+                DEFAULT_SERVER_STARTUP_PORT,
+                Path.of("src/sitespecific/tests/classpathfiles/failover_dest.xml"));
         logger.info("Done starting up dest appliance");
         logger.info("Starting up other appliance");
         createAndStartTomcatInstance(
-            testName,
-            "other_appliance",
-            ConfigServiceForTests.RETRIEVAL_TEST_PORT + 4,
-            DEFAULT_SERVER_STARTUP_PORT + 4,
-            Path.of("src/sitespecific/tests/classpathfiles/failover_other.xml"));
+                testName,
+                "other_appliance",
+                ConfigServiceForTests.RETRIEVAL_TEST_PORT + 4,
+                DEFAULT_SERVER_STARTUP_PORT + 4,
+                Path.of("src/sitespecific/tests/classpathfiles/failover_other.xml"));
         logger.info("Done starting up other appliance");
     }
 
@@ -172,8 +172,8 @@ public class TomcatSetup {
     }
 
     private void createAndStartTomcatInstance(
-        String testName, final String applianceName, int port, int startupPort, Path appliancesXML)
-        throws IOException, LifecycleException {
+            String testName, final String applianceName, int port, int startupPort, Path appliancesXML)
+            throws IOException, LifecycleException {
 
         Tomcat tomcat = new Tomcat();
         File workFolder = makeTomcatFolders(testName, applianceName);
@@ -199,7 +199,7 @@ public class TomcatSetup {
         latchAppender.start();
 
         org.apache.logging.log4j.core.Logger rootLogger =
-            (org.apache.logging.log4j.core.Logger) LogManager.getRootLogger();
+                (org.apache.logging.log4j.core.Logger) LogManager.getRootLogger();
         rootLogger.addAppender(latchAppender);
 
         try {
@@ -228,8 +228,8 @@ public class TomcatSetup {
     private void addWebapp(Tomcat tomcat, String contextPath, String docBase) throws IOException {
         File docBaseFile = new File(docBase);
         if (!docBaseFile.exists()) {
-            throw new IOException("Exploded webapp not found at " + docBaseFile.getAbsolutePath() + 
-                ". Ensure 'explodeWars' task is run.");
+            throw new IOException("Exploded webapp not found at " + docBaseFile.getAbsolutePath()
+                    + ". Ensure 'explodeWars' task is run.");
         }
         tomcat.addWebapp(contextPath, docBaseFile.getAbsolutePath());
     }
@@ -255,33 +255,32 @@ public class TomcatSetup {
         System.setProperties(new Properties(originalSystemProperties));
 
         System.setProperty(
-            "catalina.base", new File("build/tomcats/tomcat_" + testName, applianceName).getAbsolutePath());
+                "catalina.base", new File("build/tomcats/tomcat_" + testName, applianceName).getAbsolutePath());
         System.setProperty("LOG4J_CONFIGURATION_FILE", new File("src/resources/test/log4j2.xml").getAbsolutePath());
         System.setProperty(ConfigService.ARCHAPPL_CONFIGSERVICE_IMPL, ConfigServiceForTests.class.getName());
         System.setProperty(
-            DefaultConfigService.SITE_FOR_UNIT_TESTS_NAME, DefaultConfigService.SITE_FOR_UNIT_TESTS_VALUE);
+                DefaultConfigService.SITE_FOR_UNIT_TESTS_NAME, DefaultConfigService.SITE_FOR_UNIT_TESTS_VALUE);
         System.setProperty(ConfigService.ARCHAPPL_MYIDENTITY, applianceName);
 
         if (!System.getProperties().containsKey(ConfigService.ARCHAPPL_APPLIANCES)) {
             System.setProperty(
-                ConfigService.ARCHAPPL_APPLIANCES,
-                appliancesXML.toAbsolutePath().toString());
+                    ConfigService.ARCHAPPL_APPLIANCES,
+                    appliancesXML.toAbsolutePath().toString());
         }
 
         if (!System.getProperties().containsKey(ConfigService.ARCHAPPL_PERSISTENCE_LAYER)
-            || System.getProperty(ConfigService.ARCHAPPL_PERSISTENCE_LAYER)
-            .equals(InMemoryPersistence.class.getName())) {
+                || System.getProperty(ConfigService.ARCHAPPL_PERSISTENCE_LAYER)
+                        .equals(InMemoryPersistence.class.getName())) {
             System.setProperty(ConfigService.ARCHAPPL_PERSISTENCE_LAYER, InMemoryPersistence.class.getName());
         } else {
             String persistenceFile = System.getProperty(JDBM2Persistence.ARCHAPPL_JDBM2_FILENAME);
             logger.info(
-                "Persistence layer is provided by " + System.getProperty(ConfigService.ARCHAPPL_PERSISTENCE_LAYER));
+                    "Persistence layer is provided by " + System.getProperty(ConfigService.ARCHAPPL_PERSISTENCE_LAYER));
             assert (persistenceFile != null);
             String persistenceFileForMember = persistenceFile.replace(".jdbm2", "_" + applianceName + ".jdbm2");
             System.setProperty(JDBM2Persistence.ARCHAPPL_JDBM2_FILENAME, persistenceFileForMember);
             logger.info("Persistence file for member " + persistenceFileForMember);
         }
-
     }
 
     /**
