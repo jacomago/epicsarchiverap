@@ -5,11 +5,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.TomcatSetup;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -22,8 +22,8 @@ import java.time.ZonedDateTime;
  */
 @Tag("integration")
 @Tag("localEpics")
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
+@Suite
+@SelectClasses({
     PvaSuiteTstGetAll.class,
     PvaSuiteTstMgmtServiceStartup.class,
     PvaSuiteTstGetApplianceInfo.class,
@@ -36,7 +36,7 @@ public class PvaTest {
     static TomcatSetup tomcatSetup = new TomcatSetup();
     static SIOCSetup siocSetup = new SIOCSetup();
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         logger.info("Set up for the PVATestSuite");
         try {
@@ -49,7 +49,7 @@ public class PvaTest {
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() {
         logger.info("Tear Down for the PVATestSuite");
         try {
