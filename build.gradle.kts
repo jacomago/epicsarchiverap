@@ -170,6 +170,7 @@ dependencies {
 	testImplementation("org.junit.jupiter:junit-jupiter-params:${findProperty("junitJupiterVersion")}")
 	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${findProperty("junitJupiterVersion")}")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher:${findProperty("junitPlatformVersion")}")
+	testImplementation("org.junit.platform:junit-platform-suite:${findProperty("junitPlatformVersion")}")
 	testImplementation("org.awaitility:awaitility:4.2.0")
 	testImplementation("org.apache.commons:commons-compress:1.26.0")
 	testImplementation("commons-cli:commons-cli:1.5.0")
@@ -636,6 +637,8 @@ tasks.register("integrationTestSetup") {
 tasks.register<Test>("integrationTests") {
 	group = "Test"
 	description = "Run the integration tests, ones that require a tomcat installation."
+	testClassesDirs = sourceSets.test.get().output.classesDirs
+	classpath = sourceSets.test.get().runtimeClasspath
 	forkEvery = 1
 	maxParallelForks = 1 // Set to > 1 for parallel execution if tests are isolated
 	dependsOn("integrationTestSetup")
@@ -648,6 +651,8 @@ tasks.register<Test>("integrationTests") {
 tasks.register<Test>("epicsTests") {
 	group = "Test"
 	description = "Run the epics integration tests with parallel iocs."
+	testClassesDirs = sourceSets.test.get().output.classesDirs
+	classpath = sourceSets.test.get().runtimeClasspath
 	useJUnitPlatform {
 		includeTags("localEpics")
 		excludeTags("slow", "flaky", "integration")
@@ -657,6 +662,8 @@ tasks.register<Test>("epicsTests") {
 tasks.register<Test>("singleForkTests") {
 	group = "Test"
 	description = "Run the single fork tests. Ones that require a fork every test."
+	testClassesDirs = sourceSets.test.get().output.classesDirs
+	classpath = sourceSets.test.get().runtimeClasspath
 	forkEvery = 1
 	useJUnitPlatform {
 		includeTags("singleFork")
