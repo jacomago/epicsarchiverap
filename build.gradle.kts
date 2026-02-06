@@ -639,7 +639,6 @@ tasks.register<Test>("integrationTests") {
 	description = "Run the integration tests, ones that require a tomcat installation."
 	testClassesDirs = sourceSets.test.get().output.classesDirs
 	classpath = sourceSets.test.get().runtimeClasspath
-	forkEvery = 1
 	maxParallelForks = 1 // Set to > 1 for parallel execution if tests are isolated
 	dependsOn("integrationTestSetup")
 	useJUnitPlatform {
