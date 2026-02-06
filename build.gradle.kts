@@ -676,6 +676,7 @@ tasks.named<Test>("test") {
 	group = "Test"
 	useJUnitPlatform {
 		excludeTags("integration", "localEpics", "flaky", "singleFork", "slow")
+		excludeEngines("junit-platform-suite")
 	}
 }
 
