@@ -49,7 +49,7 @@ import org.epics.archiverappliance.retrieval.mimeresponses.FlxXMLResponse;
 import org.epics.archiverappliance.retrieval.mimeresponses.JPlotResponse;
 import org.epics.archiverappliance.retrieval.mimeresponses.JSONResponse;
 import org.epics.archiverappliance.retrieval.mimeresponses.MatlabResponse;
-import org.epics.archiverappliance.retrieval.mimeresponses.MimeResponse;
+import org.epics.archiverappliance.common.MimeResponse;
 import org.epics.archiverappliance.retrieval.mimeresponses.PBRAWResponse;
 import org.epics.archiverappliance.retrieval.mimeresponses.QWResponse;
 import org.epics.archiverappliance.retrieval.mimeresponses.SVGResponse;

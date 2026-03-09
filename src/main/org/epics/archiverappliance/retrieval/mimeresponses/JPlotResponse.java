@@ -11,12 +11,12 @@ import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.EventStreamDesc;
 import org.epics.archiverappliance.common.BasicContext;
+import org.epics.archiverappliance.common.MimeResponse;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.HashMap;
 
 /**
  * @author mshankar

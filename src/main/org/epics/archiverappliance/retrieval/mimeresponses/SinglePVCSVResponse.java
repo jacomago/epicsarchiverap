@@ -11,12 +11,12 @@ import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.EventStreamDesc;
 import org.epics.archiverappliance.common.BasicContext;
+import org.epics.archiverappliance.common.MimeResponse;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.time.Instant;
-import java.util.HashMap;
 
 /**
  * Implementation of a CSV response for a single PV

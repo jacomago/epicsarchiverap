@@ -18,7 +18,7 @@ import org.epics.archiverappliance.EventStreamDesc;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.retrieval.mimeresponses.ExceptionCommunicator;
-import org.epics.archiverappliance.retrieval.mimeresponses.MimeResponse;
+import org.epics.archiverappliance.common.MimeResponse;
 
 import java.io.OutputStream;
 import java.time.Instant;
