@@ -20,7 +20,7 @@ import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.EventStreamDesc;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
-import org.epics.archiverappliance.config.ArchDBRTypes;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.retrieval.mimeresponses.MimeResponse;
 import org.epics.pva.data.ElementTypeException;

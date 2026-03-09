@@ -12,7 +12,7 @@ import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BasicContext;
-import org.epics.archiverappliance.config.ArchDBRTypes;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 
 import java.io.IOException;
 

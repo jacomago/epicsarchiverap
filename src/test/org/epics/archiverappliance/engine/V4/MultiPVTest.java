@@ -1,10 +1,14 @@
 package org.epics.archiverappliance.engine.V4;
 
+import static org.epics.archiverappliance.engine.V4.PVAccessUtil.formatInput;
+import static org.epics.archiverappliance.engine.V4.PVAccessUtil.getReceivedValues;
+import static org.epics.archiverappliance.engine.V4.PVAccessUtil.startArchivingPV;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.engine.test.MemBufWriter;
 import org.epics.pva.data.PVAData;
 import org.epics.pva.data.PVADoubleArray;
@@ -24,10 +28,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static org.epics.archiverappliance.engine.V4.PVAccessUtil.formatInput;
-import static org.epics.archiverappliance.engine.V4.PVAccessUtil.getReceivedValues;
-import static org.epics.archiverappliance.engine.V4.PVAccessUtil.startArchivingPV;
 
 public class MultiPVTest {
 

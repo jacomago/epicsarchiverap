@@ -3,7 +3,7 @@ package edu.stanford.slac.archiverappliance.PB.data;
 import gov.aps.jca.dbr.DBR;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.config.ArchDBRTypes;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.pva.data.PVAStructure;
 

@@ -1,13 +1,17 @@
 package org.epics.archiverappliance.retrieval.client;
 
+import static org.epics.archiverappliance.config.PVNames.V3_PREFIX;
+import static org.epics.archiverappliance.config.PVNames.V4_PREFIX;
+import static org.epics.archiverappliance.engine.V4.PVAccessUtil.waitForStatusChange;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.TomcatSetup;
-import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.SampleValue;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.junit.jupiter.api.AfterAll;
@@ -22,10 +26,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.epics.archiverappliance.config.PVNames.V3_PREFIX;
-import static org.epics.archiverappliance.config.PVNames.V4_PREFIX;
-import static org.epics.archiverappliance.engine.V4.PVAccessUtil.waitForStatusChange;
 
 @Tag("integration")
 @Tag("localEpics")

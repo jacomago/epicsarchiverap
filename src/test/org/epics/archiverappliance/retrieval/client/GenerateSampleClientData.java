@@ -10,7 +10,7 @@ import org.epics.archiverappliance.ByteArray;
 import org.epics.archiverappliance.common.POJOEvent;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ArchDBRTypes;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.ScalarValue;
 
 import java.io.File;

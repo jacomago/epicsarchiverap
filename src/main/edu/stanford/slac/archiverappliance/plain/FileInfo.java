@@ -1,6 +1,6 @@
 package edu.stanford.slac.archiverappliance.plain;
 
-import org.epics.archiverappliance.config.ArchDBRTypes;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 
 import java.io.IOException;

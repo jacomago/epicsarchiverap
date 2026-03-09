@@ -50,6 +50,7 @@ import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
 import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.config.persistence.MySQLPersistence;
 import org.epics.archiverappliance.config.pubsub.PubSubEvent;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.engine.ArchiveEngine;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;

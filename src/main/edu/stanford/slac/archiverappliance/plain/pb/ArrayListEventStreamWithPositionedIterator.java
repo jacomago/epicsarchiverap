@@ -10,7 +10,7 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.remotable.ArrayListEventStream;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
 import org.epics.archiverappliance.common.remotable.RemotableOverRaw;
-import org.epics.archiverappliance.config.ArchDBRTypes;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 
 import java.io.IOException;
 import java.nio.file.Path;

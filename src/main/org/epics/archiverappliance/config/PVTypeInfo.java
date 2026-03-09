@@ -13,6 +13,7 @@ import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.TimeUtils;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
 import org.epics.archiverappliance.utils.ui.JSONEncoder;
 import org.json.simple.JSONArray;

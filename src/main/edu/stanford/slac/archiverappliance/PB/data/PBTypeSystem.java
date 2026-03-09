@@ -1,7 +1,7 @@
 package edu.stanford.slac.archiverappliance.PB.data;
 
-import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.TypeSystem;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 
 import java.lang.reflect.Constructor;

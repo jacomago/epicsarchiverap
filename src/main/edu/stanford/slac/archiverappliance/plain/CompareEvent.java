@@ -13,7 +13,7 @@ import edu.stanford.slac.archiverappliance.PB.search.CompareEventLine;
 import org.epics.archiverappliance.ByteArray;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.YearSecondTimestamp;
-import org.epics.archiverappliance.config.ArchDBRTypes;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 
 import java.io.IOException;

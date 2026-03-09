@@ -25,7 +25,7 @@ import org.apache.parquet.io.InputFile;
 import org.apache.parquet.io.LocalInputFile;
 import org.apache.parquet.proto.ProtoParquetReader;
 import org.epics.archiverappliance.common.YearSecondTimestamp;
-import org.epics.archiverappliance.config.ArchDBRTypes;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 
 import java.io.IOException;

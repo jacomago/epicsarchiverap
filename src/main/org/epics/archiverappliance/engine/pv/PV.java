@@ -8,8 +8,8 @@
 package org.epics.archiverappliance.engine.pv;
 
 import gov.aps.jca.CAException;
-import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.MetaInfo;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 
 import java.util.HashMap;

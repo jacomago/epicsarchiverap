@@ -4,7 +4,7 @@ import edu.stanford.slac.archiverappliance.PB.data.PBTypeSystem;
 import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
 import org.epics.archiverappliance.ByteArray;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ArchDBRTypes;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 
 import java.io.IOException;

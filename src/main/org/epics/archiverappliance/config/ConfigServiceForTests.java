@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
 import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.config.persistence.InMemoryPersistence;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.mgmt.MgmtRuntimeState;

@@ -8,7 +8,7 @@
 package org.epics.archiverappliance;
 
 import com.google.protobuf.Message;
-import org.epics.archiverappliance.config.ArchDBRTypes;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.SampleValue;
 
 import java.time.Instant;

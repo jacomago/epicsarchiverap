@@ -2,7 +2,7 @@ package edu.stanford.slac.archiverappliance.PB.data;
 
 import com.google.protobuf.Message;
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent;
-import org.epics.archiverappliance.config.ArchDBRTypes;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 
 import java.util.HashMap;
 

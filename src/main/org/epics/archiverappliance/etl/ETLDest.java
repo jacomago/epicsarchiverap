@@ -10,7 +10,7 @@ package org.epics.archiverappliance.etl;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.Writer;
 import org.epics.archiverappliance.common.PartitionGranularity;
-import org.epics.archiverappliance.config.ArchDBRTypes;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.etl.common.DefaultETLInfoListProcessor;
 import org.epics.archiverappliance.etl.common.ETLInfoListProcessor;
 

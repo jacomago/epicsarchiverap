@@ -6,7 +6,7 @@ import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.remotable.ArrayListEventStream;
-import org.epics.archiverappliance.config.ArchDBRTypes;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.HashMapEvent;
 import org.epics.archiverappliance.engine.model.SampleBuffer;
 import org.epics.archiverappliance.engine.pv.PVMetrics;

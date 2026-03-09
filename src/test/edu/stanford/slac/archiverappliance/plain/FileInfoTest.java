@@ -8,8 +8,8 @@
 package edu.stanford.slac.archiverappliance.plain;
 
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.retrieval.GenerateData;
 import org.epics.archiverappliance.utils.nio.ArchPaths;
 import org.junit.jupiter.api.AfterEach;

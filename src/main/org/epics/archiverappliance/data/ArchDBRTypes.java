@@ -5,14 +5,9 @@
  * EPICS archiver appliance is distributed subject to a Software License Agreement found
  * in file LICENSE that is included with this distribution.
  *******************************************************************************/
-package org.epics.archiverappliance.config;
+package org.epics.archiverappliance.data;
 
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadType;
-import org.epics.archiverappliance.data.SampleValue;
-import org.epics.archiverappliance.data.ScalarStringSampleValue;
-import org.epics.archiverappliance.data.ScalarValue;
-import org.epics.archiverappliance.data.VectorStringSampleValue;
-import org.epics.archiverappliance.data.VectorValue;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONValue;
 
@@ -185,8 +180,8 @@ public enum ArchDBRTypes {
             case DBR_V4_GENERIC_BYTES -> {
                 throw new UnsupportedOperationException("We do not support this for V4 types yet.");
             }
-            default -> throw new UnsupportedOperationException(
-                    "When we add a new DBR_TYPE, we should add some code here.");
+            default ->
+                throw new UnsupportedOperationException("When we add a new DBR_TYPE, we should add some code here.");
         }
     }
 

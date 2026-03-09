@@ -11,7 +11,7 @@ import edu.stanford.slac.archiverappliance.plain.URLKey;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ArchDBRTypes;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.SampleValue;
 import org.epics.archiverappliance.data.ScalarValue;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;

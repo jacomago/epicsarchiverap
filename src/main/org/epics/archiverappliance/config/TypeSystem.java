@@ -1,5 +1,6 @@
 package org.epics.archiverappliance.config;
 
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.data.HashMapEvent;
 
@@ -20,7 +21,7 @@ public interface TypeSystem {
      * For example, getJCADBRConstructor().newInstance(dbr) should return you an appropriate Event
      * @param archDBRType the enumeration type
      * @return a new DBRTimeEvent
-     * @see org.epics.archiverappliance.config.ArchDBRTypes
+     * @see ArchDBRTypes
      */
     public Constructor<? extends DBRTimeEvent> getJCADBRConstructor(ArchDBRTypes archDBRType);
 
@@ -30,7 +31,7 @@ public interface TypeSystem {
      * For example, getUnmarshallingConstructor().newInstance(yts.getYear(), rawFormAsByteArray)
      * @param archDBRType the enumeration type
      * @return a new DBRTimeEvent
-     * @see org.epics.archiverappliance.config.ArchDBRTypes
+     * @see ArchDBRTypes
      */
     public Constructor<? extends DBRTimeEvent> getUnmarshallingFromByteArrayConstructor(ArchDBRTypes archDBRType);
 
@@ -42,7 +43,7 @@ public interface TypeSystem {
      * @param archDBRType the enumeration type
      * @return a new DBRTimeEvent
      * @see HashMapEvent
-     * @see org.epics.archiverappliance.config.ArchDBRTypes
+     * @see ArchDBRTypes
      */
     public Constructor<? extends DBRTimeEvent> getSerializingConstructor(ArchDBRTypes archDBRType);
 
@@ -51,7 +52,7 @@ public interface TypeSystem {
      * For example, getV4Constructor().newInstance(Data_EPICSV4 v4Data) should return you an appropriate Event
      * @param archDBRType the enumeration type
      * @return a new DBRTimeEvent
-     * @see org.epics.archiverappliance.config.ArchDBRTypes
+     * @see ArchDBRTypes
      */
     public Constructor<? extends DBRTimeEvent> getV4Constructor(ArchDBRTypes archDBRType);
 }

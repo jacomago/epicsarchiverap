@@ -8,7 +8,7 @@
 package edu.stanford.slac.archiverappliance.plain.pb;
 
 import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
-import org.epics.archiverappliance.config.ArchDBRTypes;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 
 import java.io.IOException;
 import java.nio.file.Path;

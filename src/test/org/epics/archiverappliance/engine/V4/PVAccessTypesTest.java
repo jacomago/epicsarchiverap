@@ -7,9 +7,9 @@ import static org.epics.archiverappliance.engine.V4.PVAccessUtil.startArchivingP
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.engine.test.MemBufWriter;
 import org.epics.pva.data.PVAByte;
 import org.epics.pva.data.PVAByteArray;

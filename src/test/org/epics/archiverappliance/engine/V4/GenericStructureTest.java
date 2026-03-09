@@ -18,11 +18,17 @@
  */
 package org.epics.archiverappliance.engine.V4;
 
+import static org.epics.archiverappliance.engine.V4.PVAccessUtil.bytesToString;
+import static org.epics.archiverappliance.engine.V4.PVAccessUtil.convertBytesToPVAStructure;
+import static org.epics.archiverappliance.engine.V4.PVAccessUtil.getReceivedValues;
+import static org.epics.archiverappliance.engine.V4.PVAccessUtil.startArchivingPV;
+import static org.epics.archiverappliance.engine.V4.PVAccessUtil.updateStructure;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.SampleValue;
 import org.epics.archiverappliance.engine.test.MemBufWriter;
 import org.epics.pva.data.PVAData;
@@ -44,12 +50,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import static org.epics.archiverappliance.engine.V4.PVAccessUtil.bytesToString;
-import static org.epics.archiverappliance.engine.V4.PVAccessUtil.convertBytesToPVAStructure;
-import static org.epics.archiverappliance.engine.V4.PVAccessUtil.getReceivedValues;
-import static org.epics.archiverappliance.engine.V4.PVAccessUtil.startArchivingPV;
-import static org.epics.archiverappliance.engine.V4.PVAccessUtil.updateStructure;
 
 /**
  * Checks the storage of a generic PVAAccess structure format

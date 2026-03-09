@@ -17,7 +17,7 @@ import gov.aps.jca.dbr.DBR_TIME_Short;
 import gov.aps.jca.dbr.DBR_TIME_String;
 import org.apache.commons.lang3.ArrayUtils;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ArchDBRTypes;
+import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.ByteBufSampleValue;
 import org.epics.archiverappliance.data.SampleValue;
 import org.epics.archiverappliance.data.ScalarStringSampleValue;
@@ -337,8 +337,8 @@ public class BoundaryConditionsSimulationValueGenerator implements SimulationVal
                 retvd.setStatus(0);
                 return retvd;
             }
-            case DBR_V4_GENERIC_BYTES -> throw new RuntimeException(
-                    "Currently don't support " + type + " when generating sample data");
+            case DBR_V4_GENERIC_BYTES ->
+                throw new RuntimeException("Currently don't support " + type + " when generating sample data");
             default -> throw new RuntimeException("We seemed to have missed a DBR type when generating sample data");
         }
     }
