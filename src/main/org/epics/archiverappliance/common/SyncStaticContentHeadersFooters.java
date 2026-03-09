@@ -1,4 +1,4 @@
-package org.epics.archiverappliance.mgmt.bpl;
+package org.epics.archiverappliance.common;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

@@ -4,7 +4,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigService.STARTUP_SEQUENCE;
-import org.epics.archiverappliance.mgmt.bpl.SyncStaticContentHeadersFooters;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
