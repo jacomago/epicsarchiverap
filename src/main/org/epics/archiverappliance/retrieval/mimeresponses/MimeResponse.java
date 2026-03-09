@@ -10,11 +10,10 @@ package org.epics.archiverappliance.retrieval.mimeresponses;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.EventStreamDesc;
 import org.epics.archiverappliance.common.BasicContext;
-import org.epics.archiverappliance.retrieval.EventConsumer;
+import org.epics.archiverappliance.data.EventConsumer;
 
 import java.io.OutputStream;
 import java.time.Instant;
-import java.util.HashMap;
 
 /**
  * A set of events for classes that convert event streams to mime specific responses.
