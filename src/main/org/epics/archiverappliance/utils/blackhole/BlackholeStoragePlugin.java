@@ -19,7 +19,7 @@ import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.ConversionFunction;
 import org.epics.archiverappliance.etl.ETLContext;
 import org.epics.archiverappliance.etl.ETLDest;
-import org.epics.archiverappliance.retrieval.postprocessors.PostProcessor;
+import org.epics.archiverappliance.data.PostProcessor;
 import org.epics.archiverappliance.utils.ui.URIUtils;
 
 import java.io.IOException;

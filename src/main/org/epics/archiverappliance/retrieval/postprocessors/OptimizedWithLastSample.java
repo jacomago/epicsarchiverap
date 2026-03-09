@@ -13,6 +13,7 @@ import org.epics.archiverappliance.common.remotable.ArrayListEventStream;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.data.DBRTimeEvent;
+import org.epics.archiverappliance.data.PostProcessor;
 import org.epics.archiverappliance.retrieval.postprocessors.SummaryStatsPostProcessor.SummaryValue;
 
 import java.io.IOException;

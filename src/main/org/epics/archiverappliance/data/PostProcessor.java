@@ -5,7 +5,7 @@
  * EPICS archiver appliance is distributed subject to a Software License Agreement found
  * in file LICENSE that is included with this distribution.
  *******************************************************************************/
-package org.epics.archiverappliance.retrieval.postprocessors;
+package org.epics.archiverappliance.data;
 
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.config.PVTypeInfo;

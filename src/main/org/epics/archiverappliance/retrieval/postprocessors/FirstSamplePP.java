@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.concurrent.Callable;
 import jakarta.servlet.http.HttpServletRequest;
+import org.epics.archiverappliance.data.PostProcessor;
 
 /**
  * This takes "interval" argument and returns only the first sample in that interval...

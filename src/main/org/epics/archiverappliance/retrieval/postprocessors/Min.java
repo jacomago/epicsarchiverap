@@ -4,6 +4,7 @@ import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
+import org.epics.archiverappliance.data.PostProcessor;
 
 /**
  * Implements the min item in an interval

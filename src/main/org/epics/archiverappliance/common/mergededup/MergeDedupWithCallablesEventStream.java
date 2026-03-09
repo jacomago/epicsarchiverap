@@ -8,7 +8,7 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
 import org.epics.archiverappliance.common.remotable.RemotableOverRaw;
 import org.epics.archiverappliance.retrieval.CallableEventStream;
-import org.epics.archiverappliance.retrieval.postprocessors.PostProcessor;
+import org.epics.archiverappliance.data.PostProcessor;
 
 import java.io.IOException;
 import java.util.Iterator;

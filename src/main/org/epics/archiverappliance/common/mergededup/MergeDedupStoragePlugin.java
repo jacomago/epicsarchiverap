@@ -23,7 +23,7 @@ import org.epics.archiverappliance.etl.StorageMetrics;
 import org.epics.archiverappliance.etl.StorageMetricsContext;
 import org.epics.archiverappliance.retrieval.CallableEventStream;
 import org.epics.archiverappliance.retrieval.postprocessors.DefaultRawPostProcessor;
-import org.epics.archiverappliance.retrieval.postprocessors.PostProcessor;
+import org.epics.archiverappliance.data.PostProcessor;
 import org.epics.archiverappliance.utils.ui.URIUtils;
 
 import java.io.IOException;

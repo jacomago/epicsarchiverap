@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.epics.archiverappliance.common.TimeSpan;
+import org.epics.archiverappliance.data.PostProcessor;
 
 /**
  * A TimeSpan + PostProcessor used for time dependent sparsification.

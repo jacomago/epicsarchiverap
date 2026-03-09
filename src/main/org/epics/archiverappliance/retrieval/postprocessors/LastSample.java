@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.concurrent.Callable;
 import jakarta.servlet.http.HttpServletRequest;
+import org.epics.archiverappliance.data.PostProcessor;
 
 /**
  * Similar to the firstSample operator with the exception that we use the last sample in the bin.\

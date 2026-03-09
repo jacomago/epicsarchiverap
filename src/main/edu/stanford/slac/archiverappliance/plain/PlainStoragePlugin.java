@@ -40,7 +40,7 @@ import org.epics.archiverappliance.etl.common.DefaultETLInfoListProcessor;
 import org.epics.archiverappliance.etl.common.ETLInfoListProcessor;
 import org.epics.archiverappliance.retrieval.CallableEventStream;
 import org.epics.archiverappliance.retrieval.postprocessors.DefaultRawPostProcessor;
-import org.epics.archiverappliance.retrieval.postprocessors.PostProcessor;
+import org.epics.archiverappliance.data.PostProcessor;
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessorWithConsolidatedEventStream;
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessors;
 import org.epics.archiverappliance.utils.nio.ArchPaths;
@@ -101,7 +101,7 @@ import java.util.stream.Stream;
  * partitions at a time.
  * </dd>
  * <dt>pp</dt><dd>An optional parameter, this contains a list of
- * {@link org.epics.archiverappliance.retrieval.postprocessors.PostProcessor post processing operators}
+ * {@link PostProcessor post processing operators}
  * that are computed and cached during ETL.
  * During retrieval, if an exact match is found, then the data from the cached copy is used (greatly improving
  * retrieval performance).

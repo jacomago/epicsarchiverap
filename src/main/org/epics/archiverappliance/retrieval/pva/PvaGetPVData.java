@@ -30,7 +30,7 @@ import org.epics.archiverappliance.retrieval.postprocessors.AfterAllStreams;
 import org.epics.archiverappliance.retrieval.postprocessors.DefaultRawPostProcessor;
 import org.epics.archiverappliance.retrieval.postprocessors.ExtraFieldsPostProcessor;
 import org.epics.archiverappliance.retrieval.postprocessors.FirstSamplePP;
-import org.epics.archiverappliance.retrieval.postprocessors.PostProcessor;
+import org.epics.archiverappliance.data.PostProcessor;
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessorWithConsolidatedEventStream;
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessors;
 import org.epics.archiverappliance.retrieval.workers.CurrentThreadExecutorService;

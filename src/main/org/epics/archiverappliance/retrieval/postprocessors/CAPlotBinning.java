@@ -14,6 +14,7 @@ import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
+import org.epics.archiverappliance.data.PostProcessor;
 import org.epics.archiverappliance.data.ScalarValue;
 
 import java.io.IOException;

@@ -2,6 +2,7 @@ package org.epics.archiverappliance.retrieval.postprocessors;
 
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.epics.archiverappliance.Event;
+import org.epics.archiverappliance.data.PostProcessor;
 
 /**
  * Implements the RMS across an interval

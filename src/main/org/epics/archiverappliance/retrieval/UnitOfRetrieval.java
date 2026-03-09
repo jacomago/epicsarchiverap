@@ -15,7 +15,7 @@ import org.epics.archiverappliance.NoDataException;
 import org.epics.archiverappliance.Reader;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.mergededup.MergeDedupWithCallablesEventStream;
-import org.epics.archiverappliance.retrieval.postprocessors.PostProcessor;
+import org.epics.archiverappliance.data.PostProcessor;
 
 import java.io.IOException;
 import java.time.Instant;

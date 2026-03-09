@@ -5,6 +5,7 @@ import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
+import org.epics.archiverappliance.data.PostProcessor;
 
 import java.time.Instant;
 import java.util.LinkedList;

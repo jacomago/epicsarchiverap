@@ -21,7 +21,7 @@ import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
-import org.epics.archiverappliance.retrieval.postprocessors.PostProcessor;
+import org.epics.archiverappliance.data.PostProcessor;
 import org.epics.archiverappliance.retrieval.postprocessors.TimeSpanDependentProcessing;
 import org.epics.archiverappliance.retrieval.postprocessors.TimeSpanDependentProcessor;
 

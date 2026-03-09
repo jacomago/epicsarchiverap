@@ -22,7 +22,7 @@ import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.ScalarValue;
 import org.epics.archiverappliance.retrieval.postprocessors.DefaultRawPostProcessor;
 import org.epics.archiverappliance.retrieval.postprocessors.FirstSamplePP;
-import org.epics.archiverappliance.retrieval.postprocessors.PostProcessor;
+import org.epics.archiverappliance.data.PostProcessor;
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessors;
 import org.epics.archiverappliance.retrieval.workers.CurrentThreadWorkerEventStream;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.concurrent.Callable;
 import jakarta.servlet.http.HttpServletRequest;
+import org.epics.archiverappliance.data.PostProcessor;
 
 /**
  * This is the "default" post processor that does nothing to the underlying event stream.

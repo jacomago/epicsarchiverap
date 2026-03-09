@@ -6,7 +6,7 @@ import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.remotable.ArrayListEventStream;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
-import org.epics.archiverappliance.retrieval.postprocessors.PostProcessor;
+import org.epics.archiverappliance.data.PostProcessor;
 
 import java.util.ArrayList;
 import java.util.List;

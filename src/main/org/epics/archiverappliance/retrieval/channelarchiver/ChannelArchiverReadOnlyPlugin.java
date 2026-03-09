@@ -24,7 +24,7 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.data.ConversionFunction;
 import org.epics.archiverappliance.retrieval.CallableEventStream;
-import org.epics.archiverappliance.retrieval.postprocessors.PostProcessor;
+import org.epics.archiverappliance.data.PostProcessor;
 import org.epics.archiverappliance.utils.ui.URIUtils;
 
 import java.io.BufferedInputStream;
