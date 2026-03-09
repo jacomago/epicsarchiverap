@@ -1,4 +1,4 @@
-package org.epics.archiverappliance.common.mergededup;
+package org.epics.archiverappliance.retrieval.mergededup;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

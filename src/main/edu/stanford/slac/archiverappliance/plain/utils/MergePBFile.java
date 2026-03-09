@@ -14,7 +14,7 @@ import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.EventStream;
-import org.epics.archiverappliance.common.mergededup.MergeDedupEventStream;
+import org.epics.archiverappliance.retrieval.mergededup.MergeDedupEventStream;
 import org.epics.archiverappliance.utils.nio.ArchPaths;
 
 import java.nio.file.Files;

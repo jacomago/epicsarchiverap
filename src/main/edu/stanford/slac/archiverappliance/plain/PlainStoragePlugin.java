@@ -22,7 +22,7 @@ import org.epics.archiverappliance.common.BiDirectionalIterable;
 import org.epics.archiverappliance.common.DataAtTime;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.common.mergededup.TimeSpanLimitEventStream;
+import org.epics.archiverappliance.retrieval.mergededup.TimeSpanLimitEventStream;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
 import org.epics.archiverappliance.config.ChunkKeyKeyMapping;
 import org.epics.archiverappliance.config.ConfigService;

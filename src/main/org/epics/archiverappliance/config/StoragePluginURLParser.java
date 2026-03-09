@@ -10,7 +10,7 @@ package org.epics.archiverappliance.config;
 import static edu.stanford.slac.archiverappliance.PBOverHTTP.PBOverHTTPStoragePlugin.PBHTTP_PLUGIN_IDENTIFIER;
 import static edu.stanford.slac.archiverappliance.plain.parquet.ParquetPlainFileHandler.PARQUET_PLUGIN_IDENTIFIER;
 import static edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler.PB_PLUGIN_IDENTIFIER;
-import static org.epics.archiverappliance.common.mergededup.MergeDedupStoragePlugin.MERGE_PLUGIN_IDENTIFIER;
+import static org.epics.archiverappliance.retrieval.mergededup.MergeDedupStoragePlugin.MERGE_PLUGIN_IDENTIFIER;
 import static org.epics.archiverappliance.retrieval.channelarchiver.ChannelArchiverReadOnlyPlugin.RTREE_PLUGIN_IDENTIFIER;
 import static org.epics.archiverappliance.utils.blackhole.BlackholeStoragePlugin.BLACKHOLE_PLUGIN_IDENTIFIER;
 
@@ -22,7 +22,7 @@ import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
-import org.epics.archiverappliance.common.mergededup.MergeDedupStoragePlugin;
+import org.epics.archiverappliance.retrieval.mergededup.MergeDedupStoragePlugin;
 import org.epics.archiverappliance.etl.ETLDest;
 import org.epics.archiverappliance.etl.ETLSource;
 import org.epics.archiverappliance.retrieval.channelarchiver.ChannelArchiverReadOnlyPlugin;

@@ -9,7 +9,7 @@ import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.common.mergededup.MergeDedupEventStream;
+import org.epics.archiverappliance.retrieval.mergededup.MergeDedupEventStream;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
@@ -17,6 +17,7 @@ import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.data.ConversionFunction;
+import org.epics.archiverappliance.retrieval.mergededup.MergeDedupStoragePlugin;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
@@ -42,7 +43,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @epics.BPLActionParam to - The end time for the retrieval request to the other server - defaults to a month from now.
  * @epics.BPLActionEnd
  *
- * Use this to merge in data that is outside any ETL windows. See {@link org.epics.archiverappliance.common.mergededup.MergeDedupStoragePlugin}
+ * Use this to merge in data that is outside any ETL windows. See {@link MergeDedupStoragePlugin}
  * Note, this call actually changes the underlying data; so please do make a backup before making this call; use with caution.
  *
  * @author mshankar
