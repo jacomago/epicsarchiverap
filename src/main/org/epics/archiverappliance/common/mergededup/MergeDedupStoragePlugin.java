@@ -13,7 +13,7 @@ import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.data.ArchDBRTypes;
-import org.epics.archiverappliance.etl.ConversionFunction;
+import org.epics.archiverappliance.data.ConversionFunction;
 import org.epics.archiverappliance.etl.ETLContext;
 import org.epics.archiverappliance.etl.ETLDest;
 import org.epics.archiverappliance.etl.ETLInfo;

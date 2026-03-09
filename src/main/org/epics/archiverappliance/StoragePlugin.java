@@ -9,7 +9,7 @@ package org.epics.archiverappliance;
 
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.etl.ConversionFunction;
+import org.epics.archiverappliance.data.ConversionFunction;
 
 import java.io.IOException;
 

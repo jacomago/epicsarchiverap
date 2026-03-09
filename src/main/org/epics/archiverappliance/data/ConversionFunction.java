@@ -1,4 +1,4 @@
-package org.epics.archiverappliance.etl;
+package org.epics.archiverappliance.data;
 
 import org.epics.archiverappliance.EventStream;
 

@@ -28,7 +28,7 @@ import org.epics.archiverappliance.config.ChunkKeyKeyMapping;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNameToKeyMapping;
 import org.epics.archiverappliance.data.ArchDBRTypes;
-import org.epics.archiverappliance.etl.ConversionFunction;
+import org.epics.archiverappliance.data.ConversionFunction;
 import org.epics.archiverappliance.etl.ETLBulkStream;
 import org.epics.archiverappliance.etl.ETLContext;
 import org.epics.archiverappliance.etl.ETLDest;
@@ -1284,7 +1284,7 @@ public class PlainStoragePlugin implements StoragePlugin, ETLSource, ETLDest, St
     }
 
     /* (non-Javadoc)
-     * @see org.epics.archiverappliance.StoragePlugin#convert(org.epics.archiverappliance.common.BasicContext, org.epics.archiverappliance.etl.ConversionFunction)
+     * @see org.epics.archiverappliance.StoragePlugin#convert(org.epics.archiverappliance.common.BasicContext, org.epics.archiverappliance.data.ConversionFunction)
      *
      * We find all the paths for this PV and then apply the conversion function for the
      *

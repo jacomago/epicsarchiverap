@@ -16,7 +16,7 @@ import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.data.ArchDBRTypes;
-import org.epics.archiverappliance.etl.ConversionFunction;
+import org.epics.archiverappliance.data.ConversionFunction;
 import org.epics.archiverappliance.etl.ETLContext;
 import org.epics.archiverappliance.etl.ETLDest;
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessor;

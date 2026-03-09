@@ -9,8 +9,8 @@ import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.data.HashMapEvent;
 import org.epics.archiverappliance.data.SampleValue;
-import org.epics.archiverappliance.etl.ConversionException;
-import org.epics.archiverappliance.etl.ConversionFunction;
+import org.epics.archiverappliance.data.ConversionException;
+import org.epics.archiverappliance.data.ConversionFunction;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
