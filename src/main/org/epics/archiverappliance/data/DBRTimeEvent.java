@@ -7,7 +7,6 @@
  *******************************************************************************/
 package org.epics.archiverappliance.data;
 
-import edu.stanford.slac.archiverappliance.PB.data.PartionedTime;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.json.simple.JSONAware;

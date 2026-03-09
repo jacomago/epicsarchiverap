@@ -10,7 +10,7 @@ import static org.apache.parquet.filter2.predicate.FilterApi.ltEq;
 import static org.apache.parquet.filter2.predicate.FilterApi.or;
 
 import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
-import edu.stanford.slac.archiverappliance.PB.data.PartionedTime;
+import org.epics.archiverappliance.data.PartionedTime;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.parquet.filter2.compat.FilterCompat;

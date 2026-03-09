@@ -5,9 +5,7 @@
  * EPICS archiver appliance is distributed subject to a Software License Agreement found
  * in file LICENSE that is included with this distribution.
  *******************************************************************************/
-package edu.stanford.slac.archiverappliance.PB.data;
-
-import org.epics.archiverappliance.data.YearSecondTimestamp;
+package org.epics.archiverappliance.data;
 
 /**
  * All the PB classes also implement this version of timeinfo.

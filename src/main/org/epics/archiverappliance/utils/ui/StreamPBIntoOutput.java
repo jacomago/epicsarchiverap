@@ -9,7 +9,7 @@ package org.epics.archiverappliance.utils.ui;
 
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo.Builder;
-import edu.stanford.slac.archiverappliance.PB.data.PartionedTime;
+import org.epics.archiverappliance.data.PartionedTime;
 import edu.stanford.slac.archiverappliance.PB.utils.LineEscaper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

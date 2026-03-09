@@ -8,7 +8,7 @@
 package edu.stanford.slac.archiverappliance.plain;
 
 import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
-import edu.stanford.slac.archiverappliance.PB.data.PartionedTime;
+import org.epics.archiverappliance.data.PartionedTime;
 import edu.stanford.slac.archiverappliance.PB.search.CompareEventLine;
 import org.epics.archiverappliance.ByteArray;
 import org.epics.archiverappliance.common.PartitionGranularity;
