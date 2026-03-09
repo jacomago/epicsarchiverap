@@ -5,7 +5,9 @@
  * EPICS archiver appliance is distributed subject to a Software License Agreement found
  * in file LICENSE that is included with this distribution.
  *******************************************************************************/
-package org.epics.archiverappliance.common;
+package org.epics.archiverappliance.data;
+
+import org.epics.archiverappliance.common.TimeUtils;
 
 /**
  * This is a version of a timestamp that breaks down time into a short year, a signed int secondsintoyear and a signed int nanos

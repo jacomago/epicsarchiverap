@@ -4,7 +4,7 @@ import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.common.YearSecondTimestamp;
+import org.epics.archiverappliance.data.YearSecondTimestamp;
 import org.epics.archiverappliance.common.remotable.ArrayListEventStream;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
 import org.epics.archiverappliance.config.PVTypeInfo;

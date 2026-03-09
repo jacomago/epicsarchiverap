@@ -15,7 +15,7 @@ import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.BiDirectionalIterable;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.common.YearSecondTimestamp;
+import org.epics.archiverappliance.data.YearSecondTimestamp;
 import org.epics.archiverappliance.config.PVNameToKeyMapping;
 import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;

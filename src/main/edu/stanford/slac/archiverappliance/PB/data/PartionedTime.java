@@ -7,7 +7,7 @@
  *******************************************************************************/
 package edu.stanford.slac.archiverappliance.PB.data;
 
-import org.epics.archiverappliance.common.YearSecondTimestamp;
+import org.epics.archiverappliance.data.YearSecondTimestamp;
 
 /**
  * All the PB classes also implement this version of timeinfo.

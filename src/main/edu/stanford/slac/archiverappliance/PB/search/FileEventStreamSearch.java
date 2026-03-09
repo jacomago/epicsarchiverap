@@ -11,7 +11,7 @@ import edu.stanford.slac.archiverappliance.PB.utils.LineByteStream;
 import edu.stanford.slac.archiverappliance.plain.CompareEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.common.YearSecondTimestamp;
+import org.epics.archiverappliance.data.YearSecondTimestamp;
 import org.epics.archiverappliance.data.ArchDBRTypes;
 
 import java.io.IOException;

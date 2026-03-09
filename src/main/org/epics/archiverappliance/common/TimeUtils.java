@@ -10,6 +10,7 @@ package org.epics.archiverappliance.common;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.data.YearSecondTimestamp;
 import org.epics.pva.data.PVAInt;
 import org.epics.pva.data.PVALong;
 import org.epics.pva.data.PVAStructure;

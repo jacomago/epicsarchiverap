@@ -17,7 +17,7 @@ import gov.aps.jca.dbr.DBR_TIME_Short;
 import org.epics.archiverappliance.ByteArray;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.common.YearSecondTimestamp;
+import org.epics.archiverappliance.data.YearSecondTimestamp;
 import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRAlarm;
 import org.epics.archiverappliance.data.DBRTimeEvent;
