@@ -1,7 +1,7 @@
 package org.epics.archiverappliance.mgmt;
 
 import com.google.common.net.UrlEscapers;
-import org.epics.archiverappliance.utils.ui.GetUrlContent;
+import org.epics.archiverappliance.common.GetUrlContent;
 import org.json.simple.JSONArray;
 
 import java.util.HashMap;

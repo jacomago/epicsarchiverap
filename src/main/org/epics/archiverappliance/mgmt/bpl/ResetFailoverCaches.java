@@ -5,7 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.utils.ui.GetUrlContent;
+import org.epics.archiverappliance.common.GetUrlContent;
 
 import java.io.IOException;
 import java.io.PrintWriter;

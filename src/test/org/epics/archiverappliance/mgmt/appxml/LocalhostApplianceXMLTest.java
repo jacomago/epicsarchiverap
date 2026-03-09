@@ -6,7 +6,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.TomcatSetup;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
-import org.epics.archiverappliance.utils.ui.GetUrlContent;
+import org.epics.archiverappliance.common.GetUrlContent;
 import org.json.simple.JSONArray;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;

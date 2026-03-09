@@ -6,7 +6,7 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceAggregateInfo;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.utils.ui.GetUrlContent;
+import org.epics.archiverappliance.common.GetUrlContent;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 

@@ -2,7 +2,7 @@ package org.epics.archiverappliance.retrieval.cluster;
 
 import static org.epics.archiverappliance.config.ConfigServiceForTests.DATA_RETRIEVAL_URL;
 import static org.epics.archiverappliance.retrieval.TypeInfoUtil.updateTypeInfo;
-import static org.epics.archiverappliance.utils.ui.GetUrlContent.getURLContentAsJSONArray;
+import static org.epics.archiverappliance.common.GetUrlContent.getURLContentAsJSONArray;
 import static org.epics.archiverappliance.utils.ui.URIUtils.pluginString;
 
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;

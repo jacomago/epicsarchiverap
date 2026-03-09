@@ -12,7 +12,7 @@ import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.SampleValue;
 import org.epics.archiverappliance.retrieval.client.RawDataRetrievalAsEventStream;
-import org.epics.archiverappliance.utils.ui.GetUrlContent;
+import org.epics.archiverappliance.common.GetUrlContent;
 import org.epics.pva.data.PVAInt;
 import org.epics.pva.data.PVAString;
 import org.epics.pva.data.PVAStructure;

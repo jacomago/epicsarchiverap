@@ -63,7 +63,7 @@ import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
 import org.epics.archiverappliance.retrieval.RetrievalState;
 import org.epics.archiverappliance.retrieval.channelarchiver.XMLRPCClient;
-import org.epics.archiverappliance.utils.ui.GetUrlContent;
+import org.epics.archiverappliance.common.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.JSONDecoder;
 import org.epics.archiverappliance.utils.ui.URIUtils;
 import org.json.simple.JSONObject;

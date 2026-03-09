@@ -64,7 +64,7 @@ import org.epics.archiverappliance.retrieval.postprocessors.PostProcessorWithCon
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessors;
 import org.epics.archiverappliance.retrieval.workers.CurrentThreadExecutorService;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
-import org.epics.archiverappliance.utils.ui.GetUrlContent;
+import org.epics.archiverappliance.common.GetUrlContent;
 import org.json.simple.JSONObject;
 import org.python.core.PyDictionary;
 import org.python.core.PyList;

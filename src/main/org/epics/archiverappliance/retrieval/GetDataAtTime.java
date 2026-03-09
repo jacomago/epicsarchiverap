@@ -18,7 +18,7 @@ import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.mgmt.bpl.PVsMatchingParameter;
-import org.epics.archiverappliance.utils.ui.GetUrlContent;
+import org.epics.archiverappliance.common.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MetaFields;
 import org.json.simple.JSONValue;
 
