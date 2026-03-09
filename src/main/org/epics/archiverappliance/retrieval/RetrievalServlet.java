@@ -5,7 +5,7 @@
  * EPICS archiver appliance is distributed subject to a Software License Agreement found
  * in file LICENSE that is included with this distribution.
  *******************************************************************************/
-package org.epics.archiverappliance.utils.ui;
+package org.epics.archiverappliance.retrieval;
 
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
@@ -24,6 +24,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.epics.archiverappliance.utils.ui.StreamPBIntoOutput;
 
 /**
  * This is currently the code that remotes an event stream, for example from the engine etc.
