@@ -17,57 +17,57 @@ protobuf {
 
 dependencies {
 	// Clustering
-	implementation(libs.hazelcast)
-	implementation(libs.jedis)
+	api(libs.hazelcast)
+	api(libs.jedis)
 
 	// Serialisation / protocol
 	api(libs.protobuf.java)
 
 	// Scripting (policy engine)
-	implementation(libs.jython)
+	api(libs.jython)
 
 	// Validation
-	implementation(libs.jakarta.validation)
+	api(libs.jakarta.validation)
 
 	// JSON
-	implementation(libs.json.simple)
-	implementation(libs.json)
+	api(libs.json.simple)
+	api(libs.json)
 
 	// Storage
-	implementation(libs.jdbm)
+	api(libs.jdbm)
 	runtimeOnly(libs.mariadb)
-	implementation(libs.bundles.parquet)
-	implementation(libs.hadoop.common)
+	api(libs.bundles.parquet)
+	api(libs.hadoop.common)
 	runtimeOnly(libs.hadoop.client.api)
 	runtimeOnly(libs.hadoop.client.runtime)
 
 	// Utilities
-	implementation(libs.guava)
-	implementation(libs.bundles.commons.shared)
-	implementation(libs.commons.fileupload2.jakarta)
-	implementation(libs.commons.fileupload2.core)
-	implementation(libs.commons.compress)
-	implementation(libs.commons.cli)
-	implementation(libs.httpclient)
-	implementation(libs.httpcore)
-	implementation(libs.opencsv)
+	api(libs.guava)
+	api(libs.bundles.commons.shared)
+	api(libs.commons.fileupload2.jakarta)
+	api(libs.commons.fileupload2.core)
+	api(libs.commons.compress)
+	api(libs.commons.cli)
+	api(libs.httpclient)
+	api(libs.httpcore)
+	api(libs.opencsv)
 
 	// Logging
-	implementation(libs.log4j.api)
-	implementation(libs.bundles.log4j.impl)
+	api(libs.log4j.api)
+	api(libs.bundles.log4j.impl)
 	"permitUnusedDeclared"(libs.log4j.slf4j2)
 	"permitUnusedDeclared"(libs.log4j.jul)
 	runtimeOnly(libs.bundles.log4j.runtime)
 
 	// EPICS protocol libraries
-	implementation(libs.jca)
-	implementation(libs.core.pva)
-	implementation(files(rootProject.file("appliance/lib/jamtio_071005.jar")))
-	implementation(files(rootProject.file("appliance/lib/redisnio_0.0.1.jar")))
+	api(libs.jca)
+	api(libs.core.pva)
+	api(files(rootProject.file("appliance/lib/jamtio_071005.jar")))
+	api(files(rootProject.file("appliance/lib/redisnio_0.0.1.jar")))
 
 	// Servlet API (shared contains servlet-adjacent code e.g. BasicDispatcher)
-	implementation(libs.tomcat.servlet.api)
+	api(libs.tomcat.servlet.api)
 
 	// Policy
-	implementation(libs.jinjava)
+	api(libs.jinjava)
 }
