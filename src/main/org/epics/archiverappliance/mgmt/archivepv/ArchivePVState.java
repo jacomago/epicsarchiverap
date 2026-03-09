@@ -12,8 +12,8 @@ import org.epics.archiverappliance.config.UserSpecifiedSamplingParams;
 import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
 import org.epics.archiverappliance.config.pubsub.PubSubEvent;
 import org.epics.archiverappliance.mgmt.bpl.ArchivePVAction;
-import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
-import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
+import org.epics.archiverappliance.config.PolicyConfig;
+import org.epics.archiverappliance.config.PolicyConfig.SamplingMethod;
 import org.epics.archiverappliance.common.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.JSONEncoder;
 

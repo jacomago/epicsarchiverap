@@ -44,7 +44,7 @@ import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.ScalarValue;
 import org.epics.archiverappliance.etl.ETLDest;
 import org.epics.archiverappliance.mgmt.bpl.PVsMatchingParameter;
-import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
+import org.epics.archiverappliance.config.PolicyConfig.SamplingMethod;
 import org.epics.archiverappliance.retrieval.mimeresponses.FlxXMLResponse;
 import org.epics.archiverappliance.retrieval.mimeresponses.JPlotResponse;
 import org.epics.archiverappliance.retrieval.mimeresponses.JSONResponse;

@@ -13,7 +13,7 @@ import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.engine.ArchiveEngine;
-import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
+import org.epics.archiverappliance.config.PolicyConfig.SamplingMethod;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

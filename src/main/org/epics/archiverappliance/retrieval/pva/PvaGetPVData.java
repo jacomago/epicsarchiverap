@@ -19,7 +19,7 @@ import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.etl.ETLDest;
-import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
+import org.epics.archiverappliance.config.PolicyConfig.SamplingMethod;
 import org.epics.archiverappliance.mgmt.pva.actions.PvaAction;
 import org.epics.archiverappliance.mgmt.pva.actions.PvaActionException;
 import org.epics.archiverappliance.retrieval.DataSourceResolution;

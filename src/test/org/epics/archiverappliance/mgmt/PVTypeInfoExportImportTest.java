@@ -6,7 +6,7 @@ import org.epics.archiverappliance.config.MetaInfo;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.UserSpecifiedSamplingParams;
 import org.epics.archiverappliance.data.ArchDBRTypes;
-import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
+import org.epics.archiverappliance.config.PolicyConfig;
 import org.epics.archiverappliance.utils.ui.JSONDecoder;
 import org.epics.archiverappliance.utils.ui.JSONEncoder;
 import org.json.simple.JSONObject;

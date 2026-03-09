@@ -18,7 +18,7 @@ import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ChannelArchiver.EngineConfigParser;
 import org.epics.archiverappliance.config.ChannelArchiver.PVConfig;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
+import org.epics.archiverappliance.config.PolicyConfig.SamplingMethod;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;

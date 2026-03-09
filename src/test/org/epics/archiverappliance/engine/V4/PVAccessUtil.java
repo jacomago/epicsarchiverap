@@ -10,7 +10,7 @@ import org.epics.archiverappliance.data.SampleValue;
 import org.epics.archiverappliance.engine.ArchiveEngine;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.test.MemBufWriter;
-import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
+import org.epics.archiverappliance.config.PolicyConfig;
 import org.epics.archiverappliance.mgmt.pva.actions.NTUtil;
 import org.epics.archiverappliance.mgmt.pva.actions.PvaGetPVStatus;
 import org.epics.archiverappliance.common.GetUrlContent;

@@ -7,8 +7,8 @@ import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.engine.ArchiveEngine;
-import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
-import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
+import org.epics.archiverappliance.config.PolicyConfig;
+import org.epics.archiverappliance.config.PolicyConfig.SamplingMethod;
 import org.json.simple.JSONValue;
 
 import java.io.IOException;

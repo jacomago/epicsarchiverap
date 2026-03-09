@@ -5,7 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.DefaultConfigService;
 import org.epics.archiverappliance.mgmt.policy.ExecutePolicy;
-import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
+import org.epics.archiverappliance.config.PolicyConfig;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

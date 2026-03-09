@@ -15,7 +15,6 @@ import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
-import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
 import org.epics.archiverappliance.retrieval.RetrievalState;
 
 import java.io.IOException;

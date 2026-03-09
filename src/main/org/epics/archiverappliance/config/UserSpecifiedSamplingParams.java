@@ -3,8 +3,7 @@ package org.epics.archiverappliance.config;
 import java.io.Serializable;
 import java.util.HashSet;
 
-import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
-import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
+import org.epics.archiverappliance.config.PolicyConfig.SamplingMethod;
 
 /**
  * Various options that the user can specify for archiving a PV.

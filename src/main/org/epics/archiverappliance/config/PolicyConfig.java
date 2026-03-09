@@ -1,4 +1,4 @@
-package org.epics.archiverappliance.mgmt.policy;
+package org.epics.archiverappliance.config;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
