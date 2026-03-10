@@ -9,6 +9,9 @@ sourceSets {
 		java { srcDir("src/main/java") }
 		proto { srcDir("src/proto") }
 	}
+	test {
+		java { srcDir("src/test") }
+	}
 }
 
 protobuf {
@@ -70,4 +73,18 @@ dependencies {
 
 	// Policy
 	api(libs.jinjava)
+
+	// Testing
+	testImplementation(libs.junit.jupiter.api)
+	testImplementation(libs.junit.jupiter.params)
+	testRuntimeOnly(libs.junit.jupiter.engine)
+	testRuntimeOnly(libs.junit.platform.launcher)
+	testImplementation(libs.awaitility)
+	testImplementation(libs.mockito)
+	testImplementation(files(rootProject.file("appliance/lib/test/BPLTaglets.jar")))
+	testImplementation(files(rootProject.file("appliance/lib/test/pbrawclient-0.2.2.jar")))
+}
+
+tasks.withType<Test>().configureEach {
+	useJUnitPlatform()
 }
