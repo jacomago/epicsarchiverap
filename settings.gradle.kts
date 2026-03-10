@@ -23,3 +23,5 @@ include("integration-tests")
 // Legacy monolith — retained during migration, removed in Phase 5
 include("epicsarchiverap")
 project(":epicsarchiverap").projectDir = file("appliance")
+
+include("taglets")

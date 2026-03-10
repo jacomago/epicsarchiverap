@@ -81,7 +81,7 @@ dependencies {
 	testRuntimeOnly(libs.junit.platform.launcher)
 	testImplementation(libs.awaitility)
 	testImplementation(libs.mockito)
-	testImplementation(files(rootProject.file("appliance/lib/test/BPLTaglets.jar")))
+	testImplementation(project(":taglets"))
 	testImplementation(files(rootProject.file("appliance/lib/test/pbrawclient-0.2.2.jar")))
 }
 

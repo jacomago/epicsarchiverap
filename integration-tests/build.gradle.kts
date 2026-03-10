@@ -15,7 +15,7 @@ dependencies {
 	testImplementation(libs.mockito)
 	testImplementation(libs.jinjava)
 	testImplementation(libs.tomcat.servlet.api)
-	testImplementation(files(rootProject.file("appliance/lib/test/BPLTaglets.jar")))
+	testImplementation(project(":taglets"))
 }
 
 // Test tasks added in Phase 3

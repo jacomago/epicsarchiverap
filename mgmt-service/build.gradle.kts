@@ -27,7 +27,7 @@ tasks.withType<Javadoc>().configureEach {
 			"org.epics.archiverappliance.taglets.BPLActionParamTaglet",
 			"org.epics.archiverappliance.taglets.BPLActionEndTaglet"
 		)
-		tagletPath(rootProject.file("appliance/lib/test/BPLTaglets.jar"))
+		tagletPath(tagletConfig.files.toList())
 	}
 }
 

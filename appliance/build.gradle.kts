@@ -128,7 +128,7 @@ dependencies {
 	testImplementation(libs.commons.compress)
 	testImplementation(libs.commons.cli)
 	testImplementation(libs.jinjava)
-	testImplementation(files("lib/test/BPLTaglets.jar"))
+	testImplementation(project(":taglets"))
 	testImplementation(":pbrawclient:0.2.2")
 	testImplementation(libs.tomcat.servlet.api)
 	testImplementation(libs.mockito)
