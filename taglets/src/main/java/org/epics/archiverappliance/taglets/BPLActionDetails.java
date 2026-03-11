@@ -11,9 +11,22 @@ import java.io.PrintWriter;
  *
  */
 public class BPLActionDetails {
-	
+	private static File scriptablesFile;
+
+	// Javadoc loads each taglet with a separate class loader, so static state
+	// set by BPLActionTaglet.init() is not visible to BPLActionParamTaglet or
+	// BPLActionEndTaglet. Initialize here so every copy has a usable default.
+	// The javadoc process CWD is the subproject directory (mgmt-service/).
+	static {
+		scriptablesFile = new File("build/tmp/mgmt_scriptables.txt");
+	}
+
+	public static void setScriptablesFile(File file) {
+		scriptablesFile = file;
+	}
+
 	public static void addMethod(String path, String bplclassName, String actionDescription) {
-    	try(PrintWriter out = new PrintWriter(new FileOutputStream(new File("docs/api/mgmt_scriptables.txt"), true))) {
+    	try(PrintWriter out = new PrintWriter(new FileOutputStream(scriptablesFile, true))) {
     		out.println("@StartMethod");
     		out.println(path);
     		out.println(bplclassName);
@@ -24,8 +37,8 @@ public class BPLActionDetails {
     	}
 	}
 
-    public static void addParamDesc(String paramName, String paramDesc) { 
-    	try(PrintWriter out = new PrintWriter(new FileOutputStream(new File("docs/api/mgmt_scriptables.txt"), true))) {
+    public static void addParamDesc(String paramName, String paramDesc) {
+    	try(PrintWriter out = new PrintWriter(new FileOutputStream(scriptablesFile, true))) {
     		out.println("@StartParam");
     		out.println(paramName);
     		out.println(paramDesc);
@@ -36,7 +49,7 @@ public class BPLActionDetails {
 	}
     
 	public static void addMethodTerminator() {
-    	try(PrintWriter out = new PrintWriter(new FileOutputStream(new File("docs/api/mgmt_scriptables.txt"), true))) {
+    	try(PrintWriter out = new PrintWriter(new FileOutputStream(scriptablesFile, true))) {
     		out.println("@EndMethod");
     	} catch(Exception ex) { 
     		throw new RuntimeException(ex);

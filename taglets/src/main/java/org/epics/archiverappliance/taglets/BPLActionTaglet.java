@@ -103,21 +103,33 @@ public class BPLActionTaglet implements Taglet {
 	@Override
 	public void init(DocletEnvironment env, Doclet doclet) {
 		Taglet.super.init(env, doclet);
-		
-		try(FileInputStream fis = new FileInputStream(new File("docs/api/mgmtpathmappings.txt"))) { 
-			pathMappings.load(fis);
-			for(Object key : pathMappings.keySet()) { 
-				String className = pathMappings.getProperty((String) key);
-				reversePathMappings.put(className, key);
-			}
 
-			File bplactionitems = new File("docs/api/mgmt_scriptables.txt");
-			if(bplactionitems.exists()) { 
+		String configPath = System.getProperty(
+			"org.epics.archiverappliance.taglets.config",
+			"build/tmp/taglets.properties");
+		Properties config = new Properties();
+		try (FileInputStream fis = new FileInputStream(configPath)) {
+			config.load(fis);
+		} catch (Exception ex) {
+			throw new RuntimeException("Cannot load taglet config from: " + configPath, ex);
+		}
+		String pathMappingsPath = config.getProperty("pathMappings");
+		String scriptablesFilePath = config.getProperty("scriptablesFile");
+
+		BPLActionDetails.setScriptablesFile(new File(scriptablesFilePath));
+
+		try (FileInputStream fis = new FileInputStream(pathMappingsPath)) {
+			pathMappings.load(fis);
+			for (Object key : pathMappings.keySet()) {
+				reversePathMappings.put(pathMappings.getProperty((String) key), key);
+			}
+			File bplactionitems = new File(scriptablesFilePath);
+			if (bplactionitems.exists()) {
 				bplactionitems.delete();
 			}
-		} catch(Exception ex) { 
+		} catch (Exception ex) {
 			throw new RuntimeException(ex);
-		}	
+		}
 	}    
 }
 

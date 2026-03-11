@@ -36,8 +36,16 @@ val sitespecificpath: String by extra(
 )
 
 // =================================================================
-// Sub-project Repositories
+// Repositories (root project needs ivy for svg_viewer resolution)
 // =================================================================
+
+repositories {
+	ivy {
+		url = uri("https://github.com/")
+		patternLayout { artifact("/[organisation]/[module]/archive/[revision].[ext]") }
+		metadataSources { artifact() }
+	}
+}
 
 subprojects {
 	repositories {
@@ -73,7 +81,7 @@ dependencies {
 // Staging Tasks
 // =================================================================
 
-val srcDir = rootProject.file("appliance/src/main")
+val srcDir = rootProject.file("shared/src/main/java")
 val apiDocsDir = rootProject.file("docs/api")
 
 tasks.register<Delete>("cleanApiDocs") {

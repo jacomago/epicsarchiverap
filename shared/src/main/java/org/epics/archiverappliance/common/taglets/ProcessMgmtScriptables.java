@@ -1,14 +1,15 @@
 package org.epics.archiverappliance.common.taglets;
 
+import org.jspecify.annotations.NonNull;
+
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.PrintWriter;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Called as part of the javadoc task;
@@ -18,35 +19,46 @@ import java.util.LinkedList;
  *
  */
 public class ProcessMgmtScriptables {
+    static class BPLParam {
+        final String paramName;
+        final String paramDesc;
 
+        public BPLParam(List<String> lines) {
+            this.paramName = lines.get(0);
+            this.paramDesc = lines.get(1);
+        }
+    }
+
+    static class BPLActionDetail {
+        final String path;
+        final String bplclass;
+        final String actiondesc;
+        final LinkedList<BPLParam> paramDesc = new LinkedList<BPLParam>();
+
+        public BPLActionDetail(List<String> lines) {
+            this.path = lines.get(0);
+            this.bplclass = lines.get(1);
+            this.actiondesc = lines.get(2);
+        }
+    }
     /**
      * @param args  &emsp;
      * @throws Exception  &emsp;
      */
     public static void main(String[] args) throws Exception {
-        class BPLParam {
-            String paramName;
-            String paramDesc;
+       File mgmtScriptablesFile = new File(args[0]);
 
-            public BPLParam(LinkedList<String> lines) {
-                this.paramName = lines.get(0);
-                this.paramDesc = lines.get(1);
-            }
-        }
+       if (!mgmtScriptablesFile.exists()) {
+           throw new RuntimeException("mgmt scriptables file " + mgmtScriptablesFile + " does not exist");
+       }
 
-        class BPLActionDetail {
-            String path;
-            String bplclass;
-            String actiondesc;
-            LinkedList<BPLParam> paramDesc = new LinkedList<BPLParam>();
+       File mgmtPathMappingsFile = new File(args[1]);
 
-            public BPLActionDetail(LinkedList<String> lines) {
-                this.path = lines.get(0);
-                this.bplclass = lines.get(1);
-                this.actiondesc = lines.get(2);
-            }
-        }
+       if (!mgmtPathMappingsFile.exists()) {
+           throw new RuntimeException("mgmt pathings file " + mgmtPathMappingsFile + " does not exist");
+       }
 
+       File templateFile = new File("docs/templates/mgmt_scriptables_template.html");
         //		@StartMethod
         //		/getPVStatus
         //		org.epics.archiverappliance.mgmt.bpl.GetPVStatusAction
@@ -58,84 +70,31 @@ public class ProcessMgmtScriptables {
         //		@EndParam
         //		@EndMethod
 
-        LinkedList<BPLActionDetail> actionDetails = new LinkedList<BPLActionDetail>();
-        BPLActionDetail currentAction = null;
-        LinkedList<String> lines = null;
+        List<BPLActionDetail> actionDetails = new LinkedList<>();
         try (LineNumberReader in = new LineNumberReader(
-                new InputStreamReader(new FileInputStream(new File("docs/api/mgmt_scriptables.txt"))))) {
-            String line = in.readLine();
-            while (line != null) {
-                switch (line) {
-                    case "@StartMethod": {
-                        currentAction = null;
-                        lines = new LinkedList<String>();
-                        break;
-                    }
-                    case "@MethodDescDone": {
-                        currentAction = new BPLActionDetail(lines);
-                        lines = new LinkedList<String>();
-                        break;
-                    }
-                    case "@StartParam": {
-                        lines = new LinkedList<String>();
-                        break;
-                    }
-                    case "@EndParam": {
-                        currentAction.paramDesc.add(new BPLParam(lines));
-                        lines = new LinkedList<String>();
-                        break;
-                    }
-                    case "@EndMethod": {
-                        actionDetails.add(currentAction);
-                        currentAction = null;
-                        lines = new LinkedList<String>();
-                        break;
-                    }
-                    default: {
-                        lines.add(line);
-                        break;
-                    }
-                }
-                line = in.readLine();
-            }
+                new InputStreamReader(new FileInputStream(mgmtScriptablesFile)))) {
+            actionDetails = parseFile(in);
         }
 
-        // We want to sort actionDetails according to the location in the BPLServlet.
-        // This is output to mgmtpathmappings.txt as part of the javadoc ant task.
-        // We read the sequence from there. Here's a sample
-
-        //    	#Path mappings for mgmt BPLs
-        //    	#Tue Oct 16 18:10:26 PDT 2012
-        //    	/resumeArchivingPV=org.epics.archiverappliance.mgmt.bpl.ResumeArchivingPV
-        final LinkedList<String> pathsInBPLServletSequence = new LinkedList<String>();
-        try (LineNumberReader in = new LineNumberReader(
-                new InputStreamReader(new FileInputStream(new File("docs/api/mgmtpathmappings.txt"))))) {
-            String line = in.readLine();
-            while (line != null) {
-                if (!line.startsWith("#") && line.contains("=")) {
-                    String[] parts = line.split("=");
-                    String path = parts[0];
-                    pathsInBPLServletSequence.add(path);
-                }
-                line = in.readLine();
-            }
-        }
+        final LinkedList<String> pathsInBPLServletSequence = parseMgmtPathMappingsFile(mgmtPathMappingsFile);
 
         // Now do the sort.
-        Collections.sort(actionDetails, new Comparator<BPLActionDetail>() {
-            @Override
-            public int compare(BPLActionDetail o1, BPLActionDetail o2) {
-                int posn1 = pathsInBPLServletSequence.indexOf(o1.path);
-                int posn2 = pathsInBPLServletSequence.indexOf(o2.path);
-                return posn1 - posn2;
-            }
+        actionDetails.sort((o1, o2) -> {
+            int posn1 = pathsInBPLServletSequence.indexOf(o1.path);
+            int posn2 = pathsInBPLServletSequence.indexOf(o2.path);
+            return posn1 - posn2;
         });
+
+        writeHtmlFile(templateFile, actionDetails);
+    }
+
+    private static void writeHtmlFile(File templateFile, List<BPLActionDetail> actionDetails) throws IOException {
 
         // We get the template and replace the @Content tag with the generated content.
         try (LineNumberReader in = new LineNumberReader(new InputStreamReader(
-                        new FileInputStream(new File("docs/templates/mgmt_scriptables_template.html"))));
+                        new FileInputStream(templateFile)));
                 PrintWriter out =
-                        new PrintWriter(new FileOutputStream(new File("docs/api/mgmt_scriptables.html"), false))) {
+                        new PrintWriter(System.out)) {
             // Copy the template till we come to @Content
             String line = in.readLine();
             while (line != null) {
@@ -173,5 +132,75 @@ public class ProcessMgmtScriptables {
                 line = in.readLine();
             }
         }
+    }
+
+    private static @NonNull LinkedList<String> parseMgmtPathMappingsFile(File mgmtPathMappingsFile) throws IOException {
+        // We want to sort actionDetails according to the location in the BPLServlet.
+        // This is output to mgmtpathmappings.txt as part of the javadoc ant task.
+        // We read the sequence from there. Here's a sample
+
+        //    	#Path mappings for mgmt BPLs
+        //    	#Tue Oct 16 18:10:26 PDT 2012
+        //    	/resumeArchivingPV=org.epics.archiverappliance.mgmt.bpl.ResumeArchivingPV
+        final LinkedList<String> pathsInBPLServletSequence = new LinkedList<>();
+        try (LineNumberReader in = new LineNumberReader(
+                new InputStreamReader(new FileInputStream(mgmtPathMappingsFile)))) {
+            String line = in.readLine();
+            while (line != null) {
+                if (!line.startsWith("#") && line.contains("=")) {
+                    String[] parts = line.split("=");
+                    String path = parts[0];
+                    pathsInBPLServletSequence.add(path);
+                }
+                line = in.readLine();
+            }
+        }
+        return pathsInBPLServletSequence;
+    }
+
+    private static List<BPLActionDetail> parseFile(LineNumberReader in) throws IOException {
+        List<String> lines = new LinkedList<>();
+        BPLActionDetail currentAction = null;
+        List<BPLActionDetail> actionDetails = new LinkedList<>();
+
+        String line = in.readLine();
+        while (line != null) {
+            switch (line) {
+                case "@StartMethod": {
+                    currentAction = null;
+                    lines = new LinkedList<>();
+                    break;
+                }
+                case "@MethodDescDone": {
+                    currentAction = new BPLActionDetail(lines);
+                    lines = new LinkedList<>();
+                    break;
+                }
+                case "@StartParam": {
+                    lines = new LinkedList<>();
+                    break;
+                }
+                case "@EndParam": {
+                    if (currentAction == null) {
+                        throw new RuntimeException("Found @EndParam without @StartMethod");
+                    }
+                    currentAction.paramDesc.add(new BPLParam(lines));
+                    lines = new LinkedList<>();
+                    break;
+                }
+                case "@EndMethod": {
+                    actionDetails.add(currentAction);
+                    currentAction = null;
+                    lines = new LinkedList<>();
+                    break;
+                }
+                default: {
+                    lines.add(line);
+                    break;
+                }
+            }
+            line = in.readLine();
+        }
+        return actionDetails;
     }
 }

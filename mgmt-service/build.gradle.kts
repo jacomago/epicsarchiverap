@@ -11,13 +11,33 @@ dependencies {
 	implementation(libs.tomcat.servlet.api)
 }
 
-val apiDocsDir = layout.projectDirectory.dir("docs/api")
+val tagletConfig: Configuration by configurations.creating
+
+dependencies {
+	tagletConfig(project(":taglets"))
+}
+
+val apiDocsDir = rootProject.layout.projectDirectory.dir("docs/api")
+val mgmtScriptablesTxt = layout.buildDirectory.file("tmp/mgmt_scriptables.txt")
+val mgmtPathMappingsTxt = layout.buildDirectory.file("tmp/mgmtpathmappings.txt")
+val mgmtScriptablesHtml = apiDocsDir.file("mgmt_scriptables.html")
 
 tasks.withType<Javadoc>().configureEach {
-	dependsOn("generateBPLActionsMappings")
+	dependsOn("generateBPLActionsMappings", ":taglets:jar")
 	mustRunAfter("generateBPLActionsMappings")
 	finalizedBy("generateJavaDocTagletScriptables")
 	source = sourceSets.main.get().allJava
+	doFirst {
+		mgmtPathMappingsTxt.get().asFile.parentFile.mkdirs()
+		// Gradle writes all javadoc options (including -J flags) to an @options file,
+		// but javadoc ignores -J flags in @files. The javadoc process CWD is the
+		// subproject directory (mgmt-service/), so write the config to build/tmp/
+		// which the taglet finds at its default path relative to CWD.
+		mgmtPathMappingsTxt.get().asFile.parentFile.resolve("taglets.properties").writeText(
+			"pathMappings=${mgmtPathMappingsTxt.get().asFile.absolutePath}\n" +
+			"scriptablesFile=${mgmtScriptablesTxt.get().asFile.absolutePath}\n"
+		)
+	}
 	options {
 		require(this is StandardJavadocDocletOptions)
 		author(true); version(true); isUse = true
@@ -29,14 +49,16 @@ tasks.withType<Javadoc>().configureEach {
 		)
 		tagletPath(tagletConfig.files.toList())
 	}
+	outputs.file(mgmtScriptablesTxt)
 }
 
 tasks.register<JavaExec>("generateBPLActionsMappings") {
 	group = "Documentation"
-	outputs.file("${apiDocsDir}/mgmtpathmappings.txt")
+	outputs.file(mgmtPathMappingsTxt)
 	doFirst {
 		apiDocsDir.asFile.mkdirs()
-		standardOutput = FileOutputStream("${apiDocsDir}/mgmtpathmappings.txt")
+		mgmtPathMappingsTxt.get().asFile.parentFile.mkdirs()
+		standardOutput = FileOutputStream(mgmtPathMappingsTxt.get().asFile)
 	}
 	mainClass.set("org.epics.archiverappliance.mgmt.BPLServlet")
 	classpath = sourceSets.main.get().runtimeClasspath
@@ -44,12 +66,17 @@ tasks.register<JavaExec>("generateBPLActionsMappings") {
 
 tasks.register<JavaExec>("generateJavaDocTagletScriptables") {
 	group = "Documentation"
-	dependsOn("generateBPLActionsMappings")
+	dependsOn("generateBPLActionsMappings", "javadoc")
 	mainClass.set("org.epics.archiverappliance.common.taglets.ProcessMgmtScriptables")
-	inputs.file("${apiDocsDir}/mgmt_scriptables.txt")
+	inputs.file(mgmtScriptablesTxt)
+	doFirst {
+		standardOutput = FileOutputStream("${apiDocsDir}/mgmt_scriptables.html")
+    }
 	outputs.file("${apiDocsDir}/mgmt_scriptables.html")
+	args(mgmtScriptablesTxt.get().asFile.absolutePath)
+	args(mgmtPathMappingsTxt.get().asFile.absolutePath)
 	classpath = sourceSets.main.get().runtimeClasspath
-	workingDir = project.projectDir
+	workingDir = rootProject.projectDir
 }
 
 tasks.register<Exec>("sphinx") {
