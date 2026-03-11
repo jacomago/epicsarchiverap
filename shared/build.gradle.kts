@@ -85,6 +85,37 @@ dependencies {
 	testImplementation(files(rootProject.file("appliance/lib/test/pbrawclient-0.2.2.jar")))
 }
 
+tasks.named<ProcessResources>("processTestResources") {
+	from(rootProject.layout.projectDirectory.file("appliance/src/sitespecific/tests/classpathfiles"))
+	from(rootProject.layout.projectDirectory.file("appliance/src/resources/test")) {
+		include("log4j2.xml")
+		include("appliances.xml.j2")
+		include("log4j2.component.properties")
+	}
+}
+
 tasks.withType<Test>().configureEach {
 	useJUnitPlatform()
+
+	maxHeapSize = "1G"
+	jvmArgs = listOf("-Dlog4j1.compatibility=true")
+
+	doFirst {
+		temporaryDir.resolve("sts").mkdirs()
+		temporaryDir.resolve("mts").mkdirs()
+		temporaryDir.resolve("lts").mkdirs()
+	}
+
+	environment("ARCHAPPL_SHORT_TERM_FOLDER", temporaryDir.resolve("sts").path)
+	environment("ARCHAPPL_MEDIUM_TERM_FOLDER", temporaryDir.resolve("mts").path)
+	environment("ARCHAPPL_LONG_TERM_FOLDER", temporaryDir.resolve("lts").path)
+}
+
+tasks.named<Test>("test") {
+	useJUnitPlatform {
+		excludeTags("integration", "localEpics", "flaky", "singleFork", "slow")
+	}
+	filter {
+		includeTestsMatching("*Test")
+	}
 }
