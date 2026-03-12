@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import jakarta.servlet.ServletContext;
 
-public class ConfigServiceForTests extends DefaultConfigService {
+public class ConfigServiceForTests extends DefaultConfigService implements AutoCloseable {
     public static final String TESTAPPLIANCE0 = "appliance0";
     public static final int DEFAULT_MGMT_PORT = 17665;
     /**
@@ -325,5 +325,10 @@ public class ConfigServiceForTests extends DefaultConfigService {
     public int getInitialDelayBeforeStartingArchiveRequestWorkflow() {
         // Of course, for testing, we kick off the archive PV workflow right away.
         return 10;
+    }
+
+    @Override
+    public void close() {
+        shutdownNow();
     }
 }
