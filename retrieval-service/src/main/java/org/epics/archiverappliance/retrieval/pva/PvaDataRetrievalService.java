@@ -6,7 +6,7 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.mgmt.pva.actions.PvaAction;
+import org.epics.archiverappliance.pva.actions.PvaAction;
 import org.epics.pva.data.PVAStructure;
 import org.epics.pva.data.nt.PVAURI;
 import org.epics.pva.server.RPCService;

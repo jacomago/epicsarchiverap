@@ -2,8 +2,8 @@ package org.epics.archiverappliance.mgmt.pva;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.mgmt.pva.actions.NTUtil;
-import org.epics.archiverappliance.mgmt.pva.actions.PvaGetApplianceInfo;
+import org.epics.archiverappliance.pva.actions.NTUtil;
+import org.epics.archiverappliance.pva.actions.PvaGetApplianceInfo;
 import org.epics.pva.client.PVAChannel;
 import org.epics.pva.client.PVAClient;
 import org.epics.pva.data.PVAStructure;

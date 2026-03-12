@@ -1,4 +1,4 @@
-package org.epics.archiverappliance.mgmt.pva.actions;
+package org.epics.archiverappliance.pva.actions;
 
 /**
  * Exception for a generic error during the handling of a pvAccess RPC request

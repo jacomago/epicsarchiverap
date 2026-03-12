@@ -3,7 +3,7 @@ package org.epics.archiverappliance.mgmt.pva;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.mgmt.pva.actions.PvaArchivePVAction;
+import org.epics.archiverappliance.pva.actions.PvaArchivePVAction;
 import org.epics.pva.client.PVAChannel;
 import org.epics.pva.client.PVAClient;
 import org.epics.pva.data.PVAStringArray;
@@ -22,7 +22,7 @@ import java.util.concurrent.TimeoutException;
 
 import static org.epics.archiverappliance.mgmt.pva.PvaMgmtService.PVA_MGMT_SERVICE;
 import static org.epics.archiverappliance.mgmt.pva.PvaTest.pvPrefix;
-import static org.epics.archiverappliance.mgmt.pva.actions.NTUtil.extractStringArray;
+import static org.epics.archiverappliance.pva.actions.NTUtil.extractStringArray;
 
 /**
  *

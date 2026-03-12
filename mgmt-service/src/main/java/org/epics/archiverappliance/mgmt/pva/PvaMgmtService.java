@@ -10,7 +10,7 @@ import org.epics.archiverappliance.mgmt.pva.actions.PvaGetAllPVs;
 import org.epics.archiverappliance.mgmt.pva.actions.PvaGetApplianceInfo;
 import org.epics.archiverappliance.mgmt.pva.actions.PvaGetArchivedPVs;
 import org.epics.archiverappliance.mgmt.pva.actions.PvaGetPVStatus;
-import org.epics.archiverappliance.mgmt.pva.actions.PvaAction;
+import org.epics.archiverappliance.pva.actions.PvaAction;
 import org.epics.archiverappliance.mgmt.pva.actions.PvaArchivePVAction;
 import org.epics.pva.data.PVAStructure;
 import org.epics.pva.data.nt.PVATable;

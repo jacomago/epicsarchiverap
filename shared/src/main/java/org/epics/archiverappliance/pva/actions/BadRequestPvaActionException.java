@@ -1,4 +1,4 @@
-package org.epics.archiverappliance.mgmt.pva.actions;
+package org.epics.archiverappliance.pva.actions;
 
 /**
  * Exception to return a bad request when a problem happens

@@ -6,7 +6,7 @@ import org.apache.logging.log4j.Logger;
 import org.awaitility.Awaitility;
 import org.epics.archiverappliance.TomcatSetup;
 import org.epics.archiverappliance.engine.V4.PVAccessUtil;
-import org.epics.archiverappliance.mgmt.pva.actions.PvaArchivePVAction;
+import org.epics.archiverappliance.pva.actions.PvaArchivePVAction;
 import org.epics.pva.client.PVAChannel;
 import org.epics.pva.client.PVAClient;
 import org.epics.pva.data.PVAAnyArray;

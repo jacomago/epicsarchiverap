@@ -1,4 +1,4 @@
-package org.epics.archiverappliance.mgmt.pva.actions;
+package org.epics.archiverappliance.pva.actions;
 
 import org.epics.pva.data.PVAStringArray;
 
