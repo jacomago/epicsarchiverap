@@ -106,6 +106,7 @@ public class FileBackedIteratorTest {
 
     @AfterAll
     public static void tearDown() throws Exception {
+        configService.shutdownNow();
         FileUtils.deleteDirectory(testFolder);
     }
 

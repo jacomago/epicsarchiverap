@@ -42,12 +42,14 @@ class FileInfoTest {
         PlainStoragePlugin storagePlugin = new PlainStoragePlugin(plainStorageType);
         short currentYear = TimeUtils.getCurrentYear();
         setup.setUpRootFolder(storagePlugin);
-        plainFile = PathNameUtility.getPathNameForTime(
-                storagePlugin,
-                pvName,
-                TimeUtils.getStartOfYear(currentYear),
-                new ArchPaths(),
-                (new ConfigServiceForTests(-1).getPVNameToKeyConverter()));
+        try (ConfigServiceForTests configService = new ConfigServiceForTests(-1)) {
+            plainFile = PathNameUtility.getPathNameForTime(
+                    storagePlugin,
+                    pvName,
+                    TimeUtils.getStartOfYear(currentYear),
+                    new ArchPaths(),
+                    configService.getPVNameToKeyConverter());
+        }
         Instant start = TimeUtils.getStartOfYear(currentYear);
         Instant end = start.plusSeconds(10000);
         GenerateData.generateSineForPV(pvName, 0, ArchDBRTypes.DBR_SCALAR_DOUBLE, plainStorageType, start, end);

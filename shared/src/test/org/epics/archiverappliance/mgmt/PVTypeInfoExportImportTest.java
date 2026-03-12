@@ -28,7 +28,7 @@ public class PVTypeInfoExportImportTest {
 
     @Test
     public void testEncodePVTypeInfo() throws Exception {
-        ConfigServiceForTests configService = new ConfigServiceForTests(-1);
+        try (ConfigServiceForTests configService = new ConfigServiceForTests(-1)) {
         String pvName = "UnitTestNoNamingConvention:sine";
         MetaInfo info = new MetaInfo();
         info.addOtherMetaInfo("RTYP", "ai");
@@ -66,6 +66,7 @@ public class PVTypeInfoExportImportTest {
                 Arrays.equals(typeInfo.getDataStores(), unmarshalledTypeInfo.getDataStores()),
                 "Expecting dataStores to be " + Arrays.toString(typeInfo.getDataStores()) + "; instead it is "
                         + Arrays.toString(unmarshalledTypeInfo.getDataStores()));
+        }
     }
 
     @Test

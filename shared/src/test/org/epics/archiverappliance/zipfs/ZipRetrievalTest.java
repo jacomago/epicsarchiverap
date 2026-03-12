@@ -58,6 +58,7 @@ public class ZipRetrievalTest {
 
     @AfterEach
     public void tearDown() throws Exception {
+        configService.shutdownNow();
         FileUtils.deleteDirectory(testFolder);
     }
 

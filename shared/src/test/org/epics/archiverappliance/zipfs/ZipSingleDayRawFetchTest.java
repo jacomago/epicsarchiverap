@@ -84,6 +84,7 @@ public class ZipSingleDayRawFetchTest {
 
     @AfterEach
     public void tearDown() throws Exception {
+        configService.shutdownNow();
         FileUtils.deleteDirectory(new File(rootFolderName));
     }
 

@@ -35,6 +35,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import org.apache.commons.io.FileUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -71,12 +73,17 @@ public class FileBackedPBEventStreamTest {
 
     @BeforeAll
     public static void setUp() throws Exception {
+        if (testFolder.exists()) {
+            FileUtils.deleteDirectory(testFolder);
+        }
         events = createTestData(PlainStorageType.PB);
         createTestData(PlainStorageType.PARQUET);
     }
 
     @AfterAll
-    public static void tearDown() throws Exception {}
+    public static void tearDown() throws Exception {
+        FileUtils.deleteDirectory(testFolder);
+    }
 
     private static long createTestData(PlainStorageType plainStorageType) throws IOException {
         PlainStoragePlugin storagePlugin = getStoragePlugin(plainStorageType);

@@ -52,6 +52,7 @@ public class ZipETLTest {
 
     @AfterEach
     public void tearDown() throws Exception {
+        configService.shutdownNow();
         FileUtils.deleteDirectory(testFolder);
     }
 

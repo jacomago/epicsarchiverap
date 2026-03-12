@@ -77,6 +77,7 @@ public class ZeroByteFilesTest {
 
     @AfterEach
     public void tearDown() throws Exception {
+        configService.shutdownNow();
         cleanUpDataFolders();
     }
 

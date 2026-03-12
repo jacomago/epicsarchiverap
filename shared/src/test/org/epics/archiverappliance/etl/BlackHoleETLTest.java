@@ -60,7 +60,7 @@ public class BlackHoleETLTest {
         PlainStoragePlugin etlSrc = new PlainStoragePlugin(plainStorageType);
         PlainCommonSetup srcSetup = new PlainCommonSetup();
         BlackholeStoragePlugin etlDest = new BlackholeStoragePlugin();
-        ConfigServiceForTests configService = new ConfigServiceForTests(-1);
+        try (ConfigServiceForTests configService = new ConfigServiceForTests(-1)) {
 
         srcSetup.setUpRootFolder(etlSrc, "BlackholeETLTestSrc_" + granularity, granularity);
 
@@ -108,6 +108,7 @@ public class BlackHoleETLTest {
         }
 
         srcSetup.deleteTestFolder();
+        }
     }
 
     private int getFilesWithData(String pvName, PlainStoragePlugin etlSrc, ConfigService configService)

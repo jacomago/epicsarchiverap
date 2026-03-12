@@ -82,6 +82,7 @@ public class PlainPBFileNameUtilityTest {
 
     @AfterEach
     public void tearDown() throws Exception {
+        configService.shutdownNow();
         File rootFolder = new File(rootFolderStr);
         FileUtils.deleteDirectory(rootFolder);
     }

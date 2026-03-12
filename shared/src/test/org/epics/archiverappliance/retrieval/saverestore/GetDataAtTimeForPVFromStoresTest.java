@@ -118,6 +118,7 @@ public class GetDataAtTimeForPVFromStoresTest {
 
     @AfterAll
     public static void tearDown() throws IOException {
+        configService.shutdownNow();
         deleteData();
     }
 

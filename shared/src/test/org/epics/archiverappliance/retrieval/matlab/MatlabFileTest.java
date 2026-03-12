@@ -76,7 +76,9 @@ public class MatlabFileTest {
     }
 
     @AfterEach
-    public void tearDown() throws Exception {}
+    public void tearDown() throws Exception {
+        configService.shutdownNow();
+    }
 
     interface GenMLArray {
         public MLArray generateColumn(ArrayListEventStream dest);

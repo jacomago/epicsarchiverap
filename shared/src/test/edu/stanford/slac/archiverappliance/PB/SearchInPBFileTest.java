@@ -25,6 +25,7 @@ import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.retrieval.GenerateData;
 import org.epics.archiverappliance.utils.nio.ArchPaths;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,11 @@ public class SearchInPBFileTest {
     @BeforeEach
     public void setUp() throws Exception {
         configService = new ConfigServiceForTests(-1);
+    }
+
+    @AfterEach
+    public void tearDown() throws Exception {
+        configService.shutdownNow();
     }
 
     @Test
