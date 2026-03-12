@@ -36,6 +36,17 @@ public class PlainCommonSetup {
         } catch (ConfigException e) {
             throw new RuntimeException(e);
         }
+        Runtime.getRuntime().addShutdownHook(new Thread(
+                () -> {
+                    if (configService != null) configService.shutdownNow();
+                },
+                "PlainCommonSetupShutdown"));
+    }
+
+    public static void tearDownConfigService() {
+        if (configService != null) {
+            configService.shutdownNow();
+        }
     }
 
     private File tempFolderForTests;

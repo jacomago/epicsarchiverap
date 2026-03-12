@@ -21,7 +21,6 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.data.YearSecondTimestamp;
 import org.epics.archiverappliance.common.remotable.ArrayListEventStream;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.data.ArchDBRTypes;
@@ -46,11 +45,10 @@ public class RenamePVTest {
     private static final Logger logger = LogManager.getLogger(RenamePVTest.class);
     private final File rootFolder =
             new File(ConfigServiceForTests.getDefaultPBTestFolder() + File.separator + "RenamePV");
-    private ConfigService configService;
+    private final ConfigServiceForTests configService = PlainCommonSetup.configService;
 
     @BeforeEach
     public void setUp() throws Exception {
-        configService = new ConfigServiceForTests(-1);
         if (rootFolder.exists()) {
             FileUtils.deleteDirectory(rootFolder);
         }

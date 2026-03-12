@@ -21,7 +21,6 @@ import org.epics.archiverappliance.common.remotable.ArrayListEventStream;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
-import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.ScalarValue;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
@@ -53,7 +52,7 @@ import java.util.stream.Stream;
  */
 public class FileBackedPBEventStreamTest {
     private static final Logger logger = LogManager.getLogger(FileBackedPBEventStreamTest.class.getName());
-    private static final ConfigServiceForTests configService;
+    private static final ConfigServiceForTests configService = PlainCommonSetup.configService;
     static File testFolder = new File(ConfigServiceForTests.getDefaultPBTestFolder()
             + File.separator
             + FileBackedPBEventStreamTest.class.getSimpleName());
@@ -69,14 +68,6 @@ public class FileBackedPBEventStreamTest {
 
     private static final Instant oneWeekIntoYear = TimeUtils.getStartOfYear(TimeUtils.getCurrentYear())
             .plusSeconds(PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() * 7L);
-
-    static {
-        try {
-            configService = new ConfigServiceForTests(-1);
-        } catch (ConfigException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     @BeforeAll
     public static void setUp() throws Exception {

@@ -12,7 +12,6 @@ import org.epics.archiverappliance.utils.nio.ArchPaths;
 import org.epics.archiverappliance.utils.simulation.SimulationEventStream;
 import org.epics.archiverappliance.utils.simulation.SineGenerator;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
@@ -27,12 +26,7 @@ import java.time.Instant;
  */
 public class CleanPartitionsTest {
     private static final Logger logger = LogManager.getLogger(CleanPartitionsTest.class.getName());
-    private ConfigService configService;
-
-    @BeforeEach
-    public void setUp() throws Exception {
-        configService = new ConfigServiceForTests(-1);
-    }
+    private final ConfigService configService = PlainCommonSetup.configService;
 
     @ParameterizedTest
     @EnumSource(PlainStorageType.class)

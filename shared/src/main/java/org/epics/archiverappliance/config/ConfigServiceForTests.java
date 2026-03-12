@@ -159,6 +159,11 @@ public class ConfigServiceForTests extends DefaultConfigService {
 
         startupState = STARTUP_SEQUENCE.STARTUP_COMPLETE;
         this.addShutdownHook(() -> startupExecutor.shutdown());
+        final HazelcastInstance testHzInstance = hzinstance;
+        this.addShutdownHook(() -> {
+            logger.info("Shutting down Hazelcast instance for test config service");
+            testHzInstance.shutdown();
+        });
     }
 
     public static String getDefaultPBTestFolder() {

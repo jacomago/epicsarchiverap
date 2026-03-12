@@ -23,7 +23,6 @@ import org.epics.archiverappliance.utils.simulation.SimulationEvent;
 import org.epics.archiverappliance.utils.simulation.SimulationEventStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -56,7 +55,7 @@ public class ZeroedFileEventStreamTest {
     static Instant startTime = TimeUtils.getStartOfYear(currentYear);
     static Instant endTime = TimeUtils.getStartOfYear(currentYear + 1);
     static int defaultPeriodInSeconds = PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() / 10;
-    private static ConfigService configService;
+    private static final ConfigService configService = PlainCommonSetup.configService;
     String rootFolderName = ConfigServiceForTests.getDefaultPBTestFolder() + "/" + "ZeroedFileEventStreamTestTest/";
 
     private static int generateFreshData(PlainStoragePlugin pbplugin4data, String pvName) throws Exception {
@@ -81,11 +80,6 @@ public class ZeroedFileEventStreamTest {
                             endTime,
                             defaultPeriodInSeconds));
         }
-    }
-
-    @BeforeAll
-    public static void setUp() throws Exception {
-        configService = new ConfigServiceForTests(-1);
     }
 
     private static void deleteChecksumPaths(PlainStorageType plainStorageType, Path path) throws IOException {

@@ -14,7 +14,6 @@ import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.PartitionGranularity;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.ScalarValue;
@@ -42,7 +41,7 @@ public class MultiFilePBEventStreamTest {
     private static final Logger logger = LogManager.getLogger(MultiFilePBEventStreamTest.class);
     static String rootFolderName = ConfigServiceForTests.getDefaultPBTestFolder() + "/" + "MultiFilePBEventStream/";
     static File rootFolder = new File(rootFolderName);
-    static ConfigService configService;
+    static final ConfigServiceForTests configService = PlainCommonSetup.configService;
     long ratio = 10;
 
     @BeforeAll
@@ -51,7 +50,6 @@ public class MultiFilePBEventStreamTest {
             FileUtils.deleteDirectory(rootFolder);
         }
         rootFolder.mkdirs();
-        configService = new ConfigServiceForTests(-1);
     }
 
     @AfterAll

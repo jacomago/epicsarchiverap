@@ -16,7 +16,6 @@ import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
-import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.data.ScalarValue;
 import org.junit.jupiter.api.AfterAll;
@@ -46,15 +45,7 @@ public class DataAroundPartitionEndTest {
     private static final File testFolder =
             new File(ConfigServiceForTests.getDefaultPBTestFolder() + File.separator + "DataAroundPartitionEndTest");
     private static final String pvName = "DataAroundPartitionEndTest";
-    private static final ConfigService configService;
-
-    static {
-        try {
-            configService = new ConfigServiceForTests(-1);
-        } catch (ConfigException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    private static final ConfigService configService = PlainCommonSetup.configService;
 
     private static final short dataYear = (short) (TimeUtils.getCurrentYear() - 1);
     private static final Instant generatedEndDate = Instant.parse(dataYear + "-06-01T00:00:00.00Z");
