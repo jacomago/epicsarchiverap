@@ -111,7 +111,16 @@ tasks.withType<Test>().configureEach {
 	environment("ARCHAPPL_LONG_TERM_FOLDER", temporaryDir.resolve("lts").path)
 }
 
+val runTestsSequentially: Boolean by extra {
+	(findProperty("ARCHAPPL_SEQUENTIAL_TESTS") as? String)?.toBoolean() ?: false
+}
+
 tasks.named<Test>("test") {
+	maxParallelForks = if (runTestsSequentially) {
+		1
+	} else {
+		(Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+	}
 	useJUnitPlatform {
 		excludeTags("integration", "localEpics", "flaky", "singleFork", "slow")
 	}
