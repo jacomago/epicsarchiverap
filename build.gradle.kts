@@ -136,24 +136,24 @@ tasks.register("stage") {
 	description = "Copy static content from each of the projects into the staging directory."
 	dependsOn(":mgmt-service:javadoc")
 	finalizedBy("stageSvgViewer")
-	doFirst { stageDir.asFile.mkdirs() }
-	copy {
-		from(rootProject.file("docs")) { include("*.*") }
-		into(apiDocsDir)
-	}
-	copy {
-		from(srcDir.resolve("org/epics/archiverappliance/staticcontent"))
-		into(stageDir.asFile.resolve("org/epics/archiverappliance/staticcontent"))
-	}
-	copy {
-		from(srcDir.resolve("org/epics/archiverappliance/retrieval/staticcontent"))
-		into(stageDir.asFile.resolve("org/epics/archiverappliance/retrieval/staticcontent"))
-	}
-	copy {
-		from(srcDir.resolve("org/epics/archiverappliance/mgmt/staticcontent"))
-		into(stageDir.asFile.resolve("org/epics/archiverappliance/mgmt/staticcontent"))
-	}
 	doLast {
+		stageDir.asFile.mkdirs()
+		project.copy {
+			from(rootProject.file("docs")) { include("*.*") }
+			into(apiDocsDir)
+		}
+		project.copy {
+			from(srcDir.resolve("org/epics/archiverappliance/staticcontent"))
+			into(stageDir.asFile.resolve("org/epics/archiverappliance/staticcontent"))
+		}
+		project.copy {
+			from(srcDir.resolve("org/epics/archiverappliance/retrieval/staticcontent"))
+			into(stageDir.asFile.resolve("org/epics/archiverappliance/retrieval/staticcontent"))
+		}
+		project.copy {
+			from(srcDir.resolve("org/epics/archiverappliance/mgmt/staticcontent"))
+			into(stageDir.asFile.resolve("org/epics/archiverappliance/mgmt/staticcontent"))
+		}
 		stageDir.asFile
 			.resolve("org/epics/archiverappliance/staticcontent/version.txt")
 			.writeText("Archiver Appliance Version $version")

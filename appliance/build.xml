@@ -17,6 +17,10 @@
 
 	<echo>Building the archiver appliance for the site ${archapplsite} with path ${sitespecificpath}</echo>
 
+	<target name="stage">
+		<!-- No-op: staging is performed by the Gradle :stage task before this Ant target runs -->
+	</target>
+
 	<target name="sitespecificbuild" if="site_has_site_specific_build_xml" depends="stage">
 		<echo message="Calling site specific build for site ${archapplsite}"></echo>
 		<ant dir="${sitespecificpath}" inheritall="true"></ant>
