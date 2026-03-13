@@ -85,14 +85,6 @@ dependencies {
 	testImplementation(files(rootProject.file("appliance/lib/test/pbrawclient-0.2.2.jar")))
 }
 
-tasks.named<ProcessResources>("processTestResources") {
-	from(rootProject.layout.projectDirectory.file("appliance/src/sitespecific/tests/classpathfiles"))
-	from(rootProject.layout.projectDirectory.file("appliance/src/resources/test")) {
-		include("log4j2.xml")
-		include("appliances.xml.j2")
-		include("log4j2.component.properties")
-	}
-}
 
 tasks.withType<Test>().configureEach {
 	useJUnitPlatform()
