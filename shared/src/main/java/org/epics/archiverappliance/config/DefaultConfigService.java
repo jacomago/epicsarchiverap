@@ -61,6 +61,7 @@ import org.epics.archiverappliance.mgmt.bpl.cahdlers.NamesHandler;
 import org.epics.archiverappliance.mgmt.policy.ExecutePolicy;
 import org.epics.archiverappliance.config.PolicyConfig.SamplingMethod;
 import org.epics.archiverappliance.retrieval.RetrievalState;
+import org.epics.archiverappliance.retrieval.channelarchiver.ChannelArchiverDataServerInfo;
 import org.epics.archiverappliance.retrieval.channelarchiver.XMLRPCClient;
 import org.epics.archiverappliance.common.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.JSONDecoder;
@@ -891,7 +892,7 @@ public class DefaultConfigService implements ConfigService {
                     }
                     parts2PVNamesForThisAppliance.get(part).add(pvName);
                 }
-                applianceAggregateInfo.addInfoForPV(pvName, typeInfo, this);
+                addInfoForPVToAggregate(applianceAggregateInfo, pvName, typeInfo);
             }
         }
     }
@@ -1248,6 +1249,35 @@ public class DefaultConfigService implements ConfigService {
                 return retval;
             } catch (Exception ex) {
                 throw new IOException(ex);
+            }
+        }
+    }
+
+    private void addInfoForPVToAggregate(ApplianceAggregateInfo aggregateInfo, String pvName, PVTypeInfo typeInfo) {
+        synchronized(aggregateInfo) {
+            aggregateInfo.setTotalStorageRate(aggregateInfo.getTotalStorageRate() + typeInfo.getComputedStorageRate());
+            aggregateInfo.setTotalEventRate(aggregateInfo.getTotalEventRate() + typeInfo.getComputedEventRate());
+            aggregateInfo.setTotalPVCount(aggregateInfo.getTotalPVCount() + 1);
+            if(typeInfo.getDataStores() != null && typeInfo.getDataStores().length > 0) {
+                for(String dataStore : typeInfo.getDataStores()) {
+                    try {
+                        org.epics.archiverappliance.etl.ETLDest etlDest = StoragePluginURLParser.parseETLDest(dataStore, this);
+                        if(etlDest instanceof org.epics.archiverappliance.etl.StorageMetrics) {
+                            org.epics.archiverappliance.etl.StorageMetrics stMetrics = (org.epics.archiverappliance.etl.StorageMetrics) etlDest;
+                            String identity = stMetrics.getName();
+                            double storageImpact = etlDest.getPartitionGranularity().getApproxSecondsPerChunk()*typeInfo.getComputedStorageRate();
+                            java.util.HashMap<String, Long> totalStorageImpact = aggregateInfo.getTotalStorageImpact();
+                            if(!totalStorageImpact.containsKey(identity)) {
+                                totalStorageImpact.put(identity, Long.valueOf(0));
+                            }
+                            long currentStorageImpact = totalStorageImpact.get(identity);
+                            currentStorageImpact += storageImpact;
+                            totalStorageImpact.put(identity, currentStorageImpact);
+                        }
+                    } catch(Exception ex) {
+                        logger.error("Exception parsing storage metrics url " + dataStore, ex);
+                    }
+                }
             }
         }
     }
@@ -1874,7 +1904,7 @@ public class DefaultConfigService implements ConfigService {
                     this.typeInfos.putAll(newTypeInfos);
                     this.pv2appliancemapping.putAll(newPVMappings);
                     for (String pvName : newTypeInfos.keySet()) {
-                        applianceAggregateInfo.addInfoForPV(pvName, newTypeInfos.get(pvName), this);
+                        addInfoForPVToAggregate(applianceAggregateInfo, pvName, newTypeInfos.get(pvName));
                     }
                     clusterPVCount += newTypeInfos.size();
                     newTypeInfos = new HashMap<String, PVTypeInfo>();
@@ -1889,7 +1919,7 @@ public class DefaultConfigService implements ConfigService {
                 this.typeInfos.putAll(newTypeInfos);
                 this.pv2appliancemapping.putAll(newPVMappings);
                 for (String pvName : newTypeInfos.keySet()) {
-                    applianceAggregateInfo.addInfoForPV(pvName, newTypeInfos.get(pvName), this);
+                    addInfoForPVToAggregate(applianceAggregateInfo, pvName, newTypeInfos.get(pvName));
                 }
                 clusterPVCount += newTypeInfos.size();
             }

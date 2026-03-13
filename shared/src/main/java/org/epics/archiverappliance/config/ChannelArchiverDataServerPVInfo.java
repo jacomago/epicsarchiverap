@@ -1,6 +1,8 @@
 package org.epics.archiverappliance.config;
 
 import java.io.Serializable;
+
+import org.epics.archiverappliance.retrieval.channelarchiver.ChannelArchiverDataServerInfo;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;

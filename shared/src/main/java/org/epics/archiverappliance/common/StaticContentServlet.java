@@ -3,7 +3,7 @@ package org.epics.archiverappliance.common;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigService.STARTUP_SEQUENCE;
+import org.epics.archiverappliance.config.CoreConfigService.STARTUP_SEQUENCE;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
