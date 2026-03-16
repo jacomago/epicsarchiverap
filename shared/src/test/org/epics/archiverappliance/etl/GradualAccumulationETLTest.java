@@ -19,7 +19,6 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.remotable.ArrayListEventStream;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
-import org.epics.archiverappliance.config.DefaultConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.data.ArchDBRTypes;
@@ -47,7 +46,7 @@ import java.util.stream.Stream;
  */
 public class GradualAccumulationETLTest {
     private static final Logger logger = LogManager.getLogger(GradualAccumulationETLTest.class.getName());
-    static DefaultConfigService configService;
+    static ConfigServiceForTests configService;
     static List<ETLTestPlugins> etlPlugins;
     int ratio = 10; // Size of the test
 

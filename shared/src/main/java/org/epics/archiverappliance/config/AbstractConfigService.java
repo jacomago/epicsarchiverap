@@ -10,7 +10,6 @@ package org.epics.archiverappliance.config;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.cache.RemovalListener;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -42,7 +41,7 @@ import edu.stanford.slac.archiverappliance.PB.data.PBTypeSystem;
 import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.StoragePlugin;
+import org.epics.archiverappliance.common.GetUrlContent;
 import org.epics.archiverappliance.common.ProcessMetrics;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.PVTypeInfoEvent.ChangeType;
@@ -50,20 +49,6 @@ import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
 import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.config.persistence.MySQLPersistence;
 import org.epics.archiverappliance.config.pubsub.PubSubEvent;
-import org.epics.archiverappliance.data.ArchDBRTypes;
-import org.epics.archiverappliance.engine.ArchiveEngine;
-import org.epics.archiverappliance.engine.pv.EngineContext;
-import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
-import org.epics.archiverappliance.mgmt.MgmtPostStartup;
-import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
-import org.epics.archiverappliance.mgmt.NonMgmtPostStartup;
-import org.epics.archiverappliance.mgmt.bpl.cahdlers.NamesHandler;
-import org.epics.archiverappliance.mgmt.policy.ExecutePolicy;
-import org.epics.archiverappliance.config.PolicyConfig.SamplingMethod;
-import org.epics.archiverappliance.retrieval.RetrievalState;
-import org.epics.archiverappliance.retrieval.channelarchiver.ChannelArchiverDataServerInfo;
-import org.epics.archiverappliance.retrieval.channelarchiver.XMLRPCClient;
-import org.epics.archiverappliance.common.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.JSONDecoder;
 import org.epics.archiverappliance.utils.ui.URIUtils;
 import org.json.simple.JSONObject;
@@ -109,22 +94,28 @@ import java.util.stream.Collectors;
 import jakarta.servlet.ServletContext;
 
 /**
- * This is the default config service for the archiver appliance.
- * There is a subclass that is used in the junit tests.
+ * Abstract base class for the config service.
+ * Implements {@link CoreConfigService} with all Hazelcast, persistence, PV metadata,
+ * and lifecycle logic that does NOT require engine/etl/retrieval/mgmt imports.
  *
- * @author mshankar
+ * <p>Subclasses ({@code DefaultConfigService} and {@code ConfigServiceForTests}) extend
+ * this class and add service-specific runtime state (EngineContext, RetrievalState, etc.).
  *
+ * <p>IMPORTANT invariant: this file must have zero imports from
+ * {@code org.epics.archiverappliance.engine}, {@code .etl}, {@code .retrieval},
+ * or {@code .mgmt}.
  */
-public class DefaultConfigService implements ConfigService {
+public abstract class AbstractConfigService implements CoreConfigService {
+
     public static final String LOGGING_TYPE = "log4j2";
     public static final String ARCHAPPL_NAME = "archappl";
     public static final String LOCAL_HOST_ADDRESS = "127.0.0.1";
     public static final String TYPEINFO = "typeinfo";
     public static final String CLUSTER_INET_2_APPLIANCE_IDENTITY = "clusterInet2ApplianceIdentity";
-    private static final String CONFIGSERVICE_HZ_NAME = "EAA_DefaultConfigService";
-    private static final Logger logger = LogManager.getLogger(DefaultConfigService.class.getName());
-    private static final Logger configlogger = LogManager.getLogger("config." + DefaultConfigService.class.getName());
-    private static final Logger clusterLogger = LogManager.getLogger("cluster." + DefaultConfigService.class.getName());
+    protected static final String CONFIGSERVICE_HZ_NAME = "EAA_DefaultConfigService";
+    private static final Logger logger = LogManager.getLogger(AbstractConfigService.class.getName());
+    private static final Logger configlogger = LogManager.getLogger("config." + AbstractConfigService.class.getName());
+    private static final Logger clusterLogger = LogManager.getLogger("cluster." + AbstractConfigService.class.getName());
 
     static {
         System.getProperties().setProperty("log4j1.compatibility", "true");
@@ -167,10 +158,6 @@ public class DefaultConfigService implements ConfigService {
 
     // Runtime state begins here
     protected LinkedList<Runnable> shutdownHooks = new LinkedList<>();
-    protected PBThreeTierETLPVLookup etlPVLookup = null;
-    protected RetrievalState retrievalState = null;
-    protected MgmtRuntimeState mgmtRuntime = null;
-    protected EngineContext engineContext = null;
     protected ConcurrentSkipListSet<String> appliancesInCluster = new ConcurrentSkipListSet<String>();
     // Runtime state ends here
 
@@ -182,40 +169,97 @@ public class DefaultConfigService implements ConfigService {
     protected ConcurrentHashMap<String, LoadingCache<String, Boolean>> failoverPVs =
             new ConcurrentHashMap<String, LoadingCache<String, Boolean>>();
 
-    // State local to DefaultConfigService.
+    // State local to AbstractConfigService.
     protected WAR_FILE warFile = WAR_FILE.MGMT;
     protected STARTUP_SEQUENCE startupState = STARTUP_SEQUENCE.ZEROTH_STATE;
     protected ScheduledExecutorService startupExecutor = null;
     protected ProcessMetrics processMetrics = new ProcessMetrics();
     private final HashSet<String> runTimeFields = new HashSet<String>();
-    // Use a Guava cache to store one and only one ExecutePolicy object that expires after some inactivity.
-    // The side effect is that it may take this many minutes to update the policy that is cached.
-    private final LoadingCache<String, ExecutePolicy> theExecutionPolicy = CacheBuilder.newBuilder()
-            .expireAfterWrite(1, TimeUnit.MINUTES)
-            .removalListener((RemovalListener<String, ExecutePolicy>)
-                    arg -> arg.getValue().close())
-            .build(new CacheLoader<String, ExecutePolicy>() {
-                public ExecutePolicy load(String key) throws IOException {
-                    logger.info("Updating the cached execute policy");
-                    return new ExecutePolicy(DefaultConfigService.this);
-                }
-            });
-
+    private boolean finishedLoggingPolicyLocation = false;
     private ServletContext servletContext;
-
     private final long appserverStartEpochSeconds = TimeUtils.getCurrentEpochSeconds();
+    protected HazelcastInstance hzinstance;
 
-    private HazelcastInstance hzinstance;
-
-    protected DefaultConfigService() {
-        // Only the unit tests config service uses this constructor.
+    protected AbstractConfigService() {
+        // Only subclasses (unit test config service) use this constructor.
     }
+
+    // =========================================================================
+    // Protected hook methods — subclasses override to add service-specific logic
+    // =========================================================================
+
+    /**
+     * Called from initialize() — set warFile and create service-specific contexts.
+     * Base implementation sets warFile only.
+     */
+    protected void initializeServiceContext(String contextPath) {
+        switch (contextPath) {
+            case "/mgmt": warFile = WAR_FILE.MGMT; break;
+            case "/engine": warFile = WAR_FILE.ENGINE; break;
+            case "/retrieval": warFile = WAR_FILE.RETRIEVAL; break;
+            case "/etl": warFile = WAR_FILE.ETL; break;
+            default: logger.error("Unknown context path " + contextPath);
+        }
+    }
+
+    /**
+     * Called from initialize() after startupState = READY_TO_JOIN_APPLIANCE.
+     * Base is no-op; DefaultConfigService schedules MgmtPostStartup / NonMgmtPostStartup.
+     */
+    protected void schedulePostStartupTasks() {}
+
+    /**
+     * Called from postStartup() for the ENGINE war.
+     * Base is no-op; DefaultConfigService schedules archivePVSonStartup.
+     */
+    protected void postStartupEngine() {}
+
+    /**
+     * Called from postStartup() for the ETL war.
+     * Base is no-op; DefaultConfigService calls etlPVLookup.postStartup().
+     */
+    protected void postStartupEtl() {}
+
+    /**
+     * Updates aggregate info for a PV. Base does totals only;
+     * DefaultConfigService adds ETL storage impact computation.
+     */
+    protected void addInfoForPVToAggregate(ApplianceAggregateInfo aggregateInfo, String pvName, PVTypeInfo typeInfo) {
+        synchronized (aggregateInfo) {
+            aggregateInfo.setTotalStorageRate(aggregateInfo.getTotalStorageRate() + typeInfo.getComputedStorageRate());
+            aggregateInfo.setTotalEventRate(aggregateInfo.getTotalEventRate() + typeInfo.getComputedEventRate());
+            aggregateInfo.setTotalPVCount(aggregateInfo.getTotalPVCount() + 1);
+        }
+    }
+
+    /**
+     * Load external archiver PV names into pv2ChannelArchiverDataServer.
+     * Base is no-op; DefaultConfigService overrides with the full Channel Archiver loading logic.
+     */
+    protected void loadExternalArchiverPVs(String serverURL, String archive) throws IOException, SAXException {}
+
+    // =========================================================================
+    // Abstract methods — require ExecutePolicy (from mgmt.policy), must be in subclass
+    // =========================================================================
+
+    @Override
+    public abstract PolicyConfig computePolicyForPV(String pvName, MetaInfo metaInfo, UserSpecifiedSamplingParams userSpecParams) throws IOException;
+
+    @Override
+    public abstract HashMap<String, String> getPoliciesInInstallation() throws IOException;
+
+    @Override
+    public abstract List<String> getFieldsArchivedAsPartOfStream() throws IOException;
+
+    // =========================================================================
+    // initialize()
+    // =========================================================================
 
     @Override
     public void initialize(ServletContext sce) throws ConfigException {
         this.servletContext = sce;
         String contextPath = sce.getContextPath();
-        logger.info("DefaultConfigService was created with a servlet context " + contextPath);
+        logger.info("AbstractConfigService was created with a servlet context " + contextPath);
 
         try {
             String pathToVersionTxt = sce.getRealPath("ui/comm/version.txt");
@@ -315,7 +359,7 @@ public class DefaultConfigService implements ConfigService {
         }
 
         pvName2KeyConverter = new ConvertPVNameToKey();
-        pvName2KeyConverter.initialize(this);
+        pvName2KeyConverter.initialize((ConfigService) this);
 
         String runtimeFieldsListStr =
                 this.getInstallationProperties().getProperty("org.epics.archiverappliance.config.RuntimeKeys");
@@ -327,26 +371,8 @@ public class DefaultConfigService implements ConfigService {
             }
         }
 
-        switch (contextPath) {
-            case "/mgmt":
-                warFile = WAR_FILE.MGMT;
-                this.mgmtRuntime = new MgmtRuntimeState(this);
-                break;
-            case "/engine":
-                warFile = WAR_FILE.ENGINE;
-                this.engineContext = new EngineContext(this);
-                break;
-            case "/retrieval":
-                warFile = WAR_FILE.RETRIEVAL;
-                this.retrievalState = new RetrievalState(this);
-                break;
-            case "/etl":
-                this.etlPVLookup = new PBThreeTierETLPVLookup(this);
-                warFile = WAR_FILE.ETL;
-                break;
-            default:
-                logger.error("We seem to have introduced a new component into the system " + contextPath);
-        }
+        // Delegate service context initialization (sets warFile + creates EngineContext/etc.)
+        this.initializeServiceContext(contextPath);
 
         // To make sure we are not starting multiple appliance with the same identity, we make sure that the hostnames
         // match
@@ -390,27 +416,18 @@ public class DefaultConfigService implements ConfigService {
         });
 
         this.startupState = STARTUP_SEQUENCE.READY_TO_JOIN_APPLIANCE;
-        if (this.warFile == WAR_FILE.MGMT) {
-            logger.info("Scheduling webappReady's for the mgmt webapp ");
-            MgmtPostStartup mgmtPostStartup = new MgmtPostStartup(this);
-            ScheduledFuture<?> postStartupFuture =
-                    startupExecutor.scheduleAtFixedRate(mgmtPostStartup, 10, 20, TimeUnit.SECONDS);
-            mgmtPostStartup.setCancellingFuture(postStartupFuture);
-        } else {
-            logger.info("Scheduling webappReady's for the non-mgmt webapp " + this.warFile.toString());
-            NonMgmtPostStartup nonMgmtPostStartup = new NonMgmtPostStartup(this, this.warFile.toString());
-            ScheduledFuture<?> postStartupFuture =
-                    startupExecutor.scheduleAtFixedRate(nonMgmtPostStartup, 10, 20, TimeUnit.SECONDS);
-            nonMgmtPostStartup.setCancellingFuture(postStartupFuture);
-        }
+
+        // Delegate post-startup scheduling (MgmtPostStartup / NonMgmtPostStartup)
+        schedulePostStartupTasks();
 
         // Measure some JMX metrics once a minute
         startupExecutor.scheduleAtFixedRate(() -> processMetrics.takeMeasurement(), 60, 60, TimeUnit.SECONDS);
     }
 
-    /* (non-Javadoc)
-     * @see org.epics.archiverappliance.config.ConfigService#postStartup()
-     */
+    // =========================================================================
+    // postStartup()
+    // =========================================================================
+
     @Override
     public void postStartup() throws ConfigException {
         if (this.startupState != STARTUP_SEQUENCE.READY_TO_JOIN_APPLIANCE) {
@@ -478,7 +495,6 @@ public class DefaultConfigService implements ConfigService {
             }
 
             config.setProperty("hazelcast.logging.type", "log4j2");
-            // config.setProperty("hazelcast.query.result.size.limit", "10000000");
 
             try {
                 String[] myAddrParts = myApplianceInfo.getClusterInetPort().split(":");
@@ -534,13 +550,6 @@ public class DefaultConfigService implements ConfigService {
             // All other webapps are "native" clients.
             try {
                 logger.debug(() -> "Initializing a non-mgmt webapp's clustering");
-                /*
-                 * Loads the client config using the following resolution mechanism:
-                 *   1. first it checks if a system property 'hazelcast.client.config' is set. If it exist and it begins with 'classpath:', then a classpath resource is loaded. Else it will assume it is a file reference
-                 *   2. it checks if a hazelcast-client.xml is available in the working dir
-                 *   3. it checks if a hazelcast-client.xml is available on the classpath
-                 *   4. it loads the hazelcast-client-default.xml
-                 */
                 ClientConfig clientConfig = new XmlClientConfigBuilder().build();
                 clientConfig.setClusterName(ARCHAPPL_NAME);
                 clientConfig.setInstanceName(myIdentity + "_" + this.warFile);
@@ -707,23 +716,9 @@ public class DefaultConfigService implements ConfigService {
         }
 
         if (this.warFile == WAR_FILE.ENGINE) {
-            // It can take a while for the engine to start up.
-            // We probably want to do this in the background so that the appliance as a whole starts up quickly and we
-            // get retrieval up and running quickly.
-            this.startupExecutor.schedule(
-                    () -> {
-                        try {
-                            logger.debug(() -> "Starting up the engine's channels on startup.");
-                            archivePVSonStartup();
-                            logger.debug(() -> "Done starting up the engine's channels in startup.");
-                        } catch (Throwable t) {
-                            configlogger.fatal("Exception starting up the engine channels on startup", t);
-                        }
-                    },
-                    1,
-                    TimeUnit.SECONDS);
+            postStartupEngine();
         } else if (this.warFile == WAR_FILE.ETL) {
-            this.etlPVLookup.postStartup();
+            postStartupEtl();
         } else if (this.warFile == WAR_FILE.MGMT) {
             initializePersistenceLayer();
 
@@ -845,7 +840,7 @@ public class DefaultConfigService implements ConfigService {
                         || (pubSubEvent.getDestination().startsWith(myIdentity)
                                 && pubSubEvent
                                         .getDestination()
-                                        .endsWith(DefaultConfigService.this.warFile.toString()))) {
+                                        .endsWith(AbstractConfigService.this.warFile.toString()))) {
                     // We publish messages from hazelcast into this VM only if the intened WAR file is us.
                     logger.debug(() -> "Publishing event into this JVM " + pubSubEvent.generateEventDescription());
                     // In this case, we set the source as being the cluster to prevent republishing back into the
@@ -855,7 +850,7 @@ public class DefaultConfigService implements ConfigService {
                 } else {
                     logger.debug(
                             () -> "Skipping publishing event into this JVM " + pubSubEvent.generateEventDescription()
-                                    + " as destination is not me " + DefaultConfigService.this.warFile.toString());
+                                    + " as destination is not me " + AbstractConfigService.this.warFile.toString());
                 }
             } else {
                 logger.debug(() -> "Skipping publishing event with null destination");
@@ -867,6 +862,10 @@ public class DefaultConfigService implements ConfigService {
         this.startupState = STARTUP_SEQUENCE.STARTUP_COMPLETE;
         configlogger.info("Start complete for webapp " + this.warFile);
     }
+
+    // =========================================================================
+    // CoreConfigService implementations
+    // =========================================================================
 
     @Override
     public STARTUP_SEQUENCE getStartupState() {
@@ -915,79 +914,6 @@ public class DefaultConfigService implements ConfigService {
                     + pubSubEvent.generateEventDescription());
             pubSub.publish(pubSubEvent);
         }
-    }
-
-    /**
-     * Get the PVs that belong to this appliance and start archiving them
-     * Needless to day, this gets done only in the engine.
-     */
-    private void archivePVSonStartup() {
-        configlogger.debug(() -> "Start archiving PVs from persistence.");
-        // To prevent broadcast storms, we pause for pausePerGroup seconds for every pausePerGroup PVs
-        int currentPVCount = 0;
-        int pausePerGroupPVCount = Integer.parseInt(this.getInstallationProperties()
-                .getProperty("org.epics.archiverappliance.engine.archivePVSonStartup.pausePerGroupPVCount", "2000"));
-        int pausePerGroupPauseTimeInSeconds = Integer.parseInt(this.getInstallationProperties()
-                .getProperty(
-                        "org.epics.archiverappliance.engine.archivePVSonStartup.pausePerGroupPauseTimeInSeconds", "2"));
-        boolean determineLastKnownEventFromStores = Boolean.parseBoolean(this.getInstallationProperties()
-                .getProperty(
-                        "org.epics.archiverappliance.engine.archivePVSonStartup.determineLastKnownEventFromStores",
-                        "true"));
-
-        for (String pvName : this.getPVsForThisAppliance()) {
-            try {
-                PVTypeInfo typeInfo = typeInfos.get(pvName);
-                if (typeInfo == null) {
-                    logger.error("On restart, cannot find typeinfo for pv " + pvName + ". Not archiving");
-                    continue;
-                }
-
-                if (typeInfo.isPaused()) {
-                    logger.debug(() -> "Skipping archiving paused PV " + pvName + " on startup");
-                    continue;
-                }
-
-                ArchDBRTypes dbrType = typeInfo.getDBRType();
-                float samplingPeriod = typeInfo.getSamplingPeriod();
-                SamplingMethod samplingMethod = typeInfo.getSamplingMethod();
-                StoragePlugin firstDest = StoragePluginURLParser.parseStoragePlugin(typeInfo.getDataStores()[0], this);
-
-                Instant lastKnownTimestamp = null;
-                if (determineLastKnownEventFromStores) {
-                    lastKnownTimestamp = typeInfo.determineLastKnownEventFromStores(this);
-                    if (logger.isDebugEnabled()) {
-                        logger.debug(
-                                "Last known timestamp from ETL stores is for pv {} is {} ",
-                                pvName,
-                                TimeUtils.convertToHumanReadableString(lastKnownTimestamp));
-                    }
-                }
-
-                ArchiveEngine.archivePV(
-                        pvName,
-                        samplingPeriod,
-                        samplingMethod,
-                        firstDest,
-                        this,
-                        dbrType,
-                        lastKnownTimestamp,
-                        typeInfo.getControllingPV(),
-                        typeInfo.getArchiveFields(),
-                        typeInfo.getHostName(),
-                        typeInfo.isUsePVAccess(),
-                        typeInfo.isUseDBEProperties());
-                currentPVCount++;
-                if (currentPVCount % pausePerGroupPVCount == 0) {
-                    logger.debug(
-                            () -> "Sleeping for " + pausePerGroupPauseTimeInSeconds + " to prevent CA search storms");
-                    Thread.sleep(pausePerGroupPauseTimeInSeconds * 1000);
-                }
-            } catch (Throwable t) {
-                logger.error("Exception starting up archiving of PV " + pvName + ". Moving on to the next pv.", t);
-            }
-        }
-        configlogger.debug("Started " + currentPVCount + " PVs from persistence.");
     }
 
     @Override
@@ -1253,35 +1179,6 @@ public class DefaultConfigService implements ConfigService {
         }
     }
 
-    private void addInfoForPVToAggregate(ApplianceAggregateInfo aggregateInfo, String pvName, PVTypeInfo typeInfo) {
-        synchronized(aggregateInfo) {
-            aggregateInfo.setTotalStorageRate(aggregateInfo.getTotalStorageRate() + typeInfo.getComputedStorageRate());
-            aggregateInfo.setTotalEventRate(aggregateInfo.getTotalEventRate() + typeInfo.getComputedEventRate());
-            aggregateInfo.setTotalPVCount(aggregateInfo.getTotalPVCount() + 1);
-            if(typeInfo.getDataStores() != null && typeInfo.getDataStores().length > 0) {
-                for(String dataStore : typeInfo.getDataStores()) {
-                    try {
-                        org.epics.archiverappliance.etl.ETLDest etlDest = StoragePluginURLParser.parseETLDest(dataStore, this);
-                        if(etlDest instanceof org.epics.archiverappliance.etl.StorageMetrics) {
-                            org.epics.archiverappliance.etl.StorageMetrics stMetrics = (org.epics.archiverappliance.etl.StorageMetrics) etlDest;
-                            String identity = stMetrics.getName();
-                            double storageImpact = etlDest.getPartitionGranularity().getApproxSecondsPerChunk()*typeInfo.getComputedStorageRate();
-                            java.util.HashMap<String, Long> totalStorageImpact = aggregateInfo.getTotalStorageImpact();
-                            if(!totalStorageImpact.containsKey(identity)) {
-                                totalStorageImpact.put(identity, Long.valueOf(0));
-                            }
-                            long currentStorageImpact = totalStorageImpact.get(identity);
-                            currentStorageImpact += storageImpact;
-                            totalStorageImpact.put(identity, currentStorageImpact);
-                        }
-                    } catch(Exception ex) {
-                        logger.error("Exception parsing storage metrics url " + dataStore, ex);
-                    }
-                }
-            }
-        }
-    }
-
     @Override
     public void registerPVToAppliance(String pvName, ApplianceInfo applianceInfo, PVRegistrationType registrationType)
             throws AlreadyRegisteredException {
@@ -1484,16 +1381,6 @@ public class DefaultConfigService implements ConfigService {
     }
 
     @Override
-    public PBThreeTierETLPVLookup getETLLookup() {
-        return etlPVLookup;
-    }
-
-    @Override
-    public RetrievalState getRetrievalRuntimeState() {
-        return retrievalState;
-    }
-
-    @Override
     public boolean isShuttingDown() {
         return startupExecutor.isShutdown();
     }
@@ -1566,138 +1453,6 @@ public class DefaultConfigService implements ConfigService {
         }
     }
 
-    /**
-     * Given a external Archiver data server URL and an archive;
-     * If this is a ChannelArchiver (archives != pbraw);
-     * this adds the PVs in the Channel Archiver so that they can be proxied.
-     * @param serverURL
-     * @param archive
-     * @throws IOException
-     * @throws SAXException
-     */
-    private void loadExternalArchiverPVs(String serverURL, String archive) throws IOException, SAXException {
-        if (archive.equals("pbraw")) {
-            logger.debug(
-                    "We do not load PV names from external EPICS archiver appliances. These can number in the multiple millions and the respone on retrieval is fast enough anyways");
-            return;
-        }
-
-        ChannelArchiverDataServerInfo serverInfo = new ChannelArchiverDataServerInfo(serverURL, archive);
-        NamesHandler handler = new NamesHandler();
-        logger.debug(
-                () -> "Getting list of PV's from Channel Archiver Server at " + serverURL + " using index " + archive);
-        XMLRPCClient.archiverNames(serverURL, archive, handler);
-        HashMap<String, List<ChannelArchiverDataServerPVInfo>> tempPVNames =
-                new HashMap<String, List<ChannelArchiverDataServerPVInfo>>();
-        long totalPVsProxied = 0;
-        for (NamesHandler.ChannelDescription pvChannelDesc : handler.getChannels()) {
-            String pvName = PVNames.normalizeChannelName(pvChannelDesc.getName());
-            if (this.pv2ChannelArchiverDataServer.containsKey(pvName)) {
-                List<ChannelArchiverDataServerPVInfo> alreadyExistingServers =
-                        this.pv2ChannelArchiverDataServer.get(pvName);
-                logger.debug(() -> "Adding new server to already existing ChannelArchiver server for " + pvName);
-                addExternalCAServerToExistingList(alreadyExistingServers, serverInfo, pvChannelDesc);
-                tempPVNames.put(pvName, alreadyExistingServers);
-            } else if (tempPVNames.containsKey(pvName)) {
-                List<ChannelArchiverDataServerPVInfo> alreadyExistingServers = tempPVNames.get(pvName);
-                logger.debug(
-                        "Adding new server to already existing ChannelArchiver server (in tempspace) for " + pvName);
-                addExternalCAServerToExistingList(alreadyExistingServers, serverInfo, pvChannelDesc);
-                tempPVNames.put(pvName, alreadyExistingServers);
-            } else {
-                List<ChannelArchiverDataServerPVInfo> caServersForPV = new ArrayList<ChannelArchiverDataServerPVInfo>();
-                caServersForPV.add(new ChannelArchiverDataServerPVInfo(
-                        serverInfo, pvChannelDesc.getStartSec(), pvChannelDesc.getEndSec()));
-                tempPVNames.put(pvName, caServersForPV);
-            }
-
-            if (tempPVNames.size() > 1000) {
-                this.pv2ChannelArchiverDataServer.putAll(tempPVNames);
-                totalPVsProxied += tempPVNames.size();
-                tempPVNames.clear();
-            }
-        }
-        if (!tempPVNames.isEmpty()) {
-            this.pv2ChannelArchiverDataServer.putAll(tempPVNames);
-            totalPVsProxied += tempPVNames.size();
-            tempPVNames.clear();
-        }
-        if (logger.isDebugEnabled())
-            logger.debug("Proxied a total of " + totalPVsProxied + " from server " + serverURL + " using archive "
-                    + archive);
-    }
-
-    private void initializeFailoverServerCache() {
-        Map<String, String> existingCAServers = this.getExternalArchiverDataServers();
-        for (String serverURL : existingCAServers.keySet()) {
-            String archiveType = existingCAServers.get(serverURL);
-            if (archiveType.equals("pbraw")) {
-                logger.debug(() -> "Checking to see if " + serverURL + " is used for failover");
-                try {
-                    URI serverURI = new URI(serverURL);
-                    HashMap<String, String> queryNVPairs = URIUtils.parseQueryString(serverURI);
-                    if (!queryNVPairs.isEmpty() && queryNVPairs.containsKey("mergeDuringRetrieval")) {
-                        configlogger.info("Merging data from " + serverURL + " during data retrieval");
-                        failoverPVs.put(
-                                serverURL,
-                                CacheBuilder.newBuilder()
-                                        .expireAfterWrite(86400, TimeUnit.SECONDS)
-                                        .build(new CacheLoader<>() {
-                                            public Boolean load(String pvName) {
-                                                String areWeURL = serverURL.split("\\?")[0] + "/"
-                                                        + "bpl/areWeArchivingPV?pv=" + pvName;
-                                                logger.debug(() -> "Checking to see if " + serverURL
-                                                        + " is archiving PV " + pvName + " using " + areWeURL);
-                                                try {
-                                                    JSONObject areWeResp =
-                                                            GetUrlContent.getURLContentAsJSONObject(areWeURL);
-                                                    return Boolean.valueOf((String) areWeResp.get("status"));
-                                                } catch (Exception ex) {
-                                                    logger.error(
-                                                            "Exception checking to see if " + serverURL
-                                                                    + " is archiving PV " + pvName,
-                                                            ex);
-                                                }
-                                                return false;
-                                            }
-                                        }));
-                    }
-                } catch (Exception ex) {
-                    logger.error("Exception parsing external server URL " + serverURL, ex);
-                }
-            }
-        }
-    }
-
-    private static void addExternalCAServerToExistingList(
-            List<ChannelArchiverDataServerPVInfo> alreadyExistingServers,
-            ChannelArchiverDataServerInfo serverInfo,
-            NamesHandler.ChannelDescription pvChannelDesc) {
-        List<ChannelArchiverDataServerPVInfo> copyOfAlreadyExistingServers = new LinkedList<>();
-        for (ChannelArchiverDataServerPVInfo alreadyExistingServer : alreadyExistingServers) {
-            if (alreadyExistingServer.getServerInfo().equals(serverInfo)) {
-                logger.debug(() -> "Removing a channel archiver server that already exists " + alreadyExistingServer);
-            } else {
-                copyOfAlreadyExistingServers.add(alreadyExistingServer);
-            }
-        }
-
-        int beforeCount = alreadyExistingServers.size();
-        alreadyExistingServers.clear();
-        alreadyExistingServers.addAll(copyOfAlreadyExistingServers);
-
-        // Readd the CA server - this should take into account any updated start times, end times and so on.
-        alreadyExistingServers.add(new ChannelArchiverDataServerPVInfo(
-                serverInfo, pvChannelDesc.getStartSec(), pvChannelDesc.getEndSec()));
-
-        int afterCount = alreadyExistingServers.size();
-        logger.debug(() -> "We had " + beforeCount + " and now we have " + afterCount
-                + " when adding external ChannelArchiver server");
-
-        // Sort the servers by ascending time stamps before adding it back.
-        ChannelArchiverDataServerPVInfo.sortServersBasedOnStartAndEndSecs(alreadyExistingServers);
-    }
-
     @Override
     public List<ChannelArchiverDataServerPVInfo> getChannelArchiverDataServers(String pvName) {
         String normalizedPVName = PVNames.normalizeChannelName(pvName);
@@ -1706,94 +1461,9 @@ public class DefaultConfigService implements ConfigService {
     }
 
     @Override
-    public PolicyConfig computePolicyForPV(String pvName, MetaInfo metaInfo, UserSpecifiedSamplingParams userSpecParams)
-            throws IOException {
-        try (InputStream is = this.getPolicyText()) {
-            logger.debug(() -> "Computing policy for pvName");
-            HashMap<String, Object> pvInfo = new HashMap<String, Object>();
-            pvInfo.put("dbrtype", metaInfo.getArchDBRTypes().toString());
-            pvInfo.put("elementCount", metaInfo.getCount());
-            pvInfo.put("eventRate", metaInfo.getEventRate());
-            pvInfo.put("eventCount", metaInfo.getEventCount());
-            pvInfo.put("storageRate", metaInfo.getStorageRate());
-            pvInfo.put("aliasName", metaInfo.getAliasName());
-            if (userSpecParams != null && userSpecParams.getPolicyName() != null) {
-                logger.debug(() -> "Passing user override of policy " + userSpecParams.getPolicyName()
-                        + " as the dict entry policyName");
-                pvInfo.put("policyName", userSpecParams.getPolicyName());
-            }
-            if (userSpecParams.getControllingPV() != null) {
-                pvInfo.put("controlPV", userSpecParams.getControllingPV());
-            }
-
-            HashMap<String, String> otherMetaInfo = metaInfo.getOtherMetaInfo();
-            for (String otherMetaInfoKey : this.getExtraFields()) {
-                if (otherMetaInfo.containsKey(otherMetaInfoKey)) {
-                    if (otherMetaInfoKey.equals("ADEL") || otherMetaInfoKey.equals("MDEL")) {
-                        try {
-                            pvInfo.put(otherMetaInfoKey, Double.parseDouble(otherMetaInfo.get(otherMetaInfoKey)));
-                        } catch (Exception ex) {
-                            logger.error("Exception adding MDEL and ADEL to the info", ex);
-                        }
-                    } else {
-                        pvInfo.put(otherMetaInfoKey, otherMetaInfo.get(otherMetaInfoKey));
-                    }
-                }
-            }
-
-            if (logger.isDebugEnabled()) {
-                StringBuilder buf = new StringBuilder();
-                buf.append("Before computing policy for");
-                buf.append(pvName);
-                buf.append(" pvInfo is \n");
-                for (String key : pvInfo.keySet()) {
-                    buf.append(key);
-                    buf.append("=");
-                    buf.append(pvInfo.get(key));
-                    buf.append("\n");
-                }
-                logger.debug(buf.toString());
-            }
-
-            try {
-                // We only have one policy in the cache...
-                ExecutePolicy executePolicy = theExecutionPolicy.get("ThePolicy");
-                return executePolicy.computePolicyForPV(pvName, pvInfo);
-            } catch (ExecutionException e) {
-                Throwable cause = e.getCause();
-                logger.error("Exception executing policy for pv " + pvName, cause);
-                if (cause instanceof IOException) {
-                    throw (IOException) cause;
-                } else {
-                    throw new IOException(cause);
-                }
-            }
-        }
-    }
-
-    @Override
-    public HashMap<String, String> getPoliciesInInstallation() throws IOException {
-        try (ExecutePolicy executePolicy = new ExecutePolicy(this)) {
-            return executePolicy.getPolicyList();
-        }
-    }
-
-    @Override
-    public List<String> getFieldsArchivedAsPartOfStream() throws IOException {
-        try {
-            ExecutePolicy executePolicy = theExecutionPolicy.get("ThePolicy");
-            return executePolicy.getFieldsArchivedAsPartOfStream();
-        } catch (ExecutionException ex) {
-            throw new IOException(ex);
-        }
-    }
-
-    @Override
     public TypeSystem getArchiverTypeSystem() {
         return new PBTypeSystem();
     }
-
-    private boolean finishedLoggingPolicyLocation = false;
 
     @Override
     public InputStream getPolicyText() throws IOException {
@@ -1829,24 +1499,12 @@ public class DefaultConfigService implements ConfigService {
     }
 
     @Override
-    public EngineContext getEngineContext() {
-        return engineContext;
-    }
-
-    @Override
-    public MgmtRuntimeState getMgmtRuntimeState() {
-        return mgmtRuntime;
-    }
-
-    @Override
     public WAR_FILE getWarFile() {
         return warFile;
     }
 
     /**
      * Return a string representation of the member.
-     * @param member
-     * @return
      */
     private String getMemberKey(Member member) {
         // We use deprecated versions of the methods as the non-deprecated versions do not work as of 2.0x?
@@ -1937,9 +1595,7 @@ public class DefaultConfigService implements ConfigService {
     }
 
     /**
-     * The occasional upgrade to PVTypeInfo schema is handed here.
-     * @param typeInfo - Typeinfo to be upgraded
-     * @param upgradedPVs - Add the pvName here if we actually did an upgrade to the typeInfo.
+     * The occasional upgrade to PVTypeInfo schema is handled here.
      */
     private void upgradeTypeInfo(PVTypeInfo typeInfo, List<String> upgradedPVs) {
         // We added the chunkKey to typeInfo to permanently remember the key mapping to accomodate slowly changing key
@@ -2027,7 +1683,6 @@ public class DefaultConfigService implements ConfigService {
     /**
      * Initialize the persistenceLayer using environment/system property.
      * By default, initialize the MySQLPersistence
-     * @throws ConfigException
      */
     private void initializePersistenceLayer() throws ConfigException {
         String persistenceFromEnv = System.getenv(ARCHAPPL_PERSISTENCE_LAYER);
@@ -2238,6 +1893,48 @@ public class DefaultConfigService implements ConfigService {
             func.accept(pvName);
             if (!PVNames.isFieldOrFieldModifier(pvName)) {
                 func.accept(pvName + ".VAL");
+            }
+        }
+    }
+
+    private void initializeFailoverServerCache() {
+        Map<String, String> existingCAServers = this.getExternalArchiverDataServers();
+        for (String serverURL : existingCAServers.keySet()) {
+            String archiveType = existingCAServers.get(serverURL);
+            if (archiveType.equals("pbraw")) {
+                logger.debug(() -> "Checking to see if " + serverURL + " is used for failover");
+                try {
+                    URI serverURI = new URI(serverURL);
+                    HashMap<String, String> queryNVPairs = URIUtils.parseQueryString(serverURI);
+                    if (!queryNVPairs.isEmpty() && queryNVPairs.containsKey("mergeDuringRetrieval")) {
+                        configlogger.info("Merging data from " + serverURL + " during data retrieval");
+                        failoverPVs.put(
+                                serverURL,
+                                CacheBuilder.newBuilder()
+                                        .expireAfterWrite(86400, TimeUnit.SECONDS)
+                                        .build(new CacheLoader<>() {
+                                            public Boolean load(String pvName) {
+                                                String areWeURL = serverURL.split("\\?")[0] + "/"
+                                                        + "bpl/areWeArchivingPV?pv=" + pvName;
+                                                logger.debug(() -> "Checking to see if " + serverURL
+                                                        + " is archiving PV " + pvName + " using " + areWeURL);
+                                                try {
+                                                    JSONObject areWeResp =
+                                                            GetUrlContent.getURLContentAsJSONObject(areWeURL);
+                                                    return Boolean.valueOf((String) areWeResp.get("status"));
+                                                } catch (Exception ex) {
+                                                    logger.error(
+                                                            "Exception checking to see if " + serverURL
+                                                                    + " is archiving PV " + pvName,
+                                                            ex);
+                                                }
+                                                return false;
+                                            }
+                                        }));
+                    }
+                } catch (Exception ex) {
+                    logger.error("Exception parsing external server URL " + serverURL, ex);
+                }
             }
         }
     }

@@ -48,6 +48,9 @@ ant.importBuild("build.xml")
 // =================================================================
 
 dependencies {
+	// Shared module (AbstractConfigService, CoreConfigService, etc.)
+	implementation(project(":shared"))
+
 	// Local JARs
 	implementation(files("lib/jamtio_071005.jar", "lib/redisnio_0.0.1.jar"))
 

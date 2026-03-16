@@ -20,7 +20,7 @@ public class ApplianceAggregateInfo {
 	private double totalEventRate;
 	private double totalPVCount;
 	private HashMap<String, Long> totalStorageImpact= new HashMap<String, Long>();
-	private static Logger logger = LogManager.getLogger(DefaultConfigService.class.getName());
+	private static Logger logger = LogManager.getLogger(ApplianceAggregateInfo.class.getName());
 
 	public ApplianceAggregateInfo clone() {
 		ApplianceAggregateInfo retval = new ApplianceAggregateInfo();

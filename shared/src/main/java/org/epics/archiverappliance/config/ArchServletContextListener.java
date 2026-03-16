@@ -38,8 +38,9 @@ public class ArchServletContextListener implements ServletContextListener {
             ConfigService configService = null;
             if (configServiceImplClassName == null) {
                 configlogger.info("Using the default config service implementation");
-                configService = new DefaultConfigService();
-            } else {
+                configServiceImplClassName = "org.epics.archiverappliance.config.DefaultConfigService";
+            }
+            {
                 configlogger.info("Using " + configServiceImplClassName + " as the config service implementation");
                 configService = (ConfigService) Class.forName(configServiceImplClassName)
                         .getConstructor()

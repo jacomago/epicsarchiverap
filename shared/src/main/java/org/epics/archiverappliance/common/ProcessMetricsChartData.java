@@ -5,7 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.CoreConfigService.WAR_FILE;
-import org.epics.archiverappliance.config.DefaultConfigService;
+import org.epics.archiverappliance.config.AbstractConfigService;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -42,7 +42,7 @@ public class ProcessMetricsChartData implements BPLAction {
 
         // We are casting to DefaultConfigService here as I do not want to expose processMetrics in the public interface
         // just yet.
-        DefaultConfigService defaultConfigService = (DefaultConfigService) configService;
+        AbstractConfigService defaultConfigService = (AbstractConfigService) configService;
         ProcessMetrics processMetrics = defaultConfigService.getProcessMetrics();
         assert (configService.getWarFile() == WAR_FILE.MGMT);
         HashMap<String, Object> myProcessMetricsJSON =

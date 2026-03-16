@@ -11,6 +11,7 @@ import org.epics.archiverappliance.data.ArchDBRTypes;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
+import org.epics.archiverappliance.retrieval.RetrievalState;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,11 +20,14 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import jakarta.servlet.ServletContext;
 
-public class ConfigServiceForTests extends DefaultConfigService implements AutoCloseable {
+public class ConfigServiceForTests extends AbstractConfigService
+        implements ConfigService, AutoCloseable {
+
     public static final String TESTAPPLIANCE0 = "appliance0";
     public static final int DEFAULT_MGMT_PORT = 17665;
     /**
@@ -76,6 +80,60 @@ public class ConfigServiceForTests extends DefaultConfigService implements AutoC
     String rootFolder = ConfigServiceForTests.DEFAULT_PB_TEST_DATA_FOLDER;
     public static final int defaultSecondsDisconnect = 10;
     private File webInfClassesFolder;
+
+    // Service-specific runtime state fields (private — accessed via getters below)
+    private EngineContext engineContext;
+    private PBThreeTierETLPVLookup etlPVLookup;
+    private RetrievalState retrievalState;
+    private MgmtRuntimeState mgmtRuntime;
+
+    // =========================================================================
+    // Service-specific runtime state getters
+    // =========================================================================
+
+    @Override
+    public EngineContext getEngineContext() {
+        return engineContext;
+    }
+
+    @Override
+    public PBThreeTierETLPVLookup getETLLookup() {
+        return etlPVLookup;
+    }
+
+    @Override
+    public RetrievalState getRetrievalRuntimeState() {
+        return retrievalState;
+    }
+
+    @Override
+    public MgmtRuntimeState getMgmtRuntimeState() {
+        return mgmtRuntime;
+    }
+
+    // =========================================================================
+    // Abstract method stubs (policy evaluation not supported in tests)
+    // =========================================================================
+
+    @Override
+    public PolicyConfig computePolicyForPV(String pvName, MetaInfo metaInfo, UserSpecifiedSamplingParams userSpecParams)
+            throws IOException {
+        throw new UnsupportedOperationException("computePolicyForPV not supported in test config service");
+    }
+
+    @Override
+    public HashMap<String, String> getPoliciesInInstallation() throws IOException {
+        throw new UnsupportedOperationException("getPoliciesInInstallation not supported in test config service");
+    }
+
+    @Override
+    public List<String> getFieldsArchivedAsPartOfStream() throws IOException {
+        throw new UnsupportedOperationException("getFieldsArchivedAsPartOfStream not supported in test config service");
+    }
+
+    // =========================================================================
+    // Constructors
+    // =========================================================================
 
     /**
      * Special Constructor for Integration tests Do not use in unit tests.
@@ -156,6 +214,8 @@ public class ConfigServiceForTests extends DefaultConfigService implements AutoC
         this.etlPVLookup = new PBThreeTierETLPVLookup(this);
         this.retrievalState = new SampleRetrievalState(this);
         this.mgmtRuntime = new MgmtRuntimeState(this);
+
+        myIdentity = TESTAPPLIANCE0;
 
         startupState = STARTUP_SEQUENCE.STARTUP_COMPLETE;
         this.addShutdownHook(() -> startupExecutor.shutdown());
