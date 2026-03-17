@@ -10,6 +10,9 @@ pluginManagement {
 // Core shared library (Strategy A: holds all interconnected source)
 include("shared")
 
+// Shared event-stream layer: retrieval/client SPI + PBOverHTTP storage plugin
+include("shared-eventstream")
+
 // WAR services — thin BPL layer only during Phase 2
 include("engine-service")
 include("retrieval-service")

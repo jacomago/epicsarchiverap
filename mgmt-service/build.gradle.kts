@@ -8,6 +8,7 @@ plugins {
 
 dependencies {
 	implementation(project(":shared"))
+	implementation(project(":shared-eventstream"))
 	implementation(libs.tomcat.servlet.api)
 }
 

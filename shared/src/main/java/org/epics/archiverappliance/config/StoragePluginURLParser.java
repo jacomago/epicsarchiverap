@@ -7,14 +7,12 @@
  *******************************************************************************/
 package org.epics.archiverappliance.config;
 
-import static edu.stanford.slac.archiverappliance.PBOverHTTP.PBOverHTTPStoragePlugin.PBHTTP_PLUGIN_IDENTIFIER;
 import static edu.stanford.slac.archiverappliance.plain.parquet.ParquetPlainFileHandler.PARQUET_PLUGIN_IDENTIFIER;
 import static edu.stanford.slac.archiverappliance.plain.pb.PBPlainFileHandler.PB_PLUGIN_IDENTIFIER;
 import static org.epics.archiverappliance.retrieval.mergededup.MergeDedupStoragePlugin.MERGE_PLUGIN_IDENTIFIER;
 import static org.epics.archiverappliance.retrieval.channelarchiver.ChannelArchiverReadOnlyPlugin.RTREE_PLUGIN_IDENTIFIER;
 import static org.epics.archiverappliance.utils.blackhole.BlackholeStoragePlugin.BLACKHOLE_PLUGIN_IDENTIFIER;
 
-import edu.stanford.slac.archiverappliance.PBOverHTTP.PBOverHTTPStoragePlugin;
 import edu.stanford.slac.archiverappliance.plain.PlainStoragePlugin;
 import edu.stanford.slac.archiverappliance.plain.PlainStorageType;
 import org.apache.commons.lang3.text.StrLookup;
@@ -31,6 +29,7 @@ import org.epics.archiverappliance.utils.blackhole.BlackholeStoragePlugin;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Parses a URL representation of a storage plugin.
@@ -50,6 +49,35 @@ import java.net.URISyntaxException;
 public class StoragePluginURLParser {
     private static final Logger logger = LogManager.getLogger(StoragePluginURLParser.class.getName());
 
+    /**
+     * Factory for storage plugins registered by external modules (e.g. shared-eventstream).
+     * Allows modules to contribute plugin schemes without creating a compile-time dependency
+     * from shared back to those modules.
+     */
+    @FunctionalInterface
+    public interface StoragePluginFactory {
+        StoragePlugin create(String configURL, ConfigService configService) throws IOException;
+    }
+
+    private static final ConcurrentHashMap<String, StoragePluginFactory> extraSchemes = new ConcurrentHashMap<>();
+
+    public static void registerScheme(String scheme, StoragePluginFactory factory) {
+        extraSchemes.put(scheme, factory);
+    }
+
+    // Eagerly load optional plugin modules so their static initializers can register schemes.
+    static {
+        tryLoad("edu.stanford.slac.archiverappliance.PBOverHTTP.PBOverHTTPStoragePlugin");
+    }
+
+    private static void tryLoad(String className) {
+        try {
+            Class.forName(className);
+        } catch (ClassNotFoundException ignored) {
+            // Optional plugin not available on this classpath — skip silently.
+        }
+    }
+
     public static StoragePlugin parseStoragePlugin(String srcURIStr, ConfigService configService) throws IOException {
         try {
             srcURIStr = expandMacros(srcURIStr);
@@ -62,9 +90,6 @@ public class StoragePluginURLParser {
                 case PARQUET_PLUGIN_IDENTIFIER -> {
                     return parsePlainStoragePlugin(srcURIStr, configService, PlainStorageType.PARQUET);
                 }
-                case PBHTTP_PLUGIN_IDENTIFIER -> {
-                    return parseHTTPStoragePlugin(srcURIStr, configService);
-                }
                 case BLACKHOLE_PLUGIN_IDENTIFIER -> {
                     return parseBlackHolePlugin(srcURIStr, configService);
                 }
@@ -75,6 +100,10 @@ public class StoragePluginURLParser {
                     return parseMergeDedupPlugin(srcURIStr, configService);
                 }
                 default -> {
+                    StoragePluginFactory factory = extraSchemes.get(pluginIdentifier);
+                    if (factory != null) {
+                        return factory.create(srcURIStr, configService);
+                    }
                     logger.error("Unsupported plugin " + pluginIdentifier + ". Did you forget to register this?");
                 }
             }
@@ -148,13 +177,6 @@ public class StoragePluginURLParser {
             String srcURIStr, ConfigService configService, PlainStorageType plainStorageType) throws IOException {
         PlainStoragePlugin ret = new PlainStoragePlugin(plainStorageType);
         ret.initialize(expandMacros(srcURIStr), configService);
-        return ret;
-    }
-
-    private static PBOverHTTPStoragePlugin parseHTTPStoragePlugin(String srcURIStr, ConfigService configService)
-            throws IOException {
-        PBOverHTTPStoragePlugin ret = new PBOverHTTPStoragePlugin();
-        ret.initialize(srcURIStr, configService);
         return ret;
     }
 

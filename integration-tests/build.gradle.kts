@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
 	testImplementation(project(":shared"))
+	testImplementation(project(":shared-eventstream"))
 	testImplementation(project(":engine-service"))
 	testImplementation(project(":retrieval-service"))
 	testImplementation(project(":etl-service"))

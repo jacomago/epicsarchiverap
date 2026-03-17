@@ -26,6 +26,8 @@ import org.epics.archiverappliance.retrieval.CallableEventStream;
 import org.epics.archiverappliance.data.PostProcessor;
 import org.epics.archiverappliance.utils.ui.URIUtils;
 
+import org.epics.archiverappliance.config.StoragePluginURLParser;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
@@ -47,6 +49,14 @@ import java.util.concurrent.Callable;
  */
 public class PBOverHTTPStoragePlugin implements StoragePlugin {
     private static Logger logger = LogManager.getLogger(PBOverHTTPStoragePlugin.class.getName());
+
+    static {
+        StoragePluginURLParser.registerScheme("pbraw", (url, configService) -> {
+            PBOverHTTPStoragePlugin plugin = new PBOverHTTPStoragePlugin();
+            plugin.initialize(url, configService);
+            return plugin;
+        });
+    }
     private String accessURL = null;
     private String desc = "A event stream backed by a .raw response from a remote server.";
     private String name;
