@@ -3,7 +3,7 @@ package org.epics.archiverappliance.retrieval.bpl;
 import org.epics.archiverappliance.common.ArchivedPVsInList;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.mgmt.bpl.PVsMatchingParameter;
+import org.epics.archiverappliance.utils.ui.PVsMatchingParameter;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 

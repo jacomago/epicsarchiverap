@@ -1,4 +1,4 @@
-package org.epics.archiverappliance.mgmt.bpl;
+package org.epics.archiverappliance.utils.ui;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;

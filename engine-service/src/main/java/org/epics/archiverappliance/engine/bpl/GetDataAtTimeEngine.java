@@ -19,7 +19,7 @@ import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EngineContext;
-import org.epics.archiverappliance.mgmt.bpl.PVsMatchingParameter;
+import org.epics.archiverappliance.utils.ui.PVsMatchingParameter;
 import org.epics.archiverappliance.utils.ui.MetaFields;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;

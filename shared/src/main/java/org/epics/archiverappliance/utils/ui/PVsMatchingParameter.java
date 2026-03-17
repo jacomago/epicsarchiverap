@@ -1,4 +1,4 @@
-package org.epics.archiverappliance.mgmt.bpl;
+package org.epics.archiverappliance.utils.ui;
 
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.commons.lang3.StringUtils;

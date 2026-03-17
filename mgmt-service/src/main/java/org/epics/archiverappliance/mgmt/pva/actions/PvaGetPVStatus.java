@@ -12,7 +12,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.mgmt.bpl.GetPVStatusAction;
-import org.epics.archiverappliance.mgmt.bpl.PVsMatchingParameter;
+import org.epics.archiverappliance.utils.ui.PVsMatchingParameter;
 import org.epics.archiverappliance.pva.actions.NTUtil;
 import org.epics.archiverappliance.pva.actions.PvaAction;
 import org.epics.archiverappliance.pva.actions.PvaActionException;
