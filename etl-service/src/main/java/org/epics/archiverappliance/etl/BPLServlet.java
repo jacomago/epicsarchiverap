@@ -63,7 +63,7 @@ public class BPLServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        BasicDispatcher.dispatch(req, resp, configService, getActions);
+        BasicDispatcher.dispatch(req, resp, configService, getActions, () -> true);
     }
 
     @Override

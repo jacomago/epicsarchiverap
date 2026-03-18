@@ -98,7 +98,7 @@ public class BPLServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String path = req.getPathInfo();
         logger.info("Beginning request into Engine servlet " + path);
-        BasicDispatcher.dispatch(req, resp, configService, getActions);
+        BasicDispatcher.dispatch(req, resp, configService, getActions, () -> true);
     }
 
     private static HashMap<String, Class<? extends BPLAction>> postActions =
@@ -112,7 +112,7 @@ public class BPLServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         logger.info("Beginning POST request into Engine servlet " + req.getPathInfo());
-        BasicDispatcher.dispatch(req, resp, configService, postActions);
+        BasicDispatcher.dispatch(req, resp, configService, postActions, () -> true);
     }
 
     private ConfigService configService;

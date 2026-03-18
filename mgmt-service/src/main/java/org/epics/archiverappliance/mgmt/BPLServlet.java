@@ -213,7 +213,8 @@ public class BPLServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        BasicDispatcher.dispatch(req, resp, configService, getActions);
+        BasicDispatcher.dispatch(req, resp, configService, getActions,
+                () -> configService.getMgmtRuntimeState().haveChildComponentsStartedUp());
     }
 
     private ConfigService configService;
@@ -247,7 +248,8 @@ public class BPLServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        BasicDispatcher.dispatch(req, resp, configService, postActions);
+        BasicDispatcher.dispatch(req, resp, configService, postActions,
+                () -> configService.getMgmtRuntimeState().haveChildComponentsStartedUp());
     }
 
     /**

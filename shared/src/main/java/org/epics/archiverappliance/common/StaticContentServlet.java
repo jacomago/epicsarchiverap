@@ -2,7 +2,7 @@ package org.epics.archiverappliance.common;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.config.CoreConfigService.STARTUP_SEQUENCE;
 
 import java.io.BufferedInputStream;
@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -57,7 +58,13 @@ public class StaticContentServlet extends HttpServlet {
     private static final long DEFAULT_EXPIRE_TIME = 10 * 60 * 1000L;
     private static final String EXPIRES = "Expires";
 
-    private ConfigService configService = null;
+    private CoreConfigService configService = null;
+    /**
+     * Supplier for the archivePVWorkflowBatchSize template variable.
+     * Overridden by MgmtStaticContentServlet to provide the live value from MgmtRuntimeState.
+     * Non-mgmt deployments default to "1".
+     */
+    protected Supplier<String> archivePVWorkflowBatchSizeSupplier = () -> "1";
     /**
      * List of paths for which we have to do template replacement
      */
@@ -65,7 +72,7 @@ public class StaticContentServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        this.configService = (ConfigService) config.getServletContext().getAttribute(ConfigService.CONFIG_SERVICE_NAME);
+        this.configService = (CoreConfigService) config.getServletContext().getAttribute(CoreConfigService.CONFIG_SERVICE_NAME);
         templateReplacementPaths.add("viewer/index.html");
         templateReplacementPaths.add("js/mgmt.js");
     }
@@ -475,7 +482,7 @@ public class StaticContentServlet extends HttpServlet {
                     templateReplacementsForViewer.put(
                             "archivePVWorkflowBatchSize",
                             "var archivePVWorkflowBatchSize = "
-                                    + configService.getMgmtRuntimeState().getArchivePVWorkflowBatchSize() + ";\n");
+                                    + archivePVWorkflowBatchSizeSupplier.get() + ";\n");
                     templateReplacementsForViewer.put(
                             "minimumSamplingPeriod",
                             "var minimumSamplingPeriod = "

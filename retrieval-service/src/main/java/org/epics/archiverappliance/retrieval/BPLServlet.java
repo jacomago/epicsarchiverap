@@ -61,7 +61,7 @@ public class BPLServlet extends HttpServlet {
     }
 
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        BasicDispatcher.dispatch(req, resp, configService, getActions);
+        BasicDispatcher.dispatch(req, resp, configService, getActions, () -> true);
     }
 
     private static HashMap<String, Class<? extends BPLAction>> postActions =
@@ -75,7 +75,7 @@ public class BPLServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        BasicDispatcher.dispatch(req, resp, configService, postActions);
+        BasicDispatcher.dispatch(req, resp, configService, postActions, () -> true);
     }
 
     @Override

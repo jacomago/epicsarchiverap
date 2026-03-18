@@ -10,7 +10,6 @@ package org.epics.archiverappliance.common;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.CoreConfigService.WAR_FILE;
 import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
@@ -19,6 +18,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -36,7 +36,8 @@ public class BasicDispatcher {
             HttpServletRequest req,
             HttpServletResponse resp,
             ConfigService configService,
-            Map<String, Class<? extends BPLAction>> actions)
+            Map<String, Class<? extends BPLAction>> actions,
+            Supplier<Boolean> childComponentsStartedUp)
             throws IOException {
         String requestPath = req.getPathInfo();
         if (requestPath == null || requestPath.equals("")) {
@@ -49,7 +50,7 @@ public class BasicDispatcher {
             case "/ping" -> ping(resp, "pong");
             case "/postStartup" -> postStartup(resp, configService);
             case "/startupState" -> startupState(resp, configService);
-            default -> handleBPLAction(req, resp, configService, actions, requestPath);
+            default -> handleBPLAction(req, resp, configService, actions, requestPath, childComponentsStartedUp);
         }
     }
 
@@ -58,7 +59,8 @@ public class BasicDispatcher {
             HttpServletResponse resp,
             ConfigService configService,
             Map<String, Class<? extends BPLAction>> actions,
-            String requestPath)
+            String requestPath,
+            Supplier<Boolean> childComponentsStartedUp)
             throws IOException {
         if (!configService.isStartupComplete()) {
             logger.warn("We do not let the other actions complete until the config service startup is complete...");
@@ -66,8 +68,7 @@ public class BasicDispatcher {
             return;
         }
 
-        if (configService.getWarFile() == WAR_FILE.MGMT
-                && !configService.getMgmtRuntimeState().haveChildComponentsStartedUp()) {
+        if (!childComponentsStartedUp.get()) {
             String header = req.getHeader(GetUrlContent.ARCHAPPL_COMPONENT);
             if (header == null || !header.equals("true")) {
                 logger.error("We do not let the actions complete until all the components have started up");
