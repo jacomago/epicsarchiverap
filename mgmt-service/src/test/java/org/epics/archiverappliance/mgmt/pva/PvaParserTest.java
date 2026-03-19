@@ -2,7 +2,7 @@ package org.epics.archiverappliance.mgmt.pva;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.pva.actions.PvaArchivePVAction;
+import org.epics.archiverappliance.mgmt.pva.actions.PvaArchivePVAction;
 import org.epics.archiverappliance.pva.actions.ResponseConstructionException;
 import org.epics.pva.data.nt.PVATable;
 import org.junit.jupiter.api.Assertions;

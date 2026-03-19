@@ -145,14 +145,14 @@ public class ConfigServiceForTests extends AbstractConfigService
     }
 
     public ConfigServiceForTests(int jcaCommandThreadCount) throws ConfigException {
-        this(new File("./build/classes"), jcaCommandThreadCount);
+        this(null, jcaCommandThreadCount);
     }
 
     public static final int defaultMinutesDisconnect = 1;
 
     public ConfigServiceForTests(File WebInfClassesFolder, int jcaCommandThreadCount) throws ConfigException {
         this.webInfClassesFolder = WebInfClassesFolder;
-        configlogger.info("The WEB-INF/classes folder is " + this.webInfClassesFolder.getAbsolutePath());
+        configlogger.info("The WEB-INF/classes folder is " + (this.webInfClassesFolder != null ? this.webInfClassesFolder.getAbsolutePath() : "null"));
 
         HazelcastInstance hzinstance = Hazelcast.newHazelcastInstance();
         pv2appliancemapping = hzinstance.getMap("pv2appliancemapping");

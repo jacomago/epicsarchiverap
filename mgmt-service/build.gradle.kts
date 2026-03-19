@@ -10,6 +10,16 @@ dependencies {
 	implementation(project(":shared"))
 	implementation(project(":shared-eventstream"))
 	implementation(libs.tomcat.servlet.api)
+
+	// Testing
+	testImplementation(libs.junit.jupiter.api)
+	testRuntimeOnly(libs.junit.jupiter.engine)
+	testRuntimeOnly(libs.junit.platform.launcher)
+	testImplementation(libs.mockito)
+}
+
+tasks.withType<Test>().configureEach {
+	useJUnitPlatform()
 }
 
 val tagletConfig: Configuration by configurations.creating

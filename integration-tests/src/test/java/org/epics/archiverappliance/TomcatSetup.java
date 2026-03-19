@@ -19,6 +19,7 @@ import org.epics.archiverappliance.config.persistence.JDBM2Persistence;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -252,7 +253,9 @@ public class TomcatSetup {
         File logsFolder = new File(workFolder, "logs");
         assert (logsFolder.mkdir());
 
-        FileUtils.copyFile(new File("src/resources/test/log4j2.xml"), new File(logsFolder, "log4j2.xml"));
+        try (InputStream in = TomcatSetup.class.getResourceAsStream("/log4j2.xml")) {
+            if (in != null) FileUtils.copyInputStreamToFile(in, new File(logsFolder, "log4j2.xml"));
+        }
         File tempFolder = new File(workFolder, "temp");
         assert (tempFolder.mkdir());
 
