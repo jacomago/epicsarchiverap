@@ -14,7 +14,7 @@ import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.retrieval.channelarchiver.ChannelArchiverReadOnlyPlugin;
 import org.epics.archiverappliance.retrieval.client.RawDataRetrievalAsEventStream;
@@ -53,7 +53,7 @@ public class CompareWithChannelArchiver implements BPLAction {
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         String pv = req.getParameter("pv");
         String channelArchiverServerURL = req.getParameter("serverURL");

@@ -3,7 +3,7 @@ package org.epics.archiverappliance.etl.bpl;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -16,7 +16,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class GetLastKnownEventTimeStamp implements BPLAction {
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {

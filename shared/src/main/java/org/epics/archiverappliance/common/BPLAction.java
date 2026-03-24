@@ -7,7 +7,7 @@
  *******************************************************************************/
 package org.epics.archiverappliance.common;
 
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 
 import java.io.IOException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +24,6 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public interface BPLAction {
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException;
 }

@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONAware;
@@ -24,7 +24,7 @@ public class RecentlyChangedPVsforThisInstance implements BPLAction {
     private static Logger logger = LogManager.getLogger(RecentlyChangedPVsforThisInstance.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         String limitStr = req.getParameter("limit");
         int limit = 100;

@@ -9,7 +9,7 @@ package org.epics.archiverappliance.common;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
@@ -35,7 +35,7 @@ public class BasicDispatcher {
     public static void dispatch(
             HttpServletRequest req,
             HttpServletResponse resp,
-            ConfigService configService,
+            CoreConfigService configService,
             Map<String, Class<? extends BPLAction>> actions,
             Supplier<Boolean> childComponentsStartedUp)
             throws IOException {
@@ -57,7 +57,7 @@ public class BasicDispatcher {
     private static void handleBPLAction(
             HttpServletRequest req,
             HttpServletResponse resp,
-            ConfigService configService,
+            CoreConfigService configService,
             Map<String, Class<? extends BPLAction>> actions,
             String requestPath,
             Supplier<Boolean> childComponentsStartedUp)
@@ -95,7 +95,7 @@ public class BasicDispatcher {
         }
     }
 
-    private static void startupState(HttpServletResponse resp, ConfigService configService) throws IOException {
+    private static void startupState(HttpServletResponse resp, CoreConfigService configService) throws IOException {
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
             HashMap<String, String> ret = new HashMap<String, String>();
@@ -104,7 +104,7 @@ public class BasicDispatcher {
         }
     }
 
-    private static void postStartup(HttpServletResponse resp, ConfigService configService) throws IOException {
+    private static void postStartup(HttpServletResponse resp, CoreConfigService configService) throws IOException {
         if (configService.isStartupComplete()) {
             logger.warn("poststartup being called after startup complete");
         } else {

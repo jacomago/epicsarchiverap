@@ -15,6 +15,7 @@ import org.epics.archiverappliance.common.reports.Details;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ChannelArchiverDataServerPVInfo;
 import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.common.GetUrlContent;
@@ -48,7 +49,7 @@ public class PVDetails implements BPLAction {
     // JSON Array etc are not generic savvy so we get generics errors when we do
     // fancy stuff like so.
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         String pvNameFromRequest = req.getParameter("pv");
         String pvName = PVNames.channelNamePVName(pvNameFromRequest);

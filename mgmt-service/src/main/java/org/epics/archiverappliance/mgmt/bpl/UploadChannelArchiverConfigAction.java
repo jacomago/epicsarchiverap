@@ -17,7 +17,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ChannelArchiver.EngineConfigParser;
 import org.epics.archiverappliance.config.ChannelArchiver.PVConfig;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.config.PolicyConfig.SamplingMethod;
 
 import java.io.BufferedInputStream;
@@ -40,7 +40,7 @@ public class UploadChannelArchiverConfigAction implements BPLAction {
     private static final Logger logger = LogManager.getLogger(UploadChannelArchiverConfigAction.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         if (!configService.hasClusterFinishedInitialization()) {
             // If you have defined spare appliances in the appliances.xml that will never come up; you should remove

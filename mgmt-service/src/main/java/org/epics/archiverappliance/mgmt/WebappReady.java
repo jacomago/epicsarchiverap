@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.config.CoreConfigService.WAR_FILE;
 import org.epics.archiverappliance.common.GetUrlContent;
 
@@ -22,7 +22,7 @@ public class WebappReady implements BPLAction {
     private static Logger configlogger = LogManager.getLogger("config." + WebappReady.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         String webApp = req.getParameter("webapp");
         if (webApp == null || webApp.equals("")) {

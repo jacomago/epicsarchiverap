@@ -2,7 +2,7 @@ package org.epics.archiverappliance.retrieval.bpl;
 
 import org.epics.archiverappliance.common.ArchivedPVsInList;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.utils.ui.PVsMatchingParameter;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
@@ -23,7 +23,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class FilterArchivedPVs implements BPLAction {
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         LinkedList<String> pvNames = PVsMatchingParameter.getPVNamesFromPostBody(req);
         List<String> archivedPVs = ArchivedPVsInList.getArchivedPVs(pvNames, configService);

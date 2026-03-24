@@ -13,7 +13,7 @@ import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.remotable.ArrayListEventStream;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.data.DBRTimeEvent;
@@ -68,7 +68,7 @@ public class GetDataAtTimeEngine implements BPLAction {
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         List<String> pvNames = PVsMatchingParameter.getPVNamesFromPostBody(req);
         logger.debug("Getting data at time for PVs " + pvNames.size());

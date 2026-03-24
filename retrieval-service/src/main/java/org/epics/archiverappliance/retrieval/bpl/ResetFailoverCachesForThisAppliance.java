@@ -3,7 +3,7 @@ package org.epics.archiverappliance.retrieval.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.json.simple.JSONValue;
 
 import java.io.IOException;
@@ -27,7 +27,7 @@ public class ResetFailoverCachesForThisAppliance implements BPLAction {
     private static Logger logger = LogManager.getLogger(ResetFailoverCachesForThisAppliance.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         logger.info("Reseting the failover caches for this appliance");
         try (PrintWriter out = resp.getWriter()) {

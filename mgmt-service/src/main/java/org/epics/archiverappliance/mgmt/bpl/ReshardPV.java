@@ -11,6 +11,7 @@ import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
@@ -61,7 +62,7 @@ public class ReshardPV implements BPLAction {
     private static Logger logger = LogManager.getLogger(ReshardPV.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         if (!configService.hasClusterFinishedInitialization()) {
             // If you have defined spare appliances in the appliances.xml that will never come up; you should remove

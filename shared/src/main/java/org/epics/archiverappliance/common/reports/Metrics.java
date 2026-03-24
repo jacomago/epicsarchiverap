@@ -1,7 +1,7 @@
 package org.epics.archiverappliance.common.reports;
 
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -14,7 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public interface Metrics extends BPLAction {
 
     @Override
-    default void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    default void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
 
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
@@ -23,5 +23,5 @@ public interface Metrics extends BPLAction {
         }
     }
 
-    Map<String, String> metrics(ConfigService configService);
+    Map<String, String> metrics(CoreConfigService configService);
 }

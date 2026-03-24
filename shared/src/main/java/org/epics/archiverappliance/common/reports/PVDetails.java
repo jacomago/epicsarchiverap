@@ -4,7 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -19,7 +19,7 @@ public interface PVDetails extends BPLAction {
     Logger logger = LogManager.getLogger(PVDetails.class);
 
     @Override
-    default void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    default void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         String pvName = req.getParameter("pv");
         if (StringUtils.isEmpty(pvName)) {
@@ -48,5 +48,5 @@ public interface PVDetails extends BPLAction {
         }
     }
 
-    LinkedList<Map<String, String>> pvDetails(ConfigService configService, String pvName) throws Exception;
+    LinkedList<Map<String, String>> pvDetails(CoreConfigService configService, String pvName) throws Exception;
 }

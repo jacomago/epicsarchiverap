@@ -6,6 +6,7 @@ import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.common.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -36,7 +37,7 @@ public class DeletePV implements BPLAction {
     private static Logger logger = LogManager.getLogger(DeletePV.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         if (req.getMethod().equals("POST")) {
             deleteMultiplePVs(req, resp, configService);

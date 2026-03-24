@@ -3,7 +3,7 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
 
@@ -25,7 +25,7 @@ public class NamedFlagsAll implements BPLAction {
     private static Logger logger = LogManager.getLogger(NamedFlagsAll.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         HashMap<String, Boolean> ret = new HashMap<String, Boolean>();
         for (String namedFlagName : configService.getNamedFlagNames()) {

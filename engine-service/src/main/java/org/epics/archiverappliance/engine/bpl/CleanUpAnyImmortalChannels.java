@@ -5,7 +5,7 @@ import gov.aps.jca.Channel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.engine.pv.EngineContext.CommandThreadChannel;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -33,7 +33,7 @@ public class CleanUpAnyImmortalChannels implements BPLAction {
     private static Logger logger = LogManager.getLogger(CleanUpAnyImmortalChannels.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {

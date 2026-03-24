@@ -3,7 +3,7 @@ package org.epics.archiverappliance.retrieval.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.common.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.JSONEncoder;
@@ -32,7 +32,7 @@ public class GetPVMetaData implements BPLAction {
     private static Logger logger = LogManager.getLogger(GetPVMetaData.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         String pvName = req.getParameter("pv");
         logger.debug("Getting metadata for PV " + pvName);

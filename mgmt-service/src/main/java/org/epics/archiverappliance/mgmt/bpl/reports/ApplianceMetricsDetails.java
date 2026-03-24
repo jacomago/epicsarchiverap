@@ -13,7 +13,7 @@ import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.reports.Details;
 import org.epics.archiverappliance.config.ApplianceAggregateInfo;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.mgmt.archivepv.CapacityPlanningData;
 import org.epics.archiverappliance.mgmt.archivepv.CapacityPlanningData.CPStaticData;
@@ -41,7 +41,7 @@ public class ApplianceMetricsDetails implements BPLAction {
     private static final Logger logger = LogManager.getLogger(ApplianceMetricsDetails.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         String applianceIdentity = req.getParameter("appliance");
         logger.info("Getting the detailed metrics for the appliance " + applianceIdentity);

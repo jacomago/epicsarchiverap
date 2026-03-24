@@ -10,7 +10,7 @@ package org.epics.archiverappliance.engine.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -31,7 +31,7 @@ public class GetLatestMetaDataAction implements BPLAction {
     private static final Logger logger = LogManager.getLogger(GetLatestMetaDataAction.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {

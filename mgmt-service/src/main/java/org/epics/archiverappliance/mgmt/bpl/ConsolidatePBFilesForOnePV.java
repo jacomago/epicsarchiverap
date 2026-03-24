@@ -7,7 +7,7 @@ import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.common.GetUrlContent;
@@ -38,7 +38,7 @@ public class ConsolidatePBFilesForOnePV implements BPLAction {
     private static final Logger logger = LogManager.getLogger(ConsolidatePBFilesForOnePV.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         String pvName = req.getParameter("pv");
         String storageName = req.getParameter("storage");

@@ -12,7 +12,8 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
+import org.epics.archiverappliance.config.MgmtConfigService;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.UserSpecifiedSamplingParams;
@@ -80,7 +81,7 @@ public class ArchivePVAction implements BPLAction {
     public static final Logger logger = LogManager.getLogger(ArchivePVAction.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         if (!configService.hasClusterFinishedInitialization()) {
             // If you have defined spare appliances in the appliances.xml that will never come up; you should remove
@@ -184,7 +185,7 @@ public class ArchivePVAction implements BPLAction {
      * @param configService ConfigService
      * @return All Fields as stream
      */
-    public static List<String> getFieldsAsPartOfStream(ConfigService configService) {
+    public static List<String> getFieldsAsPartOfStream(CoreConfigService configService) {
         List<String> fieldsArchivedAsPartOfStream = new LinkedList<String>();
         try {
             fieldsArchivedAsPartOfStream = configService.getFieldsArchivedAsPartOfStream();
@@ -242,7 +243,7 @@ public class ArchivePVAction implements BPLAction {
             String policyName,
             String alias,
             boolean skipCapacityPlanning,
-            ConfigService configService,
+            CoreConfigService configService,
             List<String> fieldsArchivedAsPartOfStream)
             throws IOException {
         String fieldName = PVNames.getFieldName(pvName);
@@ -387,7 +388,7 @@ public class ArchivePVAction implements BPLAction {
             // Submit the request to the archive engine.
             // We have to make this a call into the engine to get over that fact that only the engine can load JCA
             // libraries
-            configService.getMgmtRuntimeState().startPVWorkflow(pvName);
+            ((MgmtConfigService) configService).getMgmtRuntimeState().startPVWorkflow(pvName);
             out.println("{ \"pvName\": \"" + pvName + "\", \"status\": \"Archive request submitted\" }");
         } catch (Exception ex) {
             logger.error("Exception archiving PV " + pvName, ex);
@@ -395,7 +396,7 @@ public class ArchivePVAction implements BPLAction {
         }
     }
 
-    private void processJSONRequest(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    private void processJSONRequest(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         logger.debug("Archiving multiple PVs from a JSON POST request");
         List<String> fieldsAsPartOfStream = ArchivePVAction.getFieldsAsPartOfStream(configService);
@@ -505,7 +506,7 @@ public class ArchivePVAction implements BPLAction {
      */
     @SuppressWarnings("unchecked")
     private void breakDownPVRequestsByAssignedAppliance(
-            JSONArray pvArchiveParams, String myIdentity, ConfigService configService, HttpServletResponse resp)
+            JSONArray pvArchiveParams, String myIdentity, CoreConfigService configService, HttpServletResponse resp)
             throws IOException {
         HashMap<String, List<JSONObject>> archiveRequestsByAppliance = new HashMap<String, List<JSONObject>>();
         archiveRequestsByAppliance.put(myIdentity, new LinkedList<JSONObject>());

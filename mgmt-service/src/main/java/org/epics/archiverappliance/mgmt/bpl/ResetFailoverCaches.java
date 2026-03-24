@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.CoreConfigService;
 import org.epics.archiverappliance.common.GetUrlContent;
 
 import java.io.IOException;
@@ -30,7 +30,7 @@ public class ResetFailoverCaches implements BPLAction {
     private static Logger logger = LogManager.getLogger(ResetFailoverCaches.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, CoreConfigService configService)
             throws IOException {
         LinkedList<String> retrievalURLs = new LinkedList<String>();
         for (ApplianceInfo info : configService.getAppliancesInCluster()) {
