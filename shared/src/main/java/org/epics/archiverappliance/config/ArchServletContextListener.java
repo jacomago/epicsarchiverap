@@ -25,40 +25,44 @@ public class ArchServletContextListener implements ServletContextListener {
     private static final Logger logger = LogManager.getLogger(ArchServletContextListener.class);
     private static final Logger configlogger = LogManager.getLogger("config." + ArchServletContextListener.class);
 
+    protected String defaultConfigServiceImplClassName() {
+        return "org.epics.archiverappliance.config.DefaultConfigService";
+    }
+
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         // This should hopefully trigger the log4j2 initialization
         configlogger.info("Initializing the ArchServletContextListener");
         try {
-            String configServiceImplClassName = System.getProperty(ConfigService.ARCHAPPL_CONFIGSERVICE_IMPL);
+            String configServiceImplClassName = System.getProperty(CoreConfigService.ARCHAPPL_CONFIGSERVICE_IMPL);
             if (configServiceImplClassName == null) {
-                configServiceImplClassName = System.getenv(ConfigService.ARCHAPPL_CONFIGSERVICE_IMPL);
+                configServiceImplClassName = System.getenv(CoreConfigService.ARCHAPPL_CONFIGSERVICE_IMPL);
             }
 
-            ConfigService configService = null;
+            CoreConfigService configService = null;
             if (configServiceImplClassName == null) {
                 configlogger.info("Using the default config service implementation");
-                configServiceImplClassName = "org.epics.archiverappliance.config.DefaultConfigService";
+                configServiceImplClassName = defaultConfigServiceImplClassName();
             }
             {
                 configlogger.info("Using " + configServiceImplClassName + " as the config service implementation");
-                configService = (ConfigService) Class.forName(configServiceImplClassName)
+                configService = (CoreConfigService) Class.forName(configServiceImplClassName)
                         .getConstructor()
                         .newInstance();
             }
 
             configService.initialize(sce.getServletContext());
-            sce.getServletContext().setAttribute(ConfigService.CONFIG_SERVICE_NAME, configService);
+            sce.getServletContext().setAttribute(CoreConfigService.CONFIG_SERVICE_NAME, configService);
         } catch (Exception e) {
             logger.fatal("Exception initializing config service ", e);
             try {
-                sce.getServletContext().setAttribute(ConfigService.CONFIG_SERVICE_NAME + ".exception", e.getMessage());
+                sce.getServletContext().setAttribute(CoreConfigService.CONFIG_SERVICE_NAME + ".exception", e.getMessage());
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
                 PrintWriter stackTraceOut = new PrintWriter(bos, true);
                 e.printStackTrace(stackTraceOut);
                 bos.flush();
                 bos.close();
-                sce.getServletContext().setAttribute(ConfigService.CONFIG_SERVICE_NAME + ".stacktrace", bos.toString());
+                sce.getServletContext().setAttribute(CoreConfigService.CONFIG_SERVICE_NAME + ".stacktrace", bos.toString());
             } catch (Exception ex) {
                 logger.warn("Exception setting reason for failure", ex);
             }
@@ -67,8 +71,8 @@ public class ArchServletContextListener implements ServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        ConfigService configService =
-                (ConfigService) sce.getServletContext().getAttribute(ConfigService.CONFIG_SERVICE_NAME);
+        CoreConfigService configService =
+                (CoreConfigService) sce.getServletContext().getAttribute(CoreConfigService.CONFIG_SERVICE_NAME);
         try {
             configService.shutdownNow();
         } catch (Throwable t) {
