@@ -114,6 +114,8 @@ public class EngineContext {
 
     private double sampleBufferCapacityAdjustment = 1.0;
 
+    private int writeThreadCount = 0;
+
     /***
      *
      * @return the list of pvs controlling other pvs
@@ -137,6 +139,11 @@ public class EngineContext {
     public double getAverageSecondsConsumedByWriter() {
         if (countOfWrittingByWriter == 0) return 0;
         return totalTimeConsumedByWriter / countOfWrittingByWriter;
+    }
+
+    /** @return Maximum concurrent channel writes per cycle; 0 means unlimited. */
+    public int getWriteThreadCount() {
+        return writeThreadCount;
     }
 
     /**
@@ -172,6 +179,12 @@ public class EngineContext {
                 + "% of channels have connected. We'll start metachannels " + METACHANNELS_TO_START_AT_A_TIME
                 + " at a time");
 
+        String writeThreadCountName = "org.epics.archiverappliance.engine.epics.writeThreadCount";
+        String writeThreadCountStr = configService.getInstallationProperties().getProperty(writeThreadCountName, "0");
+        this.writeThreadCount = Integer.parseInt(writeThreadCountStr);
+        configlogger.info("Write concurrency limit: " + writeThreadCountStr + " (0=unlimited) as specified by "
+                + writeThreadCountName + " in archappl.properties");
+
         writer = new WriterRunnable(configService);
         channelList = new ConcurrentHashMap<String, ArchiveChannel>();
         logger.debug("Registering EngineContext for events");
@@ -206,6 +219,7 @@ public class EngineContext {
                 }
 
                 writer.flushBuffer();
+                writer.shutdown();
                 channelList.clear();
 
                 // stop the controlling pv
