@@ -1,0 +1,64 @@
+name: Weekly Build
+
+on:
+  schedule:
+    - cron: "0 2 * * 0" # 2 AM UTC every Sunday
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  DOCKER_DEFAULT_PLATFORM: linux/amd64
+  COMPOSE_DOCKER_CLI_BUILD: 1
+  DOCKER_BUILDKIT: 1
+
+jobs:
+  docker-tests:
+    name: Docker tests
+    uses: ./.github/workflows/docker-tests.yml
+    with:
+      use-registry-image: false
+    permissions:
+      contents: read
+
+  build:
+    name: Build artifacts
+    needs: [docker-tests]
+    uses: ./.github/workflows/build.yml
+    with:
+      task: buildRelease
+      site-ids: '["default"]'
+    permissions:
+      contents: read
+
+  publish-image:
+    name: Publish images
+    needs: [docker-tests]
+    uses: ./.github/workflows/publish-image.yml
+    with:
+      nightly: true
+    permissions:
+      contents: read
+      packages: write
+
+  update-nightly-release:
+    name: Update nightly release
+    runs-on: ubuntu-latest
+    needs: [build]
+    permissions:
+      contents: write
+    steps:
+      - name: Download the built artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: default-package
+      - name: Update nightly release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: nightly
+          tag_name: nightly
+          prerelease: true
+          make_latest: false
+          files: "*.tar.gz"
+          generate_release_notes: false
