@@ -9,25 +9,33 @@ permissions:
   packages: write
 
 jobs:
-  verify:
-    name: Verify
-    uses: ./.github/workflows/verify.yml
+  lint:
+    name: Lint
+    uses: ./.github/workflows/lint.yml
     permissions:
       contents: read
       checks: write
 
-  docker-tests:
-    name: Docker tests
-    uses: ./.github/workflows/docker-tests.yml
-    with:
-      use-prebuilt-image: false
+  tests:
+    name: Tests
+    uses: ./.github/workflows/tests.yml
     permissions:
       contents: read
-      packages: write
+      checks: write
+
+  integration-tests:
+    name: Integration tests
+    needs: [tests]
+    if: needs.tests.result == 'success'
+    uses: ./.github/workflows/integration.yml
+    permissions:
+      contents: read
+      checks: write
 
   build:
     name: Build artifacts
-    needs: [docker-tests]
+    needs: [tests]
+    if: needs.tests.result == 'success'
     uses: ./.github/workflows/build.yml
     with:
       task: buildRelease
@@ -37,7 +45,8 @@ jobs:
 
   publish-image:
     name: Publish images
-    needs: [docker-tests]
+    needs: [tests]
+    if: needs.tests.result == 'success'
     uses: ./.github/workflows/publish-image.yml
     with:
       weekly: true

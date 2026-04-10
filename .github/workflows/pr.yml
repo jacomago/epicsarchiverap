@@ -14,9 +14,14 @@ permissions:
   pull-requests: write
 
 jobs:
-  verify:
-    uses: ./.github/workflows/verify.yml
+  lint:
+    uses: ./.github/workflows/lint.yml
     permissions:
       contents: read
       checks: write
 
+  tests:
+    uses: ./.github/workflows/tests.yml
+    permissions:
+      contents: read
+      checks: write
