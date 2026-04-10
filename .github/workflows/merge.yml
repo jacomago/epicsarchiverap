@@ -1,0 +1,44 @@
+name: Merge to Master
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+  checks: write
+  packages: write
+
+jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
+    permissions:
+      contents: read
+      checks: write
+
+  tests:
+    uses: ./.github/workflows/tests.yml
+    permissions:
+      contents: read
+      checks: write
+
+  integration-tests:
+    name: Integration tests
+    needs: [tests]
+    if: needs.tests.result == 'success'
+    uses: ./.github/workflows/integration.yml
+    permissions:
+      contents: read
+      checks: write
+
+  build:
+    name: Build artifacts
+    needs: [lint, tests]
+    if: |
+      needs.lint.result == 'success' &&
+      needs.tests.result == 'success'
+    uses: ./.github/workflows/build.yml
+    with:
+      task: assemble
+      site-ids: '["slacdev", "default", "tests"]'
+      artifact-prefix: merge-
