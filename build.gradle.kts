@@ -326,17 +326,43 @@ tasks.register<Exec>("generateReleaseNotes") {
 	isIgnoreExitValue = true
 }
 
+val docsVenv = tasks.register<Exec>("docsVenv") {
+	group = "Documentation"
+	description = "Create Python virtual environment for docs."
+	commandLine("python3", "-m", "venv", layout.projectDirectory.file("docs/.venv").asFile.path)
+	outputs.dir("docs/.venv")
+}
+
+val docsInstall = tasks.register<Exec>("docsInstall") {
+	group = "Documentation"
+	description = "Install Sphinx dependencies into docs venv."
+	dependsOn(docsVenv)
+	val pip = if (Os.isFamily(Os.FAMILY_WINDOWS))
+		"docs/.venv/Scripts/pip.exe" else "docs/.venv/bin/pip"
+	commandLine(pip, "install", "-q", ".[dev]")
+	workingDir = project.projectDir.resolve("docs")
+	inputs.file("docs/pyproject.toml")
+	outputs.dir("docs/.venv")
+}
+
 tasks.register<Exec>("sphinx") {
 	group = "Staging"
 	description = "Generate the documentation site."
-	dependsOn(tasks.javadoc)
-	workingDir = project.projectDir.resolve("docs")
+	dependsOn(tasks.javadoc, docsInstall)
+	val sphinxBuild = if (Os.isFamily(Os.FAMILY_WINDOWS))
+		"docs/.venv/Scripts/sphinx-build.exe" else "docs/.venv/bin/sphinx-build"
+	commandLine(sphinxBuild, "docs/source", "docs/build")
+	inputs.dir("docs/source")
 	outputs.dir("docs/build")
-	if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-		commandLine("cmd", "/c", "build_docs.bat")
-	} else {
-		commandLine("./build_docs.sh")
-	}
+}
+
+tasks.register<Exec>("liveviewdocs") {
+	group = "Documentation"
+	description = "Run Sphinx autobuild server with live reload."
+	dependsOn(docsInstall)
+	val sphinxAutobuild = if (Os.isFamily(Os.FAMILY_WINDOWS))
+		"docs/.venv/Scripts/sphinx-autobuild.exe" else "docs/.venv/bin/sphinx-autobuild"
+	commandLine(sphinxAutobuild, "docs/source", "docs/build", "--open-browser")
 }
 
 // =================================================================
@@ -374,8 +400,8 @@ tasks.register<War>("mgmtWar") {
 		include("*.sql")
 		into("install")
 	}
-	from(project.projectDir.resolve("docs/docs/build")) { into("ui/help") }
-	from(project.projectDir.resolve("docs/docs/source/samples")) {
+	from(project.projectDir.resolve("docs/build")) { into("ui/help") }
+	from(project.projectDir.resolve("docs/source/samples")) {
 		include("deployMultipleTomcats.py")
 		into("install")
 	}
@@ -498,7 +524,7 @@ tasks.register<Tar>("buildRelease") {
 	from(project.projectDir) {
 		include("LICENSE", "NOTICE", "*License.txt", "RELEASE_NOTES")
 	}
-	val samplesFolder = "docs/docs/source/samples"
+	val samplesFolder = "docs/source/samples"
 	from(samplesFolder) {
 		filePermissions {
 			user {
