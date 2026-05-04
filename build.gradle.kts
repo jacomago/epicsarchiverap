@@ -329,7 +329,8 @@ tasks.register<Exec>("generateReleaseNotes") {
 val docsVenv = tasks.register<Exec>("docsVenv") {
 	group = "Documentation"
 	description = "Create Python virtual environment for docs."
-	commandLine("python3", "-m", "venv", layout.projectDirectory.file("docs/.venv").asFile.path)
+	val python = if (Os.isFamily(Os.FAMILY_WINDOWS)) "python" else "python3"
+	commandLine(python, "-m", "venv", layout.projectDirectory.file("docs/.venv").asFile.path)
 	outputs.dir("docs/.venv")
 }
 
