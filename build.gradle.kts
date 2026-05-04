@@ -339,7 +339,9 @@ val docsInstall = tasks.register<Exec>("docsInstall") {
 	description = "Install Sphinx dependencies into docs venv."
 	dependsOn(docsVenv)
 	val pip = if (Os.isFamily(Os.FAMILY_WINDOWS))
-		"docs/.venv/Scripts/pip.exe" else "docs/.venv/bin/pip"
+		layout.projectDirectory.file("docs/.venv/Scripts/pip.exe").asFile.path
+	else
+		layout.projectDirectory.file("docs/.venv/bin/pip").asFile.path
 	commandLine(pip, "install", "-q", ".[dev]")
 	workingDir = project.projectDir.resolve("docs")
 	inputs.file("docs/pyproject.toml")
