@@ -3,8 +3,7 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-# -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+from pathlib import Path
 
 project = "Archiver Appliance"
 copyright = "2026-%Y, Archiver Appliance contributors"
@@ -29,7 +28,13 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", ".venv", ".pixi"]
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "sphinx_rtd_theme"
-html_static_path = ['_static', '../../../build/docs']
+
+# Resolve javadoc output relative to the repo root robustly.
+# conf.py lives at docs/source/conf.py, so parents[2] is the repo root.
+_javadoc_dir = Path(__file__).resolve().parents[2] / "build" / "docs"
+html_static_path = ["_static"]
+if _javadoc_dir.exists():
+    html_static_path.append(str(_javadoc_dir))
 
 
 # -- Options for MyST's markdown -----------------------------------------------
