@@ -72,12 +72,7 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0
-      - name: Set up micromamba and EPICS
-        uses: mamba-org/setup-micromamba@v2
-        with:
-          environment-file: docker/env.yml
-          environment-name: epics
-          init-shell: bash
+      - uses: jacomago/epics-github-actions/setup-epics@9a473d1131e85a814739cea27ae03c59cf9eb7a4
       - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
@@ -148,12 +143,7 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0
-      - name: Set up micromamba and EPICS
-        uses: mamba-org/setup-micromamba@v2
-        with:
-          environment-file: docker/env.yml
-          environment-name: epics
-          init-shell: bash
+      - uses: jacomago/epics-github-actions/setup-epics@9a473d1131e85a814739cea27ae03c59cf9eb7a4
       - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
