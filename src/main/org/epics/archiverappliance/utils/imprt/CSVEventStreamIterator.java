@@ -7,20 +7,19 @@
  *******************************************************************************/
 package org.epics.archiverappliance.utils.imprt;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.LineNumberReader;
-import java.lang.reflect.Constructor;
-import java.util.Iterator;
-
+import com.opencsv.CSVReader;
+import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 
-import com.opencsv.CSVReader;
-import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.LineNumberReader;
+import java.lang.reflect.Constructor;
+import java.util.Iterator;
 
 /**
  * The iterator for a CSV backed event stream
@@ -28,53 +27,58 @@ import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
  *
  */
 class CSVEventStreamIterator implements Iterator<Event> {
-	private static Logger logger = LogManager.getLogger(CSVEventStreamIterator.class.getName());
-	private String csvFileName;
-	private ArchDBRTypes dbrtype;
-	private LineNumberReader linereader;
-	private CSVReader csvreader;
-	private Event nextEvent;
-	private Constructor<? extends DBRTimeEvent> eventConstructor;
-	
-	public CSVEventStreamIterator(String fileName, ArchDBRTypes type) throws IOException {
-		this.csvFileName = fileName;
-		this.dbrtype = type;
-		linereader = new LineNumberReader(new FileReader(fileName));
-		csvreader = new CSVReader(linereader);
-		eventConstructor = DBR2PBTypeMapping.getPBClassFor(dbrtype).getSerializingConstructor();
-		assert(eventConstructor != null);
-	}
+    private static Logger logger = LogManager.getLogger(CSVEventStreamIterator.class.getName());
+    private String csvFileName;
+    private ArchDBRTypes dbrtype;
+    private LineNumberReader linereader;
+    private CSVReader csvreader;
+    private Event nextEvent;
+    private Constructor<? extends DBRTimeEvent> eventConstructor;
 
-	@Override
-	public boolean hasNext() {
-		nextEvent = readNextEvent();
-		if(nextEvent != null) return true;
-		return false;
-	}
+    public CSVEventStreamIterator(String fileName, ArchDBRTypes type) throws IOException {
+        this.csvFileName = fileName;
+        this.dbrtype = type;
+        linereader = new LineNumberReader(new FileReader(fileName));
+        csvreader = new CSVReader(linereader);
+        eventConstructor = DBR2PBTypeMapping.getPBClassFor(dbrtype).getSerializingConstructor();
+        assert (eventConstructor != null);
+    }
 
-	@Override
-	public Event next() {
-		return nextEvent;
-	}
+    @Override
+    public boolean hasNext() {
+        nextEvent = readNextEvent();
+        if (nextEvent != null) return true;
+        return false;
+    }
 
-	@Override
-	public void remove() {
-		throw new UnsupportedOperationException("We do not support the remove method in this iterator");
-	}
+    @Override
+    public Event next() {
+        return nextEvent;
+    }
 
-	public void close() {
-		try { csvreader.close(); csvreader = null; } catch (Exception ex) { } 
-	}
-	
-	private Event readNextEvent() {
-		try { 
-			String [] line = csvreader.readNext();
-			if(line == null || line.length < 5) return null;
-			CSVEvent csvEvent = new CSVEvent(line, dbrtype);
-			return (Event) eventConstructor.newInstance(csvEvent);
-		} catch(Exception ex) {
-			logger.error("Exception parsing CSV file " + csvFileName + " in line " + (linereader.getLineNumber()-1), ex);
-		}
-		return null;
-	}
+    @Override
+    public void remove() {
+        throw new UnsupportedOperationException("We do not support the remove method in this iterator");
+    }
+
+    public void close() {
+        try {
+            csvreader.close();
+            csvreader = null;
+        } catch (Exception ex) {
+        }
+    }
+
+    private Event readNextEvent() {
+        try {
+            String[] line = csvreader.readNext();
+            if (line == null || line.length < 5) return null;
+            CSVEvent csvEvent = new CSVEvent(line, dbrtype);
+            return (Event) eventConstructor.newInstance(csvEvent);
+        } catch (Exception ex) {
+            logger.error(
+                    "Exception parsing CSV file " + csvFileName + " in line " + (linereader.getLineNumber() - 1), ex);
+        }
+        return null;
+    }
 }

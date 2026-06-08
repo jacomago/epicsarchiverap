@@ -7,12 +7,12 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval.bpl.reports;
 
+import static org.epics.archiverappliance.retrieval.RetrievalMetrics.calculateSummedMetrics;
+
 import org.epics.archiverappliance.common.reports.Metrics;
 import org.epics.archiverappliance.config.ConfigService;
 
 import java.util.Map;
-
-import static org.epics.archiverappliance.retrieval.RetrievalMetrics.calculateSummedMetrics;
 
 /**
  * Summary metrics for retrieval for an alliance.

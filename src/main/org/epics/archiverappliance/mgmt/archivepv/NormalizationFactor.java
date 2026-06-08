@@ -2,20 +2,19 @@ package org.epics.archiverappliance.mgmt.archivepv;
 
 public class NormalizationFactor {
 
-	private String identify;
-	private float percentage;
-	
-	NormalizationFactor(String identify,float percentage)
-	{
-		this.identify=identify;
-		this.percentage=percentage;
-	}
+    private String identify;
+    private float percentage;
 
-	public String getIdentify() {
-		return identify;
-	}
+    NormalizationFactor(String identify, float percentage) {
+        this.identify = identify;
+        this.percentage = percentage;
+    }
 
-	public float getPercentage() {
-		return percentage;
-	}
+    public String getIdentify() {
+        return identify;
+    }
+
+    public float getPercentage() {
+        return percentage;
+    }
 }

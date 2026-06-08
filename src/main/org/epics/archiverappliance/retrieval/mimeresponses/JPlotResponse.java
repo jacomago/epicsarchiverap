@@ -16,62 +16,67 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.HashMap;
 
 /**
  * @author mshankar
  * Sends the event data as a JSON response tailored to JPlot, which is used in the test page..
  * The response is a array of array of data series: [ series1, series2, ... ]
- * A series can either be raw data or an object with properties. 
+ * A series can either be raw data or an object with properties.
  * The raw data format is an array of points: [ [x1, y1], [x2, y2], ... ] E.g. [ [1, 3], [2, 14.01], [3.5, 3.14] ]
  */
 public class JPlotResponse implements MimeResponse {
-	private PrintWriter out;
-	boolean needComma = false;
-	boolean firstPV = true;
-	boolean closePV = false;
+    private PrintWriter out;
+    boolean needComma = false;
+    boolean firstPV = true;
+    boolean closePV = false;
     private final ZoneId localTimeZone = ZoneId.systemDefault();
 
-	@Override
-	public void consumeEvent(Event e) throws Exception {
-		if(!needComma) {
-			needComma = true;
-		} else {
-			out.println(",");
-		}
-		// Add 3 zeros for millseconds...
-        out.print("[" + e.getEventTimeStamp().atZone(localTimeZone) + ", " + e.getSampleValue().toString() + "]");
-	}
+    @Override
+    public void consumeEvent(Event e) throws Exception {
+        if (!needComma) {
+            needComma = true;
+        } else {
+            out.println(",");
+        }
+        // Add 3 zeros for millseconds...
+        out.print("[" + e.getEventTimeStamp().atZone(localTimeZone) + ", "
+                + e.getSampleValue().toString() + "]");
+    }
 
-	@Override
-	public void setOutputStream(OutputStream os) {
-		out = new PrintWriter(os);
-		// We start the array of series here
-		out.println("[ ");
-	}
-	
-	public void close() {
-		if(closePV) {
-			out.println(" ] } ");
-		}
-		// We close the array of series here
-		out.println(" ]");
-		try { out.flush(); out.close(); } catch(Exception ex) {}
-	}
+    @Override
+    public void setOutputStream(OutputStream os) {
+        out = new PrintWriter(os);
+        // We start the array of series here
+        out.println("[ ");
+    }
 
-	@Override
-    public void processingPV(BasicContext retrievalContext, String pv, Instant start, Instant end, EventStreamDesc streamDesc) {
-		if(firstPV) {
-			firstPV = false;
-		} else {
-			out.println(" ] } , ");
-			needComma = false;
-		}
-		out.println("{ \"label\": \"" + pv + "\", \"data\": [ ");
-		closePV = true;
-	}
-	
-	public void swicthingToStream(EventStream strm) {
-		// Not much to do here for now.
-	}
+    public void close() {
+        if (closePV) {
+            out.println(" ] } ");
+        }
+        // We close the array of series here
+        out.println(" ]");
+        try {
+            out.flush();
+            out.close();
+        } catch (Exception ex) {
+        }
+    }
+
+    @Override
+    public void processingPV(
+            BasicContext retrievalContext, String pv, Instant start, Instant end, EventStreamDesc streamDesc) {
+        if (firstPV) {
+            firstPV = false;
+        } else {
+            out.println(" ] } , ");
+            needComma = false;
+        }
+        out.println("{ \"label\": \"" + pv + "\", \"data\": [ ");
+        closePV = true;
+    }
+
+    public void swicthingToStream(EventStream strm) {
+        // Not much to do here for now.
+    }
 }

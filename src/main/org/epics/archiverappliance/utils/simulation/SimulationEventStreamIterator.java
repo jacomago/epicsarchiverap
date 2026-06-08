@@ -21,45 +21,50 @@ import java.util.NoSuchElementException;
  *
  */
 public class SimulationEventStreamIterator implements Iterator<Event> {
-	private final ArchDBRTypes type;
-	private final SimulationValueGenerator valueGenerator;
-	private final int periodInSeconds;
-	private final Instant end;
-	private Instant currentTime;
+    private final ArchDBRTypes type;
+    private final SimulationValueGenerator valueGenerator;
+    private final int periodInSeconds;
+    private final Instant end;
+    private Instant currentTime;
 
-	public SimulationEventStreamIterator(ArchDBRTypes type, SimulationValueGenerator valueGenerator, Instant start, Instant end, int periodInSeconds) {
-		this.type = type;
-		this.valueGenerator = valueGenerator;
-		if (periodInSeconds <= 0) {
-			throw new IndexOutOfBoundsException(periodInSeconds);
-		}
-		this.periodInSeconds = periodInSeconds;
-		this.end = end;
-		this.currentTime = start;
-	}
+    public SimulationEventStreamIterator(
+            ArchDBRTypes type,
+            SimulationValueGenerator valueGenerator,
+            Instant start,
+            Instant end,
+            int periodInSeconds) {
+        this.type = type;
+        this.valueGenerator = valueGenerator;
+        if (periodInSeconds <= 0) {
+            throw new IndexOutOfBoundsException(periodInSeconds);
+        }
+        this.periodInSeconds = periodInSeconds;
+        this.end = end;
+        this.currentTime = start;
+    }
 
-	@Override
-	public boolean hasNext() {
-		return this.currentTime.isBefore(this.end);
-	}
+    @Override
+    public boolean hasNext() {
+        return this.currentTime.isBefore(this.end);
+    }
 
-	@Override
-	public Event next() {
-		if (!hasNext()) {
-			throw new NoSuchElementException("Iterator finished");
-		}
+    @Override
+    public Event next() {
+        if (!hasNext()) {
+            throw new NoSuchElementException("Iterator finished");
+        }
 
-		SimulationEvent simulationEvent = new SimulationEvent(this.currentTime, type, valueGenerator);
-		currentTime = currentTime.plusSeconds(this.periodInSeconds);
-		return simulationEvent;
-	}
+        SimulationEvent simulationEvent = new SimulationEvent(this.currentTime, type, valueGenerator);
+        currentTime = currentTime.plusSeconds(this.periodInSeconds);
+        return simulationEvent;
+    }
 
-	@Override
-	public void remove() {
-		throw new RuntimeException("Not implemented");
-	}
+    @Override
+    public void remove() {
+        throw new RuntimeException("Not implemented");
+    }
 
-	public long getNumberOfEventsLeft() {
-		return Duration.between(this.currentTime, this.end).getSeconds() / periodInSeconds;
-	}
+    public long getNumberOfEventsLeft() {
+        return Duration.between(this.currentTime, this.end).getSeconds() / periodInSeconds;
+    }
 }

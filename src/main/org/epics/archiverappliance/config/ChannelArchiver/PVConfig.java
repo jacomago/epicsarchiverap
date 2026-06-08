@@ -9,36 +9,37 @@ package org.epics.archiverappliance.config.ChannelArchiver;
 
 /**
  * Represents the configuration for a single PV in the engine config file.
- * 
+ *
  * @author mshankar
  *
  */
 public class PVConfig {
-	private String PVName;
-	private float samplingPeriod;
-	private boolean monitor;
-	
-	public PVConfig(String pVName, float period, boolean monitor) {
-		super();
-		PVName = pVName;
-		this.samplingPeriod = period;
-		this.monitor = monitor;
-	}
+    private String PVName;
+    private float samplingPeriod;
+    private boolean monitor;
 
-	public String getPVName() {
-		return PVName;
-	}
+    public PVConfig(String pVName, float period, boolean monitor) {
+        super();
+        PVName = pVName;
+        this.samplingPeriod = period;
+        this.monitor = monitor;
+    }
 
-	public float getPeriod() {
-		return samplingPeriod;
-	}
+    public String getPVName() {
+        return PVName;
+    }
 
-	public boolean isMonitor() {
-		return monitor;
-	}
+    public float getPeriod() {
+        return samplingPeriod;
+    }
 
-	@Override
-	public String toString() {
-		return "PV: " + PVName + " is being " + (monitor ? "monitored" : "scanned") + " with period " + samplingPeriod + "(s)";
-	}
+    public boolean isMonitor() {
+        return monitor;
+    }
+
+    @Override
+    public String toString() {
+        return "PV: " + PVName + " is being " + (monitor ? "monitored" : "scanned") + " with period " + samplingPeriod
+                + "(s)";
+    }
 }

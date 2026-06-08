@@ -16,44 +16,47 @@ import org.epics.archiverappliance.data.DBRTimeEvent;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.time.Instant;
-import java.util.HashMap;
 
 /**
  * Implementation of a CSV response for a single PV
- * Currently, we are restricting the CSV response to only one PV. 
- * 
+ * Currently, we are restricting the CSV response to only one PV.
+ *
  * @author mshankar
  *
  */
 public class SinglePVCSVResponse implements MimeResponse {
-	private PrintWriter out;
+    private PrintWriter out;
 
-	@Override
-	public void consumeEvent(Event e) throws Exception {
-		out.println( e.getEpochSeconds() 
-				+ "," + e.getSampleValue().toString()
-				+ "," + (((DBRTimeEvent)e).getSeverity())
-				+ "," + (((DBRTimeEvent)e).getStatus())
-                        + "," + (((DBRTimeEvent) e).getEventTimeStamp().getNano())
-				);
-	}
+    @Override
+    public void consumeEvent(Event e) throws Exception {
+        out.println(e.getEpochSeconds()
+                + "," + e.getSampleValue().toString()
+                + "," + (((DBRTimeEvent) e).getSeverity())
+                + "," + (((DBRTimeEvent) e).getStatus())
+                + "," + (((DBRTimeEvent) e).getEventTimeStamp().getNano()));
+    }
 
-	@Override
-	public void setOutputStream(OutputStream os) {
-		out = new PrintWriter(os);
-	}
-	
-	public void close() {
-		out.println();
-		try { out.flush(); out.close(); } catch(Exception ex) {}
-	}
+    @Override
+    public void setOutputStream(OutputStream os) {
+        out = new PrintWriter(os);
+    }
 
-	@Override
-    public void processingPV(BasicContext retrievalContext, String pv, Instant start, Instant end, EventStreamDesc streamDesc) {
-		// Not much to do here for now.
-	}
-	
-	public void swicthingToStream(EventStream strm) {
-		// Not much to do here for now.
-	}
+    public void close() {
+        out.println();
+        try {
+            out.flush();
+            out.close();
+        } catch (Exception ex) {
+        }
+    }
+
+    @Override
+    public void processingPV(
+            BasicContext retrievalContext, String pv, Instant start, Instant end, EventStreamDesc streamDesc) {
+        // Not much to do here for now.
+    }
+
+    public void swicthingToStream(EventStream strm) {
+        // Not much to do here for now.
+    }
 }

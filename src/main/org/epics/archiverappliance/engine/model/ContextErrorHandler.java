@@ -7,45 +7,40 @@
  ******************************************************************************/
 package org.epics.archiverappliance.engine.model;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import gov.aps.jca.event.ContextExceptionEvent;
 import gov.aps.jca.event.ContextExceptionListener;
 import gov.aps.jca.event.ContextMessageEvent;
 import gov.aps.jca.event.ContextMessageListener;
 import gov.aps.jca.event.ContextVirtualCircuitExceptionEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Handler for JCA Context errors and messages; places them in log.
- * 
+ *
  * @author Kay Kasemir
  */
 @SuppressWarnings("nls")
-public class ContextErrorHandler implements ContextExceptionListener,
-		ContextMessageListener {
-	private static final Logger logger = LogManager.getLogger(ArchiveChannel.class);
+public class ContextErrorHandler implements ContextExceptionListener, ContextMessageListener {
+    private static final Logger logger = LogManager.getLogger(ArchiveChannel.class);
 
-	/** @see ContextExceptionListener */
-	@Override
-	public void contextException(final ContextExceptionEvent ev) {
+    /** @see ContextExceptionListener */
+    @Override
+    public void contextException(final ContextExceptionEvent ev) {
 
-		logger.warn("Channel Access Exception from " + ev.getSource() + ":"
-				+ ev.getMessage());
-	}
+        logger.warn("Channel Access Exception from " + ev.getSource() + ":" + ev.getMessage());
+    }
 
-	/** @see ContextExceptionListener */
-	@Override
-	public void contextVirtualCircuitException(
-			ContextVirtualCircuitExceptionEvent ev) {
-		// nop
-	}
+    /** @see ContextExceptionListener */
+    @Override
+    public void contextVirtualCircuitException(ContextVirtualCircuitExceptionEvent ev) {
+        // nop
+    }
 
-	/** @see ContextMessageListener */
-	@Override
-	public void contextMessage(final ContextMessageEvent ev) {
+    /** @see ContextMessageListener */
+    @Override
+    public void contextMessage(final ContextMessageEvent ev) {
 
-		logger.info("Channel Access Message from " + ev.getSource() + ":"
-				+ ev.getMessage());
-	}
+        logger.info("Channel Access Message from " + ev.getSource() + ":" + ev.getMessage());
+    }
 }

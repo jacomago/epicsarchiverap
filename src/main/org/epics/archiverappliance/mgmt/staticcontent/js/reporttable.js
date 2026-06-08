@@ -64,7 +64,7 @@ function createReportTableDATA(json, url, tabledivname, coldefs, rowdefs) {
   reportTable.data("url", url);
   reporttablediv.append(reportTable);
 
-  getJSONDataAndRefreshTable(reportTable, json === undefined ? "GET": "POST");
+  getJSONDataAndRefreshTable(reportTable, json === undefined ? "GET" : "POST");
 
   reportTable.data("paging", { pagesize: 25, currentpage: 0 });
 
@@ -507,7 +507,10 @@ function setupToolbarActions(reportTable) {
     reportTable.data("paging", { pagesize: pagesize, currentpage: curpage });
     reportTable.children("tbody").empty();
     const json = reportTable.data("json");
-    getJSONDataAndRefreshTable(reportTable, json === undefined ? "GET": "POST");
+    getJSONDataAndRefreshTable(
+      reportTable,
+      json === undefined ? "GET" : "POST"
+    );
   });
 }
 

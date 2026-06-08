@@ -185,8 +185,8 @@ public enum ArchDBRTypes {
             case DBR_V4_GENERIC_BYTES -> {
                 throw new UnsupportedOperationException("We do not support this for V4 types yet.");
             }
-            default -> throw new UnsupportedOperationException(
-                    "When we add a new DBR_TYPE, we should add some code here.");
+            default ->
+                throw new UnsupportedOperationException("When we add a new DBR_TYPE, we should add some code here.");
         }
     }
 

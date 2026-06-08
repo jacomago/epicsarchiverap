@@ -11,41 +11,41 @@ import org.epics.archiverappliance.Event;
  *
  */
 public class Min extends SummaryStatsPostProcessor implements PostProcessor {
-	static final String IDENTITY = "min";
-	private static Logger logger = LogManager.getLogger(Min.class.getName());
+    static final String IDENTITY = "min";
+    private static Logger logger = LogManager.getLogger(Min.class.getName());
 
-	@Override
-	public String getIdentity() {
-		return IDENTITY;
-	}
+    @Override
+    public String getIdentity() {
+        return IDENTITY;
+    }
 
-	@Override
-	public SummaryStatsCollector getCollector() {
-		return new SummaryStatsCollector() {
-			SummaryStatistics stats = new SummaryStatistics();
-			@Override
-			public void setBinParams(int intervalSecs, long binNum) {
-			}
-			
-			@Override
-			public boolean haveEventsBeenAdded() {
-				return stats.getN() > 0;
-			}
-			
-			@Override
-			public double getStat() {
-				return stats.getMin();
-			}
-			
-			@Override
-			public void addEvent(Event e) {
-				double val = e.getSampleValue().getValue().doubleValue();
-				if(!Double.isNaN(val)) { 
-					stats.addValue(val);
-				} else { 
-					logger.warn("Skipping NAN");
-				}
-			}
-		};
-	}
+    @Override
+    public SummaryStatsCollector getCollector() {
+        return new SummaryStatsCollector() {
+            SummaryStatistics stats = new SummaryStatistics();
+
+            @Override
+            public void setBinParams(int intervalSecs, long binNum) {}
+
+            @Override
+            public boolean haveEventsBeenAdded() {
+                return stats.getN() > 0;
+            }
+
+            @Override
+            public double getStat() {
+                return stats.getMin();
+            }
+
+            @Override
+            public void addEvent(Event e) {
+                double val = e.getSampleValue().getValue().doubleValue();
+                if (!Double.isNaN(val)) {
+                    stats.addValue(val);
+                } else {
+                    logger.warn("Skipping NAN");
+                }
+            }
+        };
+    }
 }

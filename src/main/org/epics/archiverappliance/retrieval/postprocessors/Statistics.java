@@ -1,15 +1,15 @@
 package org.epics.archiverappliance.retrieval.postprocessors;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * 
+ *
  * <code>Statistics</code> is a post processor which provides a set of statistical numbers for a specific bin.
  * The order of parameters is: mean, std, min, max, count.
  *
@@ -20,17 +20,17 @@ public class Statistics extends SummaryStatsPostProcessor {
 
     public static final String IDENTITY = "stats";
     private static Logger logger = LogManager.getLogger(Statistics.class.getName());
-    
+
     @Override
     public String getIdentity() {
         return IDENTITY;
     }
-    
+
     @Override
     public int getElementCount() {
         return 5;
     }
-    
+
     @Override
     public boolean isProvidingVectorData() {
         return true;
@@ -40,15 +40,15 @@ public class Statistics extends SummaryStatsPostProcessor {
     public SummaryStatsVectorCollector getCollector() {
         return new SummaryStatsVectorCollector() {
             SummaryStatistics stats = new SummaryStatistics();
+
             @Override
-            public void setBinParams(int intervalSecs, long binNum) {
-            }
-            
+            public void setBinParams(int intervalSecs, long binNum) {}
+
             @Override
             public boolean haveEventsBeenAdded() {
                 return stats.getN() > 0;
             }
-            
+
             @Override
             public List<Double> getVectorValues() {
                 List<Double> list = new ArrayList<>(5);
@@ -56,24 +56,24 @@ public class Statistics extends SummaryStatsPostProcessor {
                 list.add(stats.getStandardDeviation());
                 list.add(stats.getMin());
                 list.add(stats.getMax());
-                list.add((double)stats.getN());
+                list.add((double) stats.getN());
                 return list;
             }
-            
+
             @Override
             public double getStat() {
                 return Double.NaN;
             }
-                        
+
             @Override
             public void addEvent(Event e) {
                 double val = e.getSampleValue().getValue().doubleValue();
-                if(!Double.isNaN(val)) { 
+                if (!Double.isNaN(val)) {
                     stats.addValue(val);
-                } else { 
+                } else {
                     logger.warn("Skipping NAN");
                 }
             }
         };
-    }   
+    }
 }

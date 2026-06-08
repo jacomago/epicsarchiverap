@@ -19,14 +19,14 @@ import java.io.IOException;
 public interface Writer {
     int appendData(BasicContext context, String pvName, EventStream stream) throws IOException;
 
-	/**
-	 * Gets the last known event in this destination. 
-	 * Future events will be appended to this destination only if their timestamp is more recent than the timestamp of this event.
-	 * If there is no last known event, then a null is returned.
-	 * @param context  &emsp;
-	 * @param pvName The PV name
-	 * @return Event The last known event of pvName
-	 * @throws IOException  &emsp; 
-	 */
-	public Event getLastKnownEvent(BasicContext context, String pvName) throws IOException;
+    /**
+     * Gets the last known event in this destination.
+     * Future events will be appended to this destination only if their timestamp is more recent than the timestamp of this event.
+     * If there is no last known event, then a null is returned.
+     * @param context  &emsp;
+     * @param pvName The PV name
+     * @return Event The last known event of pvName
+     * @throws IOException  &emsp;
+     */
+    public Event getLastKnownEvent(BasicContext context, String pvName) throws IOException;
 }
