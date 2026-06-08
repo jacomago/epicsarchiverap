@@ -1,5 +1,7 @@
 package org.epics.archiverappliance.engine.V4;
 
+import static org.epics.archiverappliance.engine.V4.PVAccessUtil.waitForStatusChange;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.SIOCSetup;
@@ -15,8 +17,6 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-
-import static org.epics.archiverappliance.engine.V4.PVAccessUtil.waitForStatusChange;
 
 /**
  * Checks pausing and resuming a pv keeps it using the pvaccess protocol.

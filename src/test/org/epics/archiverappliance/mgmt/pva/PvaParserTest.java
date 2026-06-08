@@ -1,5 +1,7 @@
 package org.epics.archiverappliance.mgmt.pva;
 
+import static org.epics.archiverappliance.mgmt.pva.actions.NTUtil.extractStringArray;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.mgmt.pva.actions.PvaArchivePVAction;
@@ -8,16 +10,13 @@ import org.epics.pva.data.nt.PVATable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.epics.archiverappliance.mgmt.pva.actions.NTUtil.extractStringArray;
-
 public class PvaParserTest {
 
     private static final Logger logger = LogManager.getLogger(PvaParserTest.class.getName());
 
     @Test
     public void test() throws ResponseConstructionException {
-        String json =
-                """
+        String json = """
 				{ "pvName": "mshankar:arch:sine", "status": "Archive request submitted" }\r
 				{ "pvName": "mshankar:arch:cosine", "status": "Archive request submitted" }\r
 				""";

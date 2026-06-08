@@ -1,5 +1,8 @@
 package org.epics.archiverappliance.engine.V4;
 
+import static org.epics.archiverappliance.engine.V4.PVAccessUtil.convertBytesToPVAStructure;
+import static org.epics.archiverappliance.engine.V4.PVAccessUtil.waitForStatusChange;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -28,9 +31,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
-import static org.epics.archiverappliance.engine.V4.PVAccessUtil.convertBytesToPVAStructure;
-import static org.epics.archiverappliance.engine.V4.PVAccessUtil.waitForStatusChange;
 
 /**
  * Checks reconnects after connection drops as an integration test.

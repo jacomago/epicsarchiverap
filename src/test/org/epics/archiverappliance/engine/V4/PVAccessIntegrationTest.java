@@ -1,5 +1,8 @@
 package org.epics.archiverappliance.engine.V4;
 
+import static org.epics.archiverappliance.engine.V4.PVAccessUtil.fromGenericSampleValueToPVAData;
+import static org.epics.archiverappliance.engine.V4.PVAccessUtil.waitForStatusChange;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -40,9 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
-
-import static org.epics.archiverappliance.engine.V4.PVAccessUtil.fromGenericSampleValueToPVAData;
-import static org.epics.archiverappliance.engine.V4.PVAccessUtil.waitForStatusChange;
 
 /**
  * A basic integration test of using pvAccess to archive a pv
