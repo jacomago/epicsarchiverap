@@ -707,7 +707,6 @@ if (gitWorks) {
 
 			// Define the steps to apply to those files
 			trimTrailingWhitespace()
-			indentWithTabs()
 			endWithNewline()
 		}
 		format("styling") {
