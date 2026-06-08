@@ -701,9 +701,6 @@ tasks.register<JavaExec>("testRun") {
 
 if (gitWorks) {
 	configure<SpotlessExtension> {
-		// Optional: limit format enforcement to just the files changed by this feature branch
-		ratchetFrom("origin/master")
-
 		format("misc") {
 			// Define the files to apply `misc` to
 			target("*.gradle.kts", "*.md", ".gitignore")
