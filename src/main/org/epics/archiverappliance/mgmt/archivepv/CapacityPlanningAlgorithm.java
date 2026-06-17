@@ -211,8 +211,12 @@ class CapacityPlanningAlgorithm {
                     + " into short term storage. Estimated writing percentage for " + pvName + " is "
                     + currentUsedWriterPercentage + " while the percentage limitation is " + percentageLimitation);
         }
-        float percentageForWriter =
-                currentUsedWriterPercentage * (totalDataRateForPvAdded + totalDataRate) / (totalDataRate);
+        // Scale the measured writer usage by how much the data rate would grow. A fresh appliance
+        // with no current data rate has nothing to scale, so use the measured usage as-is rather than
+        // dividing by zero (which would yield Inf/NaN and wrongly exclude or poison the appliance).
+        float percentageForWriter = totalDataRate > 0
+                ? currentUsedWriterPercentage * (totalDataRateForPvAdded + totalDataRate) / totalDataRate
+                : currentUsedWriterPercentage;
         cpMetrics.setPercentageTimeForWriter(percentageForWriter);
         if (percentageForWriter > percentageLimitation) {
             cpMetrics.setAvailable(false);
@@ -233,9 +237,14 @@ class CapacityPlanningAlgorithm {
                         + " while the percentage limitation is " + percentageLimitation);
             }
 
-            double estimatedEtlTimePercentage = etlTimePercentage
-                    * (double) (storageUsed + destinationMetrics.estimateStoragePVadded)
-                    / (double) storageUsed;
+            // Scale the measured ETL time by how much the stored data would grow. An empty store has
+            // nothing used to scale against, so use the measured time as-is rather than dividing by
+            // zero (Inf/NaN).
+            double estimatedEtlTimePercentage = storageUsed > 0
+                    ? etlTimePercentage
+                            * (double) (storageUsed + destinationMetrics.estimateStoragePVadded)
+                            / (double) storageUsed
+                    : etlTimePercentage;
             destinationMetrics.estimateETLtimePercentageAfterPVadded = estimatedEtlTimePercentage;
 
             if (estimatedEtlTimePercentage > percentageLimitation) {

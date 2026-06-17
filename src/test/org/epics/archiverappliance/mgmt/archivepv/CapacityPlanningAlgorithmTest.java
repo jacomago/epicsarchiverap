@@ -151,6 +151,33 @@ class CapacityPlanningAlgorithmTest {
         assertTrue(data.isAvailable());
     }
 
+    @Test
+    void freshApplianceWithZeroDataRateStaysEligible() {
+        // No current data rate -> the writer projection must not divide by zero (Inf/NaN) and the
+        // appliance must remain eligible with a finite writer percentage.
+        ETLMetrics sts = etl("STS", 1000, 600, 5);
+        CapacityPlanningData data = cpData("a", 0, 0, sts);
+        ApplianceAggregateInfo agg = aggregate(0, Map.of("STS", 0L));
+
+        CapacityPlanningAlgorithm.markAvailability("pv", data, agg, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT);
+
+        assertTrue(data.isAvailable());
+        assertEquals(0f, data.getPercentageTimeForWriter());
+    }
+
+    @Test
+    void emptyStoreDoesNotProduceNaNEtlTime() {
+        // storageUsed = totalSpace - available = 0 -> ETL projection must not divide by zero.
+        ETLMetrics sts = etl("STS", 1000, 1000, 5);
+        CapacityPlanningData data = cpData("a", 100, 1, sts);
+        ApplianceAggregateInfo agg = aggregate(0, Map.of("STS", 0L));
+
+        CapacityPlanningAlgorithm.markAvailability("pv", data, agg, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT);
+
+        assertTrue(data.isAvailable());
+        assertEquals(5.0, sts.estimateETLtimePercentageAfterPVadded, 1e-9);
+    }
+
     // --- decide ----------------------------------------------------------------------------------
 
     @Test
