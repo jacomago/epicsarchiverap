@@ -21,6 +21,7 @@ import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.mgmt.archivepv.CapacityPlanningData.ETLMetrics;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -365,6 +366,57 @@ class CapacityPlanningAlgorithmTest {
     @Test
     void estimatedStorageTreatsMissingDestinationAsZeroImpact() {
         assertEquals(100L, CapacityPlanningAlgorithm.estimatedStorageForDestination(Map.of(), "STS", 50f, 2));
+    }
+
+    // --- orchestrator (mocked ConfigService, no cluster) -----------------------------------------
+
+    @Test
+    void orchestratorSpreadsABurstAcrossTheCluster() {
+        // The full pickApplianceForPV path (minus the HTTP gather): over a burst of assignments the
+        // orchestrator's in-flight accounting plus the algorithm spread PVs across both appliances.
+        ConfigService configService = mock(ConfigService.class);
+        when(configService.getInstallationProperties()).thenReturn(new Properties());
+        ApplianceInfo a = appliance("a");
+        ApplianceInfo b = appliance("b");
+        Map<ApplianceInfo, CapacityPlanningData> appliances = new LinkedHashMap<>();
+        appliances.put(a, cpData("a", 100, 1, etl("STS", 1000, 600, 4)));
+        appliances.put(b, cpData("b", 100, 1, etl("STS", 1000, 600, 4)));
+        Map<ApplianceInfo, ApplianceAggregateInfo> diffs = new LinkedHashMap<>();
+        diffs.put(a, aggregate(0, Map.of("STS", 0L)));
+        diffs.put(b, aggregate(0, Map.of("STS", 0L)));
+        CapacityPlanningMetricsProvider.Snapshot snapshot =
+                new CapacityPlanningMetricsProvider.Snapshot(Instant.now(), appliances, diffs);
+
+        Random random = new Random(5);
+        Set<String> used = new HashSet<>();
+        for (int i = 0; i < 16; i++) {
+            ApplianceInfo chosen = CapacityPlanningBPL.decideAndRecord(
+                    "pv" + i, configService, Map.of("STS", 1), 0f, snapshot, random);
+            used.add(chosen.getIdentity());
+        }
+
+        assertEquals(Set.of("a", "b"), used);
+    }
+
+    @Test
+    void orchestratorFallsBackToRandomClusterApplianceWhenNoneFit() {
+        // The single appliance is over its storage limit, so the algorithm cannot decide and the
+        // orchestrator falls back to a random appliance from the cluster.
+        ConfigService configService = mock(ConfigService.class);
+        when(configService.getInstallationProperties()).thenReturn(new Properties());
+        ApplianceInfo a = appliance("a");
+        when(configService.getAppliancesInCluster()).thenReturn(List.of(a));
+        Map<ApplianceInfo, CapacityPlanningData> appliances = new LinkedHashMap<>();
+        appliances.put(a, cpData("a", 100, 1, etl("STS", 1000, 100, 5)));
+        Map<ApplianceInfo, ApplianceAggregateInfo> diffs = new LinkedHashMap<>();
+        diffs.put(a, aggregate(10, Map.of("STS", 500L))); // 500 > 100 available -> unavailable
+        CapacityPlanningMetricsProvider.Snapshot snapshot =
+                new CapacityPlanningMetricsProvider.Snapshot(Instant.now(), appliances, diffs);
+
+        ApplianceInfo chosen =
+                CapacityPlanningBPL.decideAndRecord("pv", configService, Map.of("STS", 1), 0f, snapshot, new Random(1));
+
+        assertEquals(a, chosen);
     }
 
     // --- configurable limit ----------------------------------------------------------------------

@@ -81,46 +81,60 @@ public class CapacityPlanningBPL {
             Map<String, Integer> destinationPartitionSeconds =
                     computeDestinationPartitionSeconds(pvTypeInfo, configService);
             float pvStorageRate = pvTypeInfo.getComputedStorageRate();
-
             CapacityPlanningMetricsProvider.Snapshot snapshot =
                     CapacityPlanningMetricsProvider.instance().gather(configService);
-            Map<ApplianceInfo, CapacityPlanningData> appliances = snapshot.appliances();
-            Map<ApplianceInfo, ApplianceAggregateInfo> aggregateDifferences = snapshot.aggregateDifferences();
-
-            float secondsToBuffer = PVTypeInfo.getSecondsToBuffer(configService);
-            Map<String, Integer> inFlight =
-                    inFlightByApplianceIdentity(snapshot.metricsTimestamp(), appliances, aggregateDifferences);
-
-            Optional<ApplianceInfo> chosen = CapacityPlanningAlgorithm.decide(
-                    pvName,
-                    appliances,
-                    aggregateDifferences,
-                    destinationPartitionSeconds,
-                    pvStorageRate,
-                    secondsToBuffer,
-                    getPercentageLimitation(configService),
-                    inFlight,
-                    RANDOM);
-
-            if (chosen.isPresent()) {
-                return recordAssignment(chosen.get());
-            }
-
-            // The planner could not decide (e.g. every appliance is over capacity). Spread the load
-            // by picking a random appliance from the cluster rather than always defaulting to self.
-            List<ApplianceInfo> clusterAppliances = new ArrayList<>();
-            configService.getAppliancesInCluster().forEach(clusterAppliances::add);
-            ApplianceInfo randomAppliance = CapacityPlanningAlgorithm.randomAppliance(clusterAppliances, RANDOM);
-            if (randomAppliance != null) {
-                configlogger.error("Capacity planning could not decide an appliance for " + pvName
-                        + "; picking the random appliance " + randomAppliance.getIdentity());
-                return recordAssignment(randomAppliance);
-            }
-            return configService.getMyApplianceInfo();
+            return decideAndRecord(pvName, configService, destinationPartitionSeconds, pvStorageRate, snapshot, RANDOM);
         } catch (Exception e) {
             logger.error("Exception during capacity planning, returning this appliance", e);
             return configService.getMyApplianceInfo();
         }
+    }
+
+    /**
+     * Decide an appliance from already-gathered metrics and record the assignment. Package-private so
+     * it can be unit tested with an in-memory {@link CapacityPlanningMetricsProvider.Snapshot} and a
+     * mocked ConfigService — i.e. without the HTTP metric fetch or the background poller.
+     */
+    static ApplianceInfo decideAndRecord(
+            String pvName,
+            ConfigService configService,
+            Map<String, Integer> destinationPartitionSeconds,
+            float pvStorageRate,
+            CapacityPlanningMetricsProvider.Snapshot snapshot,
+            Random random) {
+        Map<ApplianceInfo, CapacityPlanningData> appliances = snapshot.appliances();
+        Map<ApplianceInfo, ApplianceAggregateInfo> aggregateDifferences = snapshot.aggregateDifferences();
+
+        float secondsToBuffer = PVTypeInfo.getSecondsToBuffer(configService);
+        Map<String, Integer> inFlight =
+                inFlightByApplianceIdentity(snapshot.metricsTimestamp(), appliances, aggregateDifferences);
+
+        Optional<ApplianceInfo> chosen = CapacityPlanningAlgorithm.decide(
+                pvName,
+                appliances,
+                aggregateDifferences,
+                destinationPartitionSeconds,
+                pvStorageRate,
+                secondsToBuffer,
+                getPercentageLimitation(configService),
+                inFlight,
+                random);
+
+        if (chosen.isPresent()) {
+            return recordAssignment(chosen.get());
+        }
+
+        // The planner could not decide (e.g. every appliance is over capacity). Spread the load
+        // by picking a random appliance from the cluster rather than always defaulting to self.
+        List<ApplianceInfo> clusterAppliances = new ArrayList<>();
+        configService.getAppliancesInCluster().forEach(clusterAppliances::add);
+        ApplianceInfo randomAppliance = CapacityPlanningAlgorithm.randomAppliance(clusterAppliances, random);
+        if (randomAppliance != null) {
+            configlogger.error("Capacity planning could not decide an appliance for " + pvName
+                    + "; picking the random appliance " + randomAppliance.getIdentity());
+            return recordAssignment(randomAppliance);
+        }
+        return configService.getMyApplianceInfo();
     }
 
     /**
