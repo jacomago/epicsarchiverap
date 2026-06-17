@@ -66,6 +66,7 @@ public class CapacityPlanningBPL {
         try {
             Map<String, Integer> destinationPartitionSeconds =
                     computeDestinationPartitionSeconds(pvTypeInfo, configService);
+            float pvStorageRate = pvTypeInfo.getComputedStorageRate();
 
             CPStaticData cpStaticData = CapacityPlanningData.getMetricsForAppliances(configService);
             Map<ApplianceInfo, CapacityPlanningData> appliances = cpStaticData.cpApplianceMetrics;
@@ -84,6 +85,7 @@ public class CapacityPlanningBPL {
                     appliances,
                     aggregateDifferences,
                     destinationPartitionSeconds,
+                    pvStorageRate,
                     secondsToBuffer,
                     percentageLimitation);
 

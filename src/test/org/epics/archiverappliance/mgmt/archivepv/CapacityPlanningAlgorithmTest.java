@@ -141,10 +141,11 @@ class CapacityPlanningAlgorithmTest {
 
     @Test
     void storageOverAvailableMarksUnavailable() {
+        // estimated storage = aggregate impact (500) + pvStorageRate * partitionSeconds (50 * 1) = 550 > 100
         CapacityPlanningData data = cpData("a", 100, 1, etl("STS", 1000, 100, 5));
-        ApplianceAggregateInfo agg = aggregate(10, Map.of("STS", 500L)); // 500 > 100 available
+        ApplianceAggregateInfo agg = aggregate(10, Map.of("STS", 500L));
 
-        CapacityPlanningAlgorithm.markAvailability("pv", data, agg, Map.of("STS", 1), SECONDS_TO_BUFFER, LIMIT);
+        CapacityPlanningAlgorithm.markAvailability("pv", data, agg, Map.of("STS", 1), 50f, SECONDS_TO_BUFFER, LIMIT);
 
         assertFalse(data.isAvailable());
     }
@@ -155,23 +156,25 @@ class CapacityPlanningAlgorithmTest {
         CapacityPlanningData data = cpData("a", 100, 10, etl("STS", 1000, 600, 5));
         ApplianceAggregateInfo agg = aggregate(10, Map.of("STS", 100L));
 
-        CapacityPlanningAlgorithm.markAvailability("pv", data, agg, Map.of("STS", 1), SECONDS_TO_BUFFER, LIMIT);
+        CapacityPlanningAlgorithm.markAvailability("pv", data, agg, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT);
 
         assertFalse(data.isAvailable());
     }
 
     @Test
     void withinLimitsStaysAvailableAndComputesEtlPercentage() {
-        // storageUsed = 1000 - 600 = 400; estimateStoragePVadded = 200; etlTimeTaken = 10
-        // estimateETLtimePercentageAfterPVadded = 10 * (400 + 200) / 400 = 15
+        // estimateStoragePVadded = aggregate impact (200) + pvStorageRate * partitionSeconds (200 * 1) = 400
+        // storageUsed = 1000 - 600 = 400; etlTimeTaken = 10
+        // estimateETLtimePercentageAfterPVadded = 10 * (400 + 400) / 400 = 20
         ETLMetrics sts = etl("STS", 1000, 600, 10);
         CapacityPlanningData data = cpData("a", 100, 1, sts);
         ApplianceAggregateInfo agg = aggregate(20, Map.of("STS", 200L));
 
-        CapacityPlanningAlgorithm.markAvailability("pv", data, agg, Map.of("STS", 1), SECONDS_TO_BUFFER, LIMIT);
+        CapacityPlanningAlgorithm.markAvailability("pv", data, agg, Map.of("STS", 1), 200f, SECONDS_TO_BUFFER, LIMIT);
 
         assertTrue(data.isAvailable());
-        assertEquals(15.0, sts.estimateETLtimePercentageAfterPVadded, 1e-9);
+        assertEquals(400L, sts.estimateStoragePVadded);
+        assertEquals(20.0, sts.estimateETLtimePercentageAfterPVadded, 1e-9);
     }
 
     // --- decide ----------------------------------------------------------------------------------
@@ -189,8 +192,8 @@ class CapacityPlanningAlgorithmTest {
         diffs.put(a, aggregate(20, Map.of("STS", 200L)));
         diffs.put(b, aggregate(20, Map.of()));
 
-        Optional<ApplianceInfo> chosen =
-                CapacityPlanningAlgorithm.decide("pv", appliances, diffs, Map.of("STS", 1), SECONDS_TO_BUFFER, LIMIT);
+        Optional<ApplianceInfo> chosen = CapacityPlanningAlgorithm.decide(
+                "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT);
 
         assertEquals(a, chosen.orElseThrow());
         assertFalse(bData.isAvailable());
@@ -208,7 +211,7 @@ class CapacityPlanningAlgorithmTest {
         diffs.put(b, aggregate(0, Map.of()));
 
         Optional<ApplianceInfo> chosen =
-                CapacityPlanningAlgorithm.decide("pv", appliances, diffs, Map.of(), SECONDS_TO_BUFFER, LIMIT);
+                CapacityPlanningAlgorithm.decide("pv", appliances, diffs, Map.of(), 0f, SECONDS_TO_BUFFER, LIMIT);
 
         assertEquals(b, chosen.orElseThrow());
     }
@@ -222,8 +225,8 @@ class CapacityPlanningAlgorithmTest {
         Map<ApplianceInfo, ApplianceAggregateInfo> diffs = new LinkedHashMap<>();
         diffs.put(a, aggregate(10, Map.of("STS", 500L))); // 500 > 100 available
 
-        Optional<ApplianceInfo> chosen =
-                CapacityPlanningAlgorithm.decide("pv", appliances, diffs, Map.of("STS", 1), SECONDS_TO_BUFFER, LIMIT);
+        Optional<ApplianceInfo> chosen = CapacityPlanningAlgorithm.decide(
+                "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT);
 
         assertTrue(chosen.isEmpty());
     }

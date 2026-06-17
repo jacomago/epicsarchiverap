@@ -61,6 +61,7 @@ class CapacityPlanningAlgorithm {
             Map<ApplianceInfo, CapacityPlanningData> appliances,
             Map<ApplianceInfo, ApplianceAggregateInfo> aggregateDifferences,
             Map<String, Integer> destinationPartitionSeconds,
+            float pvStorageRate,
             float secondsToBuffer,
             float percentageLimitation) {
 
@@ -85,6 +86,7 @@ class CapacityPlanningAlgorithm {
                     cpMetrics,
                     aggregateDifferences.get(entry.getKey()),
                     destinationPartitionSeconds,
+                    pvStorageRate,
                     secondsToBuffer,
                     percentageLimitation);
         }
@@ -129,6 +131,19 @@ class CapacityPlanningAlgorithm {
     }
 
     /**
+     * The storage the PV is estimated to add to a destination: the pending aggregate impact for that
+     * destination (other PVs added since the metrics were fetched) plus this PV's own contribution
+     * over one partition ({@code pvStorageRate * partitionSeconds}).
+     */
+    static long estimatedStorageForDestination(
+            Map<String, Long> aggregateStorageImpact,
+            String destinationName,
+            float pvStorageRate,
+            int partitionSeconds) {
+        return aggregateStorageImpact.getOrDefault(destinationName, 0L) + (long) (pvStorageRate * partitionSeconds);
+    }
+
+    /**
      * Mark a single appliance available or not, based on whether adding the PV would exceed the
      * storage, writer time or ETL time limit. Also records the per-appliance writer percentage and
      * per-destination ETL time percentage that the normalization step reads back.
@@ -138,6 +153,7 @@ class CapacityPlanningAlgorithm {
             CapacityPlanningData cpMetrics,
             ApplianceAggregateInfo aggregateInfo,
             Map<String, Integer> destinationPartitionSeconds,
+            float pvStorageRate,
             float secondsToBuffer,
             float percentageLimitation) {
         cpMetrics.setAvailable(true);
@@ -145,13 +161,14 @@ class CapacityPlanningAlgorithm {
         Map<String, ETLMetrics> etlMetrics = cpMetrics.getEtlMetrics();
         float totalDataRate = cpMetrics.getCurrentTotalStorageRate();
         float totalDataRateForPvAdded = (float) aggregateInfo.getTotalStorageRate();
-        HashMap<String, Long> estimatedStorageByDestination = aggregateInfo.getTotalStorageImpact();
+        HashMap<String, Long> aggregateStorageImpact = aggregateInfo.getTotalStorageImpact();
 
         // Record the estimated storage the PV adds to each destination this appliance hosts.
-        for (String destinationName : destinationPartitionSeconds.keySet()) {
-            ETLMetrics destinationMetrics = etlMetrics.get(destinationName);
+        for (Map.Entry<String, Integer> destination : destinationPartitionSeconds.entrySet()) {
+            ETLMetrics destinationMetrics = etlMetrics.get(destination.getKey());
             if (destinationMetrics != null) {
-                destinationMetrics.estimateStoragePVadded = estimatedStorageByDestination.get(destinationName);
+                destinationMetrics.estimateStoragePVadded = estimatedStorageForDestination(
+                        aggregateStorageImpact, destination.getKey(), pvStorageRate, destination.getValue());
             }
         }
 
@@ -160,8 +177,10 @@ class CapacityPlanningAlgorithm {
         for (ETLMetrics destinationMetrics : etlMetrics.values()) {
             String destinationName = destinationMetrics.identity;
             long availableStorage = destinationMetrics.etlStorageAvailable;
-            if (destinationPartitionSeconds.get(destinationName) != null) {
-                long estimateStorageSize = estimatedStorageByDestination.get(destinationName);
+            Integer partitionSeconds = destinationPartitionSeconds.get(destinationName);
+            if (partitionSeconds != null) {
+                long estimateStorageSize = estimatedStorageForDestination(
+                        aggregateStorageImpact, destinationName, pvStorageRate, partitionSeconds);
                 if (estimateStorageSize > availableStorage) {
                     cpMetrics.setAvailable(false);
                     configlogger.error("There is not enough storage to accommodate " + pvName + " for "
