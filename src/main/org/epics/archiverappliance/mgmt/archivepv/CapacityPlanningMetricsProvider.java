@@ -30,19 +30,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Gathers the per-appliance data a capacity planning decision needs, and is the seam between the
  * different metric tiers.
  *
- * <p>The measured metrics (engine/ETL) are cached for an hour by {@link CapacityPlanningData}. Free
- * storage moves much faster but is cheap to read, so a single background poller refreshes it on a
- * short interval and {@link #gather} overlays the fresh values onto the cached snapshot. The
- * aggregate differences are fetched per call.
+ * <p>The measured metrics (engine/ETL) are cached for an hour by {@link CapacityPlanningData}. The
+ * faster-moving but cheap signals — free storage per store and the per-appliance aggregate
+ * difference — are refreshed by a single background poller on a short interval, so the decision path
+ * does no per-PV HTTP fan-out. {@link #gather} reads the polled caches (fetching synchronously only
+ * the first time an appliance is seen) and overlays the fresh free storage onto the cached snapshot.
  */
 class CapacityPlanningMetricsProvider {
     private static final Logger logger = LogManager.getLogger(CapacityPlanningMetricsProvider.class.getName());
 
-    /** Installation property overriding how often (seconds) free storage is polled. */
-    static final String FREE_STORAGE_POLL_SECONDS_PROPERTY =
-            "org.epics.archiverappliance.mgmt.archivepv.CapacityPlanningMetricsProvider.freeStoragePollSeconds";
+    /** Installation property overriding how often (seconds) the fast-moving signals are polled. */
+    static final String POLL_SECONDS_PROPERTY =
+            "org.epics.archiverappliance.mgmt.archivepv.CapacityPlanningMetricsProvider.pollSeconds";
 
-    private static final int DEFAULT_FREE_STORAGE_POLL_SECONDS = 60;
+    private static final int DEFAULT_POLL_SECONDS = 60;
 
     private static final CapacityPlanningMetricsProvider INSTANCE = new CapacityPlanningMetricsProvider();
 
@@ -54,6 +55,10 @@ class CapacityPlanningMetricsProvider {
 
     /** Latest polled available storage (bytes) per store, keyed by appliance identity then store. */
     private final ConcurrentHashMap<String, Map<String, Long>> freeStorageByApplianceIdentity =
+            new ConcurrentHashMap<>();
+
+    /** Latest polled aggregate difference since the measured metrics were fetched, by appliance identity. */
+    private final ConcurrentHashMap<String, ApplianceAggregateInfo> aggregateDifferenceByApplianceIdentity =
             new ConcurrentHashMap<>();
 
     private CapacityPlanningMetricsProvider() {}
@@ -73,20 +78,35 @@ class CapacityPlanningMetricsProvider {
             Map<ApplianceInfo, ApplianceAggregateInfo> aggregateDifferences) {}
 
     Snapshot gather(ConfigService configService) throws IOException {
-        startFreeStoragePoller(configService);
+        startPoller(configService);
 
         CPStaticData measured = CapacityPlanningData.getMetricsForAppliances(configService);
         Map<ApplianceInfo, CapacityPlanningData> appliances = measured.cpApplianceMetrics;
 
-        // Fetch the aggregate difference once per appliance so the decision itself does no I/O.
         Map<ApplianceInfo, ApplianceAggregateInfo> aggregateDifferences = new HashMap<>();
         for (Map.Entry<ApplianceInfo, CapacityPlanningData> entry : appliances.entrySet()) {
             aggregateDifferences.put(
-                    entry.getKey(), entry.getValue().getApplianceAggregateDifferenceFromLastFetch(configService));
+                    entry.getKey(), aggregateDifferenceFor(entry.getKey(), entry.getValue(), configService));
         }
 
         overlayFreeStorage(appliances, freeStorageByApplianceIdentity);
         return new Snapshot(measured.timeofData, appliances, aggregateDifferences);
+    }
+
+    /**
+     * The background-polled aggregate difference for an appliance, fetched synchronously the first
+     * time the appliance is seen (cold start or a newly added appliance) so the decision is never
+     * left without it.
+     */
+    private ApplianceAggregateInfo aggregateDifferenceFor(
+            ApplianceInfo applianceInfo, CapacityPlanningData cpData, ConfigService configService) throws IOException {
+        ApplianceAggregateInfo polled = aggregateDifferenceByApplianceIdentity.get(applianceInfo.getIdentity());
+        if (polled != null) {
+            return polled;
+        }
+        ApplianceAggregateInfo fetched = cpData.getApplianceAggregateDifferenceFromLastFetch(configService);
+        aggregateDifferenceByApplianceIdentity.put(applianceInfo.getIdentity(), fetched);
+        return fetched;
     }
 
     /**
@@ -112,30 +132,45 @@ class CapacityPlanningMetricsProvider {
         }
     }
 
-    private void startFreeStoragePoller(ConfigService configService) {
+    private void startPoller(ConfigService configService) {
         if (pollerStarted.getAndSet(true)) {
             return;
         }
         int pollSeconds = Integer.parseInt(configService
                 .getInstallationProperties()
-                .getProperty(FREE_STORAGE_POLL_SECONDS_PROPERTY, Integer.toString(DEFAULT_FREE_STORAGE_POLL_SECONDS)));
+                .getProperty(POLL_SECONDS_PROPERTY, Integer.toString(DEFAULT_POLL_SECONDS)));
         ScheduledExecutorService poller = Executors.newSingleThreadScheduledExecutor(runnable -> {
-            Thread thread = new Thread(runnable, "capacity-planning-free-storage-poller");
+            Thread thread = new Thread(runnable, "capacity-planning-metrics-poller");
             thread.setDaemon(true);
             return thread;
         });
-        poller.scheduleWithFixedDelay(() -> pollFreeStorage(configService), 0, pollSeconds, TimeUnit.SECONDS);
+        poller.scheduleWithFixedDelay(() -> poll(configService), 0, pollSeconds, TimeUnit.SECONDS);
         configService.addShutdownHook(poller::shutdownNow);
-        logger.info("Started capacity planning free-storage poller every " + pollSeconds + "s");
+        logger.info("Started capacity planning metrics poller every " + pollSeconds + "s");
     }
 
-    private void pollFreeStorage(ConfigService configService) {
-        for (ApplianceInfo applianceInfo : configService.getAppliancesInCluster()) {
+    private void poll(ConfigService configService) {
+        CPStaticData measured;
+        try {
+            measured = CapacityPlanningData.getMetricsForAppliances(configService);
+        } catch (Exception e) {
+            logger.warn("Could not refresh capacity planning metrics", e);
+            return;
+        }
+        for (Map.Entry<ApplianceInfo, CapacityPlanningData> entry : measured.cpApplianceMetrics.entrySet()) {
+            ApplianceInfo applianceInfo = entry.getKey();
             try {
                 freeStorageByApplianceIdentity.put(
                         applianceInfo.getIdentity(), CapacityPlanningData.fetchAvailableStorage(applianceInfo));
             } catch (Exception e) {
                 logger.warn("Could not poll free storage for appliance " + applianceInfo.getIdentity(), e);
+            }
+            try {
+                aggregateDifferenceByApplianceIdentity.put(
+                        applianceInfo.getIdentity(),
+                        entry.getValue().getApplianceAggregateDifferenceFromLastFetch(configService));
+            } catch (Exception e) {
+                logger.warn("Could not poll aggregate difference for appliance " + applianceInfo.getIdentity(), e);
             }
         }
     }
