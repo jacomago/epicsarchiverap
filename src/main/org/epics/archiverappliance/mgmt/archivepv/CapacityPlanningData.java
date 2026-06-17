@@ -48,7 +48,7 @@ public class CapacityPlanningData {
     private boolean isAvailable = true;
     private static CPStaticData cachedCPStaticData = null;
 
-    class ETLMetrics {
+    static class ETLMetrics {
         String identity;
         /**
          * This is percentage time taken (averaged over the lifetime of ETL) that the ETL thread takes to move data from one store to another.
@@ -79,6 +79,17 @@ public class CapacityPlanningData {
             this.etlTimeTaken = Double.parseDouble((String) obj.get("avgTimeConsumedPercent"));
             // avgTimeConsumedMs
 
+        }
+
+        /**
+         * Explicit constructor that bypasses JSON parsing. Used by the capacity planning unit tests
+         * to build ETL metrics in memory.
+         */
+        ETLMetrics(String identity, long totalSpace, long etlStorageAvailable, double etlTimeTaken) {
+            this.identity = identity;
+            this.totalSpace = totalSpace;
+            this.etlStorageAvailable = etlStorageAvailable;
+            this.etlTimeTaken = etlTimeTaken;
         }
     }
 
@@ -117,6 +128,21 @@ public class CapacityPlanningData {
             logger.error("Exception in CapacityPlanningMetricsPerApplianceForPV", e);
             throw new IOException(e);
         }
+    }
+
+    /**
+     * Explicit constructor that bypasses the engine/ETL HTTP fetches. Used by the capacity planning
+     * unit tests to build per-appliance metrics in memory.
+     */
+    CapacityPlanningData(
+            String identity,
+            float currentTotalStorageRate,
+            float totalChannelIOSeconds,
+            ConcurrentHashMap<String, ETLMetrics> etlMetrics) {
+        this.identity = identity;
+        this.currentTotalStorageRate = currentTotalStorageRate;
+        this.totalChannelIOSeconds = totalChannelIOSeconds;
+        this.etlMetrics = etlMetrics;
     }
 
     public static CPStaticData getMetricsForAppliances(ConfigService configService) throws IOException {
