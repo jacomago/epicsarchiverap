@@ -21,9 +21,12 @@ import org.epics.archiverappliance.etl.StorageMetrics;
 import org.epics.archiverappliance.mgmt.archivepv.CapacityPlanningData.CPStaticData;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 
 /**
  * Entry point for the default capacity planning: it decides which appliance a new PV is assigned to.
@@ -37,6 +40,7 @@ import java.util.Optional;
  */
 public class CapacityPlanningBPL {
     private static final Logger logger = LogManager.getLogger(CapacityPlanningBPL.class.getName());
+    private static final Logger configlogger = LogManager.getLogger("config." + CapacityPlanningBPL.class.getName());
 
     /**
      * The maximum percentage of capacity (storage, writer time and ETL time) that an appliance may
@@ -44,14 +48,17 @@ public class CapacityPlanningBPL {
      */
     private static final float percentageLimitation = 80;
 
+    private static final Random RANDOM = new Random();
+
     /**
      * Pick the appliance that the given PV should be assigned to.
      *
      * @param pvName the name of the PV.
      * @param configService the local configService.
      * @param pvTypeInfo the pvTypeInfo of this PV.
-     * @return the ApplianceInfo of the appliance that this PV will be added to. On error, returns the
-     *     local appliance.
+     * @return the ApplianceInfo of the appliance that this PV will be added to. When no appliance can
+     *     be decided (e.g. all appliances are over capacity), a random appliance from the cluster is
+     *     returned. On error gathering data, the local appliance is returned.
      * @throws IOException if an error occurs gathering capacity planning data.
      */
     public static ApplianceInfo pickApplianceForPV(String pvName, ConfigService configService, PVTypeInfo pvTypeInfo)
@@ -80,11 +87,36 @@ public class CapacityPlanningBPL {
                     secondsToBuffer,
                     percentageLimitation);
 
-            return chosen.orElseGet(configService::getMyApplianceInfo);
+            if (chosen.isPresent()) {
+                return chosen.get();
+            }
+
+            // The planner could not decide (e.g. every appliance is over capacity). Spread the load
+            // by picking a random appliance from the cluster rather than always defaulting to self.
+            List<ApplianceInfo> clusterAppliances = new ArrayList<>();
+            configService.getAppliancesInCluster().forEach(clusterAppliances::add);
+            ApplianceInfo randomAppliance = randomAppliance(clusterAppliances, RANDOM);
+            if (randomAppliance != null) {
+                configlogger.error("Capacity planning could not decide an appliance for " + pvName
+                        + "; picking the random appliance " + randomAppliance.getIdentity());
+                return randomAppliance;
+            }
+            return configService.getMyApplianceInfo();
         } catch (Exception e) {
             logger.error("Exception during capacity planning, returning this appliance", e);
             return configService.getMyApplianceInfo();
         }
+    }
+
+    /**
+     * Pick a uniformly random appliance from the given list, or {@code null} if the list is empty.
+     * The {@link Random} is a parameter so tests can make the choice deterministic.
+     */
+    static ApplianceInfo randomAppliance(List<ApplianceInfo> appliances, Random random) {
+        if (appliances.isEmpty()) {
+            return null;
+        }
+        return appliances.get(random.nextInt(appliances.size()));
     }
 
     /**

@@ -64,17 +64,25 @@ class CapacityPlanningAlgorithm {
             float secondsToBuffer,
             float percentageLimitation) {
 
-        // Cold start: if any appliance has no measured ETL metrics yet, the capacity math cannot
-        // run, so fall back to balancing by the lowest current total data rate.
-        if (hasApplianceWithoutEtlMetrics(appliances)) {
-            logger.debug("At least one appliance has no ETL metrics; balancing by data rate instead.");
+        // Cold start: if NO appliance has measured ETL metrics yet, the capacity math cannot run,
+        // so fall back to balancing by the lowest current total data rate.
+        if (allAppliancesLackEtlMetrics(appliances)) {
+            logger.debug("No appliance has ETL metrics yet; balancing by data rate instead.");
             return pickByLowestDataRate(appliances, aggregateDifferences);
         }
 
         for (Map.Entry<ApplianceInfo, CapacityPlanningData> entry : appliances.entrySet()) {
+            CapacityPlanningData cpMetrics = entry.getValue();
+            // An appliance with no measured ETL metrics is not a valid target for the PV (it is not
+            // ready / reachable), so exclude it rather than letting it dilute the decision.
+            if (cpMetrics.getEtlMetrics().isEmpty()) {
+                cpMetrics.setAvailable(false);
+                logger.debug(entry.getKey().getIdentity() + " has no ETL metrics; excluding it as a candidate.");
+                continue;
+            }
             markAvailability(
                     pvName,
-                    entry.getValue(),
+                    cpMetrics,
                     aggregateDifferences.get(entry.getKey()),
                     destinationPartitionSeconds,
                     secondsToBuffer,
@@ -90,13 +98,13 @@ class CapacityPlanningAlgorithm {
         return pickByMaxFactor(appliances, factors);
     }
 
-    static boolean hasApplianceWithoutEtlMetrics(Map<ApplianceInfo, CapacityPlanningData> appliances) {
+    static boolean allAppliancesLackEtlMetrics(Map<ApplianceInfo, CapacityPlanningData> appliances) {
         for (CapacityPlanningData cpData : appliances.values()) {
-            if (cpData.getEtlMetrics().isEmpty()) {
-                return true;
+            if (!cpData.getEtlMetrics().isEmpty()) {
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
     /**
