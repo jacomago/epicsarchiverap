@@ -243,8 +243,8 @@ class CapacityPlanningAlgorithm {
 
     /**
      * Build the normalization factors used to decide which resource is most constrained: one for the
-     * engine writer (the average writer percentage across available appliances) and one per ETL
-     * destination. Returns an empty list when no appliance is available.
+     * engine writer and one per ETL destination, each the average percentage across the available
+     * appliances. Returns an empty list when no appliance is available.
      */
     static List<NormalizationFactor> computeNormalizationFactors(
             Map<ApplianceInfo, CapacityPlanningData> appliances, Map<String, Integer> destinationPartitionSeconds) {
@@ -274,8 +274,8 @@ class CapacityPlanningAlgorithm {
         }
         factors.add(new NormalizationFactor(WRITER_FACTOR, totalWriterPercentage / availableAppliancesNum));
         for (Map.Entry<String, Double> etlEntry : etlPercentageByDestination.entrySet()) {
-            factors.add(new NormalizationFactor(
-                    etlEntry.getKey(), etlEntry.getValue().floatValue()));
+            factors.add(
+                    new NormalizationFactor(etlEntry.getKey(), (float) (etlEntry.getValue() / availableAppliancesNum)));
         }
         return factors;
     }

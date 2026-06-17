@@ -134,7 +134,7 @@ class CapacityPlanningAlgorithmTest {
             byName.put(f.getIdentify(), f.getPercentage());
         }
         assertEquals(15f, byName.get(CapacityPlanningAlgorithm.WRITER_FACTOR)); // (10 + 20) / 2 available
-        assertEquals(70f, byName.get("STS")); // 30 + 40 summed across available appliances
+        assertEquals(35f, byName.get("STS")); // (30 + 40) / 2 available
     }
 
     // --- markAvailability ------------------------------------------------------------------------
