@@ -137,6 +137,39 @@ class CapacityPlanningAlgorithmTest {
         assertEquals(35f, byName.get("STS")); // (30 + 40) / 2 available
     }
 
+    @Test
+    void normalizationFactorsIncludeEachDestination() {
+        ETLMetrics aSts = etl("STS", 1000, 600, 10);
+        ETLMetrics aMts = etl("MTS", 1000, 600, 10);
+        ETLMetrics bSts = etl("STS", 1000, 600, 10);
+        ETLMetrics bMts = etl("MTS", 1000, 600, 10);
+        aSts.estimateETLtimePercentageAfterPVadded = 20;
+        aMts.estimateETLtimePercentageAfterPVadded = 30;
+        bSts.estimateETLtimePercentageAfterPVadded = 40;
+        bMts.estimateETLtimePercentageAfterPVadded = 10;
+        CapacityPlanningData aData = cpData("a", 0, 0, aSts, aMts);
+        CapacityPlanningData bData = cpData("b", 0, 0, bSts, bMts);
+        aData.setAvailable(true);
+        bData.setAvailable(true);
+        aData.setPercentageTimeForWriter(10);
+        bData.setPercentageTimeForWriter(20);
+        Map<ApplianceInfo, CapacityPlanningData> appliances = new LinkedHashMap<>();
+        appliances.put(appliance("a"), aData);
+        appliances.put(appliance("b"), bData);
+
+        List<NormalizationFactor> factors =
+                CapacityPlanningAlgorithm.computeNormalizationFactors(appliances, Map.of("STS", 1, "MTS", 1));
+
+        Map<String, Float> byName = new LinkedHashMap<>();
+        for (NormalizationFactor f : factors) {
+            byName.put(f.getIdentify(), f.getPercentage());
+        }
+        assertEquals(3, byName.size());
+        assertEquals(15f, byName.get(CapacityPlanningAlgorithm.WRITER_FACTOR)); // (10 + 20) / 2
+        assertEquals(30f, byName.get("STS")); // (20 + 40) / 2
+        assertEquals(20f, byName.get("MTS")); // (30 + 10) / 2
+    }
+
     // --- markAvailability ------------------------------------------------------------------------
 
     @Test
@@ -175,6 +208,54 @@ class CapacityPlanningAlgorithmTest {
         assertTrue(data.isAvailable());
         assertEquals(400L, sts.estimateStoragePVadded);
         assertEquals(20.0, sts.estimateETLtimePercentageAfterPVadded, 1e-9);
+    }
+
+    @Test
+    void etlTimeOverLimitMarksUnavailable() {
+        // etlTimeTaken (90) already exceeds the limit before the PV is even added
+        CapacityPlanningData data = cpData("a", 100, 1, etl("STS", 1000, 600, 90));
+        ApplianceAggregateInfo agg = aggregate(0, Map.of("STS", 100L));
+
+        CapacityPlanningAlgorithm.markAvailability("pv", data, agg, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT);
+
+        assertFalse(data.isAvailable());
+    }
+
+    @Test
+    void estimatedEtlTimeOverLimitMarksUnavailable() {
+        // etlTimeTaken (50) is under the limit, but adding the PV pushes the projected ETL time over:
+        // storageUsed = 200 - 100 = 100; estimateStoragePVadded = 0 + 100 * 1 = 100 (= available, so storage is ok)
+        // estimateETLtimePercentageAfterPVadded = 50 * (100 + 100) / 100 = 100 > 80
+        CapacityPlanningData data = cpData("a", 100, 1, etl("STS", 200, 100, 50));
+        ApplianceAggregateInfo agg = aggregate(0, Map.of("STS", 0L));
+
+        CapacityPlanningAlgorithm.markAvailability("pv", data, agg, Map.of("STS", 1), 100f, SECONDS_TO_BUFFER, LIMIT);
+
+        assertFalse(data.isAvailable());
+    }
+
+    @Test
+    void storageEqualToAvailableStaysAvailable() {
+        // estimated storage = aggregate impact (500) + 0 = 500, exactly the available storage (not over)
+        ETLMetrics sts = etl("STS", 1000, 500, 5);
+        CapacityPlanningData data = cpData("a", 100, 1, sts);
+        ApplianceAggregateInfo agg = aggregate(0, Map.of("STS", 500L));
+
+        CapacityPlanningAlgorithm.markAvailability("pv", data, agg, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT);
+
+        assertTrue(data.isAvailable());
+    }
+
+    @Test
+    void storageIsNotCheckedForDestinationsThePvDoesNotWriteTo() {
+        // The PV writes only to STS. LTS has almost no free space and a large pending impact, but since
+        // the PV does not write to LTS its storage is never checked, so the appliance stays available.
+        CapacityPlanningData data = cpData("a", 100, 1, etl("STS", 1000, 600, 5), etl("LTS", 1000, 1, 5));
+        ApplianceAggregateInfo agg = aggregate(0, Map.of("STS", 100L, "LTS", 999_999L));
+
+        CapacityPlanningAlgorithm.markAvailability("pv", data, agg, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT);
+
+        assertTrue(data.isAvailable());
     }
 
     // --- decide ----------------------------------------------------------------------------------
@@ -229,6 +310,71 @@ class CapacityPlanningAlgorithmTest {
                 "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT);
 
         assertTrue(chosen.isEmpty());
+    }
+
+    @Test
+    void decideWithSingleAvailableApplianceReturnsIt() {
+        ApplianceInfo a = appliance("a");
+        Map<ApplianceInfo, CapacityPlanningData> appliances = new LinkedHashMap<>();
+        appliances.put(a, cpData("a", 100, 1, etl("STS", 1000, 600, 5)));
+        Map<ApplianceInfo, ApplianceAggregateInfo> diffs = new LinkedHashMap<>();
+        diffs.put(a, aggregate(0, Map.of("STS", 100L)));
+
+        Optional<ApplianceInfo> chosen = CapacityPlanningAlgorithm.decide(
+                "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT);
+
+        assertEquals(a, chosen.orElseThrow());
+    }
+
+    @Test
+    void decideFullFlowPicksApplianceWithLowestWriterWhenWriterDominates() {
+        // Both appliances healthy. Writer percentages (10 vs 20) dominate the tiny ETL factor (4),
+        // so the appliance with the lower writer percentage (a) is chosen.
+        ApplianceInfo a = appliance("a");
+        ApplianceInfo b = appliance("b");
+        Map<ApplianceInfo, CapacityPlanningData> appliances = new LinkedHashMap<>();
+        appliances.put(a, cpData("a", 100, 1, etl("STS", 1000, 600, 4))); // writer usage 10%
+        appliances.put(b, cpData("b", 100, 2, etl("STS", 1000, 600, 4))); // writer usage 20%
+        Map<ApplianceInfo, ApplianceAggregateInfo> diffs = new LinkedHashMap<>();
+        diffs.put(a, aggregate(0, Map.of("STS", 0L)));
+        diffs.put(b, aggregate(0, Map.of("STS", 0L)));
+
+        Optional<ApplianceInfo> chosen = CapacityPlanningAlgorithm.decide(
+                "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT);
+
+        assertEquals(a, chosen.orElseThrow());
+    }
+
+    @Test
+    void decideFullFlowPicksApplianceWithLowestEtlWhenEtlDominates() {
+        // Equal writer usage (10%), but the ETL destination dominates; the appliance with the lower
+        // ETL time (a, etlTimeTaken 40 vs b 50) is chosen.
+        ApplianceInfo a = appliance("a");
+        ApplianceInfo b = appliance("b");
+        Map<ApplianceInfo, CapacityPlanningData> appliances = new LinkedHashMap<>();
+        appliances.put(a, cpData("a", 100, 1, etl("STS", 1000, 200, 40)));
+        appliances.put(b, cpData("b", 100, 1, etl("STS", 1000, 200, 50)));
+        Map<ApplianceInfo, ApplianceAggregateInfo> diffs = new LinkedHashMap<>();
+        diffs.put(a, aggregate(0, Map.of("STS", 0L)));
+        diffs.put(b, aggregate(0, Map.of("STS", 0L)));
+
+        Optional<ApplianceInfo> chosen = CapacityPlanningAlgorithm.decide(
+                "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT);
+
+        assertEquals(a, chosen.orElseThrow());
+    }
+
+    // --- estimatedStorageForDestination ----------------------------------------------------------
+
+    @Test
+    void estimatedStorageAddsPvContributionToAggregateImpact() {
+        assertEquals(
+                300L, CapacityPlanningAlgorithm.estimatedStorageForDestination(Map.of("STS", 200L), "STS", 50f, 2));
+    }
+
+    @Test
+    void estimatedStorageTreatsMissingDestinationAsZeroImpact() {
+        assertEquals(100L, CapacityPlanningAlgorithm.estimatedStorageForDestination(Map.of(), "STS", 50f, 2));
     }
 
     // --- randomAppliance -------------------------------------------------------------------------
