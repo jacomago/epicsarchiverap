@@ -87,7 +87,8 @@ public class CapacityPlanningBPL {
                     destinationPartitionSeconds,
                     pvStorageRate,
                     secondsToBuffer,
-                    percentageLimitation);
+                    percentageLimitation,
+                    RANDOM);
 
             if (chosen.isPresent()) {
                 return chosen.get();
@@ -97,7 +98,7 @@ public class CapacityPlanningBPL {
             // by picking a random appliance from the cluster rather than always defaulting to self.
             List<ApplianceInfo> clusterAppliances = new ArrayList<>();
             configService.getAppliancesInCluster().forEach(clusterAppliances::add);
-            ApplianceInfo randomAppliance = randomAppliance(clusterAppliances, RANDOM);
+            ApplianceInfo randomAppliance = CapacityPlanningAlgorithm.randomAppliance(clusterAppliances, RANDOM);
             if (randomAppliance != null) {
                 configlogger.error("Capacity planning could not decide an appliance for " + pvName
                         + "; picking the random appliance " + randomAppliance.getIdentity());
@@ -108,17 +109,6 @@ public class CapacityPlanningBPL {
             logger.error("Exception during capacity planning, returning this appliance", e);
             return configService.getMyApplianceInfo();
         }
-    }
-
-    /**
-     * Pick a uniformly random appliance from the given list, or {@code null} if the list is empty.
-     * The {@link Random} is a parameter so tests can make the choice deterministic.
-     */
-    static ApplianceInfo randomAppliance(List<ApplianceInfo> appliances, Random random) {
-        if (appliances.isEmpty()) {
-            return null;
-        }
-        return appliances.get(random.nextInt(appliances.size()));
     }
 
     /**

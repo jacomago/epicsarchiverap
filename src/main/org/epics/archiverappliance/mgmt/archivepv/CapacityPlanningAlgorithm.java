@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 
 /**
  * The pure decision logic for capacity planning, separated from data acquisition so it can be unit
@@ -36,11 +37,6 @@ class CapacityPlanningAlgorithm {
     private static final Logger configlogger =
             LogManager.getLogger("config." + CapacityPlanningAlgorithm.class.getName());
 
-    /** The normalization factor identity used for the engine write thread. */
-    static final String WRITER_FACTOR = "writer";
-    /** Sentinel identity used while searching for the maximum factor. */
-    private static final String NO_FACTOR = "tempFactor";
-
     private CapacityPlanningAlgorithm() {}
 
     /**
@@ -54,6 +50,7 @@ class CapacityPlanningAlgorithm {
      *     writes to.
      * @param secondsToBuffer the engine write period used to compute writer thread usage.
      * @param percentageLimitation the maximum percentage of any resource an appliance may use.
+     * @param random source of randomness for picking among the appliances that fit.
      * @return the chosen appliance, or empty if no appliance could be decided.
      */
     static Optional<ApplianceInfo> decide(
@@ -63,7 +60,8 @@ class CapacityPlanningAlgorithm {
             Map<String, Integer> destinationPartitionSeconds,
             float pvStorageRate,
             float secondsToBuffer,
-            float percentageLimitation) {
+            float percentageLimitation,
+            Random random) {
 
         // Cold start: if NO appliance has measured ETL metrics yet, the capacity math cannot run,
         // so fall back to balancing by the lowest current total data rate.
@@ -91,13 +89,21 @@ class CapacityPlanningAlgorithm {
                     percentageLimitation);
         }
 
-        List<NormalizationFactor> factors = computeNormalizationFactors(appliances, destinationPartitionSeconds);
-        if (factors.isEmpty()) {
+        List<ApplianceInfo> fitAppliances = new ArrayList<>();
+        for (Map.Entry<ApplianceInfo, CapacityPlanningData> entry : appliances.entrySet()) {
+            if (entry.getValue().isAvailable()) {
+                fitAppliances.add(entry.getKey());
+            }
+        }
+        if (fitAppliances.isEmpty()) {
             configlogger.error("There is no appliance available for " + pvName);
             return Optional.empty();
         }
 
-        return pickByMaxFactor(appliances, factors);
+        // Pick uniformly at random among the appliances that fit. The gate above already removed
+        // anything over capacity; randomizing among the rest spreads load immediately without
+        // depending on the (hourly-cached) metrics to differentiate the candidates.
+        return Optional.ofNullable(randomAppliance(fitAppliances, random));
     }
 
     static boolean allAppliancesLackEtlMetrics(Map<ApplianceInfo, CapacityPlanningData> appliances) {
@@ -242,92 +248,13 @@ class CapacityPlanningAlgorithm {
     }
 
     /**
-     * Build the normalization factors used to decide which resource is most constrained: one for the
-     * engine writer and one per ETL destination, each the average percentage across the available
-     * appliances. Returns an empty list when no appliance is available.
+     * Pick a uniformly random appliance from the given list, or {@code null} if the list is empty.
+     * The {@link Random} is a parameter so tests can make the choice deterministic.
      */
-    static List<NormalizationFactor> computeNormalizationFactors(
-            Map<ApplianceInfo, CapacityPlanningData> appliances, Map<String, Integer> destinationPartitionSeconds) {
-        float totalWriterPercentage = 0;
-        int availableAppliancesNum = 0;
-        Map<String, Double> etlPercentageByDestination = new HashMap<>();
-
-        for (CapacityPlanningData cpMetrics : appliances.values()) {
-            if (!cpMetrics.isAvailable()) {
-                continue;
-            }
-            availableAppliancesNum++;
-            totalWriterPercentage += cpMetrics.getPercentageTimeForWriter();
-            Map<String, ETLMetrics> etlMetrics = cpMetrics.getEtlMetrics();
-            for (String destinationName : destinationPartitionSeconds.keySet()) {
-                ETLMetrics destinationMetrics = etlMetrics.get(destinationName);
-                if (destinationMetrics != null) {
-                    etlPercentageByDestination.merge(
-                            destinationName, destinationMetrics.estimateETLtimePercentageAfterPVadded, Double::sum);
-                }
-            }
+    static ApplianceInfo randomAppliance(List<ApplianceInfo> appliances, Random random) {
+        if (appliances.isEmpty()) {
+            return null;
         }
-
-        List<NormalizationFactor> factors = new ArrayList<>();
-        if (availableAppliancesNum == 0) {
-            return factors;
-        }
-        factors.add(new NormalizationFactor(WRITER_FACTOR, totalWriterPercentage / availableAppliancesNum));
-        for (Map.Entry<String, Double> etlEntry : etlPercentageByDestination.entrySet()) {
-            factors.add(
-                    new NormalizationFactor(etlEntry.getKey(), (float) (etlEntry.getValue() / availableAppliancesNum)));
-        }
-        return factors;
-    }
-
-    /**
-     * Pick the most constrained factor (highest percentage), then among the available appliances pick
-     * the one with the lowest usage of that factor. Returns empty if no factor or appliance qualifies.
-     */
-    static Optional<ApplianceInfo> pickByMaxFactor(
-            Map<ApplianceInfo, CapacityPlanningData> appliances, List<NormalizationFactor> factors) {
-        // Only factors with a non-negative percentage qualify; ties resolve to the last one seen.
-        NormalizationFactor maxFactor = new NormalizationFactor(NO_FACTOR, 0);
-        for (NormalizationFactor factor : factors) {
-            if (factor.getPercentage() >= maxFactor.getPercentage()) {
-                maxFactor = factor;
-            }
-        }
-        if (maxFactor.getIdentify().equals(NO_FACTOR)) {
-            return Optional.empty();
-        }
-        logger.debug("the max (percentage) is :" + maxFactor.getIdentify() + ",value:" + maxFactor.getPercentage());
-
-        String maxFactorIdentity = maxFactor.getIdentify();
-        ApplianceInfo chosen = null;
-        for (Map.Entry<ApplianceInfo, CapacityPlanningData> entry : appliances.entrySet()) {
-            CapacityPlanningData cpMetrics = entry.getValue();
-            ApplianceInfo applianceInfo = entry.getKey();
-            if (!cpMetrics.isAvailable()) {
-                continue;
-            }
-            if (chosen == null) {
-                chosen = applianceInfo;
-                continue;
-            }
-            if (maxFactorIdentity.equals(WRITER_FACTOR)) {
-                if (cpMetrics.getPercentageTimeForWriter()
-                        < appliances.get(chosen).getPercentageTimeForWriter()) {
-                    chosen = applianceInfo;
-                }
-            } else {
-                double chosenEtl = appliances
-                        .get(chosen)
-                        .getEtlMetrics()
-                        .get(maxFactorIdentity)
-                        .estimateETLtimePercentageAfterPVadded;
-                double candidateEtl =
-                        cpMetrics.getEtlMetrics().get(maxFactorIdentity).estimateETLtimePercentageAfterPVadded;
-                if (candidateEtl < chosenEtl) {
-                    chosen = applianceInfo;
-                }
-            }
-        }
-        return Optional.ofNullable(chosen);
+        return appliances.get(random.nextInt(appliances.size()));
     }
 }

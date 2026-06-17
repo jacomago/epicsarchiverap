@@ -18,11 +18,13 @@ import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.mgmt.archivepv.CapacityPlanningData.ETLMetrics;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -59,115 +61,6 @@ class CapacityPlanningAlgorithmTest {
         info.setTotalStorageRate(storageRate);
         info.getTotalStorageImpact().putAll(impact);
         return info;
-    }
-
-    // --- pickByMaxFactor -------------------------------------------------------------------------
-
-    @Test
-    void writerFactorPicksApplianceWithLowestWriterPercentage() {
-        ApplianceInfo a = appliance("a");
-        ApplianceInfo b = appliance("b");
-        CapacityPlanningData aData = cpData("a", 0, 0);
-        CapacityPlanningData bData = cpData("b", 0, 0);
-        aData.setAvailable(true);
-        bData.setAvailable(true);
-        aData.setPercentageTimeForWriter(10);
-        bData.setPercentageTimeForWriter(5);
-        Map<ApplianceInfo, CapacityPlanningData> appliances = new LinkedHashMap<>();
-        appliances.put(a, aData);
-        appliances.put(b, bData);
-
-        Optional<ApplianceInfo> chosen = CapacityPlanningAlgorithm.pickByMaxFactor(
-                appliances, List.of(new NormalizationFactor(CapacityPlanningAlgorithm.WRITER_FACTOR, 50)));
-
-        assertEquals(b, chosen.orElseThrow());
-    }
-
-    @Test
-    void etlFactorPicksApplianceWithLowestEtlPercentage() {
-        ApplianceInfo a = appliance("a");
-        ApplianceInfo b = appliance("b");
-        ETLMetrics aEtl = etl("STS", 1000, 600, 10);
-        ETLMetrics bEtl = etl("STS", 1000, 600, 10);
-        aEtl.estimateETLtimePercentageAfterPVadded = 30;
-        bEtl.estimateETLtimePercentageAfterPVadded = 20;
-        CapacityPlanningData aData = cpData("a", 0, 0, aEtl);
-        CapacityPlanningData bData = cpData("b", 0, 0, bEtl);
-        aData.setAvailable(true);
-        bData.setAvailable(true);
-        Map<ApplianceInfo, CapacityPlanningData> appliances = new LinkedHashMap<>();
-        appliances.put(a, aData);
-        appliances.put(b, bData);
-
-        Optional<ApplianceInfo> chosen =
-                CapacityPlanningAlgorithm.pickByMaxFactor(appliances, List.of(new NormalizationFactor("STS", 60)));
-
-        assertEquals(b, chosen.orElseThrow());
-    }
-
-    // --- computeNormalizationFactors -------------------------------------------------------------
-
-    @Test
-    void normalizationFactorsAverageWriterAndSkipUnavailable() {
-        ETLMetrics aEtl = etl("STS", 1000, 600, 10);
-        ETLMetrics bEtl = etl("STS", 1000, 600, 10);
-        aEtl.estimateETLtimePercentageAfterPVadded = 30;
-        bEtl.estimateETLtimePercentageAfterPVadded = 40;
-        CapacityPlanningData aData = cpData("a", 0, 0, aEtl);
-        CapacityPlanningData bData = cpData("b", 0, 0, bEtl);
-        CapacityPlanningData cData = cpData("c", 0, 0, etl("STS", 1000, 600, 10));
-        aData.setAvailable(true);
-        bData.setAvailable(true);
-        cData.setAvailable(false); // excluded
-        aData.setPercentageTimeForWriter(10);
-        bData.setPercentageTimeForWriter(20);
-        Map<ApplianceInfo, CapacityPlanningData> appliances = new LinkedHashMap<>();
-        appliances.put(appliance("a"), aData);
-        appliances.put(appliance("b"), bData);
-        appliances.put(appliance("c"), cData);
-
-        List<NormalizationFactor> factors =
-                CapacityPlanningAlgorithm.computeNormalizationFactors(appliances, Map.of("STS", 1));
-
-        Map<String, Float> byName = new LinkedHashMap<>();
-        for (NormalizationFactor f : factors) {
-            byName.put(f.getIdentify(), f.getPercentage());
-        }
-        assertEquals(15f, byName.get(CapacityPlanningAlgorithm.WRITER_FACTOR)); // (10 + 20) / 2 available
-        assertEquals(35f, byName.get("STS")); // (30 + 40) / 2 available
-    }
-
-    @Test
-    void normalizationFactorsIncludeEachDestination() {
-        ETLMetrics aSts = etl("STS", 1000, 600, 10);
-        ETLMetrics aMts = etl("MTS", 1000, 600, 10);
-        ETLMetrics bSts = etl("STS", 1000, 600, 10);
-        ETLMetrics bMts = etl("MTS", 1000, 600, 10);
-        aSts.estimateETLtimePercentageAfterPVadded = 20;
-        aMts.estimateETLtimePercentageAfterPVadded = 30;
-        bSts.estimateETLtimePercentageAfterPVadded = 40;
-        bMts.estimateETLtimePercentageAfterPVadded = 10;
-        CapacityPlanningData aData = cpData("a", 0, 0, aSts, aMts);
-        CapacityPlanningData bData = cpData("b", 0, 0, bSts, bMts);
-        aData.setAvailable(true);
-        bData.setAvailable(true);
-        aData.setPercentageTimeForWriter(10);
-        bData.setPercentageTimeForWriter(20);
-        Map<ApplianceInfo, CapacityPlanningData> appliances = new LinkedHashMap<>();
-        appliances.put(appliance("a"), aData);
-        appliances.put(appliance("b"), bData);
-
-        List<NormalizationFactor> factors =
-                CapacityPlanningAlgorithm.computeNormalizationFactors(appliances, Map.of("STS", 1, "MTS", 1));
-
-        Map<String, Float> byName = new LinkedHashMap<>();
-        for (NormalizationFactor f : factors) {
-            byName.put(f.getIdentify(), f.getPercentage());
-        }
-        assertEquals(3, byName.size());
-        assertEquals(15f, byName.get(CapacityPlanningAlgorithm.WRITER_FACTOR)); // (10 + 20) / 2
-        assertEquals(30f, byName.get("STS")); // (20 + 40) / 2
-        assertEquals(20f, byName.get("MTS")); // (30 + 10) / 2
     }
 
     // --- markAvailability ------------------------------------------------------------------------
@@ -274,7 +167,7 @@ class CapacityPlanningAlgorithmTest {
         diffs.put(b, aggregate(20, Map.of()));
 
         Optional<ApplianceInfo> chosen = CapacityPlanningAlgorithm.decide(
-                "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT);
+                "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT, new Random(0));
 
         assertEquals(a, chosen.orElseThrow());
         assertFalse(bData.isAvailable());
@@ -291,8 +184,8 @@ class CapacityPlanningAlgorithmTest {
         diffs.put(a, aggregate(0, Map.of()));
         diffs.put(b, aggregate(0, Map.of()));
 
-        Optional<ApplianceInfo> chosen =
-                CapacityPlanningAlgorithm.decide("pv", appliances, diffs, Map.of(), 0f, SECONDS_TO_BUFFER, LIMIT);
+        Optional<ApplianceInfo> chosen = CapacityPlanningAlgorithm.decide(
+                "pv", appliances, diffs, Map.of(), 0f, SECONDS_TO_BUFFER, LIMIT, new Random(0));
 
         assertEquals(b, chosen.orElseThrow());
     }
@@ -307,7 +200,7 @@ class CapacityPlanningAlgorithmTest {
         diffs.put(a, aggregate(10, Map.of("STS", 500L))); // 500 > 100 available
 
         Optional<ApplianceInfo> chosen = CapacityPlanningAlgorithm.decide(
-                "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT);
+                "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT, new Random(0));
 
         assertTrue(chosen.isEmpty());
     }
@@ -321,47 +214,52 @@ class CapacityPlanningAlgorithmTest {
         diffs.put(a, aggregate(0, Map.of("STS", 100L)));
 
         Optional<ApplianceInfo> chosen = CapacityPlanningAlgorithm.decide(
-                "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT);
+                "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT, new Random(0));
 
         assertEquals(a, chosen.orElseThrow());
     }
 
     @Test
-    void decideFullFlowPicksApplianceWithLowestWriterWhenWriterDominates() {
-        // Both appliances healthy. Writer percentages (10 vs 20) dominate the tiny ETL factor (4),
-        // so the appliance with the lower writer percentage (a) is chosen.
+    void decideSpreadsAcrossAllFitAppliances() {
+        // Both appliances fit. Over many draws the choice should land on each of them — i.e. the load
+        // is spread, not piled onto a single "best" appliance (the F4 burst behavior we want).
         ApplianceInfo a = appliance("a");
         ApplianceInfo b = appliance("b");
         Map<ApplianceInfo, CapacityPlanningData> appliances = new LinkedHashMap<>();
-        appliances.put(a, cpData("a", 100, 1, etl("STS", 1000, 600, 4))); // writer usage 10%
-        appliances.put(b, cpData("b", 100, 2, etl("STS", 1000, 600, 4))); // writer usage 20%
+        appliances.put(a, cpData("a", 100, 1, etl("STS", 1000, 600, 4)));
+        appliances.put(b, cpData("b", 100, 2, etl("STS", 1000, 600, 4)));
         Map<ApplianceInfo, ApplianceAggregateInfo> diffs = new LinkedHashMap<>();
         diffs.put(a, aggregate(0, Map.of("STS", 0L)));
         diffs.put(b, aggregate(0, Map.of("STS", 0L)));
 
-        Optional<ApplianceInfo> chosen = CapacityPlanningAlgorithm.decide(
-                "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT);
-
-        assertEquals(a, chosen.orElseThrow());
+        Random random = new Random(42);
+        Set<ApplianceInfo> picked = new HashSet<>();
+        for (int i = 0; i < 50; i++) {
+            picked.add(CapacityPlanningAlgorithm.decide(
+                            "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT, random)
+                    .orElseThrow());
+        }
+        assertEquals(Set.of(a, b), picked);
     }
 
     @Test
-    void decideFullFlowPicksApplianceWithLowestEtlWhenEtlDominates() {
-        // Equal writer usage (10%), but the ETL destination dominates; the appliance with the lower
-        // ETL time (a, etlTimeTaken 40 vs b 50) is chosen.
+    void decideIsDeterministicForAGivenSeed() {
         ApplianceInfo a = appliance("a");
         ApplianceInfo b = appliance("b");
         Map<ApplianceInfo, CapacityPlanningData> appliances = new LinkedHashMap<>();
-        appliances.put(a, cpData("a", 100, 1, etl("STS", 1000, 200, 40)));
-        appliances.put(b, cpData("b", 100, 1, etl("STS", 1000, 200, 50)));
+        appliances.put(a, cpData("a", 100, 1, etl("STS", 1000, 600, 4)));
+        appliances.put(b, cpData("b", 100, 1, etl("STS", 1000, 600, 4)));
         Map<ApplianceInfo, ApplianceAggregateInfo> diffs = new LinkedHashMap<>();
         diffs.put(a, aggregate(0, Map.of("STS", 0L)));
         diffs.put(b, aggregate(0, Map.of("STS", 0L)));
 
-        Optional<ApplianceInfo> chosen = CapacityPlanningAlgorithm.decide(
-                "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT);
-
-        assertEquals(a, chosen.orElseThrow());
+        ApplianceInfo first = CapacityPlanningAlgorithm.decide(
+                        "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT, new Random(7))
+                .orElseThrow();
+        ApplianceInfo second = CapacityPlanningAlgorithm.decide(
+                        "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT, new Random(7))
+                .orElseThrow();
+        assertEquals(first, second);
     }
 
     // --- estimatedStorageForDestination ----------------------------------------------------------
@@ -384,12 +282,12 @@ class CapacityPlanningAlgorithmTest {
         List<ApplianceInfo> appliances = List.of(appliance("a"), appliance("b"), appliance("c"));
         ApplianceInfo expected = appliances.get(new Random(1234).nextInt(appliances.size()));
 
-        assertEquals(expected, CapacityPlanningBPL.randomAppliance(appliances, new Random(1234)));
-        assertTrue(appliances.contains(CapacityPlanningBPL.randomAppliance(appliances, new Random())));
+        assertEquals(expected, CapacityPlanningAlgorithm.randomAppliance(appliances, new Random(1234)));
+        assertTrue(appliances.contains(CapacityPlanningAlgorithm.randomAppliance(appliances, new Random())));
     }
 
     @Test
     void randomApplianceReturnsNullForEmptyList() {
-        assertNull(CapacityPlanningBPL.randomAppliance(List.of(), new Random()));
+        assertNull(CapacityPlanningAlgorithm.randomAppliance(List.of(), new Random()));
     }
 }
