@@ -1,0 +1,17 @@
+name: Push
+
+on:
+  push:
+    branches-ignore:
+      - master
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
+    permissions:
+      contents: read
+      checks: write
