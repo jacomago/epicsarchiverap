@@ -387,6 +387,38 @@ class CapacityPlanningAlgorithmTest {
         assertEquals(65f, CapacityPlanningBPL.getPercentageLimitation(configService));
     }
 
+    // --- free-storage overlay ---------------------------------------------------------------------
+
+    @Test
+    void overlayFreeStorageRefreshesAvailableButLeavesTotalSpace() {
+        ETLMetrics sts = etl("STS", 1000, 600, 5);
+        ETLMetrics mts = etl("MTS", 5000, 4000, 5);
+        ApplianceInfo a = appliance("a");
+        Map<ApplianceInfo, CapacityPlanningData> appliances = new LinkedHashMap<>();
+        appliances.put(a, cpData("a", 100, 1, sts, mts));
+
+        // fresher poll: STS dropped to 200 available; MTS has no fresh value; appliance "b" irrelevant
+        Map<String, Map<String, Long>> freeStorage = Map.of("a", Map.of("STS", 200L), "b", Map.of("STS", 1L));
+
+        CapacityPlanningMetricsProvider.overlayFreeStorage(appliances, freeStorage);
+
+        assertEquals(200L, sts.etlStorageAvailable); // refreshed
+        assertEquals(1000L, sts.totalSpace); // total left untouched
+        assertEquals(4000L, mts.etlStorageAvailable); // no fresh value -> unchanged
+    }
+
+    @Test
+    void overlayFreeStorageNoOpWhenNoPolledData() {
+        ETLMetrics sts = etl("STS", 1000, 600, 5);
+        ApplianceInfo a = appliance("a");
+        Map<ApplianceInfo, CapacityPlanningData> appliances = new LinkedHashMap<>();
+        appliances.put(a, cpData("a", 100, 1, sts));
+
+        CapacityPlanningMetricsProvider.overlayFreeStorage(appliances, Map.of());
+
+        assertEquals(600L, sts.etlStorageAvailable);
+    }
+
     // --- randomAppliance -------------------------------------------------------------------------
 
     @Test

@@ -82,7 +82,8 @@ public class CapacityPlanningBPL {
                     computeDestinationPartitionSeconds(pvTypeInfo, configService);
             float pvStorageRate = pvTypeInfo.getComputedStorageRate();
 
-            CapacityPlanningMetricsProvider.Snapshot snapshot = CapacityPlanningMetricsProvider.gather(configService);
+            CapacityPlanningMetricsProvider.Snapshot snapshot =
+                    CapacityPlanningMetricsProvider.instance().gather(configService);
             Map<ApplianceInfo, CapacityPlanningData> appliances = snapshot.appliances();
             Map<ApplianceInfo, ApplianceAggregateInfo> aggregateDifferences = snapshot.aggregateDifferences();
 

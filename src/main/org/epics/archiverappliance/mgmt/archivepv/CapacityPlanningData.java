@@ -13,6 +13,8 @@ import org.json.simple.JSONObject;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -143,6 +145,26 @@ public class CapacityPlanningData {
         this.currentTotalStorageRate = currentTotalStorageRate;
         this.totalChannelIOSeconds = totalChannelIOSeconds;
         this.etlMetrics = etlMetrics;
+    }
+
+    /**
+     * Fetch the currently available storage (bytes) per store for an appliance, keyed by store
+     * identity. This is the fast-moving slice of the ETL metrics; the capacity planning free-storage
+     * poller refreshes it more often than the hour-cached measured metrics. Returns an empty map if
+     * the appliance's storage metrics cannot be read.
+     */
+    static Map<String, Long> fetchAvailableStorage(ApplianceInfo applianceInfo) {
+        Map<String, Long> availableByStore = new HashMap<>();
+        String etlURL = applianceInfo.getEtlURL() + "/getStorageMetricsForAppliance";
+        JSONArray etlMetricsArray = GetUrlContent.getURLContentAsJSONArray(etlURL);
+        if (etlMetricsArray == null) {
+            return availableByStore;
+        }
+        for (Object etlMetricObj : etlMetricsArray) {
+            JSONObject obj = (JSONObject) etlMetricObj;
+            availableByStore.put((String) obj.get("identity"), Long.parseLong((String) obj.get("availableSpace")));
+        }
+        return availableByStore;
     }
 
     public static CPStaticData getMetricsForAppliances(ConfigService configService) throws IOException {
