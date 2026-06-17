@@ -21,12 +21,14 @@ import org.epics.archiverappliance.etl.StorageMetrics;
 import org.epics.archiverappliance.mgmt.archivepv.CapacityPlanningData.CPStaticData;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Entry point for the default capacity planning: it decides which appliance a new PV is assigned to.
@@ -52,6 +54,16 @@ public class CapacityPlanningBPL {
     private static final float DEFAULT_PERCENTAGE_LIMITATION = 80;
 
     private static final Random RANDOM = new Random();
+
+    /**
+     * PVs assigned by this node since the measured metrics were last (re)fetched, per appliance
+     * identity. Reconciled against the freshly-fetched aggregate PV count so that, during a burst,
+     * assignments not yet visible in the aggregate still steer the planner away from piling onto one
+     * appliance. Reset whenever the measured metrics are refetched.
+     */
+    private static final ConcurrentHashMap<String, Integer> localAssignmentsSinceFetch = new ConcurrentHashMap<>();
+
+    private static volatile Instant localAssignmentsBaseline;
 
     /**
      * Pick the appliance that the given PV should be assigned to.
@@ -82,6 +94,7 @@ public class CapacityPlanningBPL {
             }
 
             float secondsToBuffer = PVTypeInfo.getSecondsToBuffer(configService);
+            Map<String, Integer> inFlight = inFlightByApplianceIdentity(cpStaticData, appliances, aggregateDifferences);
 
             Optional<ApplianceInfo> chosen = CapacityPlanningAlgorithm.decide(
                     pvName,
@@ -91,10 +104,11 @@ public class CapacityPlanningBPL {
                     pvStorageRate,
                     secondsToBuffer,
                     getPercentageLimitation(configService),
+                    inFlight,
                     RANDOM);
 
             if (chosen.isPresent()) {
-                return chosen.get();
+                return recordAssignment(chosen.get());
             }
 
             // The planner could not decide (e.g. every appliance is over capacity). Spread the load
@@ -105,7 +119,7 @@ public class CapacityPlanningBPL {
             if (randomAppliance != null) {
                 configlogger.error("Capacity planning could not decide an appliance for " + pvName
                         + "; picking the random appliance " + randomAppliance.getIdentity());
-                return randomAppliance;
+                return recordAssignment(randomAppliance);
             }
             return configService.getMyApplianceInfo();
         } catch (Exception e) {
@@ -122,6 +136,36 @@ public class CapacityPlanningBPL {
         return Float.parseFloat(configService
                 .getInstallationProperties()
                 .getProperty(PERCENTAGE_LIMITATION_PROPERTY, Float.toString(DEFAULT_PERCENTAGE_LIMITATION)));
+    }
+
+    /**
+     * Per-appliance count of PVs this node assigned but the fetched aggregate has not caught up to.
+     * The local counters reset whenever the measured metrics are refetched; the aggregate's own
+     * PV-count difference is then subtracted, so steady-state (already-propagated) assignments
+     * contribute zero and only a genuine in-flight backlog steers the decision.
+     */
+    private static Map<String, Integer> inFlightByApplianceIdentity(
+            CPStaticData cpStaticData,
+            Map<ApplianceInfo, CapacityPlanningData> appliances,
+            Map<ApplianceInfo, ApplianceAggregateInfo> aggregateDifferences) {
+        if (!cpStaticData.timeofData.equals(localAssignmentsBaseline)) {
+            localAssignmentsSinceFetch.clear();
+            localAssignmentsBaseline = cpStaticData.timeofData;
+        }
+        Map<String, Integer> inFlight = new HashMap<>();
+        for (Map.Entry<ApplianceInfo, CapacityPlanningData> entry : appliances.entrySet()) {
+            String identity = entry.getKey().getIdentity();
+            int assignedLocally = localAssignmentsSinceFetch.getOrDefault(identity, 0);
+            int reflectedInAggregate =
+                    (int) aggregateDifferences.get(entry.getKey()).getTotalPVCount();
+            inFlight.put(identity, Math.max(0, assignedLocally - reflectedInAggregate));
+        }
+        return inFlight;
+    }
+
+    private static ApplianceInfo recordAssignment(ApplianceInfo appliance) {
+        localAssignmentsSinceFetch.merge(appliance.getIdentity(), 1, Integer::sum);
+        return appliance;
     }
 
     /**

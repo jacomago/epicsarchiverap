@@ -21,6 +21,7 @@ import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.mgmt.archivepv.CapacityPlanningData.ETLMetrics;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -317,6 +318,40 @@ class CapacityPlanningAlgorithmTest {
             }
         }
         assertTrue(countA > 100, "expected the lower-loaded appliance to win the majority, got " + countA + "/200");
+    }
+
+    @Test
+    void inFlightTrackingSpreadsABurstEvenly() {
+        // Three fit appliances with identical (stale) metrics. Simulating a burst where each
+        // assignment bumps the in-flight count (as the orchestrator does), the load should be shared
+        // evenly rather than piling onto one appliance before the metrics catch up.
+        ApplianceInfo a = appliance("a");
+        ApplianceInfo b = appliance("b");
+        ApplianceInfo c = appliance("c");
+        Map<ApplianceInfo, CapacityPlanningData> appliances = new LinkedHashMap<>();
+        appliances.put(a, cpData("a", 100, 1, etl("STS", 1000, 600, 4)));
+        appliances.put(b, cpData("b", 100, 1, etl("STS", 1000, 600, 4)));
+        appliances.put(c, cpData("c", 100, 1, etl("STS", 1000, 600, 4)));
+        Map<ApplianceInfo, ApplianceAggregateInfo> diffs = new LinkedHashMap<>();
+        diffs.put(a, aggregate(0, Map.of("STS", 0L)));
+        diffs.put(b, aggregate(0, Map.of("STS", 0L)));
+        diffs.put(c, aggregate(0, Map.of("STS", 0L)));
+
+        Map<String, Integer> inFlight = new HashMap<>();
+        Map<ApplianceInfo, Integer> counts = new HashMap<>();
+        Random random = new Random(3);
+        for (int i = 0; i < 30; i++) {
+            ApplianceInfo chosen = CapacityPlanningAlgorithm.decide(
+                            "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT, inFlight, random)
+                    .orElseThrow();
+            inFlight.merge(chosen.getIdentity(), 1, Integer::sum);
+            counts.merge(chosen, 1, Integer::sum);
+        }
+
+        assertEquals(3, counts.size());
+        int max = counts.values().stream().max(Integer::compareTo).orElseThrow();
+        int min = counts.values().stream().min(Integer::compareTo).orElseThrow();
+        assertTrue(max - min <= 3, "burst should spread evenly; counts=" + counts);
     }
 
     // --- estimatedStorageForDestination ----------------------------------------------------------

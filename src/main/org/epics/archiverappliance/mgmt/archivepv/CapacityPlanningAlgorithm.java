@@ -39,6 +39,28 @@ class CapacityPlanningAlgorithm {
 
     private CapacityPlanningAlgorithm() {}
 
+    /** Decide with no in-flight assignment information. */
+    static Optional<ApplianceInfo> decide(
+            String pvName,
+            Map<ApplianceInfo, CapacityPlanningData> appliances,
+            Map<ApplianceInfo, ApplianceAggregateInfo> aggregateDifferences,
+            Map<String, Integer> destinationPartitionSeconds,
+            float pvStorageRate,
+            float secondsToBuffer,
+            float percentageLimitation,
+            Random random) {
+        return decide(
+                pvName,
+                appliances,
+                aggregateDifferences,
+                destinationPartitionSeconds,
+                pvStorageRate,
+                secondsToBuffer,
+                percentageLimitation,
+                Map.of(),
+                random);
+    }
+
     /**
      * Decide which appliance a PV should be assigned to.
      *
@@ -50,6 +72,8 @@ class CapacityPlanningAlgorithm {
      *     writes to.
      * @param secondsToBuffer the engine write period used to compute writer thread usage.
      * @param percentageLimitation the maximum percentage of any resource an appliance may use.
+     * @param inFlightByIdentity count, per appliance identity, of PVs assigned locally but not yet
+     *     reflected in the fetched aggregate — used to keep a burst from piling onto one appliance.
      * @param random source of randomness for picking among the appliances that fit.
      * @return the chosen appliance, or empty if no appliance could be decided.
      */
@@ -61,6 +85,7 @@ class CapacityPlanningAlgorithm {
             float pvStorageRate,
             float secondsToBuffer,
             float percentageLimitation,
+            Map<String, Integer> inFlightByIdentity,
             Random random) {
 
         // Cold start: if NO appliance has measured ETL metrics yet, the capacity math cannot run,
@@ -104,17 +129,26 @@ class CapacityPlanningAlgorithm {
         // power-of-two-choices: this spreads bursts (it does not always pick the same "best"
         // appliance) yet still biases away from the busier node without trusting the hourly-cached
         // metrics to finely rank every candidate.
-        return Optional.of(pickByHeadroom(fitAppliances, appliances, random));
+        return Optional.of(pickByHeadroom(fitAppliances, appliances, inFlightByIdentity, random));
     }
 
     /**
-     * Power-of-two-choices: sample two fit appliances at random and keep the one with more headroom
-     * (the lower projected usage). With one fit appliance it is returned directly.
+     * Power-of-two-choices: sample two fit appliances at random and keep the one with more headroom.
+     * An appliance with fewer in-flight assignments wins outright (so a burst spreads before the
+     * fetched metrics catch up); ties break on the lower projected usage.
      */
     static ApplianceInfo pickByHeadroom(
-            List<ApplianceInfo> fitAppliances, Map<ApplianceInfo, CapacityPlanningData> appliances, Random random) {
+            List<ApplianceInfo> fitAppliances,
+            Map<ApplianceInfo, CapacityPlanningData> appliances,
+            Map<String, Integer> inFlightByIdentity,
+            Random random) {
         ApplianceInfo first = fitAppliances.get(random.nextInt(fitAppliances.size()));
         ApplianceInfo second = fitAppliances.get(random.nextInt(fitAppliances.size()));
+        int firstInFlight = inFlightByIdentity.getOrDefault(first.getIdentity(), 0);
+        int secondInFlight = inFlightByIdentity.getOrDefault(second.getIdentity(), 0);
+        if (firstInFlight != secondInFlight) {
+            return firstInFlight < secondInFlight ? first : second;
+        }
         return projectedUsage(appliances.get(first)) <= projectedUsage(appliances.get(second)) ? first : second;
     }
 
