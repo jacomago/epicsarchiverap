@@ -100,10 +100,35 @@ class CapacityPlanningAlgorithm {
             return Optional.empty();
         }
 
-        // Pick uniformly at random among the appliances that fit. The gate above already removed
-        // anything over capacity; randomizing among the rest spreads load immediately without
-        // depending on the (hourly-cached) metrics to differentiate the candidates.
-        return Optional.ofNullable(randomAppliance(fitAppliances, random));
+        // The gate above already removed anything over capacity. Among the rest, use
+        // power-of-two-choices: this spreads bursts (it does not always pick the same "best"
+        // appliance) yet still biases away from the busier node without trusting the hourly-cached
+        // metrics to finely rank every candidate.
+        return Optional.of(pickByHeadroom(fitAppliances, appliances, random));
+    }
+
+    /**
+     * Power-of-two-choices: sample two fit appliances at random and keep the one with more headroom
+     * (the lower projected usage). With one fit appliance it is returned directly.
+     */
+    static ApplianceInfo pickByHeadroom(
+            List<ApplianceInfo> fitAppliances, Map<ApplianceInfo, CapacityPlanningData> appliances, Random random) {
+        ApplianceInfo first = fitAppliances.get(random.nextInt(fitAppliances.size()));
+        ApplianceInfo second = fitAppliances.get(random.nextInt(fitAppliances.size()));
+        return projectedUsage(appliances.get(first)) <= projectedUsage(appliances.get(second)) ? first : second;
+    }
+
+    /**
+     * The appliance's most-constrained resource after the PV is added: the larger of the projected
+     * writer percentage and the projected ETL time percentage across its stores. Lower means more
+     * headroom.
+     */
+    static double projectedUsage(CapacityPlanningData cpMetrics) {
+        double usage = cpMetrics.getPercentageTimeForWriter();
+        for (ETLMetrics destinationMetrics : cpMetrics.getEtlMetrics().values()) {
+            usage = Math.max(usage, destinationMetrics.estimateETLtimePercentageAfterPVadded);
+        }
+        return usage;
     }
 
     static boolean allAppliancesLackEtlMetrics(Map<ApplianceInfo, CapacityPlanningData> appliances) {

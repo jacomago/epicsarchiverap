@@ -258,7 +258,7 @@ class CapacityPlanningAlgorithmTest {
         ApplianceInfo b = appliance("b");
         Map<ApplianceInfo, CapacityPlanningData> appliances = new LinkedHashMap<>();
         appliances.put(a, cpData("a", 100, 1, etl("STS", 1000, 600, 4)));
-        appliances.put(b, cpData("b", 100, 2, etl("STS", 1000, 600, 4)));
+        appliances.put(b, cpData("b", 100, 1, etl("STS", 1000, 600, 4)));
         Map<ApplianceInfo, ApplianceAggregateInfo> diffs = new LinkedHashMap<>();
         diffs.put(a, aggregate(0, Map.of("STS", 0L)));
         diffs.put(b, aggregate(0, Map.of("STS", 0L)));
@@ -291,6 +291,32 @@ class CapacityPlanningAlgorithmTest {
                         "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT, new Random(7))
                 .orElseThrow();
         assertEquals(first, second);
+    }
+
+    @Test
+    void decidePrefersLowerLoadedApplianceViaPowerOfTwo() {
+        // Both fit, but a is much less loaded (writer 10% vs b 70%). Power-of-two-choices should pick
+        // the lower-loaded appliance the large majority of the time (it still occasionally lands on
+        // the busier one, which is the intended randomization).
+        ApplianceInfo a = appliance("a");
+        ApplianceInfo b = appliance("b");
+        Map<ApplianceInfo, CapacityPlanningData> appliances = new LinkedHashMap<>();
+        appliances.put(a, cpData("a", 100, 1, etl("STS", 1000, 600, 4))); // writer usage 10%
+        appliances.put(b, cpData("b", 100, 7, etl("STS", 1000, 600, 4))); // writer usage 70%
+        Map<ApplianceInfo, ApplianceAggregateInfo> diffs = new LinkedHashMap<>();
+        diffs.put(a, aggregate(0, Map.of("STS", 0L)));
+        diffs.put(b, aggregate(0, Map.of("STS", 0L)));
+
+        Random random = new Random(1);
+        int countA = 0;
+        for (int i = 0; i < 200; i++) {
+            if (a.equals(CapacityPlanningAlgorithm.decide(
+                            "pv", appliances, diffs, Map.of("STS", 1), 0f, SECONDS_TO_BUFFER, LIMIT, random)
+                    .orElseThrow())) {
+                countA++;
+            }
+        }
+        assertTrue(countA > 100, "expected the lower-loaded appliance to win the majority, got " + countA + "/200");
     }
 
     // --- estimatedStorageForDestination ----------------------------------------------------------
