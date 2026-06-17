@@ -43,10 +43,13 @@ public class CapacityPlanningBPL {
     private static final Logger configlogger = LogManager.getLogger("config." + CapacityPlanningBPL.class.getName());
 
     /**
-     * The maximum percentage of capacity (storage, writer time and ETL time) that an appliance may
-     * use before it is considered unavailable for new PVs.
+     * Installation property overriding the maximum percentage of capacity (storage, writer time and
+     * ETL time) that an appliance may use before it is considered unavailable for new PVs.
      */
-    private static final float percentageLimitation = 80;
+    static final String PERCENTAGE_LIMITATION_PROPERTY =
+            "org.epics.archiverappliance.mgmt.archivepv.CapacityPlanningBPL.percentageLimitation";
+
+    private static final float DEFAULT_PERCENTAGE_LIMITATION = 80;
 
     private static final Random RANDOM = new Random();
 
@@ -87,7 +90,7 @@ public class CapacityPlanningBPL {
                     destinationPartitionSeconds,
                     pvStorageRate,
                     secondsToBuffer,
-                    percentageLimitation,
+                    getPercentageLimitation(configService),
                     RANDOM);
 
             if (chosen.isPresent()) {
@@ -109,6 +112,16 @@ public class CapacityPlanningBPL {
             logger.error("Exception during capacity planning, returning this appliance", e);
             return configService.getMyApplianceInfo();
         }
+    }
+
+    /**
+     * The maximum percentage of capacity an appliance may use before it is considered unavailable for
+     * new PVs, from {@value #PERCENTAGE_LIMITATION_PROPERTY} (default 80).
+     */
+    static float getPercentageLimitation(ConfigService configService) {
+        return Float.parseFloat(configService
+                .getInstallationProperties()
+                .getProperty(PERCENTAGE_LIMITATION_PROPERTY, Float.toString(DEFAULT_PERCENTAGE_LIMITATION)));
     }
 
     /**

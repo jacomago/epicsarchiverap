@@ -12,9 +12,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import org.epics.archiverappliance.config.ApplianceAggregateInfo;
 import org.epics.archiverappliance.config.ApplianceInfo;
+import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.mgmt.archivepv.CapacityPlanningData.ETLMetrics;
 import org.junit.jupiter.api.Test;
 
@@ -23,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -300,6 +304,26 @@ class CapacityPlanningAlgorithmTest {
     @Test
     void estimatedStorageTreatsMissingDestinationAsZeroImpact() {
         assertEquals(100L, CapacityPlanningAlgorithm.estimatedStorageForDestination(Map.of(), "STS", 50f, 2));
+    }
+
+    // --- configurable limit ----------------------------------------------------------------------
+
+    @Test
+    void percentageLimitationDefaultsTo80() {
+        ConfigService configService = mock(ConfigService.class);
+        when(configService.getInstallationProperties()).thenReturn(new Properties());
+
+        assertEquals(80f, CapacityPlanningBPL.getPercentageLimitation(configService));
+    }
+
+    @Test
+    void percentageLimitationReadFromProperty() {
+        Properties props = new Properties();
+        props.setProperty(CapacityPlanningBPL.PERCENTAGE_LIMITATION_PROPERTY, "65");
+        ConfigService configService = mock(ConfigService.class);
+        when(configService.getInstallationProperties()).thenReturn(props);
+
+        assertEquals(65f, CapacityPlanningBPL.getPercentageLimitation(configService));
     }
 
     // --- randomAppliance -------------------------------------------------------------------------
