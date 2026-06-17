@@ -18,7 +18,6 @@ import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.etl.ETLDest;
 import org.epics.archiverappliance.etl.ETLSource;
 import org.epics.archiverappliance.etl.StorageMetrics;
-import org.epics.archiverappliance.mgmt.archivepv.CapacityPlanningData.CPStaticData;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -83,18 +82,13 @@ public class CapacityPlanningBPL {
                     computeDestinationPartitionSeconds(pvTypeInfo, configService);
             float pvStorageRate = pvTypeInfo.getComputedStorageRate();
 
-            CPStaticData cpStaticData = CapacityPlanningData.getMetricsForAppliances(configService);
-            Map<ApplianceInfo, CapacityPlanningData> appliances = cpStaticData.cpApplianceMetrics;
-
-            // Fetch the aggregate difference once per appliance so the decision itself does no I/O.
-            Map<ApplianceInfo, ApplianceAggregateInfo> aggregateDifferences = new HashMap<>();
-            for (Map.Entry<ApplianceInfo, CapacityPlanningData> entry : appliances.entrySet()) {
-                aggregateDifferences.put(
-                        entry.getKey(), entry.getValue().getApplianceAggregateDifferenceFromLastFetch(configService));
-            }
+            CapacityPlanningMetricsProvider.Snapshot snapshot = CapacityPlanningMetricsProvider.gather(configService);
+            Map<ApplianceInfo, CapacityPlanningData> appliances = snapshot.appliances();
+            Map<ApplianceInfo, ApplianceAggregateInfo> aggregateDifferences = snapshot.aggregateDifferences();
 
             float secondsToBuffer = PVTypeInfo.getSecondsToBuffer(configService);
-            Map<String, Integer> inFlight = inFlightByApplianceIdentity(cpStaticData, appliances, aggregateDifferences);
+            Map<String, Integer> inFlight =
+                    inFlightByApplianceIdentity(snapshot.metricsTimestamp(), appliances, aggregateDifferences);
 
             Optional<ApplianceInfo> chosen = CapacityPlanningAlgorithm.decide(
                     pvName,
@@ -145,12 +139,12 @@ public class CapacityPlanningBPL {
      * contribute zero and only a genuine in-flight backlog steers the decision.
      */
     private static Map<String, Integer> inFlightByApplianceIdentity(
-            CPStaticData cpStaticData,
+            Instant metricsTimestamp,
             Map<ApplianceInfo, CapacityPlanningData> appliances,
             Map<ApplianceInfo, ApplianceAggregateInfo> aggregateDifferences) {
-        if (!cpStaticData.timeofData.equals(localAssignmentsBaseline)) {
+        if (!metricsTimestamp.equals(localAssignmentsBaseline)) {
             localAssignmentsSinceFetch.clear();
-            localAssignmentsBaseline = cpStaticData.timeofData;
+            localAssignmentsBaseline = metricsTimestamp;
         }
         Map<String, Integer> inFlight = new HashMap<>();
         for (Map.Entry<ApplianceInfo, CapacityPlanningData> entry : appliances.entrySet()) {
