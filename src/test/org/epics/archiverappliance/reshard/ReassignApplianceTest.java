@@ -164,11 +164,14 @@ public class ReassignApplianceTest {
                         + URLEncoder.encode(pvName, StandardCharsets.UTF_8),
                 false));
 
-        int expectedSampleCount = 60 * 10;
+        int expectedSampleCountBefore = 60 * 10;
+        Awaitility.await()
+                .pollInterval(10, TimeUnit.SECONDS)
+                .atMost(3, TimeUnit.MINUTES)
+                .untilAsserted(() -> Assertions.assertTrue(
+                        getEvents().size() >= expectedSampleCountBefore,
+                        "Expected at least " + expectedSampleCountBefore));
         List<Integer> valsBefore = getEvents();
-        Assertions.assertTrue(
-                valsBefore.size() >= expectedSampleCount,
-                "Expected at least " + expectedSampleCount + " got " + valsBefore.size());
 
         GetUrlContent.getURLContentAsJSONObject(
                 MGMT_URL + "/reassignAppliance?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8)
@@ -200,11 +203,14 @@ public class ReassignApplianceTest {
                         .size()
                 > 5);
 
+        int expectedSampleCountAfter = 2 * 60 * 10;
+        Awaitility.await()
+                .pollInterval(10, TimeUnit.SECONDS)
+                .atMost(3, TimeUnit.MINUTES)
+                .untilAsserted(() -> Assertions.assertTrue(
+                        getEvents().size() >= expectedSampleCountAfter,
+                        "Expected at least " + expectedSampleCountAfter));
         List<Integer> valsAfter = getEvents();
-        expectedSampleCount = 2 * 60 * 10;
-        Assertions.assertTrue(
-                valsAfter.size() >= expectedSampleCount,
-                "Expected at least " + expectedSampleCount + " got " + valsAfter.size());
 
         // Confirm that every sample in the before made it into the after.
         // This is largely a matter of confirming the setup.
