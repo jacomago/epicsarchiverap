@@ -12,8 +12,6 @@ import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.epics.archiverappliance.retrieval.RetrievalState;
 
-import java.util.Set;
-
 /**
  * Interface for appliance configuration.
  * One gets to a config service implementation thru dependency injection of one kind or the other.
@@ -33,7 +31,8 @@ public interface ConfigService
                 InstallationProperties,
                 ApplianceLifecycle,
                 ClusterTopology,
-                PVDirectory {
+                PVDirectory,
+                ArchiveRequestWorkflow {
 
     /**
      * This is the environment variable that identifies the site (LCLS, LCLSII, slacdev, NSLSII etc) to be used when generating the war files.
@@ -51,55 +50,6 @@ public interface ConfigService
      */
     public static final String ARCHAPPL_PERSISTENCE_LAYER = "ARCHAPPL_PERSISTENCE_LAYER";
 
-    /**
-     * The workflow for requesting a PV to be archived consists of multiple steps
-     * This method adds a PV to the persisted list of PVs that are currently engaged in this workflow in addition to any user specified overrides
-     * @param pvName The name of PV.
-     * @param userSpecifiedSamplingParams - Use a null contructor for userSpecifiedSamplingParams if no override specified.
-     */
-    public void addToArchiveRequests(String pvName, UserSpecifiedSamplingParams userSpecifiedSamplingParams);
-
-    /**
-     * Update the archive request (mostly with aliases) if and only if we have this in our persistence.
-     * @param pvName  The name of PV.
-     * @param userSpecifiedSamplingParams  &emsp;
-     */
-    public void updateArchiveRequest(String pvName, UserSpecifiedSamplingParams userSpecifiedSamplingParams);
-
-    /**
-     * Gets a list of PVs that are currently engaged in the archive PV workflow
-     * @return String ArchiveRequestsCurrentlyInWorkflow  &emsp;
-     */
-    public Set<String> getArchiveRequestsCurrentlyInWorkflow();
-
-    /**
-     * Is this pv in the archive request workflow.
-     * @param pvname The name of PV.
-     * @return boolean True or False
-     */
-    public boolean doesPVHaveArchiveRequestInWorkflow(String pvname);
-
-    /**
-     * In clustered environments, to give capacity planning a chance to work correctly, we want to kick off the archive PV workflow only after all the machines have started.
-     * This is an approximation for that metric; though not a very satisfactory approximation.
-     * TODO -- Think thru implications of making the appliances.xml strict...
-     * @return - Initial delay in seconds.
-     */
-    public int getInitialDelayBeforeStartingArchiveRequestWorkflow();
-
-    /**
-     * Returns any user specified parameters for the archive request.
-     * @param pvName  The name of PV.
-     * @return UserSpecifiedSamplingParams  &emsp;
-     */
-    public UserSpecifiedSamplingParams getUserSpecifiedSamplingParams(String pvName);
-
-    /**
-     * Mark this pv as having it archive pv request completed and pull this request out of persistent store
-     * Can be used in the case of aborting a PV archive request as well
-     * @param pvName  The name of PV.
-     */
-    public void archiveRequestWorkflowCompleted(String pvName);
     /**
      * Returns the runtime state for the retrieval app
      * @return RetrievalState &emsp;
