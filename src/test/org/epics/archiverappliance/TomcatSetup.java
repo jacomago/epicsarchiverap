@@ -18,6 +18,7 @@ import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.Property;
 import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.DefaultConfigService;
@@ -267,7 +268,7 @@ public class TomcatSetup implements AutoCloseable {
 
         System.setProperty("catalina.base", new File(testFolder, applianceName).getAbsolutePath());
         System.setProperty("LOG4J_CONFIGURATION_FILE", new File("src/resources/test/log4j2.xml").getAbsolutePath());
-        System.setProperty(ConfigService.ARCHAPPL_CONFIGSERVICE_IMPL, ConfigServiceForTests.class.getName());
+        System.setProperty(ApplianceLifecycle.ARCHAPPL_CONFIGSERVICE_IMPL, ConfigServiceForTests.class.getName());
         System.setProperty(
                 DefaultConfigService.SITE_FOR_UNIT_TESTS_NAME, DefaultConfigService.SITE_FOR_UNIT_TESTS_VALUE);
         System.setProperty(ConfigService.ARCHAPPL_MYIDENTITY, applianceName);

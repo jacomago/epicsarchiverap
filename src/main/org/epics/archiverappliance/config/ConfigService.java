@@ -7,9 +7,7 @@
  *******************************************************************************/
 package org.epics.archiverappliance.config;
 
-import com.google.common.eventbus.EventBus;
 import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
-import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
@@ -22,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import jakarta.servlet.ServletContext;
 
 /**
  * Interface for appliance configuration.
@@ -40,7 +37,8 @@ public interface ConfigService
                 PVNamingConfig,
                 ChannelArchiverConfig,
                 FailoverConfig,
-                InstallationProperties {
+                InstallationProperties,
+                ApplianceLifecycle {
     /**
      * This is the environment variable that points to the file containing the various appliances in this cluster.
      * This list of appliances is expected to be the same for all appliances in the cluster; so it is perfectly legal to place it in NFS somewhere and point to the same file/location from all appliances in the cluster.
@@ -89,17 +87,6 @@ public interface ConfigService
     public static final String ARCHAPPL_SITEID = "ARCHAPPL_SITEID";
 
     /**
-     * This is an optional environment variable/system property that is used to identify the config service implementation.
-     *
-     */
-    public static final String ARCHAPPL_CONFIGSERVICE_IMPL = "ARCHAPPL_CONFIGSERVICE_IMPL";
-
-    /**
-     * This is the name used to identify the config service implementation in one of the existing singletons (like the ServletContext)
-     */
-    public static final String CONFIG_SERVICE_NAME = "org.epics.archiverappliance.config.ConfigService";
-
-    /**
      * This is an optional environment/system.property that is used to identity the persistence layer
      * If this is not set, we initialize MySQLPersistence as the persistence layer; so in production environments, you can leave this unset/blank
      * Set this to the class name of the class implementing {@link ConfigPersistence ConfigPersistence}
@@ -107,41 +94,12 @@ public interface ConfigService
      */
     public static final String ARCHAPPL_PERSISTENCE_LAYER = "ARCHAPPL_PERSISTENCE_LAYER";
 
-    /**
-     * If you have a null constructor and need a ServletContext, implement this method.
-     * @param sce ServletContext
-     * @throws ConfigException  &emsp;
-     */
-    public void initialize(ServletContext sce) throws ConfigException;
-
-    /**
-     * We expect to live within a servlet container.
-     * This call returns the full path to the WEB-INF folder of the webapp as it is deployed in the container.
-     * Is typically a call to the <code>servletContext.getRealPath("WEB-INF/")</code>
-     * @return String WebInfFolder &emsp;
-     */
-    public String getWebInfFolder();
-
-    /**
-     * This method is called after the mgmt WAR file has started up and set up the cluster and recovered data from persistence.
-     * Each appliance's mgmt war is responsible for calling this method on the other components (engine, etl and retrieval) using BPL.
-     * Until this method is called on all the web apps, the cluster is not considered to have started up.
-     * @throws ConfigException  &emsp;
-     */
-    public void postStartup() throws ConfigException;
-
     public enum STARTUP_SEQUENCE {
         ZEROTH_STATE,
         READY_TO_JOIN_APPLIANCE,
         POST_STARTUP_RUNNING,
         STARTUP_COMPLETE
     }
-
-    /**
-     * Used for inter-appliance startup checks.
-     * @return STARTUP_SEQUENCE  &emsp;
-     */
-    public STARTUP_SEQUENCE getStartupState();
 
     public enum WAR_FILE {
         MGMT,
@@ -151,18 +109,6 @@ public interface ConfigService
     }
 
     public static record CachedPVCounts(int totalPVCount, int pausedPVCount) implements Serializable {}
-
-    /**
-     * Have we completed all the startup steps?
-     * @return boolean True or False
-     */
-    public boolean isStartupComplete();
-
-    /**
-     * Get an approximate time in epoch seconds when the appserver started up.
-     * @return The time this app server started up.
-     */
-    public long getTimeOfAppserverStartup();
 
     /**
      * Get all the appliances in this cluster.
@@ -333,13 +279,6 @@ public interface ConfigService
      * @param pvName  The name of PV.
      */
     public void archiveRequestWorkflowCompleted(String pvName);
-
-    /**
-     * Which component is this configservice instance.
-     * @return WAR_FILE  &emsp;
-     */
-    public WAR_FILE getWarFile();
-
     /**
      * Returns the runtime state for the retrieval app
      * @return RetrievalState &emsp;
@@ -364,29 +303,6 @@ public interface ConfigService
      * @return  MgmtRuntimeStat &emsp;
      */
     public MgmtRuntimeState getMgmtRuntimeState();
-
-    /**
-     * Is this appliance component shutting down?
-     * @return boolean True or False
-     */
-    public boolean isShuttingDown();
-
-    /**
-     * Add an appserver agnostic shutdown hook; for example, to close the CA channels on shutdown
-     * @param runnable Runnable
-     */
-    public void addShutdownHook(Runnable runnable);
-
-    /**
-     * Call the registered shutdown hooks and shut the archive appliance down.
-     */
-    public void shutdownNow();
-
-    /**
-     * Get the event bus used for events within this appliance.
-     * @return  EventBus &emsp;
-     */
-    public EventBus getEventBus();
 
     // Various reporting helper functions start here
 
