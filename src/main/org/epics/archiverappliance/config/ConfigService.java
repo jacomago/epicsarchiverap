@@ -20,7 +20,6 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.function.Consumer;
 import jakarta.servlet.ServletContext;
@@ -34,7 +33,14 @@ import jakarta.servlet.ServletContext;
  * @author mshankar
  */
 public interface ConfigService
-        extends PVTypeInfoStore, AliasRegistry, ClusterExecutor, PolicyService, PVNamingConfig, ChannelArchiverConfig, FailoverConfig {
+        extends PVTypeInfoStore,
+                AliasRegistry,
+                ClusterExecutor,
+                PolicyService,
+                PVNamingConfig,
+                ChannelArchiverConfig,
+                FailoverConfig,
+                InstallationProperties {
     /**
      * This is the environment variable that points to the file containing the various appliances in this cluster.
      * This list of appliances is expected to be the same for all appliances in the cluster; so it is perfectly legal to place it in NFS somewhere and point to the same file/location from all appliances in the cluster.
@@ -157,24 +163,6 @@ public interface ConfigService
      * @return The time this app server started up.
      */
     public long getTimeOfAppserverStartup();
-
-    /**
-     * The name/path of the archappl.properties file.
-     * By default, we look for archappl.properties in the webapp's classpath - this will typically resolve into WEB-INF/classes of the webapp.
-     * However, you can override this using an environment variable (or java system property) of the same name.
-     * For example, <code>export ARCHAPPL_PROPERTIES_FILENAME=/etc/mylab_archappl.properties</code> should force the components to load their properties from <code>/etc/mylab_archappl.properties</code>
-     */
-    static final String ARCHAPPL_PROPERTIES_FILENAME = "ARCHAPPL_PROPERTIES_FILENAME";
-
-    /**
-     * This is the name of the properties file that is looked for in the webapp's classpath if one is not specified using a environment/JVM property.
-     */
-    static final String DEFAULT_ARCHAPPL_PROPERTIES_FILENAME = "archappl.properties";
-    /**
-     * An arbitrary list of name/value pairs can be specified in a file called archappl.properties that is loaded from the classpath.
-     * @return  Properties &emsp;
-     */
-    public Properties getInstallationProperties();
 
     /**
      * Get all the appliances in this cluster.
@@ -407,31 +395,4 @@ public interface ConfigService
      * @return String  &emsp;
      */
     public Set<String> getPausedPVsInThisAppliance();
-
-    public static final String ARCHAPPL_NAMEDFLAGS_PROPERTIES_FILE_PROPERTY =
-            "org.epics.archiverappliance.config.NamedFlags.readFromFile";
-
-    /**
-     * Named flags are used to control various process in the appliance; for example, the ETL process in a PlainStoragePlugin
-     * Named flags are not persistent; each time the server starts up, all the named flags are set to false
-     * You can optionally load values for named flags from a file by specifying the ARCHAPPL_NAMEDFLAGS_PROPERTIES_FILE_PROPERTY property in archappl.properties.
-     * This method gets the value of the specified named flag.
-     * If the flag has not been defined before in the cluster, this method will return false.
-     * @param name  &emsp;
-     * @return boolean True or False
-     */
-    public boolean getNamedFlag(String name);
-
-    /**
-     * Sets the value of the named flag specified by name to the specified value
-     * @param name  &emsp;
-     * @param value   &emsp;
-     */
-    public void setNamedFlag(String name, boolean value);
-
-    /**
-     * Return the names of all the named flags that we know about
-     * @return String  &emsp;
-     */
-    public Set<String> getNamedFlagNames();
 }
