@@ -36,7 +36,7 @@ import jakarta.servlet.ServletContext;
  * Guice is a good option for this but it takes over the dispatch logic from tomcat and we'll need to investigate if that has any impact.
  * @author mshankar
  */
-public interface ConfigService extends PVTypeInfoStore {
+public interface ConfigService extends PVTypeInfoStore, AliasRegistry {
     /**
      * This is the environment variable that points to the file containing the various appliances in this cluster.
      * This list of appliances is expected to be the same for all appliances in the cluster; so it is perfectly legal to place it in NFS somewhere and point to the same file/location from all appliances in the cluster.
@@ -397,40 +397,6 @@ public interface ConfigService extends PVTypeInfoStore {
      * @return String RuntimeFields
      */
     public Set<String> getRuntimeFields();
-
-    /**
-     * Register an alias
-     * @param aliasName &emsp;
-     * @param realName This is the name under which the PV will be archived under
-     */
-    public void addAlias(String aliasName, String realName);
-
-    /**
-     * Remove an alias for the specified realname
-     * @param aliasName  &emsp;
-     * @param realName This is the name under which the PV will be archived under
-     */
-    public void removeAlias(String aliasName, String realName);
-
-    /**
-     * Get all the aliases in the system. This is used for matching during glob requests in the UI.
-     * @return String AllAliases &emsp;
-     */
-    public List<String> getAllAliases();
-
-    /**
-     * Gets the .NAME field for a PV if it exists. Otherwise, this returns null
-     * @param aliasName &emsp;
-     * @return String RealNameForAlias
-     */
-    public String getRealNameForAlias(String aliasName);
-
-    /**
-     * Gets all the aliases in the system that map to this real PV name
-     * @param realName &emsp;
-     * @return A list of aliases for this real name
-     */
-    public List<String> getAliasesForRealName(String realName);
 
     /**
      * Return the text of the policy for this installation.
