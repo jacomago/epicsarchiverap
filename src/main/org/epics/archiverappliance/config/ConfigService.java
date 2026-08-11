@@ -36,7 +36,7 @@ import jakarta.servlet.ServletContext;
  * Guice is a good option for this but it takes over the dispatch logic from tomcat and we'll need to investigate if that has any impact.
  * @author mshankar
  */
-public interface ConfigService extends PVTypeInfoStore, AliasRegistry {
+public interface ConfigService extends PVTypeInfoStore, AliasRegistry, ClusterExecutor {
     /**
      * This is the environment variable that points to the file containing the various appliances in this cluster.
      * This list of appliances is expected to be the same for all appliances in the cluster; so it is perfectly legal to place it in NFS somewhere and point to the same file/location from all appliances in the cluster.
@@ -266,34 +266,6 @@ public interface ConfigService extends PVTypeInfoStore, AliasRegistry {
      * @return
      */
     public Map<String, List<String>> breakDownPVsByAppliance(List<String> pvNames);
-
-    /*
-     * Like a callable but for bulk operations within the EAA cluster.
-     * The EAABulkOperation is serialized and send to all ( active ) mgmt members in the cluster using the Hz Executor service.
-     *
-     */
-    public interface EAABulkOperation<T> extends Serializable {
-        public T call(ConfigService configService);
-    }
-
-    /*
-     * Execute the specified EAABulkOperation on all active members in the cluster.
-     * Gather the results into a hashmap indexed by appliance identity.
-     * In a typical usecase, we first breakdown a list of PVs into a per appliance Map ( String -> List<String> ) using breakDownPVsByAppliance.
-     * We send this entire Map to all the active members in the cluster.
-     * The operation can then use the appliance identity from the configservice to determine which subset of PVs are applicable
-     * to this instance and perform the appropriate operation on this subset.
-     * The results are returned in a Map ( Appliance Identity -> Result ) and callee is then expected to merge the results appropriately
-     * This is mainly intended for quick turn around operations that change state ( like changing the pause/resume status for example )
-     * One can easily overload the HZ executor so maybe we should not use it for bulk renaming/resharding or any other operation that take a significant amount of time.
-     * But small changes to PVTypeInfo's in bulk are the intended usecase.
-     */
-    public <T> Map<String, T> executeClusterWide(EAABulkOperation<T> theOperation);
-
-    /*
-     * Same as above but only on specified appliance.
-     */
-    public <T> T executeOnAppliance(ApplianceInfo applianceInfo, EAABulkOperation<T> theOperation);
 
     /**
      * Get the pvNames for this appliance matching the given regex.
