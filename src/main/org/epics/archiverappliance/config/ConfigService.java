@@ -13,14 +13,11 @@ import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
-import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
 import org.epics.archiverappliance.retrieval.RetrievalState;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -36,7 +33,7 @@ import jakarta.servlet.ServletContext;
  * Guice is a good option for this but it takes over the dispatch logic from tomcat and we'll need to investigate if that has any impact.
  * @author mshankar
  */
-public interface ConfigService extends PVTypeInfoStore, AliasRegistry, ClusterExecutor {
+public interface ConfigService extends PVTypeInfoStore, AliasRegistry, ClusterExecutor, PolicyService {
     /**
      * This is the environment variable that points to the file containing the various appliances in this cluster.
      * This list of appliances is expected to be the same for all appliances in the cluster; so it is perfectly legal to place it in NFS somewhere and point to the same file/location from all appliances in the cluster.
@@ -102,12 +99,6 @@ public interface ConfigService extends PVTypeInfoStore, AliasRegistry, ClusterEx
      * The unit tests however will set this to use InMemoryPersistence, which is a dummy persistence layer.
      */
     public static final String ARCHAPPL_PERSISTENCE_LAYER = "ARCHAPPL_PERSISTENCE_LAYER";
-
-    /**
-     * This is an optional environment/system.property that is used to specify the location of the <code>policies.py</code> policies file.
-     * If this is not set, we search for the  <code>policies.py</code> in the servlet classpath using the path <code>/WEB-INF/classes/policies.py</code>
-     */
-    public static final String ARCHAPPL_POLICIES = "ARCHAPPL_POLICIES";
 
     /**
      * If you have a null constructor and need a ServletContext, implement this method.
@@ -353,60 +344,6 @@ public interface ConfigService extends PVTypeInfoStore, AliasRegistry, ClusterEx
      * @param pvName  The name of PV.
      */
     public void archiveRequestWorkflowCompleted(String pvName);
-
-    /**
-     * Get a list of extra fields that are obtained when we initially make a request for archiving.
-     * These are used in the policies to make decisions on how to archive the PV.
-     * @return String ExtraFields  &emsp;
-     */
-    public String[] getExtraFields();
-
-    /**
-     * Get a list of fields for PVs that are monitored and maintained in the engine.
-     * These are used when displaying the PV in visualization tools like the ArchiveViewer as additional information for the PV.
-     * Some of these could be archived along with the PV but need not be.
-     * In this case, the engine simply maintains the latest copy in memory and this is served up when data from the engine in included in the stream.
-     * @return String RuntimeFields
-     */
-    public Set<String> getRuntimeFields();
-
-    /**
-     * Return the text of the policy for this installation.
-     * Gets you an InputStream; remember to close it.
-     * @return InputStream  &emsp;
-     * @throws IOException  &emsp;
-     */
-    public InputStream getPolicyText() throws IOException;
-
-    /**
-     * Given a pvName (for now, we should have a pv details object of some kind soon), determine the policy applicable for archiving this PV.
-     * @param pvName The name of PV.
-     * @param metaInfo The MetaInfo of PV
-     * @param userSpecParams UserSpecifiedSamplingParams
-     * @return  PolicyConfig  &emsp;
-     * @throws IOException  &emsp;
-     */
-    public PolicyConfig computePolicyForPV(String pvName, MetaInfo metaInfo, UserSpecifiedSamplingParams userSpecParams)
-            throws IOException;
-
-    /**
-     * Return a map of name to description of all the policies in the system
-     * This is used to drive a dropdown in the UI.
-     * @return HashMap  &emsp;
-     * @throws IOException  &emsp;
-     */
-    public HashMap<String, String> getPoliciesInInstallation() throws IOException;
-
-    /**
-     * This product offers the ability to archive certain fields (like HIHI, LOLO etc) as part of every PV.
-     * The data for these fields is embedded into the stream as extra fields using the FieldValues interface of events.
-     * This method lists all these fields.
-     * Requests for archiving these fields are deferred to and combined with the request for archiving the .VAL.
-     * We also assume that the data type (double/float) for these fields is the same as the .VAL.
-     * @return String  &emsp;
-     * @throws IOException  &emsp;
-     */
-    public List<String> getFieldsArchivedAsPartOfStream() throws IOException;
 
     /**
      * Returns a TypeSystem object that is used to convert from JCA DBR's to Event's (actually, DBRTimeEvents)
