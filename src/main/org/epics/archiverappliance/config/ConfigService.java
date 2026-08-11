@@ -33,7 +33,7 @@ import jakarta.servlet.ServletContext;
  * Guice is a good option for this but it takes over the dispatch logic from tomcat and we'll need to investigate if that has any impact.
  * @author mshankar
  */
-public interface ConfigService extends PVTypeInfoStore, AliasRegistry, ClusterExecutor, PolicyService {
+public interface ConfigService extends PVTypeInfoStore, AliasRegistry, ClusterExecutor, PolicyService, PVNamingConfig {
     /**
      * This is the environment variable that points to the file containing the various appliances in this cluster.
      * This list of appliances is expected to be the same for all appliances in the cluster; so it is perfectly legal to place it in NFS somewhere and point to the same file/location from all appliances in the cluster.
@@ -346,12 +346,6 @@ public interface ConfigService extends PVTypeInfoStore, AliasRegistry, ClusterEx
     public void archiveRequestWorkflowCompleted(String pvName);
 
     /**
-     * Returns a TypeSystem object that is used to convert from JCA DBR's to Event's (actually, DBRTimeEvents)
-     * @return TypeSystem  &emsp;
-     */
-    public TypeSystem getArchiverTypeSystem();
-
-    /**
      * Which component is this configservice instance.
      * @return WAR_FILE  &emsp;
      */
@@ -467,13 +461,6 @@ public interface ConfigService extends PVTypeInfoStore, AliasRegistry, ClusterEx
      * This method manually unloads this cache.
      */
     public void resetFailoverCaches();
-
-    /**
-     *  Implementation for converting a PV name to something that forms the prefix of a chunk's key.
-     *  See @see{PVNameToKeyMapping} for more details.
-     * @return PVNameToKeyMapping  &emsp;
-     */
-    public PVNameToKeyMapping getPVNameToKeyConverter();
 
     // Various reporting helper functions start here
 
