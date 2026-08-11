@@ -9,8 +9,8 @@ package org.epics.archiverappliance.common;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigService.WAR_FILE;
 import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -67,7 +67,7 @@ public class BasicDispatcher {
             return;
         }
 
-        if (configService.getWarFile() == WAR_FILE.MGMT
+        if (configService.getWarFile() == ApplianceLifecycle.WAR_FILE.MGMT
                 && !configService.getMgmtRuntimeState().haveChildComponentsStartedUp()) {
             String header = req.getHeader(GetUrlContent.ARCHAPPL_COMPONENT);
             if (header == null || !header.equals("true")) {

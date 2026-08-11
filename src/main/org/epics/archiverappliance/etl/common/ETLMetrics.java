@@ -2,6 +2,7 @@ package org.epics.archiverappliance.etl.common;
 
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.reports.Details;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
 
 import java.text.DecimalFormat;
@@ -137,6 +138,6 @@ public class ETLMetrics implements Details {
 
     @Override
     public ConfigService.WAR_FILE source() {
-        return ConfigService.WAR_FILE.ETL;
+        return ApplianceLifecycle.WAR_FILE.ETL;
     }
 }

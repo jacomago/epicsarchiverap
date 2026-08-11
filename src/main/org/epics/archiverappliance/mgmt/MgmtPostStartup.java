@@ -6,8 +6,8 @@ import java.util.concurrent.ScheduledFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ApplianceInfo;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigService.WAR_FILE;
 import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 
@@ -65,9 +65,9 @@ public class MgmtPostStartup implements Runnable {
 				String url = myApplianceInfo.getRetrievalURL() + "/startupState";
 				@SuppressWarnings("unchecked")
 				HashMap<String, String> retrievalStatus = (HashMap<String, String>)GetUrlContent.getURLContentAsJSONObject(url);
-				ConfigService.STARTUP_SEQUENCE retrievalStartupState = ConfigService.STARTUP_SEQUENCE.valueOf(retrievalStatus.get("status"));
-				if(retrievalStartupState == ConfigService.STARTUP_SEQUENCE.STARTUP_COMPLETE) { 
-					configService.getMgmtRuntimeState().componentStartedUp(WAR_FILE.RETRIEVAL);
+				ConfigService.STARTUP_SEQUENCE retrievalStartupState = ApplianceLifecycle.STARTUP_SEQUENCE.valueOf(retrievalStatus.get("status"));
+				if(retrievalStartupState == ApplianceLifecycle.STARTUP_SEQUENCE.STARTUP_COMPLETE) {
+					configService.getMgmtRuntimeState().componentStartedUp(ApplianceLifecycle.WAR_FILE.RETRIEVAL);
 				}
 			}
 			
@@ -76,9 +76,9 @@ public class MgmtPostStartup implements Runnable {
 				String url = myApplianceInfo.getEtlURL() + "/startupState";
 				@SuppressWarnings("unchecked")
 				HashMap<String, String> etlStatus = (HashMap<String, String>)GetUrlContent.getURLContentAsJSONObject(url);
-				ConfigService.STARTUP_SEQUENCE etlStartupState = ConfigService.STARTUP_SEQUENCE.valueOf(etlStatus.get("status"));
-				if(etlStartupState == ConfigService.STARTUP_SEQUENCE.STARTUP_COMPLETE) { 
-					configService.getMgmtRuntimeState().componentStartedUp(WAR_FILE.ETL);
+				ConfigService.STARTUP_SEQUENCE etlStartupState = ApplianceLifecycle.STARTUP_SEQUENCE.valueOf(etlStatus.get("status"));
+				if(etlStartupState == ApplianceLifecycle.STARTUP_SEQUENCE.STARTUP_COMPLETE) {
+					configService.getMgmtRuntimeState().componentStartedUp(ApplianceLifecycle.WAR_FILE.ETL);
 				}
 			}
 			
@@ -87,9 +87,9 @@ public class MgmtPostStartup implements Runnable {
 				String url = myApplianceInfo.getEngineURL() + "/startupState";
 				@SuppressWarnings("unchecked")
 				HashMap<String, String> engineStatus = (HashMap<String, String>)GetUrlContent.getURLContentAsJSONObject(url);
-				ConfigService.STARTUP_SEQUENCE engineStartupState = ConfigService.STARTUP_SEQUENCE.valueOf(engineStatus.get("status"));
-				if(engineStartupState == ConfigService.STARTUP_SEQUENCE.STARTUP_COMPLETE) { 
-					configService.getMgmtRuntimeState().componentStartedUp(WAR_FILE.ENGINE);
+				ConfigService.STARTUP_SEQUENCE engineStartupState = ApplianceLifecycle.STARTUP_SEQUENCE.valueOf(engineStatus.get("status"));
+				if(engineStartupState == ApplianceLifecycle.STARTUP_SEQUENCE.STARTUP_COMPLETE) {
+					configService.getMgmtRuntimeState().componentStartedUp(ApplianceLifecycle.WAR_FILE.ENGINE);
 				}
 			}
 			

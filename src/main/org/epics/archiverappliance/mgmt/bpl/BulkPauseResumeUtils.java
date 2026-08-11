@@ -3,9 +3,9 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.TimeUtils;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ClusterExecutor.EAABulkOperation;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigService.WAR_FILE;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
 
@@ -53,7 +53,7 @@ public class BulkPauseResumeUtils {
         @Override
         public Map<String, Map<String, String>> call(ConfigService configService) {
             HashMap<String, Map<String, String>> bulkStatus = new HashMap<String, Map<String, String>>();
-            if (!configService.getWarFile().equals(WAR_FILE.MGMT)) {
+            if (!configService.getWarFile().equals(ApplianceLifecycle.WAR_FILE.MGMT)) {
                 // According to Hz documentation, the executor service does not run on Hz clients
                 logger.error("We should't really be here {}", configService.getWarFile());
                 return bulkStatus;

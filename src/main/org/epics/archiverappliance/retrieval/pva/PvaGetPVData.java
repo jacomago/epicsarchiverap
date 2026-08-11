@@ -13,8 +13,8 @@ import org.epics.archiverappliance.common.TimeSpan;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
 import org.epics.archiverappliance.config.ApplianceInfo;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigService.STARTUP_SEQUENCE;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
@@ -108,7 +108,7 @@ public class PvaGetPVData implements PvaAction {
         PoorMansProfiler pmansProfiler = new PoorMansProfiler();
         String pvName = reqParameters.get("pv");
 
-        if (configService.getStartupState() != STARTUP_SEQUENCE.STARTUP_COMPLETE) {
+        if (configService.getStartupState() != ApplianceLifecycle.STARTUP_SEQUENCE.STARTUP_COMPLETE) {
             String msg = "Cannot process data retrieval requests for PV " + pvName
                     + " until the appliance has completely started up.";
             logger.error(msg);
@@ -472,7 +472,7 @@ public class PvaGetPVData implements PvaAction {
         List<String> pvNames = Arrays.asList(reqParameters.get("pv").split(";"));
 
         // Ensuring that the AA has finished starting up before requests are accepted.
-        if (configService.getStartupState() != STARTUP_SEQUENCE.STARTUP_COMPLETE) {
+        if (configService.getStartupState() != ApplianceLifecycle.STARTUP_SEQUENCE.STARTUP_COMPLETE) {
             String msg = "Cannot process data retrieval requests for specified PVs (" + StringUtils.join(pvNames, ", ")
                     + ") until the appliance has completely started up.";
             logger.error(msg);

@@ -10,6 +10,7 @@ package org.epics.archiverappliance.engine.epics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.reports.Details;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.engine.metadata.MetaGet;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
@@ -277,6 +278,6 @@ public class EngineMetrics implements Details {
 
     @Override
     public ConfigService.WAR_FILE source() {
-        return ConfigService.WAR_FILE.ENGINE;
+        return ApplianceLifecycle.WAR_FILE.ENGINE;
     }
 }

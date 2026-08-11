@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.MetaInfo;
 import org.epics.archiverappliance.config.PVNames;
@@ -75,7 +76,7 @@ public class ArchivePVState {
             switch (currentState) {
                 case START: {
                     PubSubEvent pubSubEvent = new PubSubEvent(
-                            "ComputeMetaInfo", myIdentity + "_" + ConfigService.WAR_FILE.ENGINE, pvName);
+                            "ComputeMetaInfo", myIdentity + "_" + ApplianceLifecycle.WAR_FILE.ENGINE, pvName);
                     UserSpecifiedSamplingParams userSpec = configService.getUserSpecifiedSamplingParams(pvName);
                     if (userSpec == null) {
                         logger.error("Unable to find user sepcification of archival parameters for pv " + pvName);
@@ -352,7 +353,7 @@ public class ArchivePVState {
 
         logger.debug("Setting up archiving of pv " + pvName);
         PubSubEvent pubSubEvent = new PubSubEvent(
-                "StartArchivingPV", applianceInfoForPV.getIdentity() + "_" + ConfigService.WAR_FILE.ENGINE, pvName);
+                "StartArchivingPV", applianceInfoForPV.getIdentity() + "_" + ApplianceLifecycle.WAR_FILE.ENGINE, pvName);
         configService.getEventBus().post(pubSubEvent);
     }
 

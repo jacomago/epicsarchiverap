@@ -47,7 +47,7 @@ public interface ApplianceLifecycle {
      *
      * @return STARTUP_SEQUENCE  &emsp;
      */
-    ConfigService.STARTUP_SEQUENCE getStartupState();
+    STARTUP_SEQUENCE getStartupState();
 
     /**
      * Have we completed all the startup steps?
@@ -68,7 +68,7 @@ public interface ApplianceLifecycle {
      *
      * @return WAR_FILE  &emsp;
      */
-    ConfigService.WAR_FILE getWarFile();
+    WAR_FILE getWarFile();
 
     /**
      * Is this appliance component shutting down?
@@ -95,4 +95,18 @@ public interface ApplianceLifecycle {
      * @return EventBus &emsp;
      */
     EventBus getEventBus();
+
+    enum STARTUP_SEQUENCE {
+        ZEROTH_STATE,
+        READY_TO_JOIN_APPLIANCE,
+        POST_STARTUP_RUNNING,
+        STARTUP_COMPLETE
+    }
+
+    enum WAR_FILE {
+        MGMT,
+        RETRIEVAL,
+        ETL,
+        ENGINE
+    }
 }

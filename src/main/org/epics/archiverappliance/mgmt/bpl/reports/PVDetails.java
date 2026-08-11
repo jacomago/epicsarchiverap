@@ -13,6 +13,7 @@ import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.reports.Details;
 import org.epics.archiverappliance.config.ApplianceInfo;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ChannelArchiverDataServerPVInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNames;
@@ -126,15 +127,15 @@ public class PVDetails implements BPLAction {
                 logger.warn("No PVTypeInfo for pv " + pvName);
             }
 
-            getStatusFromOtherWar(info.getEngineURL(), pvDetailsURLSnippet, ConfigService.WAR_FILE.ENGINE, result);
+            getStatusFromOtherWar(info.getEngineURL(), pvDetailsURLSnippet, ApplianceLifecycle.WAR_FILE.ENGINE, result);
 
             getStatusFromOtherWar(
-                    info.getRetrievalURL(), pvDetailsURLSnippet, ConfigService.WAR_FILE.RETRIEVAL, result);
+                    info.getRetrievalURL(), pvDetailsURLSnippet, ApplianceLifecycle.WAR_FILE.RETRIEVAL, result);
 
             if (typeInfo.isPaused()) {
                 logger.debug("Skipping getting pv details from ETL for paused PV " + pvName);
             } else {
-                getStatusFromOtherWar(info.getEtlURL(), pvDetailsURLSnippet, ConfigService.WAR_FILE.ETL, result);
+                getStatusFromOtherWar(info.getEtlURL(), pvDetailsURLSnippet, ApplianceLifecycle.WAR_FILE.ETL, result);
             }
 
             out.println(JSONValue.toJSONString(result));

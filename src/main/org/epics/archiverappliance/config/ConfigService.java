@@ -94,20 +94,6 @@ public interface ConfigService
      */
     public static final String ARCHAPPL_PERSISTENCE_LAYER = "ARCHAPPL_PERSISTENCE_LAYER";
 
-    public enum STARTUP_SEQUENCE {
-        ZEROTH_STATE,
-        READY_TO_JOIN_APPLIANCE,
-        POST_STARTUP_RUNNING,
-        STARTUP_COMPLETE
-    }
-
-    public enum WAR_FILE {
-        MGMT,
-        RETRIEVAL,
-        ETL,
-        ENGINE
-    }
-
     public static record CachedPVCounts(int totalPVCount, int pausedPVCount) implements Serializable {}
 
     /**

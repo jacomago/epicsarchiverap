@@ -3,8 +3,8 @@ package org.epics.archiverappliance.common;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ApplianceInfo;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigService.WAR_FILE;
 import org.epics.archiverappliance.config.DefaultConfigService;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -45,7 +45,7 @@ public class ProcessMetricsChartData implements BPLAction {
         // just yet.
         DefaultConfigService defaultConfigService = (DefaultConfigService) configService;
         ProcessMetrics processMetrics = defaultConfigService.getProcessMetrics();
-        assert (configService.getWarFile() == WAR_FILE.MGMT);
+        assert (configService.getWarFile() == ApplianceLifecycle.WAR_FILE.MGMT);
         HashMap<String, Object> myProcessMetricsJSON =
                 processMetrics.getProcessMetricsJSON(configService.getWarFile().name() + "_");
 

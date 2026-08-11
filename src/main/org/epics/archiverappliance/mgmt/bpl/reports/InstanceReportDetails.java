@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.reports.Details;
 import org.epics.archiverappliance.config.ApplianceInfo;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -41,12 +42,12 @@ public class InstanceReportDetails implements BPLAction {
                 + URLEncoder.encode(applianceIdentity, StandardCharsets.UTF_8);
         LinkedList<Map<String, String>> result = new LinkedList<Map<String, String>>();
         result.add(Details.metricDetail("mgmt", "Appliance Identity", applianceIdentity));
-        getInstanceDetails(info.getEngineURL(), applianceDetailsURLSnippet, ConfigService.WAR_FILE.ENGINE, result);
+        getInstanceDetails(info.getEngineURL(), applianceDetailsURLSnippet, ApplianceLifecycle.WAR_FILE.ENGINE, result);
 
-        getInstanceDetails(info.getEtlURL(), applianceDetailsURLSnippet, ConfigService.WAR_FILE.ENGINE, result);
+        getInstanceDetails(info.getEtlURL(), applianceDetailsURLSnippet, ApplianceLifecycle.WAR_FILE.ENGINE, result);
 
         getInstanceDetails(
-                info.getRetrievalURL(), applianceDetailsURLSnippet, ConfigService.WAR_FILE.RETRIEVAL, result);
+                info.getRetrievalURL(), applianceDetailsURLSnippet, ApplianceLifecycle.WAR_FILE.RETRIEVAL, result);
         return result;
     }
 

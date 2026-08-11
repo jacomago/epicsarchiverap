@@ -4,8 +4,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigService.WAR_FILE;
+import org.epics.archiverappliance.config.ApplianceLifecycle.WAR_FILE;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 
 import java.io.IOException;
@@ -31,7 +32,7 @@ public class WebappReady implements BPLAction {
             return;
         }
         configlogger.info("Received webAppReady from " + webApp);
-        WAR_FILE warFile = WAR_FILE.valueOf(webApp);
+        WAR_FILE warFile = ApplianceLifecycle.WAR_FILE.valueOf(webApp);
         if (warFile == null) {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             configlogger.error(
@@ -44,19 +45,19 @@ public class WebappReady implements BPLAction {
                 case RETRIEVAL: {
                     String url = myApplianceInfo.getRetrievalURL() + "/postStartup";
                     GetUrlContent.checkURL(url);
-                    configService.getMgmtRuntimeState().componentStartedUp(WAR_FILE.RETRIEVAL);
+                    configService.getMgmtRuntimeState().componentStartedUp(ApplianceLifecycle.WAR_FILE.RETRIEVAL);
                     break;
                 }
                 case ETL: {
                     String url = myApplianceInfo.getEtlURL() + "/postStartup";
                     GetUrlContent.checkURL(url);
-                    configService.getMgmtRuntimeState().componentStartedUp(WAR_FILE.ETL);
+                    configService.getMgmtRuntimeState().componentStartedUp(ApplianceLifecycle.WAR_FILE.ETL);
                     break;
                 }
                 case ENGINE: {
                     String url = myApplianceInfo.getEngineURL() + "/postStartup";
                     GetUrlContent.checkURL(url);
-                    configService.getMgmtRuntimeState().componentStartedUp(WAR_FILE.ENGINE);
+                    configService.getMgmtRuntimeState().componentStartedUp(ApplianceLifecycle.WAR_FILE.ENGINE);
                     break;
                 }
                 case MGMT: {

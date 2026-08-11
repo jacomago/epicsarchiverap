@@ -35,10 +35,10 @@ import org.epics.archiverappliance.common.TimeSpan;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
 import org.epics.archiverappliance.config.ApplianceInfo;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ChannelArchiverDataServerPVInfo;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigService.STARTUP_SEQUENCE;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
@@ -339,7 +339,7 @@ public class DataRetrievalServlet extends HttpServlet {
         String pvName = req.getParameter("pv");
 
         if (check(
-                configService.getStartupState() != STARTUP_SEQUENCE.STARTUP_COMPLETE,
+                configService.getStartupState() != ApplianceLifecycle.STARTUP_SEQUENCE.STARTUP_COMPLETE,
                 "Cannot process data retrieval requests for PV " + pvName
                         + " until the appliance has completely started up.",
                 resp,
@@ -742,7 +742,7 @@ public class DataRetrievalServlet extends HttpServlet {
 
         // Ensuring that the AA has finished starting up before requests are accepted.
         if (check(
-                configService.getStartupState() != STARTUP_SEQUENCE.STARTUP_COMPLETE,
+                configService.getStartupState() != ApplianceLifecycle.STARTUP_SEQUENCE.STARTUP_COMPLETE,
                 "Cannot process data retrieval requests for specified PVs (" + StringUtils.join(pvNames, ", ")
                         + ") until the appliance has completely started up.",
                 resp,

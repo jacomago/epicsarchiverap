@@ -2,6 +2,7 @@ package org.epics.archiverappliance.retrieval;
 
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.reports.Details;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
 
 import java.time.Instant;
@@ -60,7 +61,7 @@ public class RetrievalMetrics implements Details {
 
     @Override
     public ConfigService.WAR_FILE source() {
-        return ConfigService.WAR_FILE.RETRIEVAL;
+        return ApplianceLifecycle.WAR_FILE.RETRIEVAL;
     }
 
     @Override

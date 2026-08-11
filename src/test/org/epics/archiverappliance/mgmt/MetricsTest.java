@@ -9,7 +9,7 @@ import org.apache.logging.log4j.Logger;
 import org.awaitility.Awaitility;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.TomcatSetup;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.retrieval.RetrievalMetrics;
 import org.epics.archiverappliance.retrieval.client.RawDataRetrievalAsEventStream;
@@ -118,10 +118,10 @@ public class MetricsTest {
                         (a, b) -> a + ", " + b)));
     }
 
-    String retrievalSource = ConfigService.WAR_FILE.RETRIEVAL.name();
-    String engineSource = ConfigService.WAR_FILE.ENGINE.name();
+    String retrievalSource = ApplianceLifecycle.WAR_FILE.RETRIEVAL.name();
+    String engineSource = ApplianceLifecycle.WAR_FILE.ENGINE.name();
     String mgmtSource = "mgmt";
-    String etlSource = ConfigService.WAR_FILE.ETL.name();
+    String etlSource = ApplianceLifecycle.WAR_FILE.ETL.name();
     String pvSource = "pv";
 
     @Test

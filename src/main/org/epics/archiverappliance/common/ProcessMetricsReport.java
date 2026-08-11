@@ -3,8 +3,8 @@ package org.epics.archiverappliance.common;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ApplianceInfo;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigService.WAR_FILE;
 import org.epics.archiverappliance.config.DefaultConfigService;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -34,7 +34,7 @@ public class ProcessMetricsReport implements BPLAction {
         ProcessMetrics processMetrics = defaultConfigService.getProcessMetrics();
         HashMap<String, Object> myProcessMetricsJSON =
                 processMetrics.getProcessMetricsJSON(configService.getWarFile().name() + "_");
-        if (configService.getWarFile() == WAR_FILE.MGMT) {
+        if (configService.getWarFile() == ApplianceLifecycle.WAR_FILE.MGMT) {
             ApplianceInfo myApplianceInfo = configService.getMyApplianceInfo();
             // In this case we have combine the results from the various wars
             logger.debug("Asking for process metrics from engine using " + myApplianceInfo.getEngineURL()

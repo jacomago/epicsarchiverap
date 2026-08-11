@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ClusterExecutor.EAABulkOperation;
 import org.epics.archiverappliance.config.ConfigService;
@@ -451,7 +452,7 @@ public class EngineContext {
     public void computeMetaInfo(PubSubEvent pubSubEvent) {
         if (pubSubEvent.getDestination().equals("ALL")
                 || (pubSubEvent.getDestination().startsWith(myIdentity)
-                        && pubSubEvent.getDestination().endsWith(ConfigService.WAR_FILE.ENGINE.toString()))) {
+                        && pubSubEvent.getDestination().endsWith(ApplianceLifecycle.WAR_FILE.ENGINE.toString()))) {
             switch (pubSubEvent.getType()) {
                 case "ComputeMetaInfo" -> {
                     String pvName = pubSubEvent.getPvName();
@@ -478,7 +479,7 @@ public class EngineContext {
                                 new ArchivePVMetaCompletedListener(pvName, configService, myIdentity));
                         PubSubEvent confirmationEvent = new PubSubEvent(
                                 "MetaInfoRequested",
-                                pubSubEvent.getSource() + "_" + ConfigService.WAR_FILE.MGMT,
+                                pubSubEvent.getSource() + "_" + ApplianceLifecycle.WAR_FILE.MGMT,
                                 pvName);
                         configService.getEventBus().post(confirmationEvent);
                     } catch (Exception ex) {
@@ -491,7 +492,7 @@ public class EngineContext {
                         this.startArchivingPV(pvName);
                         PubSubEvent confirmationEvent = new PubSubEvent(
                                 "StartedArchivingPV",
-                                pubSubEvent.getSource() + "_" + ConfigService.WAR_FILE.MGMT,
+                                pubSubEvent.getSource() + "_" + ApplianceLifecycle.WAR_FILE.MGMT,
                                 pvName);
                         configService.getEventBus().post(confirmationEvent);
                     } catch (Exception ex) {
@@ -585,7 +586,7 @@ public class EngineContext {
             try {
                 logger.debug("Completed computing archive info for pv " + pvName);
                 PubSubEvent confirmationEvent =
-                        new PubSubEvent("MetaInfoFinished", myIdentity + "_" + ConfigService.WAR_FILE.MGMT, pvName);
+                        new PubSubEvent("MetaInfoFinished", myIdentity + "_" + ApplianceLifecycle.WAR_FILE.MGMT, pvName);
                 JSONEncoder<MetaInfo> encoder = JSONEncoder.getEncoder(MetaInfo.class);
                 JSONObject metaInfoObj = encoder.encode(metaInfo);
                 confirmationEvent.setEventData(JSONValue.toJSONString(metaInfoObj));

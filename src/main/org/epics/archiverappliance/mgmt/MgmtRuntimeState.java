@@ -4,8 +4,9 @@ import com.google.common.eventbus.Subscribe;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.TimeUtils;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigService.WAR_FILE;
+import org.epics.archiverappliance.config.ApplianceLifecycle.WAR_FILE;
 import org.epics.archiverappliance.config.MetaInfo;
 import org.epics.archiverappliance.config.pubsub.PubSubEvent;
 import org.epics.archiverappliance.mgmt.archivepv.ArchivePVState;
@@ -90,7 +91,7 @@ public class MgmtRuntimeState {
 			logger.debug("Removing " + pvName + " from config service archive pv requests");
 			configService.archiveRequestWorkflowCompleted(pvName);
 			logger.debug("Aborted pv archiving workflow for " + pvName + "Publishing event for engine...");
-			PubSubEvent pubSubEvent = new PubSubEvent("AbortComputeMetaInfo", myIdentity + "_" + ConfigService.WAR_FILE.ENGINE, pvName);
+			PubSubEvent pubSubEvent = new PubSubEvent("AbortComputeMetaInfo", myIdentity + "_" + ApplianceLifecycle.WAR_FILE.ENGINE, pvName);
 			configService.getEventBus().post(pubSubEvent);
 			return true;
 		}
@@ -219,7 +220,7 @@ public class MgmtRuntimeState {
 	
 	@Subscribe public void computeMetaInfo(PubSubEvent pubSubEvent) {
 		if(pubSubEvent.getDestination().equals("ALL") 
-				|| (pubSubEvent.getDestination().startsWith(myIdentity) && pubSubEvent.getDestination().endsWith(ConfigService.WAR_FILE.MGMT.toString()))) {
+				|| (pubSubEvent.getDestination().startsWith(myIdentity) && pubSubEvent.getDestination().endsWith(ApplianceLifecycle.WAR_FILE.MGMT.toString()))) {
 			if(pubSubEvent.getType().equals("MetaInfoRequested")) {
 				String pvName = pubSubEvent.getPvName();
 				logger.debug("MetaInfoRequested for " + pvName);
@@ -335,9 +336,9 @@ public class MgmtRuntimeState {
 	
 	
 	public boolean haveChildComponentsStartedUp() { 
-		return componentsThatHaveCompletedStartup.contains(WAR_FILE.ENGINE) 
-				&& componentsThatHaveCompletedStartup.contains(WAR_FILE.ETL) 
-				&& componentsThatHaveCompletedStartup.contains(WAR_FILE.RETRIEVAL);
+		return componentsThatHaveCompletedStartup.contains(ApplianceLifecycle.WAR_FILE.ENGINE)
+				&& componentsThatHaveCompletedStartup.contains(ApplianceLifecycle.WAR_FILE.ETL)
+				&& componentsThatHaveCompletedStartup.contains(ApplianceLifecycle.WAR_FILE.RETRIEVAL);
 	}
 	
 	/**

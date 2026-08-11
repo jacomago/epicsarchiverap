@@ -2,8 +2,8 @@ package org.epics.archiverappliance.common;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigService.STARTUP_SEQUENCE;
 import org.epics.archiverappliance.mgmt.bpl.SyncStaticContentHeadersFooters;
 
 import java.io.BufferedInputStream;
@@ -115,7 +115,7 @@ public class StaticContentServlet extends HttpServlet {
             return;
         }
 
-        if (configService.getStartupState() != STARTUP_SEQUENCE.STARTUP_COMPLETE) {
+        if (configService.getStartupState() != ApplianceLifecycle.STARTUP_SEQUENCE.STARTUP_COMPLETE) {
             String msg = "Cannot process static content request for " + requestedFile
                     + " until the appliance has completely started up.";
             logger.error(msg);
