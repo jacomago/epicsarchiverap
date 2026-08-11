@@ -33,7 +33,8 @@ import jakarta.servlet.ServletContext;
  * Guice is a good option for this but it takes over the dispatch logic from tomcat and we'll need to investigate if that has any impact.
  * @author mshankar
  */
-public interface ConfigService extends PVTypeInfoStore, AliasRegistry, ClusterExecutor, PolicyService, PVNamingConfig {
+public interface ConfigService
+        extends PVTypeInfoStore, AliasRegistry, ClusterExecutor, PolicyService, PVNamingConfig, ChannelArchiverConfig {
     /**
      * This is the environment variable that points to the file containing the various appliances in this cluster.
      * This list of appliances is expected to be the same for all appliances in the cluster; so it is perfectly legal to place it in NFS somewhere and point to the same file/location from all appliances in the cluster.
@@ -398,48 +399,6 @@ public interface ConfigService extends PVTypeInfoStore, AliasRegistry, ClusterEx
      * @return  EventBus &emsp;
      */
     public EventBus getEventBus();
-
-    /**
-     * This product has the ability to proxy data from other archiver data servers.
-     * We currently integrate with Channel Archiver XMLRPC data servers and other EPICS Archiver Appliance clusters.
-     * Get a list of external Archiver Data Servers that we know about.
-     * @return Map ExternalArchiverDataServers
-     */
-    public Map<String, String> getExternalArchiverDataServers();
-
-    /**
-     * Add a external Archiver Data Server into the system.
-     * @param serverURL - For Channel Archivers, this is the URL to the XML-RPC server. For other EPICS Archiver Appliance clusters, this is the <code>data_retrieval_url</code> of the cluster as defined in the <code>appliances.xml</code>.
-     * @param archivesCSV - For Channel Archivers, this is a comma separated list of indexes. For other EPICS Archiver Appliance clusters, this is the string <i>pbraw</i>.
-     * @throws IOException  &emsp;
-     */
-    public void addExternalArchiverDataServer(String serverURL, String archivesCSV) throws IOException;
-
-    /**
-     * Removes an entry for an external Archiver Data Server from the system
-     * Note; we may need to restart the entire cluster for this change to take effect.
-     * @param serverURL - For Channel Archivers, this is the URL to the XML-RPC server. For other EPICS Archiver Appliance clusters, this is the <code>data_retrieval_url</code> of the cluster as defined in the <code>appliances.xml</code>.
-     * @param archivesCSV - For Channel Archivers, this is a comma separated list of indexes. For other EPICS Archiver Appliance clusters, this is the string <i>pbraw</i>.
-     * @throws IOException  &emsp;
-     */
-    public void removeExternalArchiverDataServer(String serverURL, String archivesCSV) throws IOException;
-
-    /**
-     * Return a list of ChannelArchiverDataServerPVInfos for a PV if one exists; otherwise return null.
-     * The servers are sorted in order of the start seconds.
-     * Note: this only applies to Channel Archiver XML RPC servers.
-     * For proxying external EPICS Archiver Appliance clusters, we do not cache the PV's that are being archived on the external system.
-     * @param pvName The name of PV.
-     * @return ChannelArchiverDataServerPVInfo  &emsp;
-     */
-    public List<ChannelArchiverDataServerPVInfo> getChannelArchiverDataServers(String pvName);
-
-    /**
-     * For all the Channel Archiver XMLRPC data servers in the mix, update the PV info.
-     * This should help improve performance a little in proxying data from ChannelArchiver data servers that are still active.
-     * For proxying external EPICS Archiver Appliance clusters, since we do not cache the PV's that are being archived on the external system, this is a no-op.
-     */
-    public void refreshPVDataFromChannelArchiverDataServers();
 
     /**
      * Get a list of external archiver appliances configured for failover.
