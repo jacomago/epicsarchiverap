@@ -34,7 +34,7 @@ import jakarta.servlet.ServletContext;
  * @author mshankar
  */
 public interface ConfigService
-        extends PVTypeInfoStore, AliasRegistry, ClusterExecutor, PolicyService, PVNamingConfig, ChannelArchiverConfig {
+        extends PVTypeInfoStore, AliasRegistry, ClusterExecutor, PolicyService, PVNamingConfig, ChannelArchiverConfig, FailoverConfig {
     /**
      * This is the environment variable that points to the file containing the various appliances in this cluster.
      * This list of appliances is expected to be the same for all appliances in the cluster; so it is perfectly legal to place it in NFS somewhere and point to the same file/location from all appliances in the cluster.
@@ -399,27 +399,6 @@ public interface ConfigService
      * @return  EventBus &emsp;
      */
     public EventBus getEventBus();
-
-    /**
-     * Get a list of external archiver appliances configured for failover.
-     * Failover appliances are not used as proxies to minimize imposing the retrieval load of the this installation on a potentially less powerful appliance used principally for failover.
-     * @return
-     */
-    public Set<String> getFailoverServerURLs();
-
-    /**
-     * Get the first external archiver appliance that also archives this PV and is configured with a mergeDuringRetrieval query parameter.
-     * @return - Returns null if no failover appliance.
-     */
-    public String getFailoverApplianceURL(String pvName);
-
-    /**
-     * Each retrieval component in a cluster caches the PV's from remote failover appliances.
-     * These caches contain one entry for each PV in this appliance indicating if the PV is being archived in the remote appliance.
-     * This information is cached using a TTL to minimize the impact on the remote failover appliance.
-     * This method manually unloads this cache.
-     */
-    public void resetFailoverCaches();
 
     // Various reporting helper functions start here
 
