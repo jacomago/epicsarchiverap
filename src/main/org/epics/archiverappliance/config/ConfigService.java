@@ -8,8 +8,6 @@
 package org.epics.archiverappliance.config;
 
 import com.google.common.eventbus.EventBus;
-import com.hazelcast.projection.Projection;
-import com.hazelcast.query.Predicate;
 import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
 import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.engine.pv.EngineContext;
@@ -38,7 +36,7 @@ import jakarta.servlet.ServletContext;
  * Guice is a good option for this but it takes over the dispatch logic from tomcat and we'll need to investigate if that has any impact.
  * @author mshankar
  */
-public interface ConfigService {
+public interface ConfigService extends PVTypeInfoStore {
     /**
      * This is the environment variable that points to the file containing the various appliances in this cluster.
      * This list of appliances is expected to be the same for all appliances in the cluster; so it is perfectly legal to place it in NFS somewhere and point to the same file/location from all appliances in the cluster.
@@ -264,15 +262,6 @@ public interface ConfigService {
     public CachedPVCounts getCachedPVCountsForThisAppliance();
 
     /**
-     * Query this cluster's pvTypeInfos using the supplied the predicate and then run the supplied projection operator.
-     * This runs using Hz's query functions and can be run from any war file
-     * For example, to quickly determine the appliances for a bunch of PV's, project the applianceIdentity and then do a stream groupby.
-     * @return
-     */
-    public <T> Collection<T> queryPVTypeInfos(
-            Predicate<String, PVTypeInfo> predicate, Projection<Map.Entry<String, PVTypeInfo>, T> projection);
-
-    /**
      * Prepare for batch jobs by breaking down a list of PV's into a Map that maps appliance identity to a list of PV's being archived on that appliance.
      * @return
      */
@@ -333,29 +322,6 @@ public interface ConfigService {
             throws AlreadyRegisteredException {
         this.registerPVToAppliance(pvName, applianceInfo, PVRegistrationType.ARCHIVNG);
     }
-
-    /**
-     * Gets information about a PV's type, i.e its DBR type, graphic limits etc.
-     * This information is assumed to be somewhat static and is expected to come from a cache if possible as it is used in data retrieval.
-     * @param pvName  The name of PV.
-     * @return PVTypeInfo  &emsp;
-     */
-    public PVTypeInfo getTypeInfoForPV(String pvName);
-
-    /**
-     * Update the type information about a PV; updating both ther persistent and cached versions of the information.
-     * Clients are not expected to call this method a million times a second.
-     * In general, this is expected to be called when archiving a PV for the first time, or perhaps when an appserver startups etc...
-     * @param pvName The name of PV.
-     * @param typeInfo PVTypeInfo
-     */
-    public void updateTypeInfoForPV(String pvName, PVTypeInfo typeInfo);
-
-    /**
-     * Remove the pv from all cached and persisted configuration.
-     * @param pvName The name of PV.
-     */
-    public void removePVFromCluster(String pvName);
 
     /**
      * Facilitates various optimizations for BPL that uses appliance wide information by caching and maintaining this information on a per appliance basis
