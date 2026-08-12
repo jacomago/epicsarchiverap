@@ -29,8 +29,6 @@ public interface ConfigPersistence {
      */
     String ARCHAPPL_PERSISTENCE_LAYER = "ARCHAPPL_PERSISTENCE_LAYER";
 
-    default void initialize(ConfigService configService) {}
-
     public List<String> getTypeInfoKeys() throws IOException;
 
     public PVTypeInfo getTypeInfo(String pvName) throws IOException;
