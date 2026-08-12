@@ -7,7 +7,7 @@ import org.epics.archiverappliance.ArchiveTestUtils;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.TomcatSetup;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ConfigPersistence;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.persistence.JDBM2Persistence;
@@ -54,7 +54,7 @@ public class InactiveClusterMemberArchivePVTest {
         persistenceFolder.mkdirs();
         System.getProperties()
                 .put(
-                        ConfigService.ARCHAPPL_PERSISTENCE_LAYER,
+                        ConfigPersistence.ARCHAPPL_PERSISTENCE_LAYER,
                         "org.epics.archiverappliance.config.persistence.JDBM2Persistence");
         {
             System.getProperties()

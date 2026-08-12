@@ -19,6 +19,7 @@ import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.Property;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ConfigPersistence;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.DefaultConfigService;
@@ -279,9 +280,9 @@ public class TomcatSetup implements AutoCloseable {
                     appliancesXML.toAbsolutePath().toString());
         }
 
-        String persistenceLayer = fresh.getProperty(ConfigService.ARCHAPPL_PERSISTENCE_LAYER);
+        String persistenceLayer = fresh.getProperty(ConfigPersistence.ARCHAPPL_PERSISTENCE_LAYER);
         if (persistenceLayer == null || persistenceLayer.equals(InMemoryPersistence.class.getName())) {
-            System.setProperty(ConfigService.ARCHAPPL_PERSISTENCE_LAYER, InMemoryPersistence.class.getName());
+            System.setProperty(ConfigPersistence.ARCHAPPL_PERSISTENCE_LAYER, InMemoryPersistence.class.getName());
         } else {
             logger.info("Persistence layer for {}: {}", applianceName, persistenceLayer);
             String persistenceFile = fresh.getProperty(JDBM2Persistence.ARCHAPPL_JDBM2_FILENAME);

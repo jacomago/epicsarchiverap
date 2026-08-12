@@ -21,6 +21,14 @@ import java.util.List;
  */
 public interface ConfigPersistence {
 
+    /**
+     * This is an optional environment/system.property that is used to identity the persistence layer
+     * If this is not set, we initialize MySQLPersistence as the persistence layer; so in production environments, you can leave this unset/blank
+     * Set this to the class name of the class implementing {@link ConfigPersistence ConfigPersistence}
+     * The unit tests however will set this to use InMemoryPersistence, which is a dummy persistence layer.
+     */
+    String ARCHAPPL_PERSISTENCE_LAYER = "ARCHAPPL_PERSISTENCE_LAYER";
+
     default void initialize(ConfigService configService) {}
 
     public List<String> getTypeInfoKeys() throws IOException;

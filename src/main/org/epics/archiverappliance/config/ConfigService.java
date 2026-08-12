@@ -35,14 +35,6 @@ public interface ConfigService
                 ArchiveRequestWorkflow {
 
     /**
-     * This is an optional environment/system.property that is used to identity the persistence layer
-     * If this is not set, we initialize MySQLPersistence as the persistence layer; so in production environments, you can leave this unset/blank
-     * Set this to the class name of the class implementing {@link ConfigPersistence ConfigPersistence}
-     * The unit tests however will set this to use InMemoryPersistence, which is a dummy persistence layer.
-     */
-    public static final String ARCHAPPL_PERSISTENCE_LAYER = "ARCHAPPL_PERSISTENCE_LAYER";
-
-    /**
      * Returns the runtime state for the retrieval app
      * @return RetrievalState &emsp;
      */

@@ -2029,9 +2029,9 @@ public class DefaultConfigService implements ConfigService {
      * @throws ConfigException
      */
     private void initializePersistenceLayer() throws ConfigException {
-        String persistenceFromEnv = System.getenv(ARCHAPPL_PERSISTENCE_LAYER);
+        String persistenceFromEnv = System.getenv(ConfigPersistence.ARCHAPPL_PERSISTENCE_LAYER);
         if (persistenceFromEnv == null || persistenceFromEnv.isEmpty()) {
-            persistenceFromEnv = System.getProperty(ARCHAPPL_PERSISTENCE_LAYER);
+            persistenceFromEnv = System.getProperty(ConfigPersistence.ARCHAPPL_PERSISTENCE_LAYER);
         }
         if (persistenceFromEnv == null || persistenceFromEnv.isEmpty()) {
             logger.info("Using MYSQL for persistence; we expect to find a JNDI connection pool called jdbc/archappl");

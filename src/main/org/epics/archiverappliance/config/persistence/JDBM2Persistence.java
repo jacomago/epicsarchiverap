@@ -6,7 +6,6 @@ import jdbm.RecordManagerFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ConfigPersistence;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.UserSpecifiedSamplingParams;
 import org.epics.archiverappliance.config.exception.ConfigException;
@@ -34,7 +33,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class JDBM2Persistence implements ConfigPersistence {
     private static Logger logger = LogManager.getLogger(JDBM2Persistence.class.getName());
-    public static final String ARCHAPPL_JDBM2_FILENAME = ConfigService.ARCHAPPL_PERSISTENCE_LAYER + "_JDBM2FILENAME";
+    public static final String ARCHAPPL_JDBM2_FILENAME =
+            ConfigPersistence.ARCHAPPL_PERSISTENCE_LAYER + "_JDBM2FILENAME";
     private String pathToConfigData = "./archapplconfig.jdbm2";
     private ConcurrentHashMap<String, PVTypeInfo> cachedTypeInfos = new ConcurrentHashMap<String, PVTypeInfo>();
 

@@ -3,7 +3,6 @@ package org.epics.archiverappliance.config.persistence;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ConfigPersistence;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.UserSpecifiedSamplingParams;
 import org.epics.archiverappliance.config.exception.ConfigException;
@@ -34,7 +33,7 @@ import java.util.Set;
 public class RedisPersistence implements ConfigPersistence {
     private static Logger logger = LogManager.getLogger(RedisPersistence.class.getName());
     public static final String ARCHAPPL_PERSISTENCE_LAYER_REDISURL =
-            ConfigService.ARCHAPPL_PERSISTENCE_LAYER + "_REDISURL";
+            ConfigPersistence.ARCHAPPL_PERSISTENCE_LAYER + "_REDISURL";
     private static String redisURL = "localhost";
     private JedisPool jedisPool = null;
 
