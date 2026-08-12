@@ -1,7 +1,5 @@
 package org.epics.archiverappliance.retrieval;
 
-import com.hazelcast.projection.Projection;
-import com.hazelcast.query.Predicates;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -16,6 +14,7 @@ import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore.PVTypeInfoProjection;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.mgmt.bpl.PVsMatchingParameter;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
@@ -140,16 +139,11 @@ public class GetDataAtTime {
     private record ProjRecord(String pvName, String appliance, ArchDBRTypes DBRType, String[] archiveFields)
             implements Serializable {}
 
-    private static class GDATProjection implements Projection<Map.Entry<String, PVTypeInfo>, ProjRecord> {
+    private static class GDATProjection implements PVTypeInfoProjection<ProjRecord> {
         @Override
-        public ProjRecord transform(Map.Entry<String, PVTypeInfo> entry) {
-            String pvName = entry.getKey();
-            PVTypeInfo value = entry.getValue();
+        public ProjRecord transform(String pvName, PVTypeInfo typeInfo) {
             return new ProjRecord(
-                    pvName,
-                    value.getApplianceIdentity(),
-                    entry.getValue().getDBRType(),
-                    entry.getValue().getArchiveFields());
+                    pvName, typeInfo.getApplianceIdentity(), typeInfo.getDBRType(), typeInfo.getArchiveFields());
         }
     }
 
@@ -210,8 +204,7 @@ public class GetDataAtTime {
         HashMap<String, Appliance2PVs> valuesGatherer = new HashMap<String, Appliance2PVs>();
         HashSet<String> namesForPredicate = new HashSet<>(paddedPVNames);
 
-        Collection<ProjRecord> projRecords = configService.queryPVTypeInfos(
-                Predicates.in("__key", namesForPredicate.toArray(new String[0])), new GDATProjection());
+        Collection<ProjRecord> projRecords = configService.queryPVTypeInfos(namesForPredicate, new GDATProjection());
         Map<String, ProjRecord> pvName2proj =
                 projRecords.stream().collect(Collectors.toMap(ProjRecord::pvName, pr -> pr));
 

@@ -1093,29 +1093,37 @@ public class DefaultConfigService implements ConfigService {
         return new CachedPVCounts(this.totalPVCountOnThisAppliance, this.pausedPVCountOnThisAppliance);
     }
 
+    /**
+     * Adapts a storage agnostic {@link PVTypeInfoProjection} onto the Hz projection that IMap.project expects.
+     * Serializable by way of Projection; the delegate it holds is serializable for the same reason.
+     */
+    private record HzProjection<T>(PVTypeInfoProjection<T> delegate)
+            implements Projection<Map.Entry<String, PVTypeInfo>, T> {
+        @Override
+        public T transform(Map.Entry<String, PVTypeInfo> entry) {
+            return this.delegate.transform(entry.getKey(), entry.getValue());
+        }
+    }
+
     @Override
-    public <T> Collection<T> queryPVTypeInfos(
-            Predicate<String, PVTypeInfo> predicate, Projection<Map.Entry<String, PVTypeInfo>, T> projection) {
-        Collection<T> projectedTypeInfos = this.typeInfos.project(projection, predicate);
-        return projectedTypeInfos;
+    public <T> Collection<T> queryPVTypeInfos(Collection<String> pvNames, PVTypeInfoProjection<T> projection) {
+        Predicate<String, PVTypeInfo> predicate = Predicates.in("__key", pvNames.toArray(new String[0]));
+        return this.typeInfos.project(new HzProjection<>(projection), predicate);
     }
 
     private static record PVAppId(String pvName, String appliance) implements Serializable {}
     ;
 
-    private static class PVAppidProj implements Projection<Map.Entry<String, PVTypeInfo>, PVAppId> {
+    private static class PVAppidProj implements PVTypeInfoProjection<PVAppId> {
         @Override
-        public PVAppId transform(Map.Entry<String, PVTypeInfo> entry) {
-            String pvName = entry.getKey();
-            PVTypeInfo value = entry.getValue();
-            return new PVAppId(pvName, value.getApplianceIdentity());
+        public PVAppId transform(String pvName, PVTypeInfo typeInfo) {
+            return new PVAppId(pvName, typeInfo.getApplianceIdentity());
         }
     }
 
     @Override
     public Map<String, List<String>> breakDownPVsByAppliance(List<String> pvNames) {
-        Collection<PVAppId> vals =
-                this.queryPVTypeInfos(Predicates.in("__key", pvNames.toArray(new String[0])), new PVAppidProj());
+        Collection<PVAppId> vals = this.queryPVTypeInfos(pvNames, new PVAppidProj());
         return vals.stream()
                 .collect(Collectors.groupingBy(
                         PVAppId::appliance, Collectors.mapping(PVAppId::pvName, Collectors.toList())));

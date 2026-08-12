@@ -1,24 +1,35 @@
 package org.epics.archiverappliance.config;
 
-import com.hazelcast.projection.Projection;
-import com.hazelcast.query.Predicate;
-
+import java.io.Serializable;
 import java.util.Collection;
-import java.util.Map;
 
 /**
  * Interface for storing and retrieving PV type information.
  */
 public interface PVTypeInfoStore {
     /**
-     * Query this cluster's pvTypeInfos using the supplied the predicate and then run the supplied projection operator.
-     * This runs using Hz's query functions and can be run from any war file
+     * Extracts the parts of a PVTypeInfo that a caller of {@link #queryPVTypeInfos} is interested in.
+     * The projection is run where the typeinfos live, so it is shipped across the cluster and both it
+     * and the type it returns have to be serializable.
+     *
+     * @param <T> The projected type.
+     */
+    @FunctionalInterface
+    interface PVTypeInfoProjection<T> extends Serializable {
+        T transform(String pvName, PVTypeInfo typeInfo);
+    }
+
+    /**
+     * Look up the typeinfos for the named PVs and run the supplied projection operator over them.
+     * This runs where the typeinfos are stored and can be called from any war file; only the projected
+     * results come back, so project just the fields you need.
      * For example, to quickly determine the appliances for a bunch of PV's, project the applianceIdentity and then do a stream groupby.
      *
-     * @return
+     * @param pvNames    The PV names to look up; names that are not being archived are absent from the result.
+     * @param projection The projection to run against each matching typeinfo.
+     * @return The projected results, in no particular order.
      */
-    <T> Collection<T> queryPVTypeInfos(
-            Predicate<String, PVTypeInfo> predicate, Projection<Map.Entry<String, PVTypeInfo>, T> projection);
+    <T> Collection<T> queryPVTypeInfos(Collection<String> pvNames, PVTypeInfoProjection<T> projection);
 
     /**
      * Gets information about a PV's type, i.e its DBR type, graphic limits etc.
