@@ -35,14 +35,6 @@ public interface ConfigService
                 ArchiveRequestWorkflow {
 
     /**
-     * This is the environment variable that identifies the site (LCLS, LCLSII, slacdev, NSLSII etc) to be used when generating the war files.
-     * This is primarily a build-time property; the build.xml has various site specific hooks which let you change the appliances.xml, policies, images etc on a per site basis.
-     * The unit tests use the <code>tests</code> site which is also the default site if this environment variable is not specified.
-     * Files for a site are stored in the sitespecific/&lt;site&gt; folder.
-     */
-    public static final String ARCHAPPL_SITEID = "ARCHAPPL_SITEID";
-
-    /**
      * This is an optional environment/system.property that is used to identity the persistence layer
      * If this is not set, we initialize MySQLPersistence as the persistence layer; so in production environments, you can leave this unset/blank
      * Set this to the class name of the class implementing {@link ConfigPersistence ConfigPersistence}
