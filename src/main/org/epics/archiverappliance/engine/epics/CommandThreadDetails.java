@@ -9,8 +9,8 @@ package org.epics.archiverappliance.engine.epics;
 
 import org.epics.archiverappliance.common.reports.Details;
 import org.epics.archiverappliance.config.ApplianceLifecycle;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ApplianceLifecycle.WAR_FILE;
+import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 
 import java.util.LinkedList;

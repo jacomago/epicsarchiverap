@@ -585,8 +585,8 @@ public class EngineContext {
         public void completed(MetaInfo metaInfo) {
             try {
                 logger.debug("Completed computing archive info for pv " + pvName);
-                PubSubEvent confirmationEvent =
-                        new PubSubEvent("MetaInfoFinished", myIdentity + "_" + ApplianceLifecycle.WAR_FILE.MGMT, pvName);
+                PubSubEvent confirmationEvent = new PubSubEvent(
+                        "MetaInfoFinished", myIdentity + "_" + ApplianceLifecycle.WAR_FILE.MGMT, pvName);
                 JSONEncoder<MetaInfo> encoder = JSONEncoder.getEncoder(MetaInfo.class);
                 JSONObject metaInfoObj = encoder.encode(metaInfo);
                 confirmationEvent.setEventData(JSONValue.toJSONString(metaInfoObj));

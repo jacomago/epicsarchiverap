@@ -353,7 +353,9 @@ public class ArchivePVState {
 
         logger.debug("Setting up archiving of pv " + pvName);
         PubSubEvent pubSubEvent = new PubSubEvent(
-                "StartArchivingPV", applianceInfoForPV.getIdentity() + "_" + ApplianceLifecycle.WAR_FILE.ENGINE, pvName);
+                "StartArchivingPV",
+                applianceInfoForPV.getIdentity() + "_" + ApplianceLifecycle.WAR_FILE.ENGINE,
+                pvName);
         configService.getEventBus().post(pubSubEvent);
     }
 

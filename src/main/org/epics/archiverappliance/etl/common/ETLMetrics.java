@@ -12,13 +12,14 @@ import java.util.LinkedList;
 import java.util.Map;
 
 public class ETLMetrics implements Details {
-    private final LinkedHashMap<String, ETLMetricsIntoStore> etlMetricsIntoStores = new LinkedHashMap<String, ETLMetricsIntoStore>();
+    private final LinkedHashMap<String, ETLMetricsIntoStore> etlMetricsIntoStores =
+            new LinkedHashMap<String, ETLMetricsIntoStore>();
 
     public void createMetricIfNoExists(String destName) {
-        synchronized(etlMetricsIntoStores) {
-            if(!etlMetricsIntoStores.containsKey(destName)) {
+        synchronized (etlMetricsIntoStores) {
+            if (!etlMetricsIntoStores.containsKey(destName)) {
                 etlMetricsIntoStores.put(destName, new ETLMetricsIntoStore(destName));
-            }            
+            }
         }
     }
 
@@ -92,7 +93,8 @@ public class ETLMetrics implements Details {
                                     etlMetricsIntoStore.getTimeinMillSecond4prepareForNewPartition())));
                     details.add(metricDetail(
                             "Avg time spent by appendToETLAppendData() (s/run)",
-                            runsFormatter.getFormatted(etlMetricsIntoStore.getTimeinMillSecond4appendToETLAppendData())));
+                            runsFormatter.getFormatted(
+                                    etlMetricsIntoStore.getTimeinMillSecond4appendToETLAppendData())));
                     details.add(metricDetail(
                             "Avg time spent by commitETLAppendData() (s/run)",
                             runsFormatter.getFormatted(etlMetricsIntoStore.getTimeinMillSecond4commitETLAppendData())));
