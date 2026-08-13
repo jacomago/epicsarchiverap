@@ -9,7 +9,6 @@ package org.epics.archiverappliance.common;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
@@ -20,6 +19,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -39,6 +39,28 @@ public class BasicDispatcher {
             ConfigService configService,
             Map<String, Class<? extends BPLAction>> actions)
             throws IOException {
+        dispatch(req, resp, configService, actions, () -> true);
+    }
+
+    /**
+     * Dispatch a BPL request, holding off the business actions until this webapp is ready to serve them.
+     * The readiness check applies only to the business actions; /ping, /postStartup and /startupState always
+     * run. The mgmt webapp gates on its children having started up, and the children reach mgmt through
+     * /postStartup, so gating those would deadlock startup.
+     * @param req &emsp;
+     * @param resp &emsp;
+     * @param configService &emsp;
+     * @param actions The business actions registered by this webapp, keyed on request path.
+     * @param webappReady False to reject business actions with a 500 until this webapp is ready.
+     * @throws IOException &emsp;
+     */
+    public static void dispatch(
+            HttpServletRequest req,
+            HttpServletResponse resp,
+            ConfigService configService,
+            Map<String, Class<? extends BPLAction>> actions,
+            BooleanSupplier webappReady)
+            throws IOException {
         String requestPath = req.getPathInfo();
         if (requestPath == null || requestPath.equals("")) {
             logger.warn("Request path is empty.");
@@ -50,7 +72,7 @@ public class BasicDispatcher {
             case "/ping" -> ping(resp, "pong");
             case "/postStartup" -> postStartup(resp, configService);
             case "/startupState" -> startupState(resp, configService);
-            default -> handleBPLAction(req, resp, configService, actions, requestPath);
+            default -> handleBPLAction(req, resp, configService, actions, requestPath, webappReady);
         }
     }
 
@@ -59,7 +81,8 @@ public class BasicDispatcher {
             HttpServletResponse resp,
             ConfigService configService,
             Map<String, Class<? extends BPLAction>> actions,
-            String requestPath)
+            String requestPath,
+            BooleanSupplier webappReady)
             throws IOException {
         if (!configService.isStartupComplete()) {
             logger.warn("We do not let the other actions complete until the config service startup is complete...");
@@ -67,8 +90,7 @@ public class BasicDispatcher {
             return;
         }
 
-        if (configService.getWarFile() == ApplianceLifecycle.WAR_FILE.MGMT
-                && !configService.getMgmtRuntimeState().haveChildComponentsStartedUp()) {
+        if (!webappReady.getAsBoolean()) {
             String header = req.getHeader(GetUrlContent.ARCHAPPL_COMPONENT);
             if (header == null || !header.equals("true")) {
                 logger.error("We do not let the actions complete until all the components have started up");

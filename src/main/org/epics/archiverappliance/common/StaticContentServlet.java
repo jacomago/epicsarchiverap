@@ -476,7 +476,12 @@ public class StaticContentServlet extends HttpServlet {
                     templateReplacementsForViewer.put(
                             "archivePVWorkflowBatchSize",
                             "var archivePVWorkflowBatchSize = "
-                                    + configService.getMgmtRuntimeState().getArchivePVWorkflowBatchSize() + ";\n");
+                                    + configService
+                                            .getInstallationProperties()
+                                            .getProperty(
+                                                    "org.epics.archiverappliance.mgmt.MgmtRuntimeState.archivePVWorkflowBatchSize",
+                                                    "1000")
+                                    + ";\n");
                     templateReplacementsForViewer.put(
                             "minimumSamplingPeriod",
                             "var minimumSamplingPeriod = "

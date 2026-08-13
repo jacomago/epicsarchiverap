@@ -9,6 +9,7 @@ package org.epics.archiverappliance.config;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.config.exception.ConfigException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
@@ -26,7 +27,7 @@ public class ArchServletContextListener implements ServletContextListener {
     private static final Logger configlogger = LogManager.getLogger("config." + ArchServletContextListener.class);
 
     @Override
-    public void contextInitialized(ServletContextEvent sce) {
+    public final void contextInitialized(ServletContextEvent sce) {
         // This should hopefully trigger the log4j2 initialization
         configlogger.info("Initializing the ArchServletContextListener");
         try {
@@ -47,6 +48,7 @@ public class ArchServletContextListener implements ServletContextListener {
             }
 
             configService.initialize(sce.getServletContext());
+            createRuntimeState(configService);
             sce.getServletContext().setAttribute(ConfigService.CONFIG_SERVICE_NAME, configService);
         } catch (Exception e) {
             logger.fatal("Exception initializing config service ", e);
@@ -63,6 +65,16 @@ public class ArchServletContextListener implements ServletContextListener {
             }
         }
     }
+
+    /**
+     * Build this webapp's runtime state, if it has any.
+     * Called after the config service has initialized and before it is published into the servlet context.
+     * That ordering matters; the config service is published only if startup succeeded, and MgmtUIFilter
+     * uses its absence to decide whether to render the diagnostic page.
+     * @param configService &emsp;
+     * @throws ConfigException &emsp;
+     */
+    protected void createRuntimeState(ConfigService configService) throws ConfigException {}
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
