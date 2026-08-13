@@ -54,7 +54,6 @@ import org.epics.archiverappliance.engine.ArchiveEngine;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.mgmt.MgmtPostStartup;
-import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.epics.archiverappliance.mgmt.NonMgmtPostStartup;
 import org.epics.archiverappliance.mgmt.bpl.cahdlers.NamesHandler;
 import org.epics.archiverappliance.mgmt.policy.ExecutePolicy;
@@ -1836,11 +1835,6 @@ public class DefaultConfigService implements ConfigService {
     @Override
     public EngineContext getEngineContext() {
         return engineContext;
-    }
-
-    @Override
-    public MgmtRuntimeState getMgmtRuntimeState() {
-        return MgmtRuntimeState.of(this);
     }
 
     @Override

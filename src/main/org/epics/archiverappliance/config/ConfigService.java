@@ -9,7 +9,6 @@ package org.epics.archiverappliance.config;
 
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
-import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.epics.archiverappliance.retrieval.RetrievalState;
 
 /**
@@ -52,12 +51,6 @@ public interface ConfigService
      * @return EngineContext &emsp;
      */
     public EngineContext getEngineContext();
-
-    /**
-     * Return the runtime state for the mgmt webapp.
-     * @return  MgmtRuntimeStat &emsp;
-     */
-    public MgmtRuntimeState getMgmtRuntimeState();
 
     // Various reporting helper functions start here
 

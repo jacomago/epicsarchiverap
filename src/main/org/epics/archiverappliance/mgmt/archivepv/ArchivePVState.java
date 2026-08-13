@@ -438,8 +438,8 @@ public class ArchivePVState {
                 } else if (configService.doesPVHaveArchiveRequestInWorkflow(realName)) {
                     // Change the UserSpecifiedSamplingParams to include this alias.
                     // We really can't tell which appliance is processing the workflow.
-                    // AddAlias uses getMgmtRuntimeState to see if the PV is in the workflow and then updates the user
-                    // specified params.
+                    // AddAlias uses the mgmt runtime state to see if the PV is in the workflow and then updates
+                    // the user specified params.
                     // So we call all the appliances.
                     LinkedList<String> addAliasURLs = new LinkedList<String>();
                     for (ApplianceInfo info : configService.getAppliancesInCluster()) {
