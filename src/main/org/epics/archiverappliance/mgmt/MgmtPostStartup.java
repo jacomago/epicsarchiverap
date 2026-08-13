@@ -31,11 +31,11 @@ public class MgmtPostStartup implements Runnable {
         logger.info("About to run MgmtPostStartup");
         if (this.configService.isStartupComplete()) {
             logger.info("Startup is complete for MgmtPostStartup");
-            if (this.configService.getMgmtRuntimeState().haveChildComponentsStartedUp()) {
+            if (MgmtRuntimeState.of(this.configService).haveChildComponentsStartedUp()) {
                 cancellingFuture.cancel(false);
             } else {
                 this.checkIfAllComponentsHaveStartedUp();
-                if (this.configService.getMgmtRuntimeState().haveChildComponentsStartedUp()) {
+                if (MgmtRuntimeState.of(this.configService).haveChildComponentsStartedUp()) {
                     cancellingFuture.cancel(false);
                 }
             }
@@ -69,7 +69,7 @@ public class MgmtPostStartup implements Runnable {
                 ConfigService.STARTUP_SEQUENCE retrievalStartupState =
                         ApplianceLifecycle.STARTUP_SEQUENCE.valueOf(retrievalStatus.get("status"));
                 if (retrievalStartupState == ApplianceLifecycle.STARTUP_SEQUENCE.STARTUP_COMPLETE) {
-                    configService.getMgmtRuntimeState().componentStartedUp(ApplianceLifecycle.WAR_FILE.RETRIEVAL);
+                    MgmtRuntimeState.of(configService).componentStartedUp(ApplianceLifecycle.WAR_FILE.RETRIEVAL);
                 }
             }
 
@@ -82,7 +82,7 @@ public class MgmtPostStartup implements Runnable {
                 ConfigService.STARTUP_SEQUENCE etlStartupState =
                         ApplianceLifecycle.STARTUP_SEQUENCE.valueOf(etlStatus.get("status"));
                 if (etlStartupState == ApplianceLifecycle.STARTUP_SEQUENCE.STARTUP_COMPLETE) {
-                    configService.getMgmtRuntimeState().componentStartedUp(ApplianceLifecycle.WAR_FILE.ETL);
+                    MgmtRuntimeState.of(configService).componentStartedUp(ApplianceLifecycle.WAR_FILE.ETL);
                 }
             }
 
@@ -95,7 +95,7 @@ public class MgmtPostStartup implements Runnable {
                 ConfigService.STARTUP_SEQUENCE engineStartupState =
                         ApplianceLifecycle.STARTUP_SEQUENCE.valueOf(engineStatus.get("status"));
                 if (engineStartupState == ApplianceLifecycle.STARTUP_SEQUENCE.STARTUP_COMPLETE) {
-                    configService.getMgmtRuntimeState().componentStartedUp(ApplianceLifecycle.WAR_FILE.ENGINE);
+                    MgmtRuntimeState.of(configService).componentStartedUp(ApplianceLifecycle.WAR_FILE.ENGINE);
                 }
             }
 

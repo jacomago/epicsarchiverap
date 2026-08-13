@@ -45,19 +45,19 @@ public class WebappReady implements BPLAction {
                 case RETRIEVAL: {
                     String url = myApplianceInfo.getRetrievalURL() + "/postStartup";
                     GetUrlContent.checkURL(url);
-                    configService.getMgmtRuntimeState().componentStartedUp(ApplianceLifecycle.WAR_FILE.RETRIEVAL);
+                    MgmtRuntimeState.of(configService).componentStartedUp(ApplianceLifecycle.WAR_FILE.RETRIEVAL);
                     break;
                 }
                 case ETL: {
                     String url = myApplianceInfo.getEtlURL() + "/postStartup";
                     GetUrlContent.checkURL(url);
-                    configService.getMgmtRuntimeState().componentStartedUp(ApplianceLifecycle.WAR_FILE.ETL);
+                    MgmtRuntimeState.of(configService).componentStartedUp(ApplianceLifecycle.WAR_FILE.ETL);
                     break;
                 }
                 case ENGINE: {
                     String url = myApplianceInfo.getEngineURL() + "/postStartup";
                     GetUrlContent.checkURL(url);
-                    configService.getMgmtRuntimeState().componentStartedUp(ApplianceLifecycle.WAR_FILE.ENGINE);
+                    MgmtRuntimeState.of(configService).componentStartedUp(ApplianceLifecycle.WAR_FILE.ENGINE);
                     break;
                 }
                 case MGMT: {

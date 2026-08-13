@@ -11,6 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -39,7 +40,7 @@ public class RestartArchiveWorkflowThreadForAppliance implements BPLAction {
         HashMap<String, Object> infoValues = new HashMap<String, Object>();
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
-            configService.getMgmtRuntimeState().abortAllAndRestartArchiveRequestsThread();
+            MgmtRuntimeState.of(configService).abortAllAndRestartArchiveRequestsThread();
             infoValues.put("status", "ok");
             out.println(JSONValue.toJSONString(infoValues));
         }

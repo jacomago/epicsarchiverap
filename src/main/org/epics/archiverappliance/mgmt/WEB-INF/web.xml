@@ -52,7 +52,7 @@
 		<welcome-file>/ui/redirect.html</welcome-file>
 	</welcome-file-list>
 	<listener>
-		<listener-class>org.epics.archiverappliance.config.ArchServletContextListener</listener-class>
+		<listener-class>org.epics.archiverappliance.mgmt.MgmtServletContextListener</listener-class>
 	</listener> 
 	<resource-ref>
       <description>DB Connection</description>

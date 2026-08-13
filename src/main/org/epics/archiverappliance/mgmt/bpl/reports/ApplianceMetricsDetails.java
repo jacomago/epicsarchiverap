@@ -15,6 +15,7 @@ import org.epics.archiverappliance.config.ApplianceAggregateInfo;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.epics.archiverappliance.mgmt.archivepv.CapacityPlanningData;
 import org.epics.archiverappliance.mgmt.archivepv.CapacityPlanningData.CPStaticData;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
@@ -88,7 +89,7 @@ public class ApplianceMetricsDetails implements BPLAction {
             addDetailedStatus(
                     result,
                     "PVs in archive workflow",
-                    Integer.toString(configService.getMgmtRuntimeState().getPVsPendingInWorkflow()));
+                    Integer.toString(MgmtRuntimeState.of(configService).getPVsPendingInWorkflow()));
 
             CPStaticData cpStaticData = CapacityPlanningData.getCachedMetricsForAppliances(configService);
             ApplianceAggregateInfo applianceAggregateDifferenceFromLastFetch = null;

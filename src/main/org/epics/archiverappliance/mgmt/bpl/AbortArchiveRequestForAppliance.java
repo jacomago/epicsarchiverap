@@ -11,6 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -41,7 +42,7 @@ public class AbortArchiveRequestForAppliance implements BPLAction {
         HashMap<String, Object> infoValues = new HashMap<String, Object>();
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
-            boolean abortedPVWorkflow = configService.getMgmtRuntimeState().abortPVWorkflow(pvName);
+            boolean abortedPVWorkflow = MgmtRuntimeState.of(configService).abortPVWorkflow(pvName);
             infoValues.put("status", abortedPVWorkflow ? "ok" : "no");
             infoValues.put("desc", "Aborted request for archiving PV " + pvName);
             out.println(JSONValue.toJSONString(infoValues));

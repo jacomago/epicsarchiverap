@@ -169,7 +169,6 @@ public class DefaultConfigService implements ConfigService {
     protected LinkedList<Runnable> shutdownHooks = new LinkedList<>();
     protected PBThreeTierETLPVLookup etlPVLookup = null;
     protected RetrievalState retrievalState = null;
-    protected MgmtRuntimeState mgmtRuntime = null;
     protected EngineContext engineContext = null;
     protected ConcurrentSkipListSet<String> appliancesInCluster = new ConcurrentSkipListSet<String>();
     // Runtime state ends here
@@ -331,7 +330,6 @@ public class DefaultConfigService implements ConfigService {
         switch (contextPath) {
             case "/mgmt":
                 warFile = WAR_FILE.MGMT;
-                this.mgmtRuntime = new MgmtRuntimeState(this);
                 break;
             case "/engine":
                 warFile = WAR_FILE.ENGINE;
@@ -1842,7 +1840,7 @@ public class DefaultConfigService implements ConfigService {
 
     @Override
     public MgmtRuntimeState getMgmtRuntimeState() {
-        return mgmtRuntime;
+        return MgmtRuntimeState.of(this);
     }
 
     @Override

@@ -12,6 +12,7 @@ import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.UserSpecifiedSamplingParams;
 import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
 import org.epics.archiverappliance.config.pubsub.PubSubEvent;
+import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.epics.archiverappliance.mgmt.bpl.ArchivePVAction;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
@@ -281,7 +282,7 @@ public class ArchivePVState {
                         // to archive now would silently undo the pause.
                         logger.info("PV " + pvName + " was paused mid-workflow; completing without archiving");
                         configService.archiveRequestWorkflowCompleted(pvName);
-                        configService.getMgmtRuntimeState().finishedPVWorkflow(pvName);
+                        MgmtRuntimeState.of(configService).finishedPVWorkflow(pvName);
                         currentState = ArchivePVStateMachine.FINISHED;
                         return;
                     }
@@ -301,13 +302,13 @@ public class ArchivePVState {
                             "We are in the Archiving state. So, cancelling the periodic ping of the workflow object for pv "
                                     + pvName);
                     configService.archiveRequestWorkflowCompleted(pvName);
-                    configService.getMgmtRuntimeState().finishedPVWorkflow(pvName);
+                    MgmtRuntimeState.of(configService).finishedPVWorkflow(pvName);
                     currentState = ArchivePVStateMachine.FINISHED;
                     return;
                 }
                 case ABORTED: {
                     configService.archiveRequestWorkflowCompleted(pvName);
-                    configService.getMgmtRuntimeState().finishedPVWorkflow(pvName);
+                    MgmtRuntimeState.of(configService).finishedPVWorkflow(pvName);
                     logger.error("Aborting archive request for pv " + pvName + " Reason: " + abortReason);
                     currentState = ArchivePVStateMachine.FINISHED;
                     return;

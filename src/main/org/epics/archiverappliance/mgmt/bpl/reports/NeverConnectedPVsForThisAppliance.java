@@ -27,7 +27,7 @@ public class NeverConnectedPVsForThisAppliance implements BPLAction {
         logger.info("Getting the status of pvs that never connected since the start of this appliance");
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         String myIdentity = configService.getMyApplianceInfo().getIdentity();
-        MgmtRuntimeState mgmtRunTimeState = configService.getMgmtRuntimeState();
+        MgmtRuntimeState mgmtRunTimeState = MgmtRuntimeState.of(configService);
         LinkedList<HashMap<String, String>> result = new LinkedList<HashMap<String, String>>();
         try (PrintWriter out = resp.getWriter()) {
             List<NeverConnectedRequestState> NeverConnectedRequestState = mgmtRunTimeState.getNeverConnectedRequests();

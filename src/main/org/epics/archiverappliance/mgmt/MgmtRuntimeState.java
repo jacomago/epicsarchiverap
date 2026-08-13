@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -37,6 +38,43 @@ import java.util.concurrent.TimeUnit;
  *
  */
 public class MgmtRuntimeState {
+    /**
+     * The mgmt runtime state belonging to each config service. Entries are removed by a shutdown hook;
+     * the runtime state holds its config service, so the weak keys alone would not reclaim them.
+     * Keyed on identity, DefaultConfigService overriding neither equals nor hashCode. There is an entry
+     * per config service rather than a singleton because tests hold several config services at once.
+     */
+    private static final Map<ApplianceLifecycle, MgmtRuntimeState> INSTANCES =
+            Collections.synchronizedMap(new WeakHashMap<>());
+
+    /**
+     * Build the mgmt webapp's runtime state and publish it against this config service.
+     * A runtime state already published for this config service wins, so publishing is idempotent.
+     * @param configService &emsp;
+     * @return MgmtRuntimeState &emsp;
+     */
+    public static MgmtRuntimeState create(ConfigService configService) {
+        synchronized (INSTANCES) {
+            MgmtRuntimeState existing = INSTANCES.get(configService);
+            if (existing != null) {
+                logger.debug("Mgmt runtime state already published for this config service");
+                return existing;
+            }
+            MgmtRuntimeState created = new MgmtRuntimeState(configService);
+            INSTANCES.put(configService, created);
+            configService.addShutdownHook(() -> INSTANCES.remove(configService));
+            return created;
+        }
+    }
+
+    /**
+     * @param configService &emsp;
+     * @return This appliance's mgmt runtime state, or null if this webapp is not the mgmt webapp.
+     */
+    public static MgmtRuntimeState of(ApplianceLifecycle configService) {
+        return INSTANCES.get(configService);
+    }
+
     private ConfigService configService;
     private Map<String, ArchivePVState> currentPVRequests =
             Collections.synchronizedMap(new HashMap<String, ArchivePVState>());
@@ -109,7 +147,7 @@ public class MgmtRuntimeState {
 
     private ScheduledFuture<?> theArchiveWorkflow = null;
 
-    public MgmtRuntimeState(final ConfigService configService) {
+    private MgmtRuntimeState(final ConfigService configService) {
         this.configService = configService;
         myIdentity = this.configService.getMyApplianceInfo().getIdentity();
         configService.addShutdownHook(new Runnable() {

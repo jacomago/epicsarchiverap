@@ -7,6 +7,7 @@ import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.UserSpecifiedSamplingParams;
+import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -68,7 +69,7 @@ public class AddAliasAction implements BPLAction {
         PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
         if (typeInfo == null) {
             logger.debug("Type info is null. Check to see if we have the PV in the archivePV workflow");
-            if (configService.getMgmtRuntimeState().isPVInWorkflow(pvName)) {
+            if (MgmtRuntimeState.of(configService).isPVInWorkflow(pvName)) {
                 logger.debug("PV " + pvName
                         + " is in workflow. Updating the UserSpecifiedSamplingParams and adding alias " + aliasName);
                 UserSpecifiedSamplingParams samplingParams = configService.getUserSpecifiedSamplingParams(pvName);

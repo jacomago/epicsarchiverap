@@ -217,7 +217,7 @@ public class BPLServlet extends HttpServlet {
     }
 
     private boolean haveChildComponentsStartedUp() {
-        return configService.getMgmtRuntimeState().haveChildComponentsStartedUp();
+        return MgmtRuntimeState.of(configService).haveChildComponentsStartedUp();
     }
 
     private ConfigService configService;

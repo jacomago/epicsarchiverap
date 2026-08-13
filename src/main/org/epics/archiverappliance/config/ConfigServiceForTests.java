@@ -235,7 +235,7 @@ public class ConfigServiceForTests extends DefaultConfigService {
         this.engineContext.setDisconnectCheckTimeoutInSecondsForTestingPurposesOnly(defaultSecondsDisconnect);
         this.etlPVLookup = new PBThreeTierETLPVLookup(this);
         this.retrievalState = new SampleRetrievalState(this);
-        this.mgmtRuntime = new MgmtRuntimeState(this);
+        MgmtRuntimeState.create(this);
 
         startupState = STARTUP_SEQUENCE.STARTUP_COMPLETE;
         this.addShutdownHook(() -> startupExecutor.shutdown());

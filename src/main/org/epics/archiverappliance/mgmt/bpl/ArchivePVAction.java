@@ -16,6 +16,7 @@ import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.UserSpecifiedSamplingParams;
+import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
@@ -387,7 +388,7 @@ public class ArchivePVAction implements BPLAction {
             // Submit the request to the archive engine.
             // We have to make this a call into the engine to get over that fact that only the engine can load JCA
             // libraries
-            configService.getMgmtRuntimeState().startPVWorkflow(pvName);
+            MgmtRuntimeState.of(configService).startPVWorkflow(pvName);
             out.println("{ \"pvName\": \"" + pvName + "\", \"status\": \"Archive request submitted\" }");
         } catch (Exception ex) {
             logger.error("Exception archiving PV " + pvName, ex);

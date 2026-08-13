@@ -6,6 +6,7 @@ import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.UserSpecifiedSamplingParams;
+import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.json.simple.JSONValue;
 
 import java.io.IOException;
@@ -45,7 +46,7 @@ public class SkipAliasCheckAction implements BPLAction {
         }
 
         // Check if we have the archivePV request
-        if (configService.getMgmtRuntimeState().isPVInWorkflow(pvName)) {
+        if (MgmtRuntimeState.of(configService).isPVInWorkflow(pvName)) {
             UserSpecifiedSamplingParams params = configService.getUserSpecifiedSamplingParams(pvName);
             if (params == null) {
                 logger.error("When skipping the alias check for " + pvName

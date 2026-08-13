@@ -59,7 +59,7 @@ public class MgmtUIFilter implements Filter {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, errorMessage.toString());
             return;
         }
-        MgmtRuntimeState runtime = configService.getMgmtRuntimeState();
+        MgmtRuntimeState runtime = MgmtRuntimeState.of(configService);
         if (runtime.haveChildComponentsStartedUp()) {
             chain.doFilter(request, response);
         } else {
