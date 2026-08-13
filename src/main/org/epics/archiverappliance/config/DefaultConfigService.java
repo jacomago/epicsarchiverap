@@ -59,7 +59,6 @@ import org.epics.archiverappliance.mgmt.bpl.cahdlers.NamesHandler;
 import org.epics.archiverappliance.mgmt.policy.ExecutePolicy;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
-import org.epics.archiverappliance.retrieval.RetrievalState;
 import org.epics.archiverappliance.retrieval.channelarchiver.XMLRPCClient;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.JSONDecoder;
@@ -1468,11 +1467,6 @@ public class DefaultConfigService implements ConfigService {
     @Override
     public PBThreeTierETLPVLookup getETLLookup() {
         return etlPVLookup;
-    }
-
-    @Override
-    public RetrievalState getRetrievalRuntimeState() {
-        return RetrievalState.of(this);
     }
 
     @Override
