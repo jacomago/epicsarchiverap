@@ -12,6 +12,7 @@ import org.epics.archiverappliance.config.persistence.InMemoryPersistence;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
+import org.epics.archiverappliance.retrieval.RetrievalState;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -234,7 +235,7 @@ public class ConfigServiceForTests extends DefaultConfigService {
         this.engineContext = new EngineContext(this);
         this.engineContext.setDisconnectCheckTimeoutInSecondsForTestingPurposesOnly(defaultSecondsDisconnect);
         this.etlPVLookup = new PBThreeTierETLPVLookup(this);
-        this.retrievalState = new SampleRetrievalState(this);
+        RetrievalState.create(this, cs -> new SampleRetrievalState(this));
         MgmtRuntimeState.create(this);
 
         startupState = STARTUP_SEQUENCE.STARTUP_COMPLETE;
@@ -274,7 +275,7 @@ public class ConfigServiceForTests extends DefaultConfigService {
     public void initialize(ServletContext sce) throws ConfigException {
         super.initialize(sce);
 
-        this.retrievalState = new SampleRetrievalState(this);
+        RetrievalState.create(this, cs -> new SampleRetrievalState(this));
         if (this.engineContext != null) {
             this.engineContext.setDisconnectCheckTimeoutInSecondsForTestingPurposesOnly(defaultSecondsDisconnect);
         }

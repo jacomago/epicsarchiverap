@@ -9,6 +9,7 @@ package org.epics.archiverappliance.retrieval.bpl.reports;
 
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.retrieval.RetrievalMetrics;
+import org.epics.archiverappliance.retrieval.RetrievalState;
 
 import java.util.LinkedList;
 import java.util.Map;
@@ -21,8 +22,7 @@ public class PVDetails implements org.epics.archiverappliance.common.reports.PVD
 
     @Override
     public LinkedList<Map<String, String>> pvDetails(ConfigService configService, String pvName) throws Exception {
-        RetrievalMetrics retrievalMetrics =
-                configService.getRetrievalRuntimeState().getPVRetrievalMetrics(pvName);
+        RetrievalMetrics retrievalMetrics = RetrievalState.of(configService).getPVRetrievalMetrics(pvName);
         if (retrievalMetrics == null) retrievalMetrics = RetrievalMetrics.EMPTY_METRICS;
         return new LinkedList<>(retrievalMetrics.details(configService));
     }

@@ -109,7 +109,7 @@ public class DataSourceResolution {
             }
         } else {
             List<DataSourceforPV> dataSources =
-                    configService.getRetrievalRuntimeState().getDataSources(context, pvName, typeInfo, start, end, req);
+                    RetrievalState.of(configService).getDataSources(context, pvName, typeInfo, start, end, req);
 
             List<TimeSpan> yearlySpans = TimeUtils.breakIntoYearlyTimeSpans(start, end);
             List<TimeSpanDependentProcessor> spannedProcessors = null;

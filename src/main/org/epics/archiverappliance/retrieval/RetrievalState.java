@@ -7,6 +7,7 @@ import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ChannelArchiverDataServerPVInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
@@ -17,18 +18,70 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.function.Function;
 import jakarta.servlet.http.HttpServletRequest;
 
 public class RetrievalState {
     private static final Logger logger = LogManager.getLogger(RetrievalState.class.getName());
+
+    /**
+     * The retrieval state belonging to each config service. Entries are removed by a shutdown hook;
+     * the retrieval state holds its config service, so the weak keys alone would not reclaim them.
+     * Keyed on identity, DefaultConfigService overriding neither equals nor hashCode. There is an entry
+     * per config service rather than a singleton because tests hold several config services at once.
+     */
+    private static final Map<ApplianceLifecycle, RetrievalState> INSTANCES =
+            Collections.synchronizedMap(new WeakHashMap<>());
+
+    /**
+     * Build the retrieval webapp's runtime state and publish it against this config service.
+     * @param configService &emsp;
+     * @return RetrievalState &emsp;
+     */
+    public static RetrievalState create(ConfigService configService) {
+        return create(configService, RetrievalState::new);
+    }
+
+    /**
+     * Publish a retrieval state against this config service, building it with the given factory.
+     * A retrieval state already published for this config service wins and the factory is not called,
+     * so a test config service that has installed its SampleRetrievalState keeps it.
+     * @param configService &emsp;
+     * @param factory Builds the retrieval state, called only if none is published yet.
+     * @return RetrievalState &emsp;
+     */
+    public static RetrievalState create(ConfigService configService, Function<ConfigService, RetrievalState> factory) {
+        synchronized (INSTANCES) {
+            RetrievalState existing = INSTANCES.get(configService);
+            if (existing != null) {
+                logger.debug("Retrieval state already published for this config service");
+                return existing;
+            }
+            RetrievalState created = factory.apply(configService);
+            INSTANCES.put(configService, created);
+            configService.addShutdownHook(() -> INSTANCES.remove(configService));
+            return created;
+        }
+    }
+
+    /**
+     * @param configService &emsp;
+     * @return This appliance's retrieval state, or null if this webapp is not the retrieval webapp.
+     */
+    public static RetrievalState of(ApplianceLifecycle configService) {
+        return INSTANCES.get(configService);
+    }
+
     private final ConfigService configService;
     private int engineWriteThreadInSeconds = 60;
 
-    public RetrievalState(ConfigService configService) {
+    protected RetrievalState(ConfigService configService) {
         this.configService = configService;
         this.engineWriteThreadInSeconds = Integer.parseInt(configService
                 .getInstallationProperties()

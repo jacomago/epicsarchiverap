@@ -405,7 +405,7 @@ public class DataRetrievalServlet extends HttpServlet {
 
         pvName = PVNames.stripPrefixFromName(pvName);
         pvName = PVNames.normalizeChannelName(pvName);
-        configService.getRetrievalRuntimeState().updateRetrievalMetrics(pvName, Instant.now(), req.getRemoteAddr());
+        RetrievalState.of(configService).updateRetrievalMetrics(pvName, Instant.now(), req.getRemoteAddr());
 
         PVTypeInfo typeInfo = PVNames.determineAppropriatePVTypeInfo(pvName, configService);
         pmansProfiler.mark("After PVTypeInfo");
@@ -1027,9 +1027,7 @@ public class DataRetrievalServlet extends HttpServlet {
                     HashMap<String, String> engineMetadata = fetchLatestMetadata ? engineMetadatas.get(i) : null;
                     PostProcessor postProcessor = postProcessors.get(i);
 
-                    configService
-                            .getRetrievalRuntimeState()
-                            .updateRetrievalMetrics(pvName, Instant.now(), req.getRemoteAddr());
+                    RetrievalState.of(configService).updateRetrievalMetrics(pvName, Instant.now(), req.getRemoteAddr());
 
                     logger.debug("Done with the RetrievalResults; moving onto the individual event stream "
                             + "from each source for " + StringUtils.join(pvNames, ", "));

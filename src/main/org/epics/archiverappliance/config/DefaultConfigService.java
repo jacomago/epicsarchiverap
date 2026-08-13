@@ -167,7 +167,6 @@ public class DefaultConfigService implements ConfigService {
     // Runtime state begins here
     protected LinkedList<Runnable> shutdownHooks = new LinkedList<>();
     protected PBThreeTierETLPVLookup etlPVLookup = null;
-    protected RetrievalState retrievalState = null;
     protected EngineContext engineContext = null;
     protected ConcurrentSkipListSet<String> appliancesInCluster = new ConcurrentSkipListSet<String>();
     // Runtime state ends here
@@ -336,7 +335,6 @@ public class DefaultConfigService implements ConfigService {
                 break;
             case "/retrieval":
                 warFile = WAR_FILE.RETRIEVAL;
-                this.retrievalState = new RetrievalState(this);
                 break;
             case "/etl":
                 this.etlPVLookup = new PBThreeTierETLPVLookup(this);
@@ -1474,7 +1472,7 @@ public class DefaultConfigService implements ConfigService {
 
     @Override
     public RetrievalState getRetrievalRuntimeState() {
-        return retrievalState;
+        return RetrievalState.of(this);
     }
 
     @Override
