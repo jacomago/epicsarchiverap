@@ -18,6 +18,7 @@ import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
 import org.epics.archiverappliance.data.ScalarValue;
 import org.epics.archiverappliance.etl.ETLExecutor;
+import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.retrieval.workers.CurrentThreadWorkerEventStream;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
 import org.epics.archiverappliance.utils.simulation.SimulationEventStream;
@@ -241,7 +242,7 @@ public class ZeroedFileEventStreamTest {
             logger.error(e);
             Assertions.fail();
         }
-        configService.getETLLookup().manualControlForUnitTests();
+        PBThreeTierETLPVLookup.of(configService).manualControlForUnitTests();
 
         Instant timeETLruns = TimeUtils.plusDays(TimeUtils.now(), 366);
         ZonedDateTime ts = ZonedDateTime.now(ZoneId.from(ZoneOffset.UTC));
@@ -414,7 +415,7 @@ public class ZeroedFileEventStreamTest {
             logger.error(e);
             Assertions.fail();
         }
-        configService.getETLLookup().manualControlForUnitTests();
+        PBThreeTierETLPVLookup.of(configService).manualControlForUnitTests();
 
         Instant timeETLruns = TimeUtils.plusDays(TimeUtils.now(), 366);
         ZonedDateTime ts = ZonedDateTime.now(ZoneId.from(ZoneOffset.UTC));

@@ -17,6 +17,7 @@ import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.etl.ETLExecutor;
+import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.retrieval.workers.CurrentThreadWorkerEventStream;
 import org.epics.archiverappliance.utils.simulation.SimulationEventStream;
 import org.epics.archiverappliance.utils.simulation.SineGenerator;
@@ -94,7 +95,7 @@ public class ZipETLTest {
         typeInfo.setDataStores(dataStores);
         configService.updateTypeInfoForPV(pvName, typeInfo);
         configService.registerPVToAppliance(pvName, configService.getMyApplianceInfo());
-        configService.getETLLookup().manualControlForUnitTests();
+        PBThreeTierETLPVLookup.of(configService).manualControlForUnitTests();
 
         Instant timeETLruns = TimeUtils.now();
         ZonedDateTime ts = ZonedDateTime.now(ZoneId.from(ZoneOffset.UTC));

@@ -32,7 +32,7 @@ public class ETLStageDetails implements Details {
         DecimalFormat twoSignificantDigits = new DecimalFormat("###,###,###,###,###,###.##");
         LinkedList<Map<String, String>> statuses = new LinkedList<Map<String, String>>();
         statuses.add(metricDetail("Name (from ETL)", pvName));
-        ETLStages etlStages = configService.getETLLookup().getETLStages(pvName);
+        ETLStages etlStages = PBThreeTierETLPVLookup.of(configService).getETLStages(pvName);
         if (etlStages == null) {
             logger.info("Cannot find ETLStages for pv {}", pvName);
             return statuses;

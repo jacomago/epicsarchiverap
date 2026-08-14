@@ -78,6 +78,16 @@ public interface ApplianceLifecycle {
     boolean isShuttingDown();
 
     /**
+     * Add a hook to be run by {@link #postStartup()}, once the cluster has come up; for example, to start
+     * ETL's jobs. Lets a webapp's runtime state join the startup sequence without this interface knowing
+     * the type. Hooks run in registration order, and each webapp's context listener registers its own, so
+     * in practice there is at most one.
+     *
+     * @param runnable Runnable
+     */
+    void addPostStartupHook(Runnable runnable);
+
+    /**
      * Add an appserver agnostic shutdown hook; for example, to close the CA channels on shutdown
      *
      * @param runnable Runnable

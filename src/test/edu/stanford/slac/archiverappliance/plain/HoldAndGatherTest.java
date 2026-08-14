@@ -22,6 +22,7 @@ import org.epics.archiverappliance.data.ScalarValue;
 import org.epics.archiverappliance.etl.ETLContext;
 import org.epics.archiverappliance.etl.ETLExecutor;
 import org.epics.archiverappliance.etl.ETLInfo;
+import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.utils.blackhole.BlackholeStoragePlugin;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
 import org.junit.jupiter.api.AfterAll;
@@ -52,7 +53,7 @@ public class HoldAndGatherTest {
     @BeforeAll
     static void setUp() throws ConfigException {
         configService = new ConfigServiceForTests(-1);
-        configService.getETLLookup().manualControlForUnitTests();
+        PBThreeTierETLPVLookup.of(configService).manualControlForUnitTests();
 
         etlDest = new BlackholeStoragePlugin();
     }
@@ -110,7 +111,8 @@ public class HoldAndGatherTest {
         } catch (Exception ex) {
         }
         Assertions.assertNotNull(
-                configService.getETLLookup().getETLStages(pvName), "ETL stages have not been registered for " + pvName);
+                PBThreeTierETLPVLookup.of(configService).getETLStages(pvName),
+                "ETL stages have not been registered for " + pvName);
 
         while (currTime.isBefore(endTime)) {
             long eventsPerShot = granularity.getApproxSecondsPerChunk() / incrementSeconds;

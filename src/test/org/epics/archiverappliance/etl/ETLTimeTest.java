@@ -19,6 +19,7 @@ import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.data.ScalarValue;
+import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -89,7 +90,7 @@ public class ETLTimeTest {
     @BeforeAll
     public static void setUp() throws Exception {
         configService = new ConfigServiceForTests(-1);
-        configService.getETLLookup().manualControlForUnitTests();
+        PBThreeTierETLPVLookup.of(configService).manualControlForUnitTests();
     }
 
     @AfterAll
@@ -139,7 +140,7 @@ public class ETLTimeTest {
             configService.registerPVToAppliance(pvName, configService.getMyApplianceInfo());
             pvs.add(pvName);
         }
-        configService.getETLLookup().manualControlForUnitTests();
+        PBThreeTierETLPVLookup.of(configService).manualControlForUnitTests();
 
         logger.info("Generating data for " + pvs.size() + " pvs");
         for (int m = 0; m < pvs.size(); m++) {
@@ -204,7 +205,8 @@ public class ETLTimeTest {
                 expectedFiles,
                 "Dest file count " + postETLDestVisitor.filesPresent + " is not the same as PV count " + pvs.size());
 
-        logger.info(configService.getETLLookup().getApplianceMetrics().details(configService));
+        logger.info(
+                PBThreeTierETLPVLookup.of(configService).getApplianceMetrics().details(configService));
     }
 
     private static CountFiles getCountFiles(ArrayList<String> pvs, PlainStoragePlugin storagePlugin)

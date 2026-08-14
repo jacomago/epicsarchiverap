@@ -234,7 +234,7 @@ public class ConfigServiceForTests extends DefaultConfigService {
 
         this.engineContext = new EngineContext(this);
         this.engineContext.setDisconnectCheckTimeoutInSecondsForTestingPurposesOnly(defaultSecondsDisconnect);
-        this.etlPVLookup = new PBThreeTierETLPVLookup(this);
+        PBThreeTierETLPVLookup.create(this);
         RetrievalState.create(this, cs -> new SampleRetrievalState(this));
         MgmtRuntimeState.create(this);
 
@@ -321,8 +321,9 @@ public class ConfigServiceForTests extends DefaultConfigService {
         }
         if (applianceInfo.getIdentity().equals(myApplianceInfo.getIdentity())) {
             logger.info("Adding pv " + pvName + " to this appliance's pvs and to ETL");
-            if (this.getETLLookup() != null) {
-                this.getETLLookup().addETLJobsForUnitTests(pvName, this.getTypeInfoForPV(pvName));
+            PBThreeTierETLPVLookup etlPVLookup = PBThreeTierETLPVLookup.of(this);
+            if (etlPVLookup != null) {
+                etlPVLookup.addETLJobsForUnitTests(pvName, this.getTypeInfoForPV(pvName));
             }
         }
     }

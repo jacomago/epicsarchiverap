@@ -34,7 +34,7 @@ public class ETLExecutor {
      */
     public static void runETLs(ConfigService configService, Instant timeETLruns) throws IOException {
         for (String pvName : configService.getPVsForThisAppliance()) {
-            ETLStages etlStages = configService.getETLLookup().getETLStages(pvName);
+            ETLStages etlStages = PBThreeTierETLPVLookup.of(configService).getETLStages(pvName);
             if (etlStages == null) {
                 logger.debug("Skipping ETL for {} as it has no ETL stages", pvName);
                 continue;
@@ -73,7 +73,7 @@ public class ETLExecutor {
     public static void runPvETLsBeforeOneStorage(
             final ConfigService configService, final Instant timeETLRuns, final String pvName, final String storageName)
             throws IOException {
-        PBThreeTierETLPVLookup etlLookup = configService.getETLLookup();
+        PBThreeTierETLPVLookup etlLookup = PBThreeTierETLPVLookup.of(configService);
         if (etlLookup.getETLStages(pvName) != null) {
             throw new IOException(
                     "The pv " + pvName + " has entries in PBThreeTierETLPVLookup. Please remove these first");

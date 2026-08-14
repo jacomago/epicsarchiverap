@@ -4,6 +4,7 @@ import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -24,7 +25,7 @@ public class GetLastKnownEventTimeStamp implements BPLAction {
             return;
         }
 
-        Event event = configService.getETLLookup().getLatestEventFromDataStores(pvName);
+        Event event = PBThreeTierETLPVLookup.of(configService).getLatestEventFromDataStores(pvName);
         if (event != null) {
             resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
             HashMap<String, String> result = new HashMap<String, String>();

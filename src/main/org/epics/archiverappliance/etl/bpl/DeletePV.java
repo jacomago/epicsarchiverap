@@ -18,6 +18,7 @@ import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.etl.ETLContext;
 import org.epics.archiverappliance.etl.ETLInfo;
 import org.epics.archiverappliance.etl.ETLSource;
+import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -64,7 +65,7 @@ public class DeletePV implements BPLAction {
 
         try (PrintWriter out = resp.getWriter()) {
             // Remove any ETL jobs from the runtime state.
-            configService.getETLLookup().deleteETLJobs(pvName);
+            PBThreeTierETLPVLookup.of(configService).deleteETLJobs(pvName);
 
             if (deleteData) {
                 HashMap<String, String> timingValues = new HashMap<String, String>();

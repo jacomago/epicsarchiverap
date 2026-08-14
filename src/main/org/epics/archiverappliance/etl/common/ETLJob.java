@@ -91,7 +91,7 @@ public class ETLJob implements Runnable {
             return;
         }
 
-        if (this.configService.getETLLookup().getIsRunningInsideUnitTests() || this.allData) {
+        if (PBThreeTierETLPVLookup.of(this.configService).getIsRunningInsideUnitTests() || this.allData) {
             // Skip the check for times...
         } else {
             if (processingTime.isBefore(this.etlStage.getNextETLStart())) {

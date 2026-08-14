@@ -11,6 +11,7 @@ import com.google.common.eventbus.Subscribe;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.PVTypeInfoEvent;
@@ -21,10 +22,13 @@ import org.epics.archiverappliance.etl.ETLSource;
 import org.epics.archiverappliance.etl.StorageMetrics;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -43,6 +47,43 @@ import java.util.concurrent.TimeUnit;
 public final class PBThreeTierETLPVLookup {
     private static final Logger logger = LogManager.getLogger(PBThreeTierETLPVLookup.class.getName());
     private static final Logger configlogger = LogManager.getLogger("config." + PBThreeTierETLPVLookup.class.getName());
+
+    /**
+     * The ETL lookup belonging to each config service. Entries are removed by a shutdown hook;
+     * the lookup holds its config service, so the weak keys alone would not reclaim them.
+     * Keyed on identity, DefaultConfigService overriding neither equals nor hashCode. There is an entry
+     * per config service rather than a singleton because tests hold several config services at once.
+     */
+    private static final Map<ApplianceLifecycle, PBThreeTierETLPVLookup> INSTANCES =
+            Collections.synchronizedMap(new WeakHashMap<>());
+
+    /**
+     * Build the ETL webapp's runtime state and publish it against this config service.
+     * A lookup already published for this config service wins, so publishing is idempotent.
+     * @param configService &emsp;
+     * @return PBThreeTierETLPVLookup &emsp;
+     */
+    public static PBThreeTierETLPVLookup create(ConfigService configService) {
+        synchronized (INSTANCES) {
+            PBThreeTierETLPVLookup existing = INSTANCES.get(configService);
+            if (existing != null) {
+                logger.debug("ETL lookup already published for this config service");
+                return existing;
+            }
+            PBThreeTierETLPVLookup created = new PBThreeTierETLPVLookup(configService);
+            INSTANCES.put(configService, created);
+            configService.addShutdownHook(() -> INSTANCES.remove(configService));
+            return created;
+        }
+    }
+
+    /**
+     * @param configService &emsp;
+     * @return This appliance's ETL lookup, or null if this webapp is not the ETL webapp.
+     */
+    public static PBThreeTierETLPVLookup of(ApplianceLifecycle configService) {
+        return INSTANCES.get(configService);
+    }
 
     private ConfigService configService = null;
 
@@ -69,7 +110,7 @@ public final class PBThreeTierETLPVLookup {
      */
     private final ETLMetrics applianceMetrics = new ETLMetrics();
 
-    public PBThreeTierETLPVLookup(ConfigService configService) {
+    private PBThreeTierETLPVLookup(ConfigService configService) {
         this.configService = configService;
         configService.addShutdownHook(new ETLShutdownThread(this));
     }
@@ -290,9 +331,8 @@ public final class PBThreeTierETLPVLookup {
      */
     public void manualControlForUnitTests() {
         logger.error("Shutting down ETL for unit tests...");
-        var etlLookup = configService.getETLLookup();
-        etlLookup.scheduleWorker.shutdownNow();
-        etlLookup.isRunningInsideUnitTests = true;
+        this.scheduleWorker.shutdownNow();
+        this.isRunningInsideUnitTests = true;
     }
 
     public static OutOfSpaceHandling determineOutOfSpaceHandling(ConfigService configService) {

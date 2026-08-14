@@ -165,7 +165,7 @@ public class DefaultConfigService implements ConfigService {
 
     // Runtime state begins here
     protected LinkedList<Runnable> shutdownHooks = new LinkedList<>();
-    protected PBThreeTierETLPVLookup etlPVLookup = null;
+    protected LinkedList<Runnable> postStartupHooks = new LinkedList<>();
     protected EngineContext engineContext = null;
     protected ConcurrentSkipListSet<String> appliancesInCluster = new ConcurrentSkipListSet<String>();
     // Runtime state ends here
@@ -336,7 +336,6 @@ public class DefaultConfigService implements ConfigService {
                 warFile = WAR_FILE.RETRIEVAL;
                 break;
             case "/etl":
-                this.etlPVLookup = new PBThreeTierETLPVLookup(this);
                 warFile = WAR_FILE.ETL;
                 break;
             default:
@@ -724,8 +723,6 @@ public class DefaultConfigService implements ConfigService {
                     },
                     1,
                     TimeUnit.SECONDS);
-        } else if (this.warFile == WAR_FILE.ETL) {
-            this.etlPVLookup.postStartup();
         } else if (this.warFile == WAR_FILE.MGMT) {
             initializePersistenceLayer();
 
@@ -744,6 +741,10 @@ public class DefaultConfigService implements ConfigService {
         } else if (this.warFile == WAR_FILE.RETRIEVAL) {
             initializeFailoverServerCache();
         }
+
+        // Let this webapp's runtime state, if it registered a hook, join the startup sequence. ETL is the
+        // only registrant today; its hook occupies the slot its WAR_FILE.ETL branch used to.
+        postStartupHooks.forEach(Runnable::run);
 
         // Register for changes to the typeinfo map.
         logger.info("Registering for changes to typeinfos");
@@ -1466,12 +1467,17 @@ public class DefaultConfigService implements ConfigService {
 
     @Override
     public PBThreeTierETLPVLookup getETLLookup() {
-        return etlPVLookup;
+        return PBThreeTierETLPVLookup.of(this);
     }
 
     @Override
     public boolean isShuttingDown() {
         return startupExecutor.isShutdown();
+    }
+
+    @Override
+    public void addPostStartupHook(Runnable runnable) {
+        postStartupHooks.add(runnable);
     }
 
     @Override
