@@ -7,8 +7,6 @@
  *******************************************************************************/
 package org.epics.archiverappliance.config;
 
-import org.epics.archiverappliance.engine.pv.EngineContext;
-
 /**
  * Interface for appliance configuration.
  * One gets to a config service implementation thru dependency injection of one kind or the other.
@@ -30,12 +28,6 @@ public interface ConfigService
                 ClusterTopology,
                 PVDirectory,
                 ArchiveRequestWorkflow {
-
-    /**
-     * Return the runtime state for the engine.
-     * @return EngineContext &emsp;
-     */
-    public EngineContext getEngineContext();
 
     // Various reporting helper functions start here
 

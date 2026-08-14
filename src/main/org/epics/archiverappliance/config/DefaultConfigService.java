@@ -51,7 +51,6 @@ import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.config.persistence.MySQLPersistence;
 import org.epics.archiverappliance.config.pubsub.PubSubEvent;
 import org.epics.archiverappliance.engine.ArchiveEngine;
-import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.mgmt.MgmtPostStartup;
 import org.epics.archiverappliance.mgmt.NonMgmtPostStartup;
 import org.epics.archiverappliance.mgmt.bpl.cahdlers.NamesHandler;
@@ -1820,11 +1819,6 @@ public class DefaultConfigService implements ConfigService {
             }
             return new FileInputStream(policiesPyFile);
         }
-    }
-
-    @Override
-    public EngineContext getEngineContext() {
-        return EngineContext.of(this);
     }
 
     @Override
