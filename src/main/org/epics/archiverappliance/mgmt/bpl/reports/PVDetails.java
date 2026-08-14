@@ -14,6 +14,7 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.reports.Details;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ChannelArchiverConfig;
 import org.epics.archiverappliance.config.ChannelArchiverDataServerPVInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNames;
@@ -144,8 +145,8 @@ public class PVDetails implements BPLAction {
     }
 
     private static void addChannelArchiverInfo(
-            ConfigService configService, String pvName, LinkedList<Map<String, String>> result) {
-        List<ChannelArchiverDataServerPVInfo> serverInfos = configService.getChannelArchiverDataServers(pvName);
+            ChannelArchiverConfig channelArchiverConfig, String pvName, LinkedList<Map<String, String>> result) {
+        List<ChannelArchiverDataServerPVInfo> serverInfos = channelArchiverConfig.getChannelArchiverDataServers(pvName);
         if (serverInfos != null && !serverInfos.isEmpty()) {
             for (ChannelArchiverDataServerPVInfo serverInfo : serverInfos) {
                 addDetailedStatus(
