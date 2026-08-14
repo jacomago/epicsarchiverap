@@ -28,7 +28,8 @@ public interface ConfigService
                 ClusterTopology,
                 PVDirectory,
                 ArchiveRequestWorkflow,
-                StoragePluginConfigView {
+                StoragePluginConfigView,
+                PVTypeInfoLookupView {
 
     // Various reporting helper functions start here
 

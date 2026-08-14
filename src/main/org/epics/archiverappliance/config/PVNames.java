@@ -185,7 +185,7 @@ public class PVNames {
     /**
      * A standard process for dealing with aliases, standard fields and the like and getting to the PVTypeInfo.
      * @param pvName The name of PV.
-     * @param configService ConfigService
+     * @param configService Alias resolution plus the type info store
      * @return PVTypeInfo  &emsp;
      * <p>
      * Places where we look for the typeinfo.
@@ -205,7 +205,7 @@ public class PVNames {
      * </ul>
      *
      */
-    public static PVTypeInfo determineAppropriatePVTypeInfo(String pvName, ConfigService configService) {
+    public static PVTypeInfo determineAppropriatePVTypeInfo(String pvName, PVTypeInfoLookupView configService) {
         boolean pvDoesNotHaveField = !PVNames.isFieldOrFieldModifier(pvName);
 
         if (pvDoesNotHaveField) {

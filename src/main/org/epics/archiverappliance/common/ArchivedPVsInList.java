@@ -1,8 +1,8 @@
 package org.epics.archiverappliance.common;
 
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoLookupView;
 import org.epics.archiverappliance.config.PVTypeInfoStore.PVTypeInfoProjection;
 
 import java.io.IOException;
@@ -28,7 +28,8 @@ public class ArchivedPVsInList {
         }
     }
 
-    public static List<String> getArchivedPVs(List<String> pvNames, ConfigService configService) throws IOException {
+    public static List<String> getArchivedPVs(List<String> pvNames, PVTypeInfoLookupView configService)
+            throws IOException {
         record PVNameParts(String pvName, String plainPVName, boolean isField, String fieldName) {}
         ;
         LinkedList<PVNameParts> pvnps = new LinkedList<>();
