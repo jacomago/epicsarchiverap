@@ -10,6 +10,7 @@ package org.epics.archiverappliance.engine.bpl.reports;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EngineContext;
@@ -71,9 +72,9 @@ public class StorageRateReport implements BPLAction {
         }
     }
 
-    private static List<PVStorageRate> getStorageRates(ConfigService configService, String limit) {
+    private static List<PVStorageRate> getStorageRates(ApplianceLifecycle applianceLifecycle, String limit) {
         ArrayList<PVStorageRate> storageRates = new ArrayList<PVStorageRate>();
-        EngineContext engineContext = EngineContext.of(configService);
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
         for (ArchiveChannel channel : engineContext.getChannelList().values()) {
             PVMetrics pvMetrics = channel.getPVMetrics();
             storageRates.add(new PVStorageRate(pvMetrics.getPvName(), pvMetrics.getStorageRate()));

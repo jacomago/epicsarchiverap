@@ -78,10 +78,10 @@ public class ArchServletContextListener implements ServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        ConfigService configService =
-                (ConfigService) sce.getServletContext().getAttribute(ConfigService.CONFIG_SERVICE_NAME);
+        ApplianceLifecycle applianceLifecycle =
+                (ApplianceLifecycle) sce.getServletContext().getAttribute(ConfigService.CONFIG_SERVICE_NAME);
         try {
-            configService.shutdownNow();
+            applianceLifecycle.shutdownNow();
         } catch (Throwable t) {
             logger.warn("Exception shutting down config service using shutdown hook ", t);
         }

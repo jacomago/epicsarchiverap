@@ -44,8 +44,8 @@ public class RetrievalMetrics implements Details {
         return this;
     }
 
-    public static RetrievalMetrics calculateSummedMetrics(ConfigService configService) {
-        var allMetrics = RetrievalState.of(configService).getRetrievalMetrics();
+    public static RetrievalMetrics calculateSummedMetrics(ApplianceLifecycle applianceLifecycle) {
+        var allMetrics = RetrievalState.of(applianceLifecycle).getRetrievalMetrics();
         return allMetrics.values().stream().reduce(new RetrievalMetrics(), RetrievalMetrics::sumMetrics);
     }
 

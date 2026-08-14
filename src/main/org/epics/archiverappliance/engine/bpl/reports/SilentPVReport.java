@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EngineContext;
@@ -58,9 +59,9 @@ public class SilentPVReport implements BPLAction {
         }
     }
 
-    private static List<SilentPV> getSilentPVs(ConfigService configService, String limit) {
+    private static List<SilentPV> getSilentPVs(ApplianceLifecycle applianceLifecycle, String limit) {
         ArrayList<SilentPV> silentPVs = new ArrayList<SilentPV>();
-        EngineContext engineContext = EngineContext.of(configService);
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
         for (ArchiveChannel channel : engineContext.getChannelList().values()) {
             PVMetrics pvMetrics = channel.getPVMetrics();
             silentPVs.add(new SilentPV(pvMetrics.getPvName(), pvMetrics.getSecondsOfLastEvent()));

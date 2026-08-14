@@ -99,11 +99,11 @@ public class EngineContext {
     }
 
     /**
-     * @param configService &emsp;
+     * @param applianceLifecycle &emsp;
      * @return This appliance's engine context, or null if this webapp is not the engine webapp.
      */
-    public static EngineContext of(ApplianceLifecycle configService) {
-        return INSTANCES.get(configService);
+    public static EngineContext of(ApplianceLifecycle applianceLifecycle) {
+        return INSTANCES.get(applianceLifecycle);
     }
 
     /** writing thread to write samplebuffer to protocol buffer */

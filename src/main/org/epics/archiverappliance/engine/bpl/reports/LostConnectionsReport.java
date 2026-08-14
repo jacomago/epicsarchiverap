@@ -3,6 +3,7 @@ package org.epics.archiverappliance.engine.bpl.reports;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EngineContext;
@@ -58,9 +59,9 @@ public class LostConnectionsReport implements BPLAction {
         }
     }
 
-    private static List<PVLostConnections> getLostConnections(ConfigService configService, String limit) {
+    private static List<PVLostConnections> getLostConnections(ApplianceLifecycle applianceLifecycle, String limit) {
         ArrayList<PVLostConnections> lostConnections = new ArrayList<PVLostConnections>();
-        EngineContext engineContext = EngineContext.of(configService);
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
         for (ArchiveChannel channel : engineContext.getChannelList().values()) {
             PVMetrics pvMetrics = channel.getPVMetrics();
             lostConnections.add(new PVLostConnections(

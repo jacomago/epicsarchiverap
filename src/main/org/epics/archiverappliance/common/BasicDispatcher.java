@@ -9,6 +9,7 @@ package org.epics.archiverappliance.common;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
@@ -117,21 +118,23 @@ public class BasicDispatcher {
         }
     }
 
-    private static void startupState(HttpServletResponse resp, ConfigService configService) throws IOException {
+    private static void startupState(HttpServletResponse resp, ApplianceLifecycle applianceLifecycle)
+            throws IOException {
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
             HashMap<String, String> ret = new HashMap<String, String>();
-            ret.put("status", configService.getStartupState().toString());
+            ret.put("status", applianceLifecycle.getStartupState().toString());
             out.println(JSONObject.toJSONString(ret));
         }
     }
 
-    private static void postStartup(HttpServletResponse resp, ConfigService configService) throws IOException {
-        if (configService.isStartupComplete()) {
+    private static void postStartup(HttpServletResponse resp, ApplianceLifecycle applianceLifecycle)
+            throws IOException {
+        if (applianceLifecycle.isStartupComplete()) {
             logger.warn("poststartup being called after startup complete");
         } else {
             try {
-                configService.postStartup();
+                applianceLifecycle.postStartup();
             } catch (ConfigException ex) {
                 logger.fatal("Exception running postStartup", ex);
                 throw new IOException(ex);

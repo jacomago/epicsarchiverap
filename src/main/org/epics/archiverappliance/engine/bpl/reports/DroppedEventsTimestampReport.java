@@ -3,6 +3,7 @@ package org.epics.archiverappliance.engine.bpl.reports;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EngineContext;
@@ -54,9 +55,10 @@ public class DroppedEventsTimestampReport implements BPLAction {
         }
     }
 
-    private static List<PVDroppedEvents> getDroppedEventsTimeStamp(ConfigService configService, String limit) {
+    private static List<PVDroppedEvents> getDroppedEventsTimeStamp(
+            ApplianceLifecycle applianceLifecycle, String limit) {
         ArrayList<PVDroppedEvents> eventRates = new ArrayList<PVDroppedEvents>();
-        EngineContext engineContext = EngineContext.of(configService);
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
         for (ArchiveChannel channel : engineContext.getChannelList().values()) {
             PVMetrics pvMetrics = channel.getPVMetrics();
             if (pvMetrics.getTimestampWrongEventCount() > 0) {

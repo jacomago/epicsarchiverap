@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.Writer;
 import org.epics.archiverappliance.common.TimeUtils;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
@@ -606,13 +607,13 @@ public class ArchiveEngine {
      * get the pv's info and status
      * @param pvName
      *            Name of the channel (PV)
-     * @param configservice  ConfigService
+     * @param applianceLifecycle  ConfigService
      * @return  PVMetrics  &emsp;
      * @throws Exception
      *             On error in getting the pv info and status .
      */
-    public static PVMetrics getMetricsforPV(String pvName, ConfigService configservice) throws Exception {
-        EngineContext engineContext = EngineContext.of(configservice);
+    public static PVMetrics getMetricsforPV(String pvName, ApplianceLifecycle applianceLifecycle) throws Exception {
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
         ArchiveChannel channel = engineContext.getChannelList().get(pvName);
         if (channel == null) {
             return null;
@@ -623,13 +624,14 @@ public class ArchiveEngine {
     /**
      * Return info from CAJ
      * @param pvName The name of PV.
-     * @param configservice  ConfigService
+     * @param applianceLifecycle  ConfigService
      * @param statuses  Add a list of key value pairs to the status
      * @throws Exception  &emsp;
      */
     public static void getLowLevelStateInfo(
-            String pvName, ConfigService configservice, LinkedList<Map<String, String>> statuses) throws Exception {
-        EngineContext engineContext = EngineContext.of(configservice);
+            String pvName, ApplianceLifecycle applianceLifecycle, LinkedList<Map<String, String>> statuses)
+            throws Exception {
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
         ArchiveChannel channel = engineContext.getChannelList().get(pvName);
         if (channel == null) return;
         channel.getLowLevelChannelStateInfo(statuses);
@@ -760,12 +762,12 @@ public class ArchiveEngine {
     /**
      * destroy the pv
      * @param pvName  the pv's name to destroy
-     * @param configservice the configSerivice of the application
+     * @param applianceLifecycle the configSerivice of the application
      * @throws Exception
      *        error when destroy the PV
      */
-    public static void destoryPv(String pvName, final ConfigService configservice) throws Exception {
-        EngineContext engineContext = EngineContext.of(configservice);
+    public static void destoryPv(String pvName, final ApplianceLifecycle applianceLifecycle) throws Exception {
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
         ArchiveChannel channel = engineContext.getChannelList().get(pvName);
 
         if (channel == null) {
