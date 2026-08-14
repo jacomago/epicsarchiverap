@@ -215,7 +215,7 @@ public class EngineContext {
         configlogger.info("Write concurrency limit: " + writeThreadCountStr + " (0=unlimited) as specified by "
                 + writeThreadCountName + " in archappl.properties");
 
-        writer = new WriterRunnable(configService);
+        writer = new WriterRunnable(configService, this);
         channelList = new ConcurrentHashMap<String, ArchiveChannel>();
         logger.debug("Registering EngineContext for events");
         this.configService = configService;

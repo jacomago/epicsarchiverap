@@ -58,12 +58,12 @@ class WriterRunnableTest {
     // -------------------------------------------------------------------------
 
     /**
-     * Builds the mocked ConfigService + EngineContext that WriterRunnable requires.
+     * Builds a WriterRunnable on the mocked ConfigService + EngineContext it requires.
      *
      * @param channelList    the channel map the engine context will return
      * @param writeThreadCount  0 = unlimited (no semaphore), >0 caps concurrency
      */
-    private ConfigService buildConfigService(
+    private WriterRunnable buildWriterRunnable(
             ConcurrentHashMap<String, ArchiveChannel> channelList, int writeThreadCount) {
         EngineContext engineContext = mock(EngineContext.class);
         when(engineContext.getChannelList()).thenReturn(channelList);
@@ -74,9 +74,8 @@ class WriterRunnableTest {
                 "org.epics.archiverappliance.engine.epics.writeThreadCount", Integer.toString(writeThreadCount));
 
         ConfigService configService = mock(ConfigService.class);
-        when(configService.getEngineContext()).thenReturn(engineContext);
         when(configService.getInstallationProperties()).thenReturn(props);
-        return configService;
+        return new WriterRunnable(configService, engineContext);
     }
 
     private HashMapEvent makeEvent() {
@@ -173,7 +172,7 @@ class WriterRunnableTest {
 
         Set<String> expectedActive = new HashSet<>();
         ConcurrentHashMap<String, ArchiveChannel> channelList = new ConcurrentHashMap<>();
-        WriterRunnable writerRunnable = new WriterRunnable(buildConfigService(channelList, 0));
+        WriterRunnable writerRunnable = buildWriterRunnable(channelList, 0);
 
         for (int i = 0; i < activeCount + idleCount; i++) {
             String name = "TEST:PV:" + i;
@@ -239,7 +238,7 @@ class WriterRunnableTest {
         };
 
         ConcurrentHashMap<String, ArchiveChannel> channelList = new ConcurrentHashMap<>();
-        WriterRunnable writerRunnable = new WriterRunnable(buildConfigService(channelList, 0));
+        WriterRunnable writerRunnable = buildWriterRunnable(channelList, 0);
 
         for (int i = 0; i < DATA_CHANNEL_COUNT; i++) {
             String name = "TEST:PV:" + i;
@@ -287,7 +286,7 @@ class WriterRunnableTest {
     void testWritesRunInParallel() {
         SlowCountingWriter slowWriter = new SlowCountingWriter();
         ConcurrentHashMap<String, ArchiveChannel> channelList = new ConcurrentHashMap<>();
-        WriterRunnable writerRunnable = new WriterRunnable(buildConfigService(channelList, 0));
+        WriterRunnable writerRunnable = buildWriterRunnable(channelList, 0);
 
         for (int i = 0; i < PARALLEL_CHANNEL_COUNT; i++) {
             String name = "TEST:PV:" + i;
@@ -367,7 +366,7 @@ class WriterRunnableTest {
 
         ConcurrentHashMap<String, ArchiveChannel> channelList = new ConcurrentHashMap<>();
         channelList.put(name, channel);
-        WriterRunnable writerRunnable = new WriterRunnable(buildConfigService(channelList, 0));
+        WriterRunnable writerRunnable = buildWriterRunnable(channelList, 0);
         writerRunnable.addChannel(channel);
 
         // Start the first run in a virtual thread so it blocks in appendData
@@ -426,7 +425,7 @@ class WriterRunnableTest {
 
         ConcurrentHashMap<String, ArchiveChannel> channelList = new ConcurrentHashMap<>();
         // writeThreadCount = cap → semaphore limits to `cap` concurrent writes
-        WriterRunnable writerRunnable = new WriterRunnable(buildConfigService(channelList, cap));
+        WriterRunnable writerRunnable = buildWriterRunnable(channelList, cap);
 
         for (int i = 0; i < 20; i++) {
             String name = "TEST:PV:" + i;
@@ -491,7 +490,7 @@ class WriterRunnableTest {
 
         ConcurrentHashMap<String, ArchiveChannel> channelList = new ConcurrentHashMap<>();
         channelList.put(name, channel);
-        WriterRunnable writerRunnable = new WriterRunnable(buildConfigService(channelList, 0));
+        WriterRunnable writerRunnable = buildWriterRunnable(channelList, 0);
         writerRunnable.addChannel(channel);
 
         // Seed the buffer with a current-year event so the buffer's year is set
@@ -542,7 +541,7 @@ class WriterRunnableTest {
 
         ConcurrentHashMap<String, ArchiveChannel> channelList = new ConcurrentHashMap<>();
         channelList.put(name, channel);
-        WriterRunnable writerRunnable = new WriterRunnable(buildConfigService(channelList, 0));
+        WriterRunnable writerRunnable = buildWriterRunnable(channelList, 0);
         writerRunnable.addChannel(channel);
 
         writerRunnable.removeChannel(name);
@@ -577,7 +576,7 @@ class WriterRunnableTest {
 
         ConcurrentHashMap<String, ArchiveChannel> channelList = new ConcurrentHashMap<>();
         channelList.put(name, channel);
-        WriterRunnable writerRunnable = new WriterRunnable(buildConfigService(channelList, 0));
+        WriterRunnable writerRunnable = buildWriterRunnable(channelList, 0);
         writerRunnable.addChannel(channel);
 
         writerRunnable.removeChannel(name);

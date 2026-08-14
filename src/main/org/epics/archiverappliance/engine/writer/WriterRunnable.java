@@ -15,6 +15,7 @@ import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.model.SampleBuffer;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,8 +41,8 @@ public class WriterRunnable implements Runnable {
     /** the sample buffer hash map */
     private final ConcurrentHashMap<String, SampleBuffer> buffers = new ConcurrentHashMap<>();
 
-    /** the configservice used by this WriterRunnable */
-    private final ConfigService configservice;
+    /** the engine context that owns this WriterRunnable */
+    private final EngineContext engineContext;
     /** guards against concurrent write() invocations */
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     /** virtual thread executor for parallel per-channel I/O */
@@ -53,10 +54,11 @@ public class WriterRunnable implements Runnable {
 
     /**
      * the constructor
-     * @param configservice the configservice used by this WriterRunnable
+     * @param configservice the configservice this WriterRunnable reads its configuration from
+     * @param engineContext the engine context that owns this WriterRunnable
      */
-    public WriterRunnable(ConfigService configservice) {
-        this.configservice = configservice;
+    public WriterRunnable(ConfigService configservice, EngineContext engineContext) {
+        this.engineContext = engineContext;
         int limit = 0;
         try {
             limit = Integer.parseInt(configservice
@@ -83,8 +85,7 @@ public class WriterRunnable implements Runnable {
     public void removeChannel(final String channelName) {
         SampleBuffer buffer = buffers.get(channelName);
         if (buffer != null) {
-            ConcurrentHashMap<String, ArchiveChannel> channelList =
-                    configservice.getEngineContext().getChannelList();
+            ConcurrentHashMap<String, ArchiveChannel> channelList = engineContext.getChannelList();
             buffer.resetSamples();
             ArrayListEventStream previousSamples = buffer.getPreviousSamples();
             if (!previousSamples.isEmpty()) {
@@ -136,14 +137,10 @@ public class WriterRunnable implements Runnable {
             WriteCycleMetrics metrics = write();
             long wallClockMillis = System.currentTimeMillis() - startMillis;
             if (metrics == null) {
-                configservice.getEngineContext().recordSkippedWriteCycle();
+                engineContext.recordSkippedWriteCycle();
             } else {
-                configservice
-                        .getEngineContext()
-                        .recordWriteCycle(
-                                wallClockMillis / 1000.0,
-                                metrics.totalChannelIOMillis() / 1000.0,
-                                metrics.channelsWritten());
+                engineContext.recordWriteCycle(
+                        wallClockMillis / 1000.0, metrics.totalChannelIOMillis() / 1000.0, metrics.channelsWritten());
             }
         } catch (Exception e) {
             logger.error("Exception", e);
@@ -162,8 +159,7 @@ public class WriterRunnable implements Runnable {
             return;
         }
         String channelName = buffer.getChannelName();
-        ConcurrentHashMap<String, ArchiveChannel> channelList =
-                configservice.getEngineContext().getChannelList();
+        ConcurrentHashMap<String, ArchiveChannel> channelList = engineContext.getChannelList();
 
         buffer.resetSamples();
         ArrayListEventStream previousSamples = buffer.getPreviousSamples();
@@ -211,8 +207,7 @@ public class WriterRunnable implements Runnable {
         if (!isRunning.compareAndSet(false, true)) return null;
         try {
             final long writeTimestamp = System.currentTimeMillis() / 1000;
-            ConcurrentHashMap<String, ArchiveChannel> channelList =
-                    configservice.getEngineContext().getChannelList();
+            ConcurrentHashMap<String, ArchiveChannel> channelList = engineContext.getChannelList();
 
             List<WriteTask> tasks = collectWriteTasks(channelList, writeTimestamp);
             List<Future<Long>> futures = submitWriteTasks(tasks);
