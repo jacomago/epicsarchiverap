@@ -546,11 +546,11 @@ public class PVTypeInfo implements Serializable {
 
     /**
      * Loop thru the stores outlined in this typeinfo and determine the most recent event for this pv
-     * @param configService ConfigService
+     * @param configService The configuration the stores named in this typeinfo need to initialize
      * @throws IOException  &emsp;
      * @return Instant  &emsp;
      */
-    public Instant determineLastKnownEventFromStores(ConfigService configService) throws IOException {
+    public Instant determineLastKnownEventFromStores(StoragePluginConfigView configService) throws IOException {
         try (BasicContext context = new BasicContext()) {
             for (String storeUrl : this.dataStores) {
                 try {
