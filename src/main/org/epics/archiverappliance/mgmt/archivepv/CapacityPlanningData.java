@@ -6,6 +6,7 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceAggregateInfo;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -88,7 +89,7 @@ public class CapacityPlanningData {
         }
     }
 
-    public CapacityPlanningData(ConfigService configService, ApplianceInfo applianceInfo) throws IOException {
+    public CapacityPlanningData(PVDirectory pvDirectory, ApplianceInfo applianceInfo) throws IOException {
         try {
             identity = applianceInfo.getIdentity();
             String engineURL = applianceInfo.getEngineURL() + "/getApplianceMetrics";
@@ -118,7 +119,7 @@ public class CapacityPlanningData {
             }
 
             applianceAggregateInfoAsOfLastFetch =
-                    configService.getAggregatedApplianceInfo(applianceInfo).clone();
+                    pvDirectory.getAggregatedApplianceInfo(applianceInfo).clone();
         } catch (Exception e) {
             logger.error("Exception in CapacityPlanningMetricsPerApplianceForPV", e);
             throw new IOException(e);
