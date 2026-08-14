@@ -8,7 +8,6 @@
 package org.epics.archiverappliance.config;
 
 import org.epics.archiverappliance.engine.pv.EngineContext;
-import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 
 /**
  * Interface for appliance configuration.
@@ -31,13 +30,6 @@ public interface ConfigService
                 ClusterTopology,
                 PVDirectory,
                 ArchiveRequestWorkflow {
-
-    /**
-     * Return the runtime state for ETL.
-     * This may eventually be moved to a RunTime class but that would still start from the configservice.
-     * @return PBThreeTierETLPVLookup &emsp;
-     */
-    public PBThreeTierETLPVLookup getETLLookup();
 
     /**
      * Return the runtime state for the engine.
