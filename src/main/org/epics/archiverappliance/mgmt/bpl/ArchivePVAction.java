@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
@@ -502,11 +503,11 @@ public class ArchivePVAction implements BPLAction {
      * All archive requests that do not have an appliance specified will be sampled on this appliance and go thru capacity planning.
      * @param pvArchiveParams JSONArray
      * @param myIdentity emsp
-     * @param configService ConfigServic
+     * @param clusterTopology Cluster topology
      */
     @SuppressWarnings("unchecked")
     private void breakDownPVRequestsByAssignedAppliance(
-            JSONArray pvArchiveParams, String myIdentity, ConfigService configService, HttpServletResponse resp)
+            JSONArray pvArchiveParams, String myIdentity, ClusterTopology clusterTopology, HttpServletResponse resp)
             throws IOException {
         HashMap<String, List<JSONObject>> archiveRequestsByAppliance = new HashMap<String, List<JSONObject>>();
         archiveRequestsByAppliance.put(myIdentity, new LinkedList<JSONObject>());
@@ -514,7 +515,7 @@ public class ArchivePVAction implements BPLAction {
             JSONObject pvArchiveParam = (JSONObject) pvArchiveParamObj;
             if (pvArchiveParam.containsKey("appliance")) {
                 String assignedAppliance = (String) pvArchiveParam.get("appliance");
-                if (configService.getAppliance(assignedAppliance) == null) {
+                if (clusterTopology.getAppliance(assignedAppliance) == null) {
                     throw new IOException("Cannot find appliance info for " + assignedAppliance + " for pv "
                             + pvArchiveParam.get("pv"));
                 }
@@ -535,7 +536,7 @@ public class ArchivePVAction implements BPLAction {
         for (String appliance : archiveRequestsByAppliance.keySet()) {
             List<JSONObject> requestsForAppliance = archiveRequestsByAppliance.get(appliance);
             if (!requestsForAppliance.isEmpty()) {
-                String archiveURL = configService.getAppliance(appliance).getMgmtURL() + "/archivePV";
+                String archiveURL = clusterTopology.getAppliance(appliance).getMgmtURL() + "/archivePV";
                 JSONArray archiveResponse = GetUrlContent.postDataAndGetContentAsJSONArray(
                         archiveURL, GetUrlContent.from(requestsForAppliance));
                 finalResult.addAll(archiveResponse);

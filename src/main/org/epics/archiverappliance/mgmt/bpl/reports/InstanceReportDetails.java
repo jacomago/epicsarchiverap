@@ -6,6 +6,7 @@ import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.reports.Details;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -35,8 +36,8 @@ public class InstanceReportDetails implements BPLAction {
         }
     }
 
-    public LinkedList<Map<String, String>> metricsDetails(ConfigService configService, String applianceIdentity) {
-        ApplianceInfo info = configService.getAppliance(applianceIdentity);
+    public LinkedList<Map<String, String>> metricsDetails(ClusterTopology clusterTopology, String applianceIdentity) {
+        ApplianceInfo info = clusterTopology.getAppliance(applianceIdentity);
 
         String applianceDetailsURLSnippet = "/getInstanceMetricsForAppliance?appliance="
                 + URLEncoder.encode(applianceIdentity, StandardCharsets.UTF_8);

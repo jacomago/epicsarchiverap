@@ -10,6 +10,7 @@ import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
@@ -476,9 +477,9 @@ public class AppendAndAliasPV implements BPLAction {
         }
     }
 
-    private void cleanupTemporaryPV(ConfigService configService, String destPVName) {
+    private void cleanupTemporaryPV(ClusterTopology clusterTopology, String destPVName) {
         try {
-            String deleteURL = configService.getMyApplianceInfo().getMgmtURL() + "/deletePV?pv="
+            String deleteURL = clusterTopology.getMyApplianceInfo().getMgmtURL() + "/deletePV?pv="
                     + URLEncoder.encode(destPVName, "UTF-8") + "&deleteData=true";
             logger.info("Deleting temporary PV from system using " + deleteURL);
             GetUrlContent.getURLContentAsJSONObject(deleteURL);

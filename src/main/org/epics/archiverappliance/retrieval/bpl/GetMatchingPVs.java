@@ -3,6 +3,7 @@ package org.epics.archiverappliance.retrieval.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -133,11 +134,11 @@ public class GetMatchingPVs implements BPLAction {
         }
     }
 
-    private static LinkedList<String> getMgmtURLsInCluster(ConfigService configService) {
+    private static LinkedList<String> getMgmtURLsInCluster(ClusterTopology clusterTopology) {
         LinkedList<String> mgmtURLs = new LinkedList<String>();
         try {
             JSONArray appliancesInCluster = GetUrlContent.getURLContentAsJSONArray(
-                    configService.getMyApplianceInfo().getMgmtURL() + "/getAppliancesInCluster");
+                    clusterTopology.getMyApplianceInfo().getMgmtURL() + "/getAppliancesInCluster");
             for (Object object : appliancesInCluster) {
                 mgmtURLs.add((String) ((JSONObject) object).get("mgmtURL"));
             }
