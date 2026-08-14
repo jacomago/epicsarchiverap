@@ -3,7 +3,7 @@ package org.epics.archiverappliance.config;
 import org.epics.archiverappliance.config.exception.ConfigException;
 
 public class ChunkKeyKeyMapping implements PVNameToKeyMapping {
-    private ConfigService configService;
+    private StoragePluginConfigView configService;
     private char terminatorChar = 0;
 
     @Override
@@ -11,11 +11,11 @@ public class ChunkKeyKeyMapping implements PVNameToKeyMapping {
         this.configService = configService;
     }
 
-    public ChunkKeyKeyMapping(ConfigService configService) {
+    public ChunkKeyKeyMapping(StoragePluginConfigView configService) {
         this.configService = configService;
     }
 
-    public ChunkKeyKeyMapping(ConfigService configService, char terminatorChar) {
+    public ChunkKeyKeyMapping(StoragePluginConfigView configService, char terminatorChar) {
         this.configService = configService;
         this.terminatorChar = terminatorChar;
     }

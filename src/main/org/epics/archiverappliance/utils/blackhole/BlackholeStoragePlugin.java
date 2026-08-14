@@ -15,7 +15,7 @@ import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.etl.ConversionFunction;
 import org.epics.archiverappliance.etl.ETLContext;
 import org.epics.archiverappliance.etl.ETLDest;
@@ -107,7 +107,7 @@ public class BlackholeStoragePlugin implements StoragePlugin, ETLDest {
     }
 
     @Override
-    public void initialize(String configURL, ConfigService configService) throws IOException {
+    public void initialize(String configURL, StoragePluginConfigView configService) throws IOException {
         try {
             URI srcURI = new URI(configURL);
             HashMap<String, String> queryNVPairs = URIUtils.parseQueryString(srcURI);

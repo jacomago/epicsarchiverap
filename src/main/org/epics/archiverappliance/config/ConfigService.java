@@ -27,7 +27,8 @@ public interface ConfigService
                 ApplianceLifecycle,
                 ClusterTopology,
                 PVDirectory,
-                ArchiveRequestWorkflow {
+                ArchiveRequestWorkflow,
+                StoragePluginConfigView {
 
     // Various reporting helper functions start here
 
