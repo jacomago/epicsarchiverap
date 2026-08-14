@@ -11,6 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
+import org.epics.archiverappliance.config.ClusterExecutor;
 import org.epics.archiverappliance.config.ClusterExecutor.EAABulkOperation;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVDirectory.CachedPVCounts;
@@ -66,14 +67,14 @@ public class ApplianceMetrics implements BPLAction {
     /*
      * Return a map of appliance identity -> PV counts.
      */
-    static Map<String, Long> getAppliancePVCounts(ConfigService configService) {
+    static Map<String, Long> getAppliancePVCounts(ClusterExecutor clusterExecutor) {
         class PVCounts implements EAABulkOperation<CachedPVCounts> {
             @Override
             public CachedPVCounts call(ConfigService configService) {
                 return configService.getCachedPVCountsForThisAppliance();
             }
         }
-        Map<String, CachedPVCounts> pvCountsByAppliance = configService.executeClusterWide(new PVCounts());
+        Map<String, CachedPVCounts> pvCountsByAppliance = clusterExecutor.executeClusterWide(new PVCounts());
         Map<String, Long> pvCounts = new HashMap<String, Long>();
         for (Map.Entry<String, CachedPVCounts> entry : pvCountsByAppliance.entrySet()) {
             String applianceIdentity = entry.getKey();
