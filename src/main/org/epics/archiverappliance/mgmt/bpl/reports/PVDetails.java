@@ -18,6 +18,7 @@ import org.epics.archiverappliance.config.ChannelArchiverDataServerPVInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PolicyService;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONArray;
@@ -157,8 +158,8 @@ public class PVDetails implements BPLAction {
     }
 
     private void addExtraFields(
-            ConfigService configService, PVTypeInfo typeInfo, LinkedList<Map<String, String>> result) {
-        for (String extraFieldName : configService.getExtraFields()) {
+            PolicyService policyService, PVTypeInfo typeInfo, LinkedList<Map<String, String>> result) {
+        for (String extraFieldName : policyService.getExtraFields()) {
             String extraValue = typeInfo.getExtraFields().get(extraFieldName);
             if (extraValue != null) {
                 if (extraFieldName.equals("SCAN")) {

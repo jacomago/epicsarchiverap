@@ -16,6 +16,7 @@ import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PolicyService;
 import org.epics.archiverappliance.config.UserSpecifiedSamplingParams;
 import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
@@ -183,13 +184,13 @@ public class ArchivePVAction implements BPLAction {
 
     /**
      * Performance optimization - pass in fieldsArchivedAsPartOfStream as part of archivePV call.
-     * @param configService ConfigService
+     * @param policyService ConfigService
      * @return All Fields as stream
      */
-    public static List<String> getFieldsAsPartOfStream(ConfigService configService) {
+    public static List<String> getFieldsAsPartOfStream(PolicyService policyService) {
         List<String> fieldsArchivedAsPartOfStream = new LinkedList<String>();
         try {
-            fieldsArchivedAsPartOfStream = configService.getFieldsArchivedAsPartOfStream();
+            fieldsArchivedAsPartOfStream = policyService.getFieldsArchivedAsPartOfStream();
         } catch (IOException ex) {
             logger.error("Exception fetching standard fields", ex);
         }
