@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.InstallationProperties;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.PVTypeInfoEvent;
 import org.epics.archiverappliance.config.PVTypeInfoEvent.ChangeType;
@@ -335,8 +336,8 @@ public final class PBThreeTierETLPVLookup {
         this.isRunningInsideUnitTests = true;
     }
 
-    public static OutOfSpaceHandling determineOutOfSpaceHandling(ConfigService configService) {
-        String outOfSpaceHandler = configService
+    public static OutOfSpaceHandling determineOutOfSpaceHandling(InstallationProperties installationProperties) {
+        String outOfSpaceHandler = installationProperties
                 .getInstallationProperties()
                 .getProperty(
                         "org.epics.archiverappliance.etl.common.OutOfSpaceHandling",

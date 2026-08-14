@@ -11,7 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.remotable.ArrayListEventStream;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.InstallationProperties;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.model.SampleBuffer;
@@ -54,14 +54,14 @@ public class WriterRunnable implements Runnable {
 
     /**
      * the constructor
-     * @param configservice the configservice this WriterRunnable reads its configuration from
+     * @param installationProperties the installationProperties this WriterRunnable reads its configuration from
      * @param engineContext the engine context that owns this WriterRunnable
      */
-    public WriterRunnable(ConfigService configservice, EngineContext engineContext) {
+    public WriterRunnable(InstallationProperties installationProperties, EngineContext engineContext) {
         this.engineContext = engineContext;
         int limit = 0;
         try {
-            limit = Integer.parseInt(configservice
+            limit = Integer.parseInt(installationProperties
                     .getInstallationProperties()
                     .getProperty("org.epics.archiverappliance.engine.epics.writeThreadCount", "0"));
         } catch (NumberFormatException e) {

@@ -568,11 +568,11 @@ public class PVTypeInfo implements Serializable {
     /**
      * The secondsToBuffer is a system wide property.
      * Use this method to get the proper defaults.
-     * @param configService ConfigService
+     * @param installationProperties ConfigService
      * @return secondsToBuffer  &emsp;
      */
-    public static int getSecondsToBuffer(ConfigService configService) {
-        String secondsToBufferStr = configService
+    public static int getSecondsToBuffer(InstallationProperties installationProperties) {
+        String secondsToBufferStr = installationProperties
                 .getInstallationProperties()
                 .getProperty("org.epics.archiverappliance.config.PVTypeInfo.secondsToBuffer", "10");
         int secondsToBuffer = Integer.parseInt(secondsToBufferStr);

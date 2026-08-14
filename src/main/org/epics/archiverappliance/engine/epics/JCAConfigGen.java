@@ -16,6 +16,7 @@ import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.InstallationProperties;
 import org.epics.archiverappliance.config.exception.ConfigException;
 
 /**
@@ -32,14 +33,14 @@ public class JCAConfigGen {
 	
 	/**
 	 * Use environment vars to generate a JCA config that can be handed off to a JCA DefaultConfigurationBuilder
-	 * @param configService ConfigService
+	 * @param installationProperties ConfigService
 	 * @return ByteArrayInputStream  &emsp;
 	 * @throws ConfigException &emsp;
 	 */
-	public static ByteArrayInputStream generateJCAConfig(ConfigService configService) throws ConfigException {
+	public static ByteArrayInputStream generateJCAConfig(InstallationProperties installationProperties) throws ConfigException {
 		String JCACAJContext = "gov.aps.jca.jni.SingleThreadedContext";
 		
-		Properties props = configService.getInstallationProperties();
+		Properties props = installationProperties.getInstallationProperties();
 		configlogger.info("JCA/CAJ prop from archappl.properties is " + props.get(JCA_CONFIG_GEN_USE_CAJ));
 		if(props != null 
 				&& props.containsKey(JCA_CONFIG_GEN_USE_CAJ) 
