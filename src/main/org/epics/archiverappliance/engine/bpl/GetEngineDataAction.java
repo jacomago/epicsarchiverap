@@ -55,7 +55,7 @@ public class GetEngineDataAction implements BPLAction {
             end = TimeUtils.convertFromISO8601String(endTimeStr);
         }
 
-        EngineContext engineContext = configService.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configService);
         if (engineContext.getChannelList().containsKey(pvName)) {
             ArchiveChannel archiveChannel = engineContext.getChannelList().get(pvName);
             ArrayListEventStream st = archiveChannel.getPVData();

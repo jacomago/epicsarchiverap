@@ -132,7 +132,7 @@ public class EngineMetrics implements Details {
 
     @Override
     public LinkedList<Map<String, String>> details(ConfigService configService) {
-        EngineContext context = configService.getEngineContext();
+        EngineContext context = EngineContext.of(configService);
         DecimalFormat twoSignificantDigits = new DecimalFormat("###,###,###,###,###,###.##");
         LinkedList<Map<String, String>> details = new LinkedList<Map<String, String>>();
         details.add(this.metricDetail("Total PV count", Integer.toString(pvCount)));

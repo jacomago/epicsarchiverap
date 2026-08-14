@@ -91,8 +91,7 @@ public class PVContext {
             final ConnectionListener conn_callback)
             throws Exception {
 
-        final Channel channel = configservice
-                .getEngineContext()
+        final Channel channel = EngineContext.of(configservice)
                 .getJCACommandThread(jcaCommandThreadId)
                 .createChannel(name, conn_callback);
 
@@ -140,8 +139,7 @@ public class PVContext {
             final Runnable command) {
         try {
             if (theChannel != null) {
-                if (!configservice
-                        .getEngineContext()
+                if (!EngineContext.of(configservice)
                         .doesChannelContextMatchThreadContext(theChannel, jcaCommandThreadId)) {
                     logger.error("Command for pv " + pvName + " is incorrectly scheduled on thread "
                             + jcaCommandThreadId + " in " + msg);
@@ -156,6 +154,6 @@ public class PVContext {
         } catch (Throwable t) {
             logger.error("Exception scheduling command for pv " + pvName, t);
         }
-        configservice.getEngineContext().getJCACommandThread(jcaCommandThreadId).addCommand(command);
+        EngineContext.of(configservice).getJCACommandThread(jcaCommandThreadId).addCommand(command);
     }
 }

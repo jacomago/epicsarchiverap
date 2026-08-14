@@ -56,7 +56,7 @@ public class DroppedEventsTimestampReport implements BPLAction {
 
     private static List<PVDroppedEvents> getDroppedEventsTimeStamp(ConfigService configService, String limit) {
         ArrayList<PVDroppedEvents> eventRates = new ArrayList<PVDroppedEvents>();
-        EngineContext engineContext = configService.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configService);
         for (ArchiveChannel channel : engineContext.getChannelList().values()) {
             PVMetrics pvMetrics = channel.getPVMetrics();
             if (pvMetrics.getTimestampWrongEventCount() > 0) {

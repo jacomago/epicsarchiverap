@@ -10,6 +10,7 @@ package org.epics.archiverappliance.engine.bpl.reports;
 import org.epics.archiverappliance.common.reports.Metrics;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.engine.epics.EngineMetrics;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 
 import java.util.Map;
 
@@ -22,7 +23,7 @@ public class ApplianceMetrics implements Metrics {
 
     @Override
     public Map<String, String> metrics(ConfigService configService) {
-        return EngineMetrics.computeEngineMetrics(configService.getEngineContext(), configService)
+        return EngineMetrics.computeEngineMetrics(EngineContext.of(configService), configService)
                 .toJSONString();
     }
 }

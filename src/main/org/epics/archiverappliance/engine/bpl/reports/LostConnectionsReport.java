@@ -60,7 +60,7 @@ public class LostConnectionsReport implements BPLAction {
 
     private static List<PVLostConnections> getLostConnections(ConfigService configService, String limit) {
         ArrayList<PVLostConnections> lostConnections = new ArrayList<PVLostConnections>();
-        EngineContext engineContext = configService.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configService);
         for (ArchiveChannel channel : engineContext.getChannelList().values()) {
             PVMetrics pvMetrics = channel.getPVMetrics();
             lostConnections.add(new PVLostConnections(

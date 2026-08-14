@@ -232,8 +232,7 @@ public class ConfigServiceForTests extends DefaultConfigService {
             return t;
         });
 
-        this.engineContext = new EngineContext(this);
-        this.engineContext.setDisconnectCheckTimeoutInSecondsForTestingPurposesOnly(defaultSecondsDisconnect);
+        EngineContext.create(this).setDisconnectCheckTimeoutInSecondsForTestingPurposesOnly(defaultSecondsDisconnect);
         PBThreeTierETLPVLookup.create(this);
         RetrievalState.create(this, cs -> new SampleRetrievalState(this));
         MgmtRuntimeState.create(this);
@@ -276,8 +275,9 @@ public class ConfigServiceForTests extends DefaultConfigService {
         super.initialize(sce);
 
         RetrievalState.create(this, cs -> new SampleRetrievalState(this));
-        if (this.engineContext != null) {
-            this.engineContext.setDisconnectCheckTimeoutInSecondsForTestingPurposesOnly(defaultSecondsDisconnect);
+        EngineContext engineContext = EngineContext.of(this);
+        if (engineContext != null) {
+            engineContext.setDisconnectCheckTimeoutInSecondsForTestingPurposesOnly(defaultSecondsDisconnect);
         }
     }
 

@@ -60,7 +60,7 @@ public class SilentPVReport implements BPLAction {
 
     private static List<SilentPV> getSilentPVs(ConfigService configService, String limit) {
         ArrayList<SilentPV> silentPVs = new ArrayList<SilentPV>();
-        EngineContext engineContext = configService.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configService);
         for (ArchiveChannel channel : engineContext.getChannelList().values()) {
             PVMetrics pvMetrics = channel.getPVMetrics();
             silentPVs.add(new SilentPV(pvMetrics.getPvName(), pvMetrics.getSecondsOfLastEvent()));

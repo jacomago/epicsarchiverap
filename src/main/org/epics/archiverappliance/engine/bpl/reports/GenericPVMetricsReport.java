@@ -63,7 +63,7 @@ public class GenericPVMetricsReport<T extends Number> implements BPLAction {
     private List<Map<String, String>> applyMetric(ConfigService configService, String limitStr) {
         this.applianceName = configService.getMyApplianceInfo().getIdentity();
         HashMap<String, T> pvs2Rate = new HashMap<String, T>();
-        EngineContext engineContext = configService.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configService);
         for (ArchiveChannel channel : engineContext.getChannelList().values()) {
             pvs2Rate.put(channel.getName(), this.getFn.apply(channel.getPVMetrics()));
         }

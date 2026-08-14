@@ -40,7 +40,7 @@ public class WaveformPVsAction implements BPLAction {
             throws IOException {
         logger.info("Getting a list of waveform PV's");
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
-        EngineContext engineContext = configService.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configService);
         LinkedList<HashMap<String, String>> result = new LinkedList<HashMap<String, String>>();
         try (PrintWriter out = resp.getWriter()) {
             for (ArchiveChannel channel : engineContext.getChannelList().values()) {

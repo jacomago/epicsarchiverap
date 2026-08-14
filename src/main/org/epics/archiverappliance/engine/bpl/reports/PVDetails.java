@@ -14,6 +14,7 @@ import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.engine.ArchiveEngine;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.EngineContext.CommandThreadChannel;
 import org.epics.archiverappliance.engine.pv.PVMetrics;
 
@@ -45,7 +46,7 @@ public class PVDetails implements org.epics.archiverappliance.common.reports.PVD
             if (typeInfoForPV.isPaused()) {
                 LinkedList<Map<String, String>> statuses = new LinkedList<Map<String, String>>();
                 List<CommandThreadChannel> immortalChannelsForPV =
-                        configService.getEngineContext().getAllChannelsForPV(pvName);
+                        EngineContext.of(configService).getAllChannelsForPV(pvName);
                 if (immortalChannelsForPV.isEmpty()) {
                     addDetailedStatus(statuses, "Open channels", "0");
                 } else {
@@ -66,7 +67,7 @@ public class PVDetails implements org.epics.archiverappliance.common.reports.PVD
                 ArchiveEngine.getLowLevelStateInfo(pvName, configService, statuses);
 
                 List<CommandThreadChannel> immortalChannelsForPV =
-                        configService.getEngineContext().getAllChannelsForPV(pvName);
+                        EngineContext.of(configService).getAllChannelsForPV(pvName);
                 if (immortalChannelsForPV.isEmpty()) {
                     addDetailedStatus(statuses, "Open channels", "0");
                 } else {
@@ -81,7 +82,7 @@ public class PVDetails implements org.epics.archiverappliance.common.reports.PVD
 
                 if (dbrType.isV3Type()) {
                     ArchiveChannel channel =
-                            configService.getEngineContext().getChannelList().get(pvName);
+                            EngineContext.of(configService).getChannelList().get(pvName);
                     if (channel != null) {
                         int metaFieldCount = channel.getMetaChannelCount();
                         int connectedMetaFieldCount = channel.getConnectedMetaChannelCount();

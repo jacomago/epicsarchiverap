@@ -20,6 +20,7 @@ import org.epics.archiverappliance.data.ScalarStringSampleValue;
 import org.epics.archiverappliance.data.ScalarValue;
 import org.epics.archiverappliance.data.VectorStringSampleValue;
 import org.epics.archiverappliance.data.VectorValue;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.PV;
 import org.epics.archiverappliance.engine.pv.PVFactory;
 import org.epics.archiverappliance.engine.pv.PVListener;
@@ -79,7 +80,7 @@ public class MetaGet implements Runnable {
     public void initpv() throws Exception {
         try {
 
-            int jcaCommandThreadId = configservice.getEngineContext().assignJCACommandThread(pvName, null);
+            int jcaCommandThreadId = EngineContext.of(configservice).assignJCACommandThread(pvName, null);
             PV pv = PVFactory.createPV(pvName, configservice, jcaCommandThreadId, usePVAccess);
             pv.addListener(new PVListener() {
                 @Override
@@ -95,7 +96,7 @@ public class MetaGet implements Runnable {
                                 "Starting the timer to measure event and storage rates for about 60 seconds for pv "
                                         + MetaGet.this.pvName);
                         ScheduledThreadPoolExecutor scheduler =
-                                configservice.getEngineContext().getMiscTasksScheduler();
+                                EngineContext.of(configservice).getMiscTasksScheduler();
                         samplingFuture = scheduler.schedule(MetaGet.this, 60, TimeUnit.SECONDS);
                         MetaGet.this.scheduleStartEpochSecs = System.currentTimeMillis() / 1000;
                         isScheduled = true;

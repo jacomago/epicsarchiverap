@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.EngineContext.CommandThreadChannel;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
@@ -55,7 +56,7 @@ public class CleanUpAnyImmortalChannels implements BPLAction {
         }
 
         List<CommandThreadChannel> immortalChannelsForPV =
-                configService.getEngineContext().getAllChannelsForPV(pvName);
+                EngineContext.of(configService).getAllChannelsForPV(pvName);
         for (final CommandThreadChannel immortalCommandThreadChannel : immortalChannelsForPV) {
             immortalCommandThreadChannel.getCommandThread().addCommand(new Runnable() {
                 @Override

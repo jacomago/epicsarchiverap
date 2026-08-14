@@ -60,7 +60,7 @@ public class SlowChangingPVsWithDroppedEvents implements BPLAction {
 
     private static List<PVDroppedEvents> getDroppedEvents(ConfigService configService, String limit) {
         ArrayList<PVDroppedEvents> eventRates = new ArrayList<PVDroppedEvents>();
-        EngineContext engineContext = configService.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configService);
         for (ArchiveChannel channel : engineContext.getChannelList().values()) {
             PVMetrics pvMetrics = channel.getPVMetrics();
             if (pvMetrics.getTimestampWrongEventCount() > pvMetrics.getEventCounts()) {

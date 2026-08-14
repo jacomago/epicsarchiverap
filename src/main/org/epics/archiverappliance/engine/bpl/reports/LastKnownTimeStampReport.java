@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.PVMetrics;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
@@ -43,7 +44,7 @@ public class LastKnownTimeStampReport implements BPLAction {
             out.println("[");
             boolean first = true;
             for (ArchiveChannel channel :
-                    configService.getEngineContext().getChannelList().values()) {
+                    EngineContext.of(configService).getChannelList().values()) {
                 if (pattern != null && !pattern.matcher(channel.getName()).matches()) continue;
 
                 PVMetrics pvMetrics = channel.getPVMetrics();

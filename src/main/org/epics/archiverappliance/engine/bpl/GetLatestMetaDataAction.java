@@ -39,7 +39,7 @@ public class GetLatestMetaDataAction implements BPLAction {
             return;
         }
 
-        EngineContext engineContext = configService.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configService);
         if (engineContext.getChannelList().containsKey(pvName)) {
             ArchiveChannel archiveChannel = engineContext.getChannelList().get(pvName);
             HashMap<String, String> retVal = archiveChannel.getLatestMetadata();

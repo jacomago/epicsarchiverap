@@ -11,6 +11,7 @@ import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.data.SampleValue;
 import org.epics.archiverappliance.engine.ArchiveEngine;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.test.MemBufWriter;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
 import org.epics.archiverappliance.mgmt.pva.actions.NTUtil;
@@ -108,7 +109,7 @@ public class PVAccessUtil {
         }
 
         ArchiveChannel pvChannel =
-                configService.getEngineContext().getChannelList().get(pvName);
+                EngineContext.of(configService).getChannelList().get(pvName);
         try {
             pvChannel.startUpMetaChannels();
         } catch (Exception e) {

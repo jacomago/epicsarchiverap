@@ -15,6 +15,7 @@ import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.engine.ArchiveEngine;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.PVMetrics;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
 import org.junit.jupiter.api.AfterEach;
@@ -90,7 +91,7 @@ public class ChangeArchivalParametersTest {
             });
 
             // ArchiveChannel
-            // archiveChannel=testConfigService.getEngineContext().getChannelList().get(pvName);
+            // archiveChannel=EngineContext.of(testConfigService).getChannelList().get(pvName);
             PVMetrics tempPVMetrics = ArchiveEngine.getMetricsforPV(pvName, testConfigService);
             double period = tempPVMetrics.getSamplingPeriod();
             boolean isMonitor = tempPVMetrics.isMonitor();
@@ -103,7 +104,7 @@ public class ChangeArchivalParametersTest {
             logger.error("Exception", e);
         }
         ArchiveChannel archiveChannel =
-                testConfigService.getEngineContext().getChannelList().get(pvName);
+                EngineContext.of(testConfigService).getChannelList().get(pvName);
         int valueNumber = archiveChannel.getSampleBuffer().getCurrentSamples().size();
         try {
             valueNumber =
@@ -156,7 +157,7 @@ public class ChangeArchivalParametersTest {
             Assertions.assertTrue(
                     isMonitor, "the " + pvName + " should be archived in monitor mode but it is scan mode");
             ArchiveChannel archiveChannel =
-                    testConfigService.getEngineContext().getChannelList().get(pvName);
+                    EngineContext.of(testConfigService).getChannelList().get(pvName);
             int valueNumber =
                     archiveChannel.getSampleBuffer().getCurrentSamples().size();
             valueNumber =
@@ -210,7 +211,7 @@ public class ChangeArchivalParametersTest {
             Assertions.assertTrue(
                     !isMonitor, "the " + pvName + " should be archived in scan mode but it is monitor mode");
             ArchiveChannel archiveChannel =
-                    testConfigService.getEngineContext().getChannelList().get(pvName);
+                    EngineContext.of(testConfigService).getChannelList().get(pvName);
             int valueNumber =
                     archiveChannel.getSampleBuffer().getCurrentSamples().size();
             valueNumber =
@@ -265,7 +266,7 @@ public class ChangeArchivalParametersTest {
             Assertions.assertTrue(
                     isMonitor, "the " + pvName + " should be archived in monitor mode but it is scan mode");
             ArchiveChannel archiveChannel =
-                    testConfigService.getEngineContext().getChannelList().get(pvName);
+                    EngineContext.of(testConfigService).getChannelList().get(pvName);
             int valueNumber =
                     archiveChannel.getSampleBuffer().getCurrentSamples().size();
             valueNumber =

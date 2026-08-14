@@ -85,7 +85,7 @@ public class ArchiveEngine {
             final String iocHostName,
             final boolean usePVAccess)
             throws Exception {
-        EngineContext engineContext = configservice.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configservice);
         ArchiveChannel channel = null;
         // Is this an existing channel?
         channel = engineContext.getChannelList().get(name);
@@ -95,7 +95,7 @@ public class ArchiveEngine {
         }
 
         // Determine buffer capacity
-        double write_period = configservice.getEngineContext().getWritePeriod();
+        double write_period = EngineContext.of(configservice).getWritePeriod();
         double pvSamplingPeriod = sample_mode.getPeriod();
         if (pvSamplingPeriod <= 0.0) {
             logger.warn("Sampling period is invalid " + pvSamplingPeriod + ". Resetting this to "
@@ -156,7 +156,7 @@ public class ArchiveEngine {
                     usePVAccess);
         }
 
-        configservice.getEngineContext().getChannelList().put(channel.getName(), channel);
+        EngineContext.of(configservice).getChannelList().put(channel.getName(), channel);
         engineContext.getWriteThead().addChannel(channel);
         return channel;
     }
@@ -176,7 +176,7 @@ public class ArchiveEngine {
             final boolean usePVAccess,
             final boolean useDBEProperties)
             throws Exception {
-        EngineContext engineContext = configservice.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configservice);
 
         if (!engineContext.isWriteThreadStarted()) {
             engineContext.startWriteThread(configservice);
@@ -402,7 +402,7 @@ public class ArchiveEngine {
         boolean start = true;
         if (controllingPVName != null) {
             ConcurrentHashMap<String, ControllingPV> controlingPVList =
-                    configservice.getEngineContext().getControlingPVList();
+                    EngineContext.of(configservice).getControlingPVList();
             ControllingPV controllingPV = controlingPVList.get(controllingPVName);
 
             if (controllingPV == null) {
@@ -425,7 +425,7 @@ public class ArchiveEngine {
                         configservice,
                         true,
                         archdbrtype,
-                        configservice.getEngineContext().assignJCACommandThread(controllingPVName, null),
+                        EngineContext.of(configservice).assignJCACommandThread(controllingPVName, null),
                         false);
                 controlingPVList.put(controllingPVName, controllingPV);
                 controllingPV.addControledPV(pvName);
@@ -475,7 +475,7 @@ public class ArchiveEngine {
      * @throws Exception error in pausing the channel .
      */
     public static void pauseArchivingPV(final String pvName, ConfigService configservice) throws Exception {
-        EngineContext engineContext = configservice.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configservice);
         // pause the pv
         ArchiveChannel channel = engineContext.getChannelList().get(pvName);
         if (channel != null) {
@@ -496,7 +496,7 @@ public class ArchiveEngine {
      *              error in restarting the channel .
      */
     public static void resumeArchivingPV(final String pvName, ConfigService configservice) throws Exception {
-        EngineContext engineContext = configservice.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configservice);
         ArchiveChannel channel = engineContext.getChannelList().get(pvName);
         if (channel != null) {
             if (channel.isRunning() && !channel.isPaused()) {
@@ -526,7 +526,7 @@ public class ArchiveEngine {
      */
     public static void resumeArchivingPV(final String pvName, ConfigService configservice, Writer writer)
             throws Exception {
-        EngineContext engineContext = configservice.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configservice);
         ArchiveChannel channel = engineContext.getChannelList().get(pvName);
         if (channel != null) {
             if (channel.isRunning() && !channel.isPaused()) {
@@ -612,7 +612,7 @@ public class ArchiveEngine {
      *             On error in getting the pv info and status .
      */
     public static PVMetrics getMetricsforPV(String pvName, ConfigService configservice) throws Exception {
-        EngineContext engineContext = configservice.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configservice);
         ArchiveChannel channel = engineContext.getChannelList().get(pvName);
         if (channel == null) {
             return null;
@@ -629,7 +629,7 @@ public class ArchiveEngine {
      */
     public static void getLowLevelStateInfo(
             String pvName, ConfigService configservice, LinkedList<Map<String, String>> statuses) throws Exception {
-        EngineContext engineContext = configservice.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configservice);
         ArchiveChannel channel = engineContext.getChannelList().get(pvName);
         if (channel == null) return;
         channel.getLowLevelChannelStateInfo(statuses);
@@ -660,7 +660,7 @@ public class ArchiveEngine {
             final boolean usePVAccess,
             final boolean useDBEPropeties)
             throws Exception {
-        EngineContext engineContext = configservice.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configservice);
         ArchiveChannel channel = engineContext.getChannelList().get(pvName);
         if (channel == null) {
             throw new Exception(String.format(" Channel '%s' doesn't exist'", pvName));
@@ -765,7 +765,7 @@ public class ArchiveEngine {
      *        error when destroy the PV
      */
     public static void destoryPv(String pvName, final ConfigService configservice) throws Exception {
-        EngineContext engineContext = configservice.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configservice);
         ArchiveChannel channel = engineContext.getChannelList().get(pvName);
 
         if (channel == null) {

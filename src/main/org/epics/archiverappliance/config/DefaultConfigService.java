@@ -165,7 +165,6 @@ public class DefaultConfigService implements ConfigService {
     // Runtime state begins here
     protected LinkedList<Runnable> shutdownHooks = new LinkedList<>();
     protected LinkedList<Runnable> postStartupHooks = new LinkedList<>();
-    protected EngineContext engineContext = null;
     protected ConcurrentSkipListSet<String> appliancesInCluster = new ConcurrentSkipListSet<String>();
     // Runtime state ends here
 
@@ -329,7 +328,6 @@ public class DefaultConfigService implements ConfigService {
                 break;
             case "/engine":
                 warFile = WAR_FILE.ENGINE;
-                this.engineContext = new EngineContext(this);
                 break;
             case "/retrieval":
                 warFile = WAR_FILE.RETRIEVAL;
@@ -1826,7 +1824,7 @@ public class DefaultConfigService implements ConfigService {
 
     @Override
     public EngineContext getEngineContext() {
-        return engineContext;
+        return EngineContext.of(this);
     }
 
     @Override

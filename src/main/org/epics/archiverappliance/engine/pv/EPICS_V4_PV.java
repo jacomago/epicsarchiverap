@@ -339,7 +339,7 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
     }
 
     private void scheduleCommand(final Runnable command) {
-        configservice.getEngineContext().getJCACommandThread(jcaCommandThreadId).addCommand(command);
+        EngineContext.of(configservice).getJCACommandThread(jcaCommandThreadId).addCommand(command);
     }
 
     private void connect() {
@@ -351,8 +351,7 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
                     state = PVConnectionState.Connecting;
                     synchronized (this) {
                         if (pvaChannel == null) {
-                            pvaChannel = configservice
-                                    .getEngineContext()
+                            pvaChannel = EngineContext.of(configservice)
                                     .getPVAClient()
                                     .getChannel(name, EPICS_V4_PV.this);
                         }

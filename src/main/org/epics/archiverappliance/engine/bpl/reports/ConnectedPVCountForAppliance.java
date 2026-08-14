@@ -10,6 +10,7 @@ package org.epics.archiverappliance.engine.bpl.reports;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.engine.epics.EngineMetrics;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
 
@@ -33,7 +34,7 @@ public class ConnectedPVCountForAppliance implements BPLAction {
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
             EngineMetrics engineMetrics =
-                    EngineMetrics.computeEngineMetrics(configService.getEngineContext(), configService);
+                    EngineMetrics.computeEngineMetrics(EngineContext.of(configService), configService);
             HashMap<String, String> ret = new HashMap<String, String>();
             ret.put("total", Integer.toString(engineMetrics.getPvCount()));
             ret.put("connected", Integer.toString(engineMetrics.getConnectedPVCount()));

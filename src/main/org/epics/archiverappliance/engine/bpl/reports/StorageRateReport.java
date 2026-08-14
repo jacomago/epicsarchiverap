@@ -73,7 +73,7 @@ public class StorageRateReport implements BPLAction {
 
     private static List<PVStorageRate> getStorageRates(ConfigService configService, String limit) {
         ArrayList<PVStorageRate> storageRates = new ArrayList<PVStorageRate>();
-        EngineContext engineContext = configService.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configService);
         for (ArchiveChannel channel : engineContext.getChannelList().values()) {
             PVMetrics pvMetrics = channel.getPVMetrics();
             storageRates.add(new PVStorageRate(pvMetrics.getPvName(), pvMetrics.getStorageRate()));

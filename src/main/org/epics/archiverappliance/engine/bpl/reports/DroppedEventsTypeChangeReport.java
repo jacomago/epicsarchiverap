@@ -57,7 +57,7 @@ public class DroppedEventsTypeChangeReport implements BPLAction {
 
     private static List<PVDroppedEvents> getDroppedEventsTypeChange(ConfigService configService, String limit) {
         ArrayList<PVDroppedEvents> eventRates = new ArrayList<PVDroppedEvents>();
-        EngineContext engineContext = configService.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configService);
         for (ArchiveChannel channel : engineContext.getChannelList().values()) {
             PVMetrics pvMetrics = channel.getPVMetrics();
             if (pvMetrics.getInvalidTypeLostEventCount() > 0) {

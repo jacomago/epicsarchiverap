@@ -22,7 +22,7 @@ public class ListAllChannels implements BPLAction {
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
             throws IOException {
-        EngineContext engineRuntime = configService.getEngineContext();
+        EngineContext engineRuntime = EngineContext.of(configService);
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
             out.println("[");

@@ -8,6 +8,7 @@ import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EPICS_V3_PV;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -37,7 +38,7 @@ public class ArchiveChannelObjectDetailsAction implements BPLAction {
         }
 
         ArchiveChannel channel =
-                configService.getEngineContext().getChannelList().get(pvName);
+                EngineContext.of(configService).getChannelList().get(pvName);
         if (channel == null) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;

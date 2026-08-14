@@ -43,11 +43,13 @@ import org.json.simple.JSONValue;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
@@ -65,6 +67,44 @@ public class EngineContext {
 
     private static double MAXIMUM_DISCONNECTED_CHANNEL_PERCENTAGE_BEFORE_STARTING_METACHANNELS = 5.0;
     private static int METACHANNELS_TO_START_AT_A_TIME = 10000;
+
+    /**
+     * The engine context belonging to each config service. Entries are removed by a shutdown hook;
+     * the context holds its config service, so the weak keys alone would not reclaim them.
+     * Keyed on identity, DefaultConfigService overriding neither equals nor hashCode. There is an entry
+     * per config service rather than a singleton because tests hold several config services at once.
+     */
+    private static final Map<ApplianceLifecycle, EngineContext> INSTANCES =
+            Collections.synchronizedMap(new WeakHashMap<>());
+
+    /**
+     * Build the engine webapp's runtime state and publish it against this config service.
+     * A context already published for this config service wins, so publishing is idempotent.
+     * @param configService &emsp;
+     * @return EngineContext &emsp;
+     * @throws ConfigException &emsp;
+     */
+    public static EngineContext create(ConfigService configService) throws ConfigException {
+        synchronized (INSTANCES) {
+            EngineContext existing = INSTANCES.get(configService);
+            if (existing != null) {
+                logger.debug("Engine context already published for this config service");
+                return existing;
+            }
+            EngineContext created = new EngineContext(configService);
+            INSTANCES.put(configService, created);
+            configService.addShutdownHook(() -> INSTANCES.remove(configService));
+            return created;
+        }
+    }
+
+    /**
+     * @param configService &emsp;
+     * @return This appliance's engine context, or null if this webapp is not the engine webapp.
+     */
+    public static EngineContext of(ApplianceLifecycle configService) {
+        return INSTANCES.get(configService);
+    }
 
     /** writing thread to write samplebuffer to protocol buffer */
     private final WriterRunnable writer;
@@ -177,10 +217,10 @@ public class EngineContext {
     }
 
     /**
-     * This EngineContext should always be singleton
+     * There is one EngineContext per config service; go through {@link #create(ConfigService)}.
      * @param configService the config service to initialize the engine context
      */
-    public EngineContext(final ConfigService configService) throws ConfigException {
+    private EngineContext(final ConfigService configService) throws ConfigException {
         String commandThreadCountVarName = "org.epics.archiverappliance.engine.epics.commandThreadCount";
         String commandThreadCountStr =
                 configService.getInstallationProperties().getProperty(commandThreadCountVarName, "10");

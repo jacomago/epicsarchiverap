@@ -79,7 +79,7 @@ public class GetDataAtTimeEngine implements BPLAction {
             atTime = TimeUtils.convertFromISO8601String(timeStr);
         }
 
-        EngineContext engineContext = configService.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configService);
         HashMap<String, HashMap<String, Object>> values = new HashMap<String, HashMap<String, Object>>();
         for (String pvName : pvNames) {
             String nameFromUser = pvName;

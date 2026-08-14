@@ -26,7 +26,7 @@ public class CommandThreadDetails implements Details {
     @Override
     public LinkedList<Map<String, String>> details(ConfigService configService) {
         LinkedList<Map<String, String>> details = new LinkedList<Map<String, String>>();
-        EngineContext context = configService.getEngineContext();
+        EngineContext context = EngineContext.of(configService);
         details.addAll(context.getCommandThreadDetails());
         return details;
     }

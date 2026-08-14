@@ -6,6 +6,7 @@ import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.PVMetrics;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
@@ -32,7 +33,7 @@ public class CurrentlyDisconnectedPVsAction implements BPLAction {
         Set<String> pausedPVs = configService.getPausedPVsInThisAppliance();
         try (PrintWriter out = resp.getWriter()) {
             for (ArchiveChannel channel :
-                    configService.getEngineContext().getChannelList().values()) {
+                    EngineContext.of(configService).getChannelList().values()) {
                 PVMetrics pvMetrics = channel.getPVMetrics();
                 if (!pvMetrics.isConnected()) {
                     String pvName = pvMetrics.getPvName();

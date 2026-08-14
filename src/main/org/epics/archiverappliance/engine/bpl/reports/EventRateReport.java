@@ -66,7 +66,7 @@ public class EventRateReport implements BPLAction {
 
     private static List<PVEventRate> getEventRates(ConfigService configService, String limit) {
         ArrayList<PVEventRate> eventRates = new ArrayList<PVEventRate>();
-        EngineContext engineContext = configService.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configService);
         for (ArchiveChannel channel : engineContext.getChannelList().values()) {
             eventRates.add(
                     new PVEventRate(channel.getName(), channel.getPVMetrics().getEventRate()));

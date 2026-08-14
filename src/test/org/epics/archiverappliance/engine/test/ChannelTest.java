@@ -17,6 +17,7 @@ import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.engine.ArchiveEngine;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.PVMetrics;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
 import org.junit.jupiter.api.AfterAll;
@@ -87,7 +88,7 @@ public class ChannelTest {
                             writer.getCollectedSamples().isEmpty(),
                             "the channel for " + pvName + " should have data but it don't"));
             ArchiveChannel archiveChannel =
-                    testConfigService.getEngineContext().getChannelList().get(pvName);
+                    EngineContext.of(testConfigService).getChannelList().get(pvName);
             Assertions.assertNotNull(archiveChannel, "the channel for " + pvName + " should be created but it is not");
 
             ArchiveEngine.destoryPv(pvName, testConfigService);
@@ -122,7 +123,7 @@ public class ChannelTest {
                             writer.getCollectedSamples().isEmpty(),
                             "the channel for " + pvName + " should have data but it don't"));
             ArchiveChannel archiveChannel =
-                    testConfigService.getEngineContext().getChannelList().get(pvName);
+                    EngineContext.of(testConfigService).getChannelList().get(pvName);
             Assertions.assertNotNull(archiveChannel, "the channel for " + pvName + " should be created but it is not");
 
             ArchiveEngine.destoryPv(pvName, testConfigService);
@@ -161,7 +162,7 @@ public class ChannelTest {
             Awaitility.await().atMost(15, TimeUnit.SECONDS).until(() -> !writer.getCollectedSamples()
                     .isEmpty());
             ArchiveChannel archiveChannel =
-                    testConfigService.getEngineContext().getChannelList().get(pvName);
+                    EngineContext.of(testConfigService).getChannelList().get(pvName);
             Assertions.assertNotNull(archiveChannel, "the channel for " + pvName + " should be created but it is not");
             boolean hasData = !writer.getCollectedSamples().isEmpty();
             Assertions.assertTrue(hasData, "the channel for " + pvName + " should have data but it don't");
@@ -191,7 +192,7 @@ public class ChannelTest {
             Assertions.assertTrue(
                     tempPVMetrics3.isConnected(), "the channel for " + pvName + " should be restarted but it is not");
             archiveChannel =
-                    testConfigService.getEngineContext().getChannelList().get(pvName);
+                    EngineContext.of(testConfigService).getChannelList().get(pvName);
             boolean hasData3 = !writer.getCollectedSamples().isEmpty();
             Assertions.assertTrue(hasData3, "the channel for " + pvName + " should have data but it don't");
 
@@ -326,14 +327,12 @@ public class ChannelTest {
                     null,
                     false,
                     false);
-            Awaitility.await().atMost(10, TimeUnit.SECONDS).until(() -> !testConfigService
-                    .getEngineContext()
+            Awaitility.await().atMost(10, TimeUnit.SECONDS).until(() -> !EngineContext.of(testConfigService)
                     .getChannelList()
                     .get(pvName)
                     .getPVData()
                     .isEmpty());
-            ArrayListEventStream samples = testConfigService
-                    .getEngineContext()
+            ArrayListEventStream samples = EngineContext.of(testConfigService)
                     .getChannelList()
                     .get(pvName)
                     .getPVData();
