@@ -10,7 +10,7 @@ package org.epics.archiverappliance.mgmt.bpl.reports;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.reports.Metrics;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
@@ -27,7 +27,7 @@ public class MgmtMetrics implements Metrics {
     private static final Logger logger = LogManager.getLogger(MgmtMetrics.class);
 
     @Override
-    public Map<String, String> metrics(ConfigService configService) {
+    public Map<String, String> metrics(ApplianceLifecycle configService) {
         Map<String, String> result = new HashMap<String, String>();
         long vmStartTime = ManagementFactory.getRuntimeMXBean().getStartTime();
         Duration vmInterval =

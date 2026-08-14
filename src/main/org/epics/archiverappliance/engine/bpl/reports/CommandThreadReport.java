@@ -8,7 +8,7 @@
 package org.epics.archiverappliance.engine.bpl.reports;
 
 import org.epics.archiverappliance.common.reports.MetricsDetails;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.engine.epics.CommandThreadDetails;
 
 import java.util.LinkedList;
@@ -23,7 +23,7 @@ import java.util.Map;
 public class CommandThreadReport implements MetricsDetails {
 
     @Override
-    public LinkedList<Map<String, String>> metricsDetails(ConfigService configService) {
+    public LinkedList<Map<String, String>> metricsDetails(ApplianceLifecycle configService) {
         CommandThreadDetails ctd = new CommandThreadDetails();
         return ctd.details(configService);
     }

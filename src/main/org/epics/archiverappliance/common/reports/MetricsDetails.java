@@ -1,6 +1,7 @@
 package org.epics.archiverappliance.common.reports;
 
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
@@ -24,5 +25,5 @@ public interface MetricsDetails extends BPLAction {
         }
     }
 
-    LinkedList<Map<String, String>> metricsDetails(ConfigService configService);
+    LinkedList<Map<String, String>> metricsDetails(ApplianceLifecycle configService);
 }

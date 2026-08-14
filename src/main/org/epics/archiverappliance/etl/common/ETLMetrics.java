@@ -3,7 +3,6 @@ package org.epics.archiverappliance.etl.common;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.reports.Details;
 import org.epics.archiverappliance.config.ApplianceLifecycle;
-import org.epics.archiverappliance.config.ConfigService;
 
 import java.text.DecimalFormat;
 import java.util.HashMap;
@@ -49,7 +48,7 @@ public class ETLMetrics implements Details {
     }
 
     @Override
-    public LinkedList<Map<String, String>> details(ConfigService configService) {
+    public LinkedList<Map<String, String>> details(ApplianceLifecycle configService) {
         DecimalFormat twoSignificantDigits = new DecimalFormat("###,###,###,###,###,###.##");
         LinkedList<Map<String, String>> details = new LinkedList<Map<String, String>>();
         if (etlMetricsIntoStores.isEmpty()) {
@@ -139,7 +138,7 @@ public class ETLMetrics implements Details {
     }
 
     @Override
-    public ConfigService.WAR_FILE source() {
+    public ApplianceLifecycle.WAR_FILE source() {
         return ApplianceLifecycle.WAR_FILE.ETL;
     }
 }

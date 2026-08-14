@@ -33,8 +33,7 @@ public class ConnectedPVCountForAppliance implements BPLAction {
             throws IOException {
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
-            EngineMetrics engineMetrics =
-                    EngineMetrics.computeEngineMetrics(EngineContext.of(configService), configService);
+            EngineMetrics engineMetrics = EngineMetrics.computeEngineMetrics(EngineContext.of(configService));
             HashMap<String, String> ret = new HashMap<String, String>();
             ret.put("total", Integer.toString(engineMetrics.getPvCount()));
             ret.put("connected", Integer.toString(engineMetrics.getConnectedPVCount()));
