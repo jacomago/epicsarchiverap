@@ -652,10 +652,10 @@ public class MetaInfo {
      * This should accommodate changes in EGU and precision.
      * However, this should happen rarely or else performance will suffer.
      * @param pvName The name of PV.
-     * @param configService ConfigService
+     * @param pvTypeInfoStore ConfigService
      */
-    private void updateTypeInfo(String pvName, ConfigService configService) {
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+    private void updateTypeInfo(String pvName, PVTypeInfoStore pvTypeInfoStore) {
+        PVTypeInfo typeInfo = pvTypeInfoStore.getTypeInfoForPV(pvName);
         boolean updated = false;
         if (typeInfo != null) {
             if ((typeInfo.getUnits() == null && this.unit != null)
@@ -680,7 +680,7 @@ public class MetaInfo {
 
             if (updated) {
                 logger.debug("Saving typeinfo in persistence for pv " + pvName);
-                configService.updateTypeInfoForPV(pvName, typeInfo);
+                pvTypeInfoStore.updateTypeInfoForPV(pvName, typeInfo);
             }
         }
     }
