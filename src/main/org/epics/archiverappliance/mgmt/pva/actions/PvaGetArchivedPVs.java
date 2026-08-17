@@ -9,9 +9,9 @@ package org.epics.archiverappliance.mgmt.pva.actions;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoLookupView;
 import org.epics.archiverappliance.mgmt.bpl.ArchivedPVsAction;
 import org.epics.pva.data.PVAStringArray;
 import org.epics.pva.data.PVAStructure;
@@ -58,7 +58,7 @@ import java.util.Map.Entry;
  * @author mshankar, shroffk
  *
  */
-public class PvaGetArchivedPVs implements PvaAction {
+public class PvaGetArchivedPVs implements PvaAction<PVTypeInfoLookupView> {
     private static final Logger logger = LogManager.getLogger(PvaGetArchivedPVs.class);
 
     public static final String NAME = "archivedPVStatus";
@@ -69,7 +69,7 @@ public class PvaGetArchivedPVs implements PvaAction {
     }
 
     @Override
-    public PVAStructure request(PVAStructure args, ConfigService configService) throws PvaActionException {
+    public PVAStructure request(PVAStructure args, PVTypeInfoLookupView configService) throws PvaActionException {
         logger.info("Determining PVs that are archived ");
         LinkedHashMap<String, String> map = new LinkedHashMap<>();
         for (String pvName :

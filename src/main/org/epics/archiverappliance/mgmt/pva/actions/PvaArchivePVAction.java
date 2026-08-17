@@ -57,7 +57,7 @@ import java.util.Arrays;
  * @author Kunal Shroff, mshankar
  *
  */
-public class PvaArchivePVAction implements PvaAction {
+public class PvaArchivePVAction implements PvaAction<ConfigService> {
 
     public static final Logger logger = LogManager.getLogger(PvaArchivePVAction.class);
     public static final String NAME = "archivePVs";

@@ -33,7 +33,7 @@ public class PvaMgmtService implements RPCService {
     /**
      * List of supported operations
      */
-    Map<String, PvaAction> actions = new HashMap<String, PvaAction>();
+    Map<String, PvaAction<? super ConfigService>> actions = new HashMap<>();
 
     /**
      * Construct the mgmt service.

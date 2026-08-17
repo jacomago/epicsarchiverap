@@ -61,7 +61,7 @@ import java.util.Map;
  * @author mshankar, shroffk
  *
  */
-public class PvaGetPVStatus implements PvaAction {
+public class PvaGetPVStatus implements PvaAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(PvaGetPVStatus.class);
 
     public static final String NAME = "PVStatus";

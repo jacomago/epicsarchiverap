@@ -59,7 +59,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import jakarta.servlet.ServletException;
 
-public class PvaGetPVData implements PvaAction {
+public class PvaGetPVData implements PvaAction<ConfigService> {
 
     private static final Logger logger = LogManager.getLogger(PvaGetPVData.class.getName());
     public static final String NAME = "getPVsData";

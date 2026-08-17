@@ -3,7 +3,7 @@ package org.epics.archiverappliance.mgmt.pva.actions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.mgmt.bpl.GetApplianceInfo;
 import org.epics.pva.data.PVAStringArray;
 import org.epics.pva.data.PVAStructure;
@@ -21,7 +21,7 @@ import java.util.Map;
  * @author Kunal Shroff, mshankar
  *
  */
-public class PvaGetApplianceInfo implements PvaAction {
+public class PvaGetApplianceInfo implements PvaAction<ClusterTopology> {
 
     private static Logger logger = LogManager.getLogger(PvaGetApplianceInfo.class.getName());
 
@@ -33,7 +33,7 @@ public class PvaGetApplianceInfo implements PvaAction {
     }
 
     @Override
-    public PVAStructure request(PVAStructure args, ConfigService configService) throws PvaActionException {
+    public PVAStructure request(PVAStructure args, ClusterTopology configService) throws PvaActionException {
         String id = null;
         LinkedHashMap<String, String> applianceInfoMap;
         PVAURI uri = PVAURI.fromStructure(args);
