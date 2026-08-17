@@ -7,7 +7,7 @@ public class ChunkKeyKeyMapping implements PVNameToKeyMapping {
     private char terminatorChar = 0;
 
     @Override
-    public void initialize(ConfigService configService) throws ConfigException {
+    public void initialize(StoragePluginConfigView configService) throws ConfigException {
         this.configService = configService;
     }
 

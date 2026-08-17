@@ -63,7 +63,7 @@ public class ConvertPVNameToKey implements PVNameToKeyMapping {
     }
 
     @Override
-    public void initialize(ConfigService configService) throws ConfigException {
+    public void initialize(StoragePluginConfigView configService) throws ConfigException {
         this.siteNameSpaceSeparators =
                 configService.getInstallationProperties().getProperty(SITE_NAME_SPACE_SEPARATORS);
         if (this.siteNameSpaceSeparators == null || this.siteNameSpaceSeparators.isEmpty()) {
