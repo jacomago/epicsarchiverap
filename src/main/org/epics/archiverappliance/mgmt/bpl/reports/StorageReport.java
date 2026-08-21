@@ -4,7 +4,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterExecutor;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
@@ -19,10 +20,12 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public class StorageReport implements BPLAction {
 
-    private final ConfigService configService;
+    private final ClusterExecutor clusterExecutor;
+    private final ClusterTopology clusterTopology;
 
-    public StorageReport(ConfigService configService) {
-        this.configService = configService;
+    public StorageReport(ClusterExecutor clusterExecutor, ClusterTopology clusterTopology) {
+        this.clusterExecutor = clusterExecutor;
+        this.clusterTopology = clusterTopology;
     }
 
     private static Logger logger = LogManager.getLogger(StorageReport.class.getName());
@@ -33,8 +36,8 @@ public class StorageReport implements BPLAction {
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
             LinkedList<Map<String, String>> result = new LinkedList<Map<String, String>>();
-            Map<String, Long> pvCounts = ApplianceMetrics.getAppliancePVCounts(configService);
-            for (ApplianceInfo info : configService.getAppliancesInCluster()) {
+            Map<String, Long> pvCounts = ApplianceMetrics.getAppliancePVCounts(clusterExecutor);
+            for (ApplianceInfo info : clusterTopology.getAppliancesInCluster()) {
                 var applianceInfo = ApplianceMetrics.getBasicMetrics(result, info, pvCounts);
 
                 // The getApplianceMetrics here is not a typo. We redisplay some of the appliance metrics in this page.
