@@ -4,8 +4,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.AliasRegistry;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
@@ -27,10 +29,17 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class GetStoresForPV implements BPLAction {
 
-    private final ConfigService configService;
+    private final AliasRegistry aliasRegistry;
+    private final PVTypeInfoStore pvtypeInfoStore;
+    private final StoragePluginConfigView storagePluginConfigView;
 
-    public GetStoresForPV(ConfigService configService) {
-        this.configService = configService;
+    public GetStoresForPV(
+            AliasRegistry aliasRegistry,
+            PVTypeInfoStore pvtypeInfoStore,
+            StoragePluginConfigView storagePluginConfigView) {
+        this.aliasRegistry = aliasRegistry;
+        this.pvtypeInfoStore = pvtypeInfoStore;
+        this.storagePluginConfigView = storagePluginConfigView;
     }
 
     private static Logger logger = LogManager.getLogger(GetStoresForPV.class.getName());
@@ -45,10 +54,10 @@ public class GetStoresForPV implements BPLAction {
         }
 
         // String pvNameFromRequest = pvName;
-        String realName = configService.getRealNameForAlias(pvName);
+        String realName = aliasRegistry.getRealNameForAlias(pvName);
         if (realName != null) pvName = realName;
 
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pvName);
         if (typeInfo == null) {
             logger.warn("Cannot find typeinfo for " + pvName);
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -58,7 +67,7 @@ public class GetStoresForPV implements BPLAction {
         try (PrintWriter out = resp.getWriter()) {
             HashMap<String, String> stores = new HashMap<String, String>();
             for (String store : typeInfo.getDataStores()) {
-                StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, configService);
+                StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, storagePluginConfigView);
                 stores.put(plugin.getName(), store);
             }
             out.println(JSONValue.toJSONString(stores));

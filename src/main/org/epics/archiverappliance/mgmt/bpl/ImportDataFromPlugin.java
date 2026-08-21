@@ -7,8 +7,9 @@ import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.retrieval.postprocessors.DefaultRawPostProcessor;
 import org.epics.archiverappliance.retrieval.workers.CurrentThreadWorkerEventStream;
@@ -29,10 +30,12 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class ImportDataFromPlugin implements BPLAction {
 
-    private final ConfigService configService;
+    private final PVTypeInfoStore pvtypeInfoStore;
+    private final StoragePluginConfigView storagePluginConfigView;
 
-    public ImportDataFromPlugin(ConfigService configService) {
-        this.configService = configService;
+    public ImportDataFromPlugin(PVTypeInfoStore pvtypeInfoStore, StoragePluginConfigView storagePluginConfigView) {
+        this.pvtypeInfoStore = pvtypeInfoStore;
+        this.storagePluginConfigView = storagePluginConfigView;
     }
 
     private static Logger logger = LogManager.getLogger(ImportDataFromPlugin.class.getName());
@@ -44,7 +47,7 @@ public class ImportDataFromPlugin implements BPLAction {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pvName);
         if (typeInfo == null) {
             logger.warn("Cannot find typeinfo for " + pvName);
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -76,11 +79,13 @@ public class ImportDataFromPlugin implements BPLAction {
             return;
         }
 
-        StoragePlugin srcPlugin = StoragePluginURLParser.parseStoragePlugin(srcStoragePluginURL, configService);
+        StoragePlugin srcPlugin =
+                StoragePluginURLParser.parseStoragePlugin(srcStoragePluginURL, storagePluginConfigView);
 
         StoragePlugin destPlugin = null;
         for (String dataStore : typeInfo.getDataStores()) {
-            StoragePlugin dataStorePlugin = StoragePluginURLParser.parseStoragePlugin(dataStore, configService);
+            StoragePlugin dataStorePlugin =
+                    StoragePluginURLParser.parseStoragePlugin(dataStore, storagePluginConfigView);
             if (dataStorePlugin.getName().equals(destStoragePluginName)) {
                 destPlugin = dataStorePlugin;
                 break;

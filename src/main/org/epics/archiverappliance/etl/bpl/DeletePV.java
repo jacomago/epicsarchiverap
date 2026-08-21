@@ -12,8 +12,10 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.etl.ETLContext;
 import org.epics.archiverappliance.etl.ETLInfo;
@@ -37,10 +39,17 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class DeletePV implements BPLAction {
 
-    private final ConfigService configService;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final PVTypeInfoStore pvtypeInfoStore;
+    private final StoragePluginConfigView storagePluginConfigView;
 
-    public DeletePV(ConfigService configService) {
-        this.configService = configService;
+    public DeletePV(
+            ApplianceLifecycle applianceLifecycle,
+            PVTypeInfoStore pvtypeInfoStore,
+            StoragePluginConfigView storagePluginConfigView) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.pvtypeInfoStore = pvtypeInfoStore;
+        this.storagePluginConfigView = storagePluginConfigView;
     }
 
     private static final Logger logger = LogManager.getLogger(DeletePV.class);
@@ -59,7 +68,7 @@ public class DeletePV implements BPLAction {
             deleteData = Boolean.parseBoolean(deleteDataStr);
         }
 
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pvName);
         if (typeInfo == null) {
             logger.debug("Unable to find typeinfo for PV...");
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -71,7 +80,7 @@ public class DeletePV implements BPLAction {
 
         try (PrintWriter out = resp.getWriter()) {
             // Remove any ETL jobs from the runtime state.
-            PBThreeTierETLPVLookup.of(configService).deleteETLJobs(pvName);
+            PBThreeTierETLPVLookup.of(applianceLifecycle).deleteETLJobs(pvName);
 
             if (deleteData) {
                 HashMap<String, String> timingValues = new HashMap<String, String>();
@@ -83,7 +92,8 @@ public class DeletePV implements BPLAction {
                             0);
                     for (String dataSource : typeInfo.getDataStores()) {
                         try {
-                            ETLSource etlSource = StoragePluginURLParser.parseETLSource(dataSource, configService);
+                            ETLSource etlSource =
+                                    StoragePluginURLParser.parseETLSource(dataSource, storagePluginConfigView);
                             if (etlSource == null) continue;
                             List<ETLInfo> infos = etlSource.getETLStreams(pvName, tenYearsLaterTimeStamp, context);
                             if (infos == null) continue;
