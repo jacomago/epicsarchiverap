@@ -11,7 +11,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceLifecycle;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -33,7 +32,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class EventRateReport implements BPLAction<ConfigService> {
+public class EventRateReport implements BPLAction<ApplianceLifecycle> {
     private static class PVEventRate {
         String pvName;
         double eventRate;
@@ -47,7 +46,7 @@ public class EventRateReport implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(EventRateReport.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, ApplianceLifecycle configService)
             throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Event rate report for " + (limit == null ? "default limit " : ("limit " + limit)));

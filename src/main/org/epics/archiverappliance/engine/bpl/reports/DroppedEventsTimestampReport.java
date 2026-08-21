@@ -4,7 +4,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceLifecycle;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.PVMetrics;
@@ -22,7 +21,7 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class DroppedEventsTimestampReport implements BPLAction<ConfigService> {
+public class DroppedEventsTimestampReport implements BPLAction<ApplianceLifecycle> {
     private static Logger logger = LogManager.getLogger(DroppedEventsTimestampReport.class.getName());
 
     private static class PVDroppedEvents {
@@ -36,7 +35,7 @@ public class DroppedEventsTimestampReport implements BPLAction<ConfigService> {
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, ApplianceLifecycle configService)
             throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Report for PVs that have dropped events because of incorrect timestamps for "

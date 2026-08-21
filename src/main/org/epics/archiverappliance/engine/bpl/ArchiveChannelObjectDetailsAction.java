@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EPICS_V3_PV;
@@ -25,11 +25,11 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ArchiveChannelObjectDetailsAction implements BPLAction<ConfigService> {
+public class ArchiveChannelObjectDetailsAction implements BPLAction<ApplianceLifecycle> {
     private static Logger logger = LogManager.getLogger(ArchiveChannelObjectDetailsAction.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, ApplianceLifecycle configService)
             throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
