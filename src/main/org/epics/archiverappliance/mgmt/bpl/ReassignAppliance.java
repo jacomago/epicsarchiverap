@@ -3,10 +3,14 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.config.AliasRegistry;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.InstallationProperties;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVRegistrationType;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.json.simple.JSONValue;
 
 import java.io.IOException;
@@ -44,17 +48,30 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class ReassignAppliance implements BPLAction {
 
-    private final ConfigService configService;
+    private final AliasRegistry aliasRegistry;
+    private final ClusterTopology clusterTopology;
+    private final InstallationProperties installationProperties;
+    private final PVDirectory pvdirectory;
+    private final PVTypeInfoStore pvtypeInfoStore;
 
-    public ReassignAppliance(ConfigService configService) {
-        this.configService = configService;
+    public ReassignAppliance(
+            AliasRegistry aliasRegistry,
+            ClusterTopology clusterTopology,
+            InstallationProperties installationProperties,
+            PVDirectory pvdirectory,
+            PVTypeInfoStore pvtypeInfoStore) {
+        this.aliasRegistry = aliasRegistry;
+        this.clusterTopology = clusterTopology;
+        this.installationProperties = installationProperties;
+        this.pvdirectory = pvdirectory;
+        this.pvtypeInfoStore = pvtypeInfoStore;
     }
 
     private static Logger logger = LogManager.getLogger(ReassignAppliance.class.getName());
 
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        if (!configService.hasClusterFinishedInitialization()) {
+        if (!clusterTopology.hasClusterFinishedInitialization()) {
             // If you have defined spare appliances in the appliances.xml that will never come up; you should remove
             // them
             // This seems to be one of the few ways we can prevent split brain clusters from messing up the pv <->
@@ -63,7 +80,7 @@ public class ReassignAppliance implements BPLAction {
                     "Waiting for all the appliances listed in appliances.xml to finish loading up their PVs into the cluster");
         }
 
-        if (!Boolean.parseBoolean((String) configService
+        if (!Boolean.parseBoolean((String) installationProperties
                 .getInstallationProperties()
                 .getOrDefault(ReassignAppliance.class.getCanonicalName(), false))) {
             throw new IOException(
@@ -76,7 +93,7 @@ public class ReassignAppliance implements BPLAction {
             return;
         }
 
-        ApplianceInfo destApplianceInfo = configService.getAppliance(destApplianceIdentity);
+        ApplianceInfo destApplianceInfo = clusterTopology.getAppliance(destApplianceIdentity);
         if (destApplianceInfo == null) {
             logger.error("Unable to find appliance with identity " + destApplianceIdentity);
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -87,10 +104,10 @@ public class ReassignAppliance implements BPLAction {
         LinkedHashMap<String, String> statuses = new LinkedHashMap<String, String>();
         for (String pvName : pvNames) {
             String pvNameFromRequest = pvName;
-            String realName = configService.getRealNameForAlias(pvName);
+            String realName = aliasRegistry.getRealNameForAlias(pvName);
             if (realName != null) pvName = realName;
 
-            ApplianceInfo srcApplianceInfo = configService.getApplianceForPV(pvName);
+            ApplianceInfo srcApplianceInfo = pvdirectory.getApplianceForPV(pvName);
             if (srcApplianceInfo == null) {
                 statuses.put(pvNameFromRequest, "Unable to find appliance for PV " + pvName);
                 continue;
@@ -106,7 +123,7 @@ public class ReassignAppliance implements BPLAction {
                 continue;
             }
 
-            PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+            PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pvName);
             if (typeInfo == null) {
                 statuses.put(pvNameFromRequest, "Unable to find typeinfo for PV " + pvName);
                 continue;
@@ -114,8 +131,8 @@ public class ReassignAppliance implements BPLAction {
 
             try {
                 typeInfo.setApplianceIdentity(destApplianceInfo.getIdentity());
-                configService.updateTypeInfoForPV(pvName, typeInfo);
-                configService.registerPVToAppliance(pvName, destApplianceInfo, PVRegistrationType.REASSIGNING);
+                pvtypeInfoStore.updateTypeInfoForPV(pvName, typeInfo);
+                pvdirectory.registerPVToAppliance(pvName, destApplianceInfo, PVRegistrationType.REASSIGNING);
                 statuses.put(pvNameFromRequest, "Success");
             } catch (Exception ex) {
                 String msg = "Exception reassiging PV " + pvName + " to appliance " + destApplianceIdentity;

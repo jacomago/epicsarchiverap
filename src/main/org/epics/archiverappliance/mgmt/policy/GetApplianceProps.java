@@ -3,7 +3,8 @@ package org.epics.archiverappliance.mgmt.policy;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.InstallationProperties;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -20,10 +21,12 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class GetApplianceProps implements BPLAction {
 
-    private final ConfigService configService;
+    private final ClusterTopology clusterTopology;
+    private final InstallationProperties installationProperties;
 
-    public GetApplianceProps(ConfigService configService) {
-        this.configService = configService;
+    public GetApplianceProps(ClusterTopology clusterTopology, InstallationProperties installationProperties) {
+        this.clusterTopology = clusterTopology;
+        this.installationProperties = installationProperties;
     }
 
     private static Logger logger = LogManager.getLogger(GetApplianceProps.class.getName());
@@ -35,7 +38,7 @@ public class GetApplianceProps implements BPLAction {
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         props.put(
                 "minimum_sampling_period",
-                configService
+                installationProperties
                         .getInstallationProperties()
                         .getProperty("org.epics.archiverappliance.mgmt.bpl.ArchivePVAction.minimumSamplingPeriod"));
         try (PrintWriter out = resp.getWriter()) {
@@ -43,7 +46,7 @@ public class GetApplianceProps implements BPLAction {
         } catch (Exception ex) {
             logger.error(
                     "Exception getting list of appliance properties "
-                            + configService.getMyApplianceInfo().getIdentity(),
+                            + clusterTopology.getMyApplianceInfo().getIdentity(),
                     ex);
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
