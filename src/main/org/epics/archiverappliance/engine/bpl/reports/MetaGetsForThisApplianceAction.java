@@ -10,7 +10,7 @@ package org.epics.archiverappliance.engine.bpl.reports;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.engine.metadata.MetaGet;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
@@ -25,11 +25,11 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class MetaGetsForThisApplianceAction implements BPLAction<ConfigService> {
+public class MetaGetsForThisApplianceAction implements BPLAction<ClusterTopology> {
     private static final Logger logger = LogManager.getLogger(MetaGetsForThisApplianceAction.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
             throws IOException {
         logger.info("Getting the status of pvs that never connected since the start of this appliance");
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
