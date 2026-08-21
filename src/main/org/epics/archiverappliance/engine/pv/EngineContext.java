@@ -19,6 +19,7 @@ import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ClusterExecutor.EAABulkOperation;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.MetaInfo;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVDirectory.CachedPVCounts;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
@@ -968,9 +969,9 @@ public class EngineContext {
         return ret;
     }
 
-    static class PVCounts implements EAABulkOperation<CachedPVCounts> {
+    static class PVCounts implements EAABulkOperation<PVDirectory, CachedPVCounts> {
         @Override
-        public CachedPVCounts call(ConfigService configService) {
+        public CachedPVCounts call(PVDirectory configService) {
             return configService.getCachedPVCountsForThisAppliance();
         }
     }

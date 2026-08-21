@@ -41,7 +41,8 @@ public class BulkPauseResumeUtils {
         return pvNames;
     }
 
-    public static class PauseResumeBulkOperation implements EAABulkOperation<Map<String, Map<String, String>>> {
+    public static class PauseResumeBulkOperation
+            implements EAABulkOperation<ConfigService, Map<String, Map<String, String>>> {
         private final Map<String, List<String>> pvNamesByAppliance;
         private final boolean askingToPausePV;
 

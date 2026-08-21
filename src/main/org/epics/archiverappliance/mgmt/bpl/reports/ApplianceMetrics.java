@@ -14,6 +14,7 @@ import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ClusterExecutor;
 import org.epics.archiverappliance.config.ClusterExecutor.EAABulkOperation;
 import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVDirectory.CachedPVCounts;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -68,9 +69,9 @@ public class ApplianceMetrics implements BPLAction<ConfigService> {
      * Return a map of appliance identity -> PV counts.
      */
     static Map<String, Long> getAppliancePVCounts(ClusterExecutor clusterExecutor) {
-        class PVCounts implements EAABulkOperation<CachedPVCounts> {
+        class PVCounts implements EAABulkOperation<PVDirectory, CachedPVCounts> {
             @Override
-            public CachedPVCounts call(ConfigService configService) {
+            public CachedPVCounts call(PVDirectory configService) {
                 return configService.getCachedPVCountsForThisAppliance();
             }
         }

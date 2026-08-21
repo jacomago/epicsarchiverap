@@ -1125,9 +1125,9 @@ public class DefaultConfigService implements ConfigService {
     private static class EAAClusterWideOperation<T>
             implements Callable<Tuple<T>>, Serializable, HazelcastInstanceAware {
         private transient ConfigService theConfigService;
-        private final EAABulkOperation<T> theOperation;
+        private final EAABulkOperation<? super ConfigService, T> theOperation;
 
-        public EAAClusterWideOperation(EAABulkOperation<T> theOperation) {
+        public EAAClusterWideOperation(EAABulkOperation<? super ConfigService, T> theOperation) {
             this.theOperation = theOperation;
         }
 
@@ -1143,7 +1143,7 @@ public class DefaultConfigService implements ConfigService {
     }
 
     @Override
-    public <T> Map<String, T> executeClusterWide(EAABulkOperation<T> theOperation) {
+    public <T> Map<String, T> executeClusterWide(EAABulkOperation<? super ConfigService, T> theOperation) {
         HashMap<String, T> ret = new HashMap<String, T>();
         IExecutorService executorService = this.hzinstance.getExecutorService("default");
         Map<Member, Future<Tuple<T>>> futures = executorService.submitToMembers(
@@ -1162,7 +1162,8 @@ public class DefaultConfigService implements ConfigService {
     }
 
     @Override
-    public <T> T executeOnAppliance(ApplianceInfo applianceInfo, EAABulkOperation<T> theOperation) {
+    public <T> T executeOnAppliance(
+            ApplianceInfo applianceInfo, EAABulkOperation<? super ConfigService, T> theOperation) {
         IExecutorService executorService = this.hzinstance.getExecutorService("default");
         for (Entry<String, String> c2a : this.clusterInet2ApplianceIdentity.entrySet()) {
             if (c2a.getValue().equals(applianceInfo.getIdentity())) {
