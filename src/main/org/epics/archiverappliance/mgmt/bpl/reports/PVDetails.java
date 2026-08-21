@@ -12,13 +12,16 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.reports.Details;
+import org.epics.archiverappliance.config.AliasRegistry;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ChannelArchiverConfig;
 import org.epics.archiverappliance.config.ChannelArchiverDataServerPVInfo;
 import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.epics.archiverappliance.config.PolicyService;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -47,10 +50,23 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class PVDetails implements BPLAction {
 
-    private final ConfigService configService;
+    private final AliasRegistry aliasRegistry;
+    private final ChannelArchiverConfig channelArchiverConfig;
+    private final PVDirectory pvdirectory;
+    private final PVTypeInfoStore pvtypeInfoStore;
+    private final PolicyService policyService;
 
-    public PVDetails(ConfigService configService) {
-        this.configService = configService;
+    public PVDetails(
+            AliasRegistry aliasRegistry,
+            ChannelArchiverConfig channelArchiverConfig,
+            PVDirectory pvdirectory,
+            PVTypeInfoStore pvtypeInfoStore,
+            PolicyService policyService) {
+        this.aliasRegistry = aliasRegistry;
+        this.channelArchiverConfig = channelArchiverConfig;
+        this.pvdirectory = pvdirectory;
+        this.pvtypeInfoStore = pvtypeInfoStore;
+        this.policyService = policyService;
     }
 
     private static final Logger logger = LogManager.getLogger(PVDetails.class);
@@ -65,22 +81,22 @@ public class PVDetails implements BPLAction {
         pvName = PVNames.stripPrefixFromName(pvName);
 
         ApplianceInfo info = null;
-        PVTypeInfo typeInfoForNameFromRequest = configService.getTypeInfoForPV(pvNameFromRequest);
+        PVTypeInfo typeInfoForNameFromRequest = pvtypeInfoStore.getTypeInfoForPV(pvNameFromRequest);
         if (typeInfoForNameFromRequest != null) {
             logger.debug("Was able to find a PVTypeInfo for the name as specified in the request " + pvNameFromRequest);
             pvName = pvNameFromRequest;
         } else {
-            String realName = configService.getRealNameForAlias(pvName);
+            String realName = aliasRegistry.getRealNameForAlias(pvName);
             if (realName != null) pvName = realName;
             logger.debug("Found an alias; using that instead " + pvName);
         }
-        info = configService.getApplianceForPV(pvName);
+        info = pvdirectory.getApplianceForPV(pvName);
 
         logger.info("Getting the detailed status for PV " + pvName);
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         if (info == null) {
             pvName = pvNameFromRequest;
-            info = configService.getApplianceForPV(pvName);
+            info = pvdirectory.getApplianceForPV(pvName);
             if (info == null) {
                 resp.sendError(
                         HttpServletResponse.SC_NOT_FOUND, "Cannot find the appliance archiving " + pvNameFromRequest);
@@ -95,13 +111,13 @@ public class PVDetails implements BPLAction {
             if (!pvName.equals(pvNameFromRequest)) {
                 addDetailedStatus(result, "Alias for ", pvName);
             }
-            List<String> myaliases = configService.getAliasesForRealName(pvName);
+            List<String> myaliases = aliasRegistry.getAliasesForRealName(pvName);
             if (myaliases != null && !myaliases.isEmpty()) {
                 addDetailedStatus(result, "Aliases mapped to this PV ", String.join(",", myaliases));
             }
 
             addDetailedStatus(result, "Instance archiving PV", info.getIdentity());
-            PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+            PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pvName);
             if (typeInfo != null) {
                 addDetailedStatus(
                         result,
@@ -124,13 +140,13 @@ public class PVDetails implements BPLAction {
                         result, "Sampling method:", typeInfo.getSamplingMethod().toString());
                 addDetailedStatus(result, "Sampling period:", Float.toString(typeInfo.getSamplingPeriod()));
                 addDetailedStatus(result, "Are we using PVAccess?", typeInfo.isUsePVAccess() ? "Yes" : "No");
-                addExtraFields(configService, typeInfo, result);
+                addExtraFields(policyService, typeInfo, result);
                 String[] archiveFields = typeInfo.getArchiveFields();
                 if (archiveFields != null && archiveFields.length > 0) {
                     String archiveFieldsStr = typeInfo.obtainArchiveFieldsAsString();
                     addDetailedStatus(result, "Archive Fields", archiveFieldsStr);
                 }
-                addChannelArchiverInfo(configService, pvName, result);
+                addChannelArchiverInfo(channelArchiverConfig, pvName, result);
             } else {
                 logger.warn("No PVTypeInfo for pv " + pvName);
             }
