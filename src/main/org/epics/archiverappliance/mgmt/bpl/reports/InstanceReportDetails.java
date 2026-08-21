@@ -7,7 +7,6 @@ import org.epics.archiverappliance.common.reports.Details;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ClusterTopology;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONArray;
@@ -24,10 +23,10 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public class InstanceReportDetails implements BPLAction {
 
-    private final ConfigService configService;
+    private final ClusterTopology clusterTopology;
 
-    public InstanceReportDetails(ConfigService configService) {
-        this.configService = configService;
+    public InstanceReportDetails(ClusterTopology clusterTopology) {
+        this.clusterTopology = clusterTopology;
     }
 
     private static final Logger logger = LogManager.getLogger(InstanceReportDetails.class.getName());
@@ -38,7 +37,7 @@ public class InstanceReportDetails implements BPLAction {
         logger.info("Getting the detailed instance metrics for the appliance " + applianceIdentity);
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
-            out.println(JSONValue.toJSONString(metricsDetails(configService, applianceIdentity)));
+            out.println(JSONValue.toJSONString(metricsDetails(clusterTopology, applianceIdentity)));
         }
     }
 
@@ -61,7 +60,7 @@ public class InstanceReportDetails implements BPLAction {
     private static void getInstanceDetails(
             String info,
             String applianceDetailsURLSnippet,
-            ConfigService.WAR_FILE warFile,
+            ApplianceLifecycle.WAR_FILE warFile,
             LinkedList<Map<String, String>> result) {
         JSONArray engineStatusVars = GetUrlContent.getURLContentAsJSONArray(info + applianceDetailsURLSnippet);
         if (engineStatusVars == null) {

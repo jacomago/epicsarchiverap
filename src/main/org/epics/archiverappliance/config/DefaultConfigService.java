@@ -387,13 +387,13 @@ public class DefaultConfigService implements ConfigService {
         this.startupState = STARTUP_SEQUENCE.READY_TO_JOIN_APPLIANCE;
         if (this.warFile == WAR_FILE.MGMT) {
             logger.info("Scheduling webappReady's for the mgmt webapp ");
-            MgmtPostStartup mgmtPostStartup = new MgmtPostStartup(this);
+            MgmtPostStartup mgmtPostStartup = new MgmtPostStartup(this, this);
             ScheduledFuture<?> postStartupFuture =
                     startupExecutor.scheduleAtFixedRate(mgmtPostStartup, 10, 20, TimeUnit.SECONDS);
             mgmtPostStartup.setCancellingFuture(postStartupFuture);
         } else {
             logger.info("Scheduling webappReady's for the non-mgmt webapp " + this.warFile.toString());
-            NonMgmtPostStartup nonMgmtPostStartup = new NonMgmtPostStartup(this, this.warFile.toString());
+            NonMgmtPostStartup nonMgmtPostStartup = new NonMgmtPostStartup(this, this, this.warFile.toString());
             ScheduledFuture<?> postStartupFuture =
                     startupExecutor.scheduleAtFixedRate(nonMgmtPostStartup, 10, 20, TimeUnit.SECONDS);
             nonMgmtPostStartup.setCancellingFuture(postStartupFuture);
@@ -1134,8 +1134,8 @@ public class DefaultConfigService implements ConfigService {
         }
 
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            theConfigService = (ClusterCallbackView)
-                    hazelcastInstance.getUserContext().get(CONFIGSERVICE_HZ_NAME);
+            theConfigService =
+                    (ClusterCallbackView) hazelcastInstance.getUserContext().get(CONFIGSERVICE_HZ_NAME);
         }
 
         public Tuple<T> call() {

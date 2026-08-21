@@ -13,7 +13,7 @@ import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ClusterExecutor;
 import org.epics.archiverappliance.config.ClusterExecutor.EAABulkOperation;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVDirectory.CachedPVCounts;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
@@ -37,10 +37,12 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class ApplianceMetrics implements BPLAction {
 
-    private final ConfigService configService;
+    private final ClusterExecutor clusterExecutor;
+    private final ClusterTopology clusterTopology;
 
-    public ApplianceMetrics(ConfigService configService) {
-        this.configService = configService;
+    public ApplianceMetrics(ClusterExecutor clusterExecutor, ClusterTopology clusterTopology) {
+        this.clusterExecutor = clusterExecutor;
+        this.clusterTopology = clusterTopology;
     }
 
     private static final Logger logger = LogManager.getLogger(ApplianceMetrics.class);
@@ -51,8 +53,8 @@ public class ApplianceMetrics implements BPLAction {
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
             LinkedList<Map<String, String>> result = new LinkedList<Map<String, String>>();
-            Map<String, Long> pvCounts = ApplianceMetrics.getAppliancePVCounts(configService);
-            for (ApplianceInfo info : configService.getAppliancesInCluster()) {
+            Map<String, Long> pvCounts = ApplianceMetrics.getAppliancePVCounts(clusterExecutor);
+            for (ApplianceInfo info : clusterTopology.getAppliancesInCluster()) {
                 HashMap<String, String> applianceInfo = getBasicMetrics(result, info, pvCounts);
 
                 logger.debug("Asking for appliance metrics from engine using " + info.getEngineURL()
