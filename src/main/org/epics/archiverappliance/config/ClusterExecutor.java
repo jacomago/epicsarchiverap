@@ -19,12 +19,13 @@ public interface ClusterExecutor {
      * One can easily overload the HZ executor so maybe we should not use it for bulk renaming/resharding or any other operation that take a significant amount of time.
      * But small changes to PVTypeInfo's in bulk are the intended usecase.
      */
-    <T> Map<String, T> executeClusterWide(EAABulkOperation<? super ConfigService, T> theOperation);
+    <T> Map<String, T> executeClusterWide(EAABulkOperation<? super ClusterCallbackView, T> theOperation);
 
     /*
      * Same as above but only on specified appliance.
      */
-    <T> T executeOnAppliance(ApplianceInfo applianceInfo, EAABulkOperation<? super ConfigService, T> theOperation);
+    <T> T executeOnAppliance(
+            ApplianceInfo applianceInfo, EAABulkOperation<? super ClusterCallbackView, T> theOperation);
 
     /*
      * Like a callable but for bulk operations within the EAA cluster.

@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ClusterExecutor.EAABulkOperation;
+import org.epics.archiverappliance.config.ClusterCallbackView;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
@@ -42,7 +43,7 @@ public class BulkPauseResumeUtils {
     }
 
     public static class PauseResumeBulkOperation
-            implements EAABulkOperation<ConfigService, Map<String, Map<String, String>>> {
+            implements EAABulkOperation<ClusterCallbackView, Map<String, Map<String, String>>> {
         private final Map<String, List<String>> pvNamesByAppliance;
         private final boolean askingToPausePV;
 
@@ -52,7 +53,7 @@ public class BulkPauseResumeUtils {
         }
 
         @Override
-        public Map<String, Map<String, String>> call(ConfigService configService) {
+        public Map<String, Map<String, String>> call(ClusterCallbackView configService) {
             HashMap<String, Map<String, String>> bulkStatus = new HashMap<String, Map<String, String>>();
             if (!configService.getWarFile().equals(ApplianceLifecycle.WAR_FILE.MGMT)) {
                 // According to Hz documentation, the executor service does not run on Hz clients

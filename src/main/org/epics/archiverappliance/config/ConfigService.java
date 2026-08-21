@@ -31,6 +31,7 @@ public interface ConfigService
                 StoragePluginConfigView,
                 PVTypeInfoLookupView,
                 AppliancePVsView,
+                ClusterCallbackView,
                 ProcessMetricsSource {
 
     // Various reporting helper functions start here
