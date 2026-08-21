@@ -4,8 +4,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ApplianceLifecycle;
-import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.DefaultConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.ProcessMetricsSource;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
@@ -24,24 +24,28 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class ProcessMetricsReport implements BPLAction {
 
-    private final ConfigService configService;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final ClusterTopology clusterTopology;
+    private final ProcessMetricsSource processMetricsSource;
 
-    public ProcessMetricsReport(ConfigService configService) {
-        this.configService = configService;
+    public ProcessMetricsReport(
+            ApplianceLifecycle applianceLifecycle,
+            ClusterTopology clusterTopology,
+            ProcessMetricsSource processMetricsSource) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.clusterTopology = clusterTopology;
+        this.processMetricsSource = processMetricsSource;
     }
 
     private static Logger logger = LogManager.getLogger(ProcessMetricsReport.class.getName());
 
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        // We are casting to DefaultConfigService here as I do not want to expose processMetrics in the public interface
-        // just yet.
-        DefaultConfigService defaultConfigService = (DefaultConfigService) configService;
-        ProcessMetrics processMetrics = defaultConfigService.getProcessMetrics();
-        HashMap<String, Object> myProcessMetricsJSON =
-                processMetrics.getProcessMetricsJSON(configService.getWarFile().name() + "_");
-        if (configService.getWarFile() == ApplianceLifecycle.WAR_FILE.MGMT) {
-            ApplianceInfo myApplianceInfo = configService.getMyApplianceInfo();
+        ProcessMetrics processMetrics = processMetricsSource.getProcessMetrics();
+        HashMap<String, Object> myProcessMetricsJSON = processMetrics.getProcessMetricsJSON(
+                applianceLifecycle.getWarFile().name() + "_");
+        if (applianceLifecycle.getWarFile() == ApplianceLifecycle.WAR_FILE.MGMT) {
+            ApplianceInfo myApplianceInfo = clusterTopology.getMyApplianceInfo();
             // In this case we have combine the results from the various wars
             logger.debug("Asking for process metrics from engine using " + myApplianceInfo.getEngineURL()
                     + "/getProcessMetrics");

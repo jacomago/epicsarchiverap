@@ -30,7 +30,8 @@ public interface ConfigService
                 ArchiveRequestWorkflow,
                 StoragePluginConfigView,
                 PVTypeInfoLookupView,
-                AppliancePVsView {
+                AppliancePVsView,
+                ProcessMetricsSource {
 
     // Various reporting helper functions start here
 
