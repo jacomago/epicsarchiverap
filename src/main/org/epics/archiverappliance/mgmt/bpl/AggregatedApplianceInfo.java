@@ -4,7 +4,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceAggregateInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.utils.ui.JSONEncoder;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 
@@ -20,10 +21,12 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class AggregatedApplianceInfo implements BPLAction {
 
-    private final ConfigService configService;
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvdirectory;
 
-    public AggregatedApplianceInfo(ConfigService configService) {
-        this.configService = configService;
+    public AggregatedApplianceInfo(ClusterTopology clusterTopology, PVDirectory pvdirectory) {
+        this.clusterTopology = clusterTopology;
+        this.pvdirectory = pvdirectory;
     }
 
     private static Logger logger = LogManager.getLogger(AggregatedApplianceInfo.class.getName());
@@ -31,10 +34,10 @@ public class AggregatedApplianceInfo implements BPLAction {
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.debug("Getting the aggregated appliance information for the appliance"
-                + configService.getMyApplianceInfo().getIdentity());
+                + clusterTopology.getMyApplianceInfo().getIdentity());
 
         ApplianceAggregateInfo aggregateInfo =
-                configService.getAggregatedApplianceInfo(configService.getMyApplianceInfo());
+                pvdirectory.getAggregatedApplianceInfo(clusterTopology.getMyApplianceInfo());
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
             JSONEncoder<ApplianceAggregateInfo> jsonEncoder = JSONEncoder.getEncoder(ApplianceAggregateInfo.class);
@@ -42,7 +45,7 @@ public class AggregatedApplianceInfo implements BPLAction {
         } catch (Exception ex) {
             logger.error(
                     "ExceptionGetting the aggregated appliance information for the appliance"
-                            + configService.getMyApplianceInfo().getIdentity(),
+                            + clusterTopology.getMyApplianceInfo().getIdentity(),
                     ex);
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }

@@ -3,8 +3,10 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.epics.archiverappliance.utils.ui.JSONEncoder;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 
@@ -21,17 +23,22 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class ExportConfigForThisInstance implements BPLAction {
 
-    private final ConfigService configService;
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvdirectory;
+    private final PVTypeInfoStore pvtypeInfoStore;
 
-    public ExportConfigForThisInstance(ConfigService configService) {
-        this.configService = configService;
+    public ExportConfigForThisInstance(
+            ClusterTopology clusterTopology, PVDirectory pvdirectory, PVTypeInfoStore pvtypeInfoStore) {
+        this.clusterTopology = clusterTopology;
+        this.pvdirectory = pvdirectory;
+        this.pvtypeInfoStore = pvtypeInfoStore;
     }
 
     private static Logger logger = LogManager.getLogger(ExportConfigForThisInstance.class.getName());
 
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String identity = configService.getMyApplianceInfo().getIdentity();
+        String identity = clusterTopology.getMyApplianceInfo().getIdentity();
         logger.info("Exporting config for this instance" + identity);
 
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
@@ -39,8 +46,8 @@ public class ExportConfigForThisInstance implements BPLAction {
             out.println("[");
             JSONEncoder<PVTypeInfo> typeInfoEncoder = JSONEncoder.getEncoder(PVTypeInfo.class);
             boolean first = true;
-            for (String pvName : configService.getPVsForThisAppliance()) {
-                PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+            for (String pvName : pvdirectory.getPVsForThisAppliance()) {
+                PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pvName);
                 if (typeInfo != null) {
                     if (first) {
                         first = false;

@@ -4,8 +4,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONAware;
 import org.json.simple.JSONValue;
@@ -27,10 +29,15 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class RecentlyAddedPVsforThisInstance implements BPLAction {
 
-    private final ConfigService configService;
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvdirectory;
+    private final PVTypeInfoStore pvtypeInfoStore;
 
-    public RecentlyAddedPVsforThisInstance(ConfigService configService) {
-        this.configService = configService;
+    public RecentlyAddedPVsforThisInstance(
+            ClusterTopology clusterTopology, PVDirectory pvdirectory, PVTypeInfoStore pvtypeInfoStore) {
+        this.clusterTopology = clusterTopology;
+        this.pvdirectory = pvdirectory;
+        this.pvtypeInfoStore = pvtypeInfoStore;
     }
 
     private static Logger logger = LogManager.getLogger(RecentlyAddedPVsforThisInstance.class.getName());
@@ -45,7 +52,7 @@ public class RecentlyAddedPVsforThisInstance implements BPLAction {
             limit = Integer.parseInt(limitStr);
         }
 
-        final String identity = configService.getMyApplianceInfo().getIdentity();
+        final String identity = clusterTopology.getMyApplianceInfo().getIdentity();
         final class RecentlyAddedPVInfo implements JSONAware {
             String pvName;
             Instant creationTimeStamp;
@@ -66,8 +73,8 @@ public class RecentlyAddedPVsforThisInstance implements BPLAction {
         }
 
         LinkedList<RecentlyAddedPVInfo> myPVs = new LinkedList<RecentlyAddedPVInfo>();
-        for (String pv : configService.getPVsForThisAppliance()) {
-            PVTypeInfo typeInfo = configService.getTypeInfoForPV(pv);
+        for (String pv : pvdirectory.getPVsForThisAppliance()) {
+            PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pv);
             if (typeInfo != null) {
                 myPVs.add(new RecentlyAddedPVInfo(pv, typeInfo.getCreationTime()));
             }

@@ -3,7 +3,8 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -20,10 +21,12 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class GetPausedPVsForThisAppliance implements BPLAction {
 
-    private final ConfigService configService;
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvdirectory;
 
-    public GetPausedPVsForThisAppliance(ConfigService configService) {
-        this.configService = configService;
+    public GetPausedPVsForThisAppliance(ClusterTopology clusterTopology, PVDirectory pvdirectory) {
+        this.clusterTopology = clusterTopology;
+        this.pvdirectory = pvdirectory;
     }
 
     private static Logger logger = LogManager.getLogger(GetPausedPVsForThisAppliance.class.getName());
@@ -31,9 +34,9 @@ public class GetPausedPVsForThisAppliance implements BPLAction {
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.debug("Getting paused pvs for appliance "
-                + configService.getMyApplianceInfo().getIdentity());
+                + clusterTopology.getMyApplianceInfo().getIdentity());
         LinkedList<String> pausedPVSForThisAppliance = new LinkedList<String>();
-        for (String pvName : configService.getPausedPVsInThisAppliance()) {
+        for (String pvName : pvdirectory.getPausedPVsInThisAppliance()) {
             pausedPVSForThisAppliance.add(pvName);
         }
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
@@ -42,7 +45,7 @@ public class GetPausedPVsForThisAppliance implements BPLAction {
         } catch (Exception ex) {
             logger.error(
                     "Exception getting paused pvs for appliance "
-                            + configService.getMyApplianceInfo().getIdentity(),
+                            + clusterTopology.getMyApplianceInfo().getIdentity(),
                     ex);
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }

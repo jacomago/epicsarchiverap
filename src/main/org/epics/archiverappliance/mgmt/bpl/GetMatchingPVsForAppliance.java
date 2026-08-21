@@ -3,7 +3,8 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -28,10 +29,12 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class GetMatchingPVsForAppliance implements BPLAction {
 
-    private final ConfigService configService;
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvdirectory;
 
-    public GetMatchingPVsForAppliance(ConfigService configService) {
-        this.configService = configService;
+    public GetMatchingPVsForAppliance(ClusterTopology clusterTopology, PVDirectory pvdirectory) {
+        this.clusterTopology = clusterTopology;
+        this.pvdirectory = pvdirectory;
     }
 
     private static Logger logger = LogManager.getLogger(GetMatchingPVsForAppliance.class.getName());
@@ -58,7 +61,7 @@ public class GetMatchingPVsForAppliance implements BPLAction {
             logger.debug("Finding PV's for glob (converted to regex)" + nameToMatch);
         }
 
-        Set<String> pvNamesMatchingRegex = configService.getPVsForApplianceMatchingRegex(nameToMatch);
+        Set<String> pvNamesMatchingRegex = pvdirectory.getPVsForApplianceMatchingRegex(nameToMatch);
 
         LinkedList<String> pvNames = new LinkedList<String>();
         if (limit == -1) {
@@ -79,7 +82,7 @@ public class GetMatchingPVsForAppliance implements BPLAction {
         } catch (Exception ex) {
             logger.error(
                     "Exception getting all pvs on appliance "
-                            + configService.getMyApplianceInfo().getIdentity(),
+                            + clusterTopology.getMyApplianceInfo().getIdentity(),
                     ex);
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
