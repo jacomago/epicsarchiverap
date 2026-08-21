@@ -137,8 +137,8 @@ public class GetDataAtTimeTest {
                     dataTs.getEpochSecond());
             try (BasicContext context = new BasicContext()) {
                 for (String pvName : pvNames.keySet()) {
-                    PVWithData pvDatas =
-                            GetDataAtTime.getDataAtTimeForPVFromStores(pvName, dataTs, searchPeriod, configService);
+                    PVWithData pvDatas = GetDataAtTime.getDataAtTimeForPVFromStores(
+                            pvName, dataTs, searchPeriod, configService, configService, configService);
                     DBRTimeEvent event = (DBRTimeEvent) pvDatas.event();
                     Assertions.assertNotNull(
                             event, "Getting at time " + dataTs + " for PV " + pvName + " returns null?");

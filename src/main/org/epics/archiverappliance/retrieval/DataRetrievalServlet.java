@@ -314,14 +314,14 @@ public class DataRetrievalServlet extends HttpServlet {
             }
             case "getDataAtTime" -> {
                 try {
-                    GetDataAtTime.getDataAtTime(req, resp, configService);
+                    GetDataAtTime.getDataAtTime(req, resp, configService, configService, configService, configService);
                 } catch (ExecutionException | InterruptedException ex) {
                     throw new IOException(ex);
                 }
             }
             case "getDataAtTimeForAppliance" -> {
                 try {
-                    GetDataAtTime.getDataAtTimeForAppliance(req, resp, configService);
+                    GetDataAtTime.getDataAtTimeForAppliance(req, resp, configService, configService, configService);
                 } catch (ExecutionException | InterruptedException ex) {
                     throw new IOException(ex);
                 }
@@ -1148,7 +1148,8 @@ public class DataRetrievalServlet extends HttpServlet {
          * Gets the object responsible for resolving data sources (e.g., where data is stored
          * for this appliance.
          */
-        DataSourceResolution datasourceresolver = new DataSourceResolution(configService);
+        DataSourceResolution datasourceresolver =
+                new DataSourceResolution(configService, configService, configService, configService);
 
         for (TimeSpan timespan : executorResult.requestTimespans) {
             // Resolve data sources for the given PV and the given time frames

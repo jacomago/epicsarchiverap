@@ -235,7 +235,7 @@ public class ConfigServiceForTests extends DefaultConfigService {
         EngineContext.create(this, this, this, this, this, this)
                 .setDisconnectCheckTimeoutInSecondsForTestingPurposesOnly(defaultSecondsDisconnect);
         PBThreeTierETLPVLookup.create(this, this, this);
-        RetrievalState.create(this, cs -> new SampleRetrievalState(this));
+        RetrievalState.create(this, () -> new SampleRetrievalState(this));
         MgmtRuntimeState.create(this);
 
         startupState = STARTUP_SEQUENCE.STARTUP_COMPLETE;
@@ -275,7 +275,7 @@ public class ConfigServiceForTests extends DefaultConfigService {
     public void initialize(ServletContext sce) throws ConfigException {
         super.initialize(sce);
 
-        RetrievalState.create(this, cs -> new SampleRetrievalState(this));
+        RetrievalState.create(this, () -> new SampleRetrievalState(this));
         EngineContext engineContext = EngineContext.of(this);
         if (engineContext != null) {
             engineContext.setDisconnectCheckTimeoutInSecondsForTestingPurposesOnly(defaultSecondsDisconnect);

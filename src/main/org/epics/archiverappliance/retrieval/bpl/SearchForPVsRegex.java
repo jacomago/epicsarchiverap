@@ -3,7 +3,8 @@ package org.epics.archiverappliance.retrieval.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ChannelArchiverConfig;
+import org.epics.archiverappliance.config.ClusterTopology;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -13,10 +14,12 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public class SearchForPVsRegex implements BPLAction {
 
-    private final ConfigService configService;
+    private final ChannelArchiverConfig channelArchiverConfig;
+    private final ClusterTopology clusterTopology;
 
-    public SearchForPVsRegex(ConfigService configService) {
-        this.configService = configService;
+    public SearchForPVsRegex(ChannelArchiverConfig channelArchiverConfig, ClusterTopology clusterTopology) {
+        this.channelArchiverConfig = channelArchiverConfig;
+        this.clusterTopology = clusterTopology;
     }
 
     private static Logger logger = LogManager.getLogger(SearchForPVsRegex.class.getName());
@@ -35,7 +38,11 @@ public class SearchForPVsRegex implements BPLAction {
         resp.setContentType("text/plain");
         try (PrintWriter out = resp.getWriter()) {
             List<String> matchingPVNames = (List<String>) GetMatchingPVs.getMatchingPVsInCluster(
-                    configService, -1, nameToMatch, GetMatchingPVs.includeExternalServers(req));
+                    channelArchiverConfig,
+                    clusterTopology,
+                    -1,
+                    nameToMatch,
+                    GetMatchingPVs.includeExternalServers(req));
             for (String pvName : matchingPVNames) {
                 out.println(pvName);
             }

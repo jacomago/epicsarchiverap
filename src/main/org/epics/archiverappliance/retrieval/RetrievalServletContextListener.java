@@ -21,7 +21,7 @@ public class RetrievalServletContextListener extends ArchServletContextListener 
 
     @Override
     protected void createRuntimeState(ConfigService configService) throws ConfigException {
-        RetrievalState.create(configService);
+        RetrievalState.create(configService, configService, configService, configService);
         if (RetrievalState.of(configService) == null) {
             throw new ConfigException("Unable to publish the retrieval state");
         }

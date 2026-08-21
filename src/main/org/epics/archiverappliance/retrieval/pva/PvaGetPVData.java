@@ -1314,7 +1314,7 @@ public class PvaGetPVData implements PvaAction<ConfigService> {
          * Gets the object responsible for resolving data sources (e.g., where data is
          * stored for this appliance.
          */
-        DataSourceResolution datasourceresolver = new DataSourceResolution(configService);
+        DataSourceResolution datasourceresolver = new DataSourceResolution(configService, configService, configService, configService);
 
         for (TimeSpan timespan : executorResult.requestTimespans) {
             // Resolve data sources for the given PV and the given time frames
