@@ -3,9 +3,14 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.config.AliasRegistry;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ArchiveRequestWorkflow;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.epics.archiverappliance.config.UserSpecifiedSamplingParams;
 import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
@@ -30,10 +35,26 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class AddAliasAction implements BPLAction {
 
-    private final ConfigService configService;
+    private final AliasRegistry aliasRegistry;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final ArchiveRequestWorkflow archiveRequestWorkflow;
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvdirectory;
+    private final PVTypeInfoStore pvtypeInfoStore;
 
-    public AddAliasAction(ConfigService configService) {
-        this.configService = configService;
+    public AddAliasAction(
+            AliasRegistry aliasRegistry,
+            ApplianceLifecycle applianceLifecycle,
+            ArchiveRequestWorkflow archiveRequestWorkflow,
+            ClusterTopology clusterTopology,
+            PVDirectory pvdirectory,
+            PVTypeInfoStore pvtypeInfoStore) {
+        this.aliasRegistry = aliasRegistry;
+        this.applianceLifecycle = applianceLifecycle;
+        this.archiveRequestWorkflow = archiveRequestWorkflow;
+        this.clusterTopology = clusterTopology;
+        this.pvdirectory = pvdirectory;
+        this.pvtypeInfoStore = pvtypeInfoStore;
     }
 
     private static Logger logger = LogManager.getLogger(AddAliasAction.class.getName());
@@ -63,7 +84,7 @@ public class AddAliasAction implements BPLAction {
         }
 
         // Make sure we do not have a pvTypeInfo in the alias name
-        PVTypeInfo aliasTypeInfo = configService.getTypeInfoForPV(aliasName);
+        PVTypeInfo aliasTypeInfo = pvtypeInfoStore.getTypeInfoForPV(aliasName);
         if (aliasTypeInfo != null) {
             logger.error("We seem to have a PVTypeInfo for alias " + aliasName
                     + ". We do not support adding aliases that have typeinfo's associated with them.");
@@ -72,15 +93,16 @@ public class AddAliasAction implements BPLAction {
         }
 
         // Make sure we have a pvTypeInfo in the real name.
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pvName);
         if (typeInfo == null) {
             logger.debug("Type info is null. Check to see if we have the PV in the archivePV workflow");
-            if (MgmtRuntimeState.of(configService).isPVInWorkflow(pvName)) {
+            if (MgmtRuntimeState.of(applianceLifecycle).isPVInWorkflow(pvName)) {
                 logger.debug("PV " + pvName
                         + " is in workflow. Updating the UserSpecifiedSamplingParams and adding alias " + aliasName);
-                UserSpecifiedSamplingParams samplingParams = configService.getUserSpecifiedSamplingParams(pvName);
+                UserSpecifiedSamplingParams samplingParams =
+                        archiveRequestWorkflow.getUserSpecifiedSamplingParams(pvName);
                 samplingParams.addAlias(aliasName);
-                configService.updateArchiveRequest(pvName, samplingParams);
+                archiveRequestWorkflow.updateArchiveRequest(pvName, samplingParams);
                 logger.debug(
                         "Done updating PV " + pvName + " UserSpecifiedSamplingParams and adding alias " + aliasName);
             } else {
@@ -92,9 +114,9 @@ public class AddAliasAction implements BPLAction {
             }
         }
 
-        ApplianceInfo infoForPV = configService.getApplianceForPV(pvName);
-        if (useThisAppliance || (infoForPV != null && infoForPV.equals(configService.getMyApplianceInfo()))) {
-            configService.addAlias(aliasName, pvName);
+        ApplianceInfo infoForPV = pvdirectory.getApplianceForPV(pvName);
+        if (useThisAppliance || (infoForPV != null && infoForPV.equals(clusterTopology.getMyApplianceInfo()))) {
+            aliasRegistry.addAlias(aliasName, pvName);
             HashMap<String, Object> infoValues = new HashMap<String, Object>();
             infoValues.put("status", "ok");
             infoValues.put("desc", "Added an alias " + aliasName + " for PV " + pvName);
