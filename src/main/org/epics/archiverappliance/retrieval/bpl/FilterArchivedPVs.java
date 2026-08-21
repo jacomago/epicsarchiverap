@@ -2,7 +2,7 @@ package org.epics.archiverappliance.retrieval.bpl;
 
 import org.epics.archiverappliance.common.ArchivedPVsInList;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.PVTypeInfoLookupView;
 import org.epics.archiverappliance.mgmt.bpl.PVsMatchingParameter;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
@@ -20,10 +20,10 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class FilterArchivedPVs implements BPLAction<ConfigService> {
+public class FilterArchivedPVs implements BPLAction<PVTypeInfoLookupView> {
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, PVTypeInfoLookupView configService)
             throws IOException {
         LinkedList<String> pvNames = PVsMatchingParameter.getPVNamesFromPostBody(req);
         List<String> archivedPVs = ArchivedPVsInList.getArchivedPVs(pvNames, configService);
