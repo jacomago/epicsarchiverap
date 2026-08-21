@@ -3,8 +3,9 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.AliasRegistry;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.epics.archiverappliance.utils.ui.JSONEncoder;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 
@@ -24,10 +25,12 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class GetPVTypeInfo implements BPLAction {
 
-    private final ConfigService configService;
+    private final AliasRegistry aliasRegistry;
+    private final PVTypeInfoStore pvtypeInfoStore;
 
-    public GetPVTypeInfo(ConfigService configService) {
-        this.configService = configService;
+    public GetPVTypeInfo(AliasRegistry aliasRegistry, PVTypeInfoStore pvtypeInfoStore) {
+        this.aliasRegistry = aliasRegistry;
+        this.pvtypeInfoStore = pvtypeInfoStore;
     }
 
     private static Logger logger = LogManager.getLogger(GetPVTypeInfo.class.getName());
@@ -42,10 +45,10 @@ public class GetPVTypeInfo implements BPLAction {
         }
 
         // String pvNameFromRequest = pvName;
-        String realName = configService.getRealNameForAlias(pvName);
+        String realName = aliasRegistry.getRealNameForAlias(pvName);
         if (realName != null) pvName = realName;
 
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pvName);
         if (typeInfo == null) {
             logger.warn("Cannot find typeinfo for " + pvName);
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
