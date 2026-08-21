@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONArray;
@@ -21,11 +21,11 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetPVTypeInfoKeys implements BPLAction<ConfigService> {
+public class GetPVTypeInfoKeys implements BPLAction<ClusterTopology> {
     private static Logger logger = LogManager.getLogger(GetPVTypeInfoKeys.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
             throws IOException {
         logger.info("Getting PVTypeInfo keys");
         LinkedList<String> typeInfoURLs = new LinkedList<String>();

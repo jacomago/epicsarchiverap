@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 
@@ -20,11 +20,11 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ExportConfig implements BPLAction<ConfigService> {
+public class ExportConfig implements BPLAction<ClusterTopology> {
     private static Logger logger = LogManager.getLogger(ExportConfig.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
             throws IOException {
         logger.info("Exporting PV archiving configuration ");
         LinkedList<String> exportPVTypeInfoURLs = new LinkedList<String>();
