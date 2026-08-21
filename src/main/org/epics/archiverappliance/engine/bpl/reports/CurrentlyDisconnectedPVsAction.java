@@ -19,7 +19,7 @@ import java.util.Set;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class CurrentlyDisconnectedPVsAction implements BPLAction {
+public class CurrentlyDisconnectedPVsAction implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(CurrentlyDisconnectedPVsAction.class.getName());
 
     @Override

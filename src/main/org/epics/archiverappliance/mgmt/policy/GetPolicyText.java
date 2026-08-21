@@ -14,7 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetPolicyText implements BPLAction {
+public class GetPolicyText implements BPLAction<ConfigService> {
 
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)

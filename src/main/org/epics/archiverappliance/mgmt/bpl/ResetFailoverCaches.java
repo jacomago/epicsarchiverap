@@ -26,7 +26,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ResetFailoverCaches implements BPLAction {
+public class ResetFailoverCaches implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(ResetFailoverCaches.class.getName());
 
     @Override

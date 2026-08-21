@@ -32,7 +32,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class MetaGetsAction implements BPLAction {
+public class MetaGetsAction implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(MetaGetsAction.class);
 
     @Override

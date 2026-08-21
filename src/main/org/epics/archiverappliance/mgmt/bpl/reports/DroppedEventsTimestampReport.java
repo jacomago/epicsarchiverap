@@ -26,7 +26,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class DroppedEventsTimestampReport implements BPLAction {
+public class DroppedEventsTimestampReport implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(DroppedEventsTimestampReport.class.getName());
 
     @Override

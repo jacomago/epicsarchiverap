@@ -13,7 +13,7 @@ import java.util.HashMap;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class GetPolicyList implements BPLAction {
+public class GetPolicyList implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(GetPolicyList.class.getName());
 
     @Override

@@ -20,7 +20,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class RefreshPVDataFromChannelArchivers implements BPLAction {
+public class RefreshPVDataFromChannelArchivers implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(RefreshPVDataFromChannelArchivers.class.getName());
 
     @Override

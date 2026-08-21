@@ -8,7 +8,7 @@ import java.io.PrintWriter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class StorageMetricsForAppliance implements BPLAction {
+public class StorageMetricsForAppliance implements BPLAction<ConfigService> {
 
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)

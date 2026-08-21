@@ -26,7 +26,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetMatchingPVsForAppliance implements BPLAction {
+public class GetMatchingPVsForAppliance implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(GetMatchingPVsForAppliance.class.getName());
 
     @Override

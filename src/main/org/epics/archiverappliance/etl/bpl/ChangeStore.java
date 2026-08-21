@@ -15,7 +15,7 @@ import java.util.HashMap;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class ChangeStore implements BPLAction {
+public class ChangeStore implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(ChangeStore.class);
 
     @Override

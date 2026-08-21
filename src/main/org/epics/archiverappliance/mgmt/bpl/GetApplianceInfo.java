@@ -27,7 +27,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetApplianceInfo implements BPLAction {
+public class GetApplianceInfo implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(GetApplianceInfo.class.getName());
 
     @SuppressWarnings("unchecked")

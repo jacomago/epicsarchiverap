@@ -59,8 +59,8 @@ import jakarta.servlet.http.HttpServletResponse;
 @SuppressWarnings("serial")
 public class BPLServlet extends HttpServlet {
     private static final Logger logger = LogManager.getLogger(BPLServlet.class);
-    private static HashMap<String, Class<? extends BPLAction>> getActions =
-            new HashMap<String, Class<? extends BPLAction>>();
+    private static HashMap<String, Class<? extends BPLAction<? super ConfigService>>> getActions =
+            new HashMap<String, Class<? extends BPLAction<? super ConfigService>>>();
 
     static {
         getActions.put("/getData.raw", GetEngineDataAction.class);
@@ -101,8 +101,8 @@ public class BPLServlet extends HttpServlet {
         BasicDispatcher.dispatch(req, resp, configService, getActions);
     }
 
-    private static HashMap<String, Class<? extends BPLAction>> postActions =
-            new HashMap<String, Class<? extends BPLAction>>();
+    private static HashMap<String, Class<? extends BPLAction<? super ConfigService>>> postActions =
+            new HashMap<String, Class<? extends BPLAction<? super ConfigService>>>();
 
     static {
         postActions.put("/status", PVStatusAction.class);

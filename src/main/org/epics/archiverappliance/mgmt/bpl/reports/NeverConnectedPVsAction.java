@@ -32,7 +32,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class NeverConnectedPVsAction implements BPLAction {
+public class NeverConnectedPVsAction implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(NeverConnectedPVsAction.class);
 
     @Override

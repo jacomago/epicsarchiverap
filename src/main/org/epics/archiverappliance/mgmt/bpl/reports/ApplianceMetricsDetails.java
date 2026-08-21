@@ -38,7 +38,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ApplianceMetricsDetails implements BPLAction {
+public class ApplianceMetricsDetails implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(ApplianceMetricsDetails.class.getName());
 
     @Override

@@ -37,7 +37,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GenericPVMetricsReport<T extends Number> implements BPLAction {
+public class GenericPVMetricsReport<T extends Number> implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(GenericPVMetricsReport.class);
     private final Function<PVMetrics, T> getFn;
     private final String metricName;

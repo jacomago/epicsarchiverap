@@ -18,7 +18,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetPausedPVsForThisAppliance implements BPLAction {
+public class GetPausedPVsForThisAppliance implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(GetPausedPVsForThisAppliance.class.getName());
 
     @Override

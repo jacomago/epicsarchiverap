@@ -28,7 +28,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class SlowChangingPVsWithDroppedEvents implements BPLAction {
+public class SlowChangingPVsWithDroppedEvents implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(SlowChangingPVsWithDroppedEvents.class.getName());
 
     @Override

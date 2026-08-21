@@ -25,7 +25,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class RecentlyAddedPVsforThisInstance implements BPLAction {
+public class RecentlyAddedPVsforThisInstance implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(RecentlyAddedPVsforThisInstance.class.getName());
 
     @Override

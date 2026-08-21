@@ -18,7 +18,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class AggregatedApplianceInfo implements BPLAction {
+public class AggregatedApplianceInfo implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(AggregatedApplianceInfo.class.getName());
 
     @Override

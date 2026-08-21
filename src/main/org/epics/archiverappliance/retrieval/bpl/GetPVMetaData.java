@@ -28,7 +28,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetPVMetaData implements BPLAction {
+public class GetPVMetaData implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(GetPVMetaData.class.getName());
 
     @Override

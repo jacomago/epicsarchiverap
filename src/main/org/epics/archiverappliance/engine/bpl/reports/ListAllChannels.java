@@ -17,7 +17,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ListAllChannels implements BPLAction {
+public class ListAllChannels implements BPLAction<ConfigService> {
 
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)

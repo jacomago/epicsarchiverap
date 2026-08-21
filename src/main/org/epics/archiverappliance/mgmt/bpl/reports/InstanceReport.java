@@ -17,7 +17,7 @@ import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class InstanceReport implements BPLAction {
+public class InstanceReport implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(InstanceReport.class.getName());
 
     @Override

@@ -34,7 +34,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class StorageRateReport implements BPLAction {
+public class StorageRateReport implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(StorageRateReport.class);
 
     @Override

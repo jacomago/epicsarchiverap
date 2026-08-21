@@ -37,7 +37,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class TimeSpanReport implements BPLAction {
+public class TimeSpanReport implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(TimeSpanReport.class);
 
     @SuppressWarnings("unchecked")

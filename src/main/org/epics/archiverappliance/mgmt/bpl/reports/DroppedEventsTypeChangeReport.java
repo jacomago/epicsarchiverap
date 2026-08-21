@@ -28,7 +28,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class DroppedEventsTypeChangeReport implements BPLAction {
+public class DroppedEventsTypeChangeReport implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(DroppedEventsTypeChangeReport.class.getName());
 
     @Override

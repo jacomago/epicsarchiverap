@@ -26,7 +26,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class SilentPVReport implements BPLAction {
+public class SilentPVReport implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(SilentPVReport.class.getName());
 
     @Override

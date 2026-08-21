@@ -16,7 +16,7 @@ import java.util.LinkedList;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class PVsByStorageConsumed implements BPLAction {
+public class PVsByStorageConsumed implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(PVsByStorageConsumed.class.getName());
 
     @Override

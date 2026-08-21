@@ -40,7 +40,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetDataAtTimeEngine implements BPLAction {
+public class GetDataAtTimeEngine implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(GetDataAtTimeEngine.class);
 
     /**

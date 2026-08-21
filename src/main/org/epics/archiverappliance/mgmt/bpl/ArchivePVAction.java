@@ -79,7 +79,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ArchivePVAction implements BPLAction {
+public class ArchivePVAction implements BPLAction<ConfigService> {
     public static final Logger logger = LogManager.getLogger(ArchivePVAction.class);
 
     @Override

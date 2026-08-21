@@ -23,7 +23,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class AreWeArchivingPV implements BPLAction {
+public class AreWeArchivingPV implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(AreWeArchivingPV.class.getName());
 
     @Override

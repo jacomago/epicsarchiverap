@@ -35,7 +35,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class AbortArchiveRequest implements BPLAction {
+public class AbortArchiveRequest implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(AbortArchiveRequest.class);
 
     @Override

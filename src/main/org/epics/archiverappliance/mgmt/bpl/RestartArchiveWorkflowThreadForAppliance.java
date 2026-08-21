@@ -30,7 +30,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class RestartArchiveWorkflowThreadForAppliance implements BPLAction {
+public class RestartArchiveWorkflowThreadForAppliance implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(RestartArchiveWorkflowThreadForAppliance.class);
 
     @Override

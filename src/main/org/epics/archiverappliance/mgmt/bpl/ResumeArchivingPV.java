@@ -25,7 +25,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ResumeArchivingPV implements BPLAction {
+public class ResumeArchivingPV implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(ResumeArchivingPV.class.getName());
 
     @Override

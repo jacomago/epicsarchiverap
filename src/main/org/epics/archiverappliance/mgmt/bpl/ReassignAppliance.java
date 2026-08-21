@@ -42,7 +42,7 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  * @author mshankar
  */
-public class ReassignAppliance implements BPLAction {
+public class ReassignAppliance implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(ReassignAppliance.class.getName());
 
     @Override

@@ -26,7 +26,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class LostConnectionsReport implements BPLAction {
+public class LostConnectionsReport implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(LostConnectionsReport.class.getName());
 
     @Override

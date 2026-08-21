@@ -17,7 +17,7 @@ import java.util.HashMap;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class ChangeArchivalParamsAction implements BPLAction {
+public class ChangeArchivalParamsAction implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(ChangeArchivalParamsAction.class.getName());
 
     @Override

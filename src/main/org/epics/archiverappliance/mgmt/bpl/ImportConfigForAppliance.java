@@ -29,7 +29,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ImportConfigForAppliance implements BPLAction {
+public class ImportConfigForAppliance implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(ImportConfigForAppliance.class.getName());
 
     @Override

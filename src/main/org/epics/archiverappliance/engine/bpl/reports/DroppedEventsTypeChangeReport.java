@@ -22,7 +22,7 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class DroppedEventsTypeChangeReport implements BPLAction {
+public class DroppedEventsTypeChangeReport implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(DroppedEventsTypeChangeReport.class.getName());
 
     private static class PVDroppedEvents {

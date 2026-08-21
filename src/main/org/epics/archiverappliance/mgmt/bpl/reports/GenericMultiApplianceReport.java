@@ -32,7 +32,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GenericMultiApplianceReport implements BPLAction {
+public class GenericMultiApplianceReport implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(GenericMultiApplianceReport.class);
     private Function<ApplianceInfo, String> urlPrefixFn;
     private final String urlSuffix;

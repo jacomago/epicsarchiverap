@@ -15,7 +15,7 @@ import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public interface PVDetails extends BPLAction {
+public interface PVDetails extends BPLAction<ConfigService> {
     Logger logger = LogManager.getLogger(PVDetails.class);
 
     @Override

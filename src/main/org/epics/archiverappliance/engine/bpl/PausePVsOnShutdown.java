@@ -21,7 +21,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class PausePVsOnShutdown implements BPLAction {
+public class PausePVsOnShutdown implements BPLAction<ConfigService> {
     private static Logger configlogger = LogManager.getLogger("config." + PausePVsOnShutdown.class.getName());
 
     @Override

@@ -33,7 +33,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class EventRateReport implements BPLAction {
+public class EventRateReport implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(EventRateReport.class);
 
     @Override

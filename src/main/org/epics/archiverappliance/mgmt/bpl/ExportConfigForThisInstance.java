@@ -19,7 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ExportConfigForThisInstance implements BPLAction {
+public class ExportConfigForThisInstance implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(ExportConfigForThisInstance.class.getName());
 
     @Override

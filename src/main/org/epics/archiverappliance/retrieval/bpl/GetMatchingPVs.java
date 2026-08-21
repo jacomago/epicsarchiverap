@@ -33,7 +33,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetMatchingPVs implements BPLAction {
+public class GetMatchingPVs implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(GetMatchingPVs.class.getName());
 
     @Override

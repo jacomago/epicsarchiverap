@@ -48,7 +48,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class MergeInDataFromExternalStore implements BPLAction {
+public class MergeInDataFromExternalStore implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(MergeInDataFromExternalStore.class.getName());
 
     @Override

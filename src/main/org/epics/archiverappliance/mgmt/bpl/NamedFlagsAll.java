@@ -21,7 +21,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class NamedFlagsAll implements BPLAction {
+public class NamedFlagsAll implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(NamedFlagsAll.class.getName());
 
     @Override

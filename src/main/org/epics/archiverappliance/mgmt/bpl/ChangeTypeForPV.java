@@ -35,7 +35,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ChangeTypeForPV implements BPLAction {
+public class ChangeTypeForPV implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(ChangeTypeForPV.class.getName());
 
     @Override

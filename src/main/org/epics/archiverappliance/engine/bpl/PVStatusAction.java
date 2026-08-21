@@ -28,7 +28,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class PVStatusAction implements BPLAction {
+public class PVStatusAction implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(PVStatusAction.class.getName());
 
     @Override

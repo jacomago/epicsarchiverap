@@ -38,7 +38,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class CompareWithChannelArchiver implements BPLAction {
+public class CompareWithChannelArchiver implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(CompareWithChannelArchiver.class.getName());
 
     private static void addEventToEventList(

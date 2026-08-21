@@ -29,7 +29,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ModifyStoreURLForPV implements BPLAction {
+public class ModifyStoreURLForPV implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(ModifyStoreURLForPV.class.getName());
 
     @Override

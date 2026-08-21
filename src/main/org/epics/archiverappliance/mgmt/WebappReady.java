@@ -19,7 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class WebappReady implements BPLAction {
+public class WebappReady implements BPLAction<ConfigService> {
     private static Logger configlogger = LogManager.getLogger("config." + WebappReady.class.getName());
 
     @Override

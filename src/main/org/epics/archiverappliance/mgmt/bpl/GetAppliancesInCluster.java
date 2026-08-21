@@ -23,7 +23,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetAppliancesInCluster implements BPLAction {
+public class GetAppliancesInCluster implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(GetAppliancesInCluster.class.getName());
 
     @SuppressWarnings("unchecked")

@@ -22,7 +22,7 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class DroppedEventsBufferOverflowReport implements BPLAction {
+public class DroppedEventsBufferOverflowReport implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(DroppedEventsBufferOverflowReport.class.getName());
 
     private static class PVDroppedEvents {

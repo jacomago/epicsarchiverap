@@ -32,7 +32,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ChangeArchivalParamsAction implements BPLAction {
+public class ChangeArchivalParamsAction implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(ChangeArchivalParamsAction.class.getName());
 
     @Override

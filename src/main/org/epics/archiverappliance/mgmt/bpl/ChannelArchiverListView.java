@@ -27,7 +27,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ChannelArchiverListView implements BPLAction {
+public class ChannelArchiverListView implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(ChannelArchiverListView.class.getName());
 
     @Override

@@ -34,7 +34,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * Use with caution.
  *
  */
-public class ChangeStore implements BPLAction {
+public class ChangeStore implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(ChangeStore.class.getName());
 
     @Override

@@ -32,7 +32,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ImportChannelArchiverConfigAction implements BPLAction {
+public class ImportChannelArchiverConfigAction implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(ImportChannelArchiverConfigAction.class);
 
     @Override

@@ -25,7 +25,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class MetaGetsForThisApplianceAction implements BPLAction {
+public class MetaGetsForThisApplianceAction implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(MetaGetsForThisApplianceAction.class);
 
     @Override

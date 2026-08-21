@@ -25,7 +25,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class CurrentlyDisconnectedPVs implements BPLAction {
+public class CurrentlyDisconnectedPVs implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(CurrentlyDisconnectedPVs.class.getName());
 
     @Override

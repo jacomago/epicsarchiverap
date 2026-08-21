@@ -31,7 +31,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetEngineDataAction implements BPLAction {
+public class GetEngineDataAction implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(GetEngineDataAction.class);
 
     @Override

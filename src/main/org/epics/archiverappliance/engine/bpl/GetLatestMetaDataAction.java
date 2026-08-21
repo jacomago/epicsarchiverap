@@ -27,7 +27,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetLatestMetaDataAction implements BPLAction {
+public class GetLatestMetaDataAction implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(GetLatestMetaDataAction.class);
 
     @Override

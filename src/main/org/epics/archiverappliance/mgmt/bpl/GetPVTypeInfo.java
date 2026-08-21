@@ -22,7 +22,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetPVTypeInfo implements BPLAction {
+public class GetPVTypeInfo implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(GetPVTypeInfo.class.getName());
 
     @Override

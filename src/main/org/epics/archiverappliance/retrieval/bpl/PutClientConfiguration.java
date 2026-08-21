@@ -34,7 +34,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class PutClientConfiguration implements BPLAction {
+public class PutClientConfiguration implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(PutClientConfiguration.class.getName());
 
     @Override

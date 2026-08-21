@@ -36,7 +36,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class UnarchivedPVsAction implements BPLAction {
+public class UnarchivedPVsAction implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(UnarchivedPVsAction.class);
 
     @Override

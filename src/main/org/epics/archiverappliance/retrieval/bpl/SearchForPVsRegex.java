@@ -11,7 +11,7 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class SearchForPVsRegex implements BPLAction {
+public class SearchForPVsRegex implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(SearchForPVsRegex.class.getName());
 
     @Override

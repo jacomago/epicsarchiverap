@@ -20,7 +20,7 @@ import java.util.LinkedList;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class RecentlyChangedPVsforThisInstance implements BPLAction {
+public class RecentlyChangedPVsforThisInstance implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(RecentlyChangedPVsforThisInstance.class.getName());
 
     @Override

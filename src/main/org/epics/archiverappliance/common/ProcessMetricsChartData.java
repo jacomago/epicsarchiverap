@@ -20,7 +20,7 @@ import java.util.LinkedList;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class ProcessMetricsChartData implements BPLAction {
+public class ProcessMetricsChartData implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(ProcessMetricsChartData.class.getName());
 
     @Override

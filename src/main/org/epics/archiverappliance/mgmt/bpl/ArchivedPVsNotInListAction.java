@@ -31,7 +31,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ArchivedPVsNotInListAction implements BPLAction {
+public class ArchivedPVsNotInListAction implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(ArchivedPVsNotInListAction.class);
 
     @Override

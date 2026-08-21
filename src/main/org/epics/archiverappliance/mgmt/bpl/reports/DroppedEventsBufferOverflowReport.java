@@ -29,7 +29,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class DroppedEventsBufferOverflowReport implements BPLAction {
+public class DroppedEventsBufferOverflowReport implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(DroppedEventsBufferOverflowReport.class.getName());
 
     @Override

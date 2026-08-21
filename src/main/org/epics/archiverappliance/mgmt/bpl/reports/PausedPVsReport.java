@@ -29,7 +29,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class PausedPVsReport implements BPLAction {
+public class PausedPVsReport implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(PausedPVsReport.class.getName());
 
     @Override

@@ -18,7 +18,7 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class NeverConnectedPVsForThisAppliance implements BPLAction {
+public class NeverConnectedPVsForThisAppliance implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(NeverConnectedPVsForThisAppliance.class.getName());
 
     @Override

@@ -32,7 +32,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class WaveformPVsAction implements BPLAction {
+public class WaveformPVsAction implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(WaveformPVsAction.class);
 
     @Override

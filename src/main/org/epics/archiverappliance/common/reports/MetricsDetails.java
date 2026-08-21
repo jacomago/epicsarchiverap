@@ -13,7 +13,7 @@ import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public interface MetricsDetails extends BPLAction {
+public interface MetricsDetails extends BPLAction<ConfigService> {
 
     @Override
     default void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)

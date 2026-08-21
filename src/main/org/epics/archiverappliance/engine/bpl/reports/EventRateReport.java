@@ -33,7 +33,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class EventRateReport implements BPLAction {
+public class EventRateReport implements BPLAction<ConfigService> {
     private static class PVEventRate {
         String pvName;
         double eventRate;

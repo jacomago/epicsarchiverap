@@ -27,7 +27,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ImportDataFromPlugin implements BPLAction {
+public class ImportDataFromPlugin implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(ImportDataFromPlugin.class.getName());
 
     @Override

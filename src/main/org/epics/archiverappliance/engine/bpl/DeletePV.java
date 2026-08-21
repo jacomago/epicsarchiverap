@@ -14,7 +14,7 @@ import java.util.HashMap;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class DeletePV implements BPLAction {
+public class DeletePV implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(DeletePV.class.getName());
 
     @Override

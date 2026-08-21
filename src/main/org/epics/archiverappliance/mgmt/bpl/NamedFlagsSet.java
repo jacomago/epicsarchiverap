@@ -23,7 +23,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class NamedFlagsSet implements BPLAction {
+public class NamedFlagsSet implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(NamedFlagsSet.class.getName());
 
     @Override

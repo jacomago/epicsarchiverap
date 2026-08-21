@@ -35,7 +35,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author Luofeng  Li
  *
  */
-public class DeletePV implements BPLAction {
+public class DeletePV implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(DeletePV.class);
 
     @Override

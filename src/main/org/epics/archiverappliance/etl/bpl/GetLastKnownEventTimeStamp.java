@@ -14,7 +14,7 @@ import java.util.HashMap;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class GetLastKnownEventTimeStamp implements BPLAction {
+public class GetLastKnownEventTimeStamp implements BPLAction<ConfigService> {
 
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)

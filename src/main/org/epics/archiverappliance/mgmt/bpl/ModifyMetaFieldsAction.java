@@ -28,7 +28,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ModifyMetaFieldsAction implements BPLAction {
+public class ModifyMetaFieldsAction implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(ModifyMetaFieldsAction.class.getName());
 
     @Override

@@ -59,7 +59,7 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  * @author mshankar
  */
-public class AppendAndAliasPV implements BPLAction {
+public class AppendAndAliasPV implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(AppendAndAliasPV.class.getName());
 
     @Override

@@ -28,7 +28,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class AddAliasAction implements BPLAction {
+public class AddAliasAction implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(AddAliasAction.class.getName());
 
     @Override

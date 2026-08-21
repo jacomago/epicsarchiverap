@@ -20,7 +20,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class FilterArchivedPVs implements BPLAction {
+public class FilterArchivedPVs implements BPLAction<ConfigService> {
 
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)

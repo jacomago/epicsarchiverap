@@ -16,7 +16,7 @@ import java.net.URLEncoder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class StorageReportDetails implements BPLAction {
+public class StorageReportDetails implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(StorageReportDetails.class.getName());
 
     @Override

@@ -22,7 +22,7 @@ import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class InstanceReportDetails implements BPLAction {
+public class InstanceReportDetails implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(InstanceReportDetails.class.getName());
 
     @Override

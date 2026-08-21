@@ -25,7 +25,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ArchiveChannelObjectDetailsAction implements BPLAction {
+public class ArchiveChannelObjectDetailsAction implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(ArchiveChannelObjectDetailsAction.class.getName());
 
     @Override

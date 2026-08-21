@@ -38,7 +38,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class RenamePVAction implements BPLAction {
+public class RenamePVAction implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(RenamePVAction.class.getName());
 
     @Override

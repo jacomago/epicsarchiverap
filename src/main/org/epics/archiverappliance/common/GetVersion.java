@@ -21,7 +21,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetVersion implements BPLAction {
+public class GetVersion implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(GetVersion.class.getName());
 
     @Override

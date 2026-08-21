@@ -23,7 +23,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ResetFailoverCachesForThisAppliance implements BPLAction {
+public class ResetFailoverCachesForThisAppliance implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(ResetFailoverCachesForThisAppliance.class.getName());
 
     @Override

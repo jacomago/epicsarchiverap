@@ -36,7 +36,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class UploadChannelArchiverConfigAction implements BPLAction {
+public class UploadChannelArchiverConfigAction implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(UploadChannelArchiverConfigAction.class);
 
     @Override

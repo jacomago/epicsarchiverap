@@ -33,7 +33,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class PutPVTypeInfo implements BPLAction {
+public class PutPVTypeInfo implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(PutPVTypeInfo.class.getName());
 
     class TypeInfoAndJsonObject {

@@ -34,7 +34,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ConsolidatePBFilesForOnePV implements BPLAction {
+public class ConsolidatePBFilesForOnePV implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(ConsolidatePBFilesForOnePV.class.getName());
 
     @Override

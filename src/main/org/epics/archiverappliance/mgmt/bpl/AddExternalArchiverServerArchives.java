@@ -26,7 +26,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class AddExternalArchiverServerArchives implements BPLAction {
+public class AddExternalArchiverServerArchives implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(AddExternalArchiverServerArchives.class.getName());
 
     @Override

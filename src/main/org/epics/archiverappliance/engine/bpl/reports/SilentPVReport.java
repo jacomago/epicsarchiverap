@@ -23,7 +23,7 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class SilentPVReport implements BPLAction {
+public class SilentPVReport implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(SilentPVReport.class.getName());
 
     private static class SilentPV {

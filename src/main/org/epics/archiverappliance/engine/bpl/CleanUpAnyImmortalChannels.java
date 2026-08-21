@@ -30,7 +30,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class CleanUpAnyImmortalChannels implements BPLAction {
+public class CleanUpAnyImmortalChannels implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(CleanUpAnyImmortalChannels.class.getName());
 
     @Override

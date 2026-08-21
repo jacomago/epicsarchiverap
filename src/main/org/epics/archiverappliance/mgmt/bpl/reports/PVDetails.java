@@ -45,7 +45,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class PVDetails implements BPLAction {
+public class PVDetails implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(PVDetails.class);
 
     // JSON Array etc are not generic savvy so we get generics errors when we do

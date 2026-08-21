@@ -25,7 +25,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class SkipAliasCheckAction implements BPLAction {
+public class SkipAliasCheckAction implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(SkipAliasCheckAction.class.getName());
 
     @Override

@@ -38,7 +38,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetPVStatusAction implements BPLAction {
+public class GetPVStatusAction implements BPLAction<ConfigService> {
     private static final Logger logger = LogManager.getLogger(GetPVStatusAction.class);
 
     @SuppressWarnings("unchecked")

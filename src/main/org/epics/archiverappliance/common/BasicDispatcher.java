@@ -38,7 +38,7 @@ public class BasicDispatcher {
             HttpServletRequest req,
             HttpServletResponse resp,
             ConfigService configService,
-            Map<String, Class<? extends BPLAction>> actions)
+            Map<String, Class<? extends BPLAction<? super ConfigService>>> actions)
             throws IOException {
         dispatch(req, resp, configService, actions, () -> true);
     }
@@ -59,7 +59,7 @@ public class BasicDispatcher {
             HttpServletRequest req,
             HttpServletResponse resp,
             ConfigService configService,
-            Map<String, Class<? extends BPLAction>> actions,
+            Map<String, Class<? extends BPLAction<? super ConfigService>>> actions,
             BooleanSupplier webappReady)
             throws IOException {
         String requestPath = req.getPathInfo();
@@ -81,7 +81,7 @@ public class BasicDispatcher {
             HttpServletRequest req,
             HttpServletResponse resp,
             ConfigService configService,
-            Map<String, Class<? extends BPLAction>> actions,
+            Map<String, Class<? extends BPLAction<? super ConfigService>>> actions,
             String requestPath,
             BooleanSupplier webappReady)
             throws IOException {
@@ -100,7 +100,7 @@ public class BasicDispatcher {
             }
         }
 
-        Class<? extends BPLAction> actionClass = actions.get(requestPath);
+        Class<? extends BPLAction<? super ConfigService>> actionClass = actions.get(requestPath);
         if (actionClass == null) {
             logger.error("Do not have a appropriate BPL action for " + requestPath
                     + ". Please register the appropriate business method in getActions.");
@@ -108,7 +108,7 @@ public class BasicDispatcher {
             return;
         }
 
-        BPLAction action;
+        BPLAction<? super ConfigService> action;
         try {
             action = actionClass.getConstructor().newInstance();
             action.execute(req, resp, configService);

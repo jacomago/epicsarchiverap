@@ -17,7 +17,7 @@ import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class StorageReport implements BPLAction {
+public class StorageReport implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(StorageReport.class.getName());
 
     @Override

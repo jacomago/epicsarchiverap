@@ -58,7 +58,7 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  * @author mshankar
  */
-public class ReshardPV implements BPLAction {
+public class ReshardPV implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(ReshardPV.class.getName());
 
     @Override

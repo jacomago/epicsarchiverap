@@ -24,7 +24,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class LastKnownTimeStampReport implements BPLAction {
+public class LastKnownTimeStampReport implements BPLAction<ConfigService> {
     private static Logger logger = LogManager.getLogger(LastKnownTimeStampReport.class.getName());
 
     @Override
