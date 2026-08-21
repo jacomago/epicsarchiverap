@@ -29,7 +29,8 @@ public interface ConfigService
                 PVDirectory,
                 ArchiveRequestWorkflow,
                 StoragePluginConfigView,
-                PVTypeInfoLookupView {
+                PVTypeInfoLookupView,
+                AppliancePVsView {
 
     // Various reporting helper functions start here
 

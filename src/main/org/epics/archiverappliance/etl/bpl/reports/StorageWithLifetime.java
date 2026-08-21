@@ -2,7 +2,7 @@ package org.epics.archiverappliance.etl.bpl.reports;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.AppliancePVsView;
 import org.epics.archiverappliance.etl.ETLDest;
 import org.epics.archiverappliance.etl.ETLSource;
 import org.epics.archiverappliance.etl.StorageMetrics;
@@ -35,7 +35,7 @@ public class StorageWithLifetime {
         this.storageName = storageName;
     }
 
-    public static String getStorageMetrics(ConfigService configService) {
+    public static String getStorageMetrics(AppliancePVsView configService) {
         LinkedList<Map<String, String>> allStorageMetrics = new LinkedList<Map<String, String>>();
 
         LinkedList<StorageWithLifetime> finalStorages = getStorageWithLifetimes(configService);
@@ -70,7 +70,7 @@ public class StorageWithLifetime {
         return JSONValue.toJSONString(allStorageMetrics);
     }
 
-    public static String getStorageDetails(ConfigService configService) {
+    public static String getStorageDetails(AppliancePVsView configService) {
         DecimalFormat twoSignificantDigits = new DecimalFormat("###,###,###,###,###,###.##");
         LinkedList<HashMap<String, String>> details = new LinkedList<HashMap<String, String>>();
 
@@ -116,7 +116,7 @@ public class StorageWithLifetime {
      * Utility method to get all the ETL lookup items as storagemetrics instances if they support it.
      * @return
      */
-    private static LinkedList<StorageWithLifetime> getStorageWithLifetimes(ConfigService configService) {
+    private static LinkedList<StorageWithLifetime> getStorageWithLifetimes(AppliancePVsView configService) {
         LinkedHashMap<String, StorageWithLifetime> storages = new LinkedHashMap<String, StorageWithLifetime>();
         for (String pvName : configService.getPVsForThisAppliance()) {
             ETLStages etlStages = PBThreeTierETLPVLookup.of(configService).getETLStages(pvName);
@@ -178,11 +178,11 @@ public class StorageWithLifetime {
 
     /**
      * Get a list of PVs and the storage they consume on all the devices sorted by desc storage consumed...
-     * @param configService ConfigService
+     * @param configService the appliance's PVs and lifecycle handle
      * @return LinkedList StorageConsumedByPV
      * @throws IOException  &emsp;
      */
-    public static LinkedList<StorageConsumedByPV> getPVSByStorageConsumed(ConfigService configService)
+    public static LinkedList<StorageConsumedByPV> getPVSByStorageConsumed(AppliancePVsView configService)
             throws IOException {
         // TODO there may be some problems . When visiting the web page of reports and look up the "PVs by storage
         // consumed(100)" , it takes a long time
@@ -211,10 +211,10 @@ public class StorageWithLifetime {
 
     /**
      * Get the stores for all PV's indexed by PV name..
-     * @param configService ConfigService
+     * @param configService the appliance's PVs and lifecycle handle
      * @return HashMap  &emsp;
      */
-    private static HashMap<String, HashMap<String, StorageMetrics>> getStoresForAllPVs(ConfigService configService) {
+    private static HashMap<String, HashMap<String, StorageMetrics>> getStoresForAllPVs(AppliancePVsView configService) {
         HashMap<String, HashMap<String, StorageMetrics>> storesForAllPVs =
                 new HashMap<String, HashMap<String, StorageMetrics>>();
 
