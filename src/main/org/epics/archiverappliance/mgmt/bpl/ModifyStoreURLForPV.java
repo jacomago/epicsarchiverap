@@ -5,9 +5,11 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoLookupView;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 
@@ -31,10 +33,17 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class ModifyStoreURLForPV implements BPLAction {
 
-    private final ConfigService configService;
+    private final PVTypeInfoLookupView pvtypeInfoLookupView;
+    private final PVTypeInfoStore pvtypeInfoStore;
+    private final StoragePluginConfigView storagePluginConfigView;
 
-    public ModifyStoreURLForPV(ConfigService configService) {
-        this.configService = configService;
+    public ModifyStoreURLForPV(
+            PVTypeInfoLookupView pvtypeInfoLookupView,
+            PVTypeInfoStore pvtypeInfoStore,
+            StoragePluginConfigView storagePluginConfigView) {
+        this.pvtypeInfoLookupView = pvtypeInfoLookupView;
+        this.pvtypeInfoStore = pvtypeInfoStore;
+        this.storagePluginConfigView = storagePluginConfigView;
     }
 
     private static Logger logger = LogManager.getLogger(ModifyStoreURLForPV.class.getName());
@@ -61,7 +70,7 @@ public class ModifyStoreURLForPV implements BPLAction {
             return;
         }
 
-        PVTypeInfo typeInfo = PVNames.determineAppropriatePVTypeInfo(pvName, configService);
+        PVTypeInfo typeInfo = PVNames.determineAppropriatePVTypeInfo(pvName, pvtypeInfoLookupView);
         if (typeInfo == null) {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Cannot find typeinfo for " + pvName);
             return;
@@ -74,7 +83,7 @@ public class ModifyStoreURLForPV implements BPLAction {
 
         HashMap<String, String> stores = new HashMap<String, String>();
         for (String store : typeInfo.getDataStores()) {
-            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, configService);
+            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, storagePluginConfigView);
             stores.put(plugin.getName(), store);
         }
 
@@ -84,7 +93,7 @@ public class ModifyStoreURLForPV implements BPLAction {
         }
 
         try {
-            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(plugin_url, configService);
+            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(plugin_url, storagePluginConfigView);
             if (plugin == null) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Cannot parse URL " + plugin_url);
                 return;
@@ -102,7 +111,7 @@ public class ModifyStoreURLForPV implements BPLAction {
         try (PrintWriter out = resp.getWriter()) {
             LinkedList<String> newStores = new LinkedList<String>();
             for (String store : typeInfo.getDataStores()) {
-                StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, configService);
+                StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, storagePluginConfigView);
                 if (plugin.getName().equals(storage)) {
                     newStores.add(plugin_url);
                 } else {
@@ -111,7 +120,7 @@ public class ModifyStoreURLForPV implements BPLAction {
             }
             typeInfo.setDataStores(newStores.toArray(new String[0]));
             typeInfo.setModificationTime(TimeUtils.now());
-            configService.updateTypeInfoForPV(pvName, typeInfo);
+            pvtypeInfoStore.updateTypeInfoForPV(pvName, typeInfo);
         } catch (Exception ex) {
             logger.error("Exception updating typeinfo for pv " + pvName, ex);
             resp.sendError(

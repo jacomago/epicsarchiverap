@@ -13,9 +13,10 @@ import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.remotable.ArrayListEventStream;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoLookupView;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EngineContext;
@@ -42,10 +43,12 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class GetDataAtTimeEngine implements BPLAction {
 
-    private final ConfigService configService;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final PVTypeInfoLookupView pvtypeInfoLookupView;
 
-    public GetDataAtTimeEngine(ConfigService configService) {
-        this.configService = configService;
+    public GetDataAtTimeEngine(ApplianceLifecycle applianceLifecycle, PVTypeInfoLookupView pvtypeInfoLookupView) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.pvtypeInfoLookupView = pvtypeInfoLookupView;
     }
 
     private static final Logger logger = LogManager.getLogger(GetDataAtTimeEngine.class);
@@ -85,12 +88,12 @@ public class GetDataAtTimeEngine implements BPLAction {
             atTime = TimeUtils.convertFromISO8601String(timeStr);
         }
 
-        EngineContext engineContext = EngineContext.of(configService);
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
         HashMap<String, HashMap<String, Object>> values = new HashMap<String, HashMap<String, Object>>();
         for (String pvName : pvNames) {
             String nameFromUser = pvName;
 
-            PVTypeInfo rootTypeInfo = PVNames.determineAppropriatePVTypeInfo(pvName, configService);
+            PVTypeInfo rootTypeInfo = PVNames.determineAppropriatePVTypeInfo(pvName, pvtypeInfoLookupView);
             if (rootTypeInfo == null) continue;
             pvName = rootTypeInfo.getPvName();
 
