@@ -100,7 +100,7 @@ public class PvaGetPVStatus implements PvaAction<ConfigService> {
         } else {
             throw new IllegalArgumentException("Only supports request args of type NTURI or NTTable ");
         }
-        LinkedList<String> pvNames = PVsMatchingParameter.getMatchingPVs(pvs, null, -1, configService, true);
+        LinkedList<String> pvNames = PVsMatchingParameter.getMatchingPVs(pvs, null, -1, configService, configService, true);
 
         HashMap<String, Map<String, String>> pvStatuses = new HashMap<String, Map<String, String>>();
         HashMap<String, LinkedList<String>> pvNamesToAskEngineForStatus = new HashMap<String, LinkedList<String>>();
@@ -108,6 +108,8 @@ public class PvaGetPVStatus implements PvaAction<ConfigService> {
         HashMap<String, LinkedList<String>> realName2NameFromRequest = new HashMap<String, LinkedList<String>>();
 
         GetPVStatusAction.getPVStatuses(
+                configService,
+                configService,
                 configService,
                 pvNames,
                 pvStatuses,

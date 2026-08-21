@@ -11,9 +11,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ArchiveRequestWorkflow;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoLookupView;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONArray;
@@ -40,10 +43,20 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class GetPVStatusAction implements BPLAction {
 
-    private final ConfigService configService;
+    private final PVTypeInfoLookupView pvTypeInfoLookup;
+    private final ArchiveRequestWorkflow archiveRequests;
+    private final PVDirectory pvDirectory;
+    private final ClusterTopology clusterTopology;
 
-    public GetPVStatusAction(ConfigService configService) {
-        this.configService = configService;
+    public GetPVStatusAction(
+            PVTypeInfoLookupView pvTypeInfoLookup,
+            ArchiveRequestWorkflow archiveRequests,
+            PVDirectory pvDirectory,
+            ClusterTopology clusterTopology) {
+        this.pvTypeInfoLookup = pvTypeInfoLookup;
+        this.archiveRequests = archiveRequests;
+        this.pvDirectory = pvDirectory;
+        this.clusterTopology = clusterTopology;
     }
 
     private static final Logger logger = LogManager.getLogger(GetPVStatusAction.class);
@@ -54,17 +67,18 @@ public class GetPVStatusAction implements BPLAction {
         LinkedList<String> pvNames;
         if (req.getMethod().equals("POST")) {
 
-            LinkedList<String> postPVNames = BulkPauseResumeUtils.getPVNames(req, configService);
+            LinkedList<String> postPVNames = BulkPauseResumeUtils.getPVNames(req, pvDirectory, pvTypeInfoLookup);
 
             pvNames = PVsMatchingParameter.getMatchingPVs(
                     postPVNames,
                     null,
                     PVsMatchingParameter.getLimit(-1, PVsMatchingParameter.getRequestParameters(req)),
-                    configService,
+                    pvDirectory,
+                    pvTypeInfoLookup,
                     true);
 
         } else {
-            pvNames = PVsMatchingParameter.getMatchingPVs(req, configService, true, -1);
+            pvNames = PVsMatchingParameter.getMatchingPVs(req, pvDirectory, pvTypeInfoLookup, true, -1);
         }
         logger.info("Getting the status of pv(s) " + req.getParameter("pv"));
 
@@ -76,7 +90,9 @@ public class GetPVStatusAction implements BPLAction {
         HashMap<String, LinkedList<String>> realName2NameFromRequest = new LinkedHashMap<String, LinkedList<String>>();
 
         getPVStatuses(
-                configService,
+                pvTypeInfoLookup,
+                archiveRequests,
+                clusterTopology,
                 pvNames,
                 pvStatuses,
                 pvNamesToAskEngineForStatus,
@@ -96,7 +112,9 @@ public class GetPVStatusAction implements BPLAction {
     }
 
     public static void getPVStatuses(
-            ConfigService configService,
+            PVTypeInfoLookupView pvTypeInfoLookup,
+            ArchiveRequestWorkflow archiveRequests,
+            ClusterTopology clusterTopology,
             LinkedList<String> pvNames,
             HashMap<String, Map<String, String>> pvStatuses,
             HashMap<String, LinkedList<String>> pvNamesToAskEngineForStatus,
@@ -110,11 +128,11 @@ public class GetPVStatusAction implements BPLAction {
             pvName = PVNames.stripPrefixFromName(pvName);
             addInverseNameMapping(pvNameFromRequest, pvName, realName2NameFromRequest);
 
-            PVTypeInfo typeInfoForPV = PVNames.determineAppropriatePVTypeInfo(pvName, configService);
+            PVTypeInfo typeInfoForPV = PVNames.determineAppropriatePVTypeInfo(pvName, pvTypeInfoLookup);
             if (typeInfoForPV != null) {
                 pvName = typeInfoForPV.getPvName();
                 addInverseNameMapping(pvNameFromRequest, pvName, realName2NameFromRequest);
-                ApplianceInfo info = configService.getAppliance(typeInfoForPV.getApplianceIdentity());
+                ApplianceInfo info = clusterTopology.getAppliance(typeInfoForPV.getApplianceIdentity());
 
                 if (!pvNamesToAskEngineForStatus.containsKey(info.getEngineURL())) {
                     pvNamesToAskEngineForStatus.put(info.getEngineURL(), new LinkedList<String>());
@@ -124,7 +142,7 @@ public class GetPVStatusAction implements BPLAction {
             } else {
                 Map<String, String> pvStatusInfo = new LinkedHashMap<String, String>();
                 pvStatusInfo.put("pvName", pvNameFromRequest);
-                if (PVNames.determineIfPVInWorkflow(pvName, configService)) {
+                if (PVNames.determineIfPVInWorkflow(pvName, archiveRequests, pvTypeInfoLookup)) {
                     pvStatusInfo.put("status", "Initial sampling");
                 } else {
                     pvStatusInfo.put("status", "Not being archived");

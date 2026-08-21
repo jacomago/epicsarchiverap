@@ -80,7 +80,8 @@ public class PvaGetAllPVs implements PvaAction<ConfigService> {
                 defaultLimit = Integer.parseInt(queryName.get("limit"));
             }
             LinkedList<String> pvNames =
-                    PVsMatchingParameter.getMatchingPVs(List.of(), null, defaultLimit, configService, false);
+                    PVsMatchingParameter.getMatchingPVs(
+                    List.of(), null, defaultLimit, configService, configService, false);
             ntScalarArray = PVAScalar.stringArrayScalarBuilder(pvNames.toArray(new String[0]))
                     .name("result")
                     .build();
