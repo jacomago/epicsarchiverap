@@ -59,12 +59,18 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  * @author mshankar
  */
-public class AppendAndAliasPV implements BPLAction<ConfigService> {
+public class AppendAndAliasPV implements BPLAction {
+
+    private final ConfigService configService;
+
+    public AppendAndAliasPV(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(AppendAndAliasPV.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String olderPVName = req.getParameter("olderpv");
         if (olderPVName == null || olderPVName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);

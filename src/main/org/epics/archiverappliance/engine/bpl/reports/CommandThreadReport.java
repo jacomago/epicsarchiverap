@@ -22,6 +22,17 @@ import java.util.Map;
  */
 public class CommandThreadReport implements MetricsDetails {
 
+    private final ApplianceLifecycle configService;
+
+    public CommandThreadReport(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
+    @Override
+    public ApplianceLifecycle configService() {
+        return configService;
+    }
+
     @Override
     public LinkedList<Map<String, String>> metricsDetails(ApplianceLifecycle configService) {
         CommandThreadDetails ctd = new CommandThreadDetails();

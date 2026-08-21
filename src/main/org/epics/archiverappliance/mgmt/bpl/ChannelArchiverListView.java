@@ -27,12 +27,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ChannelArchiverListView implements BPLAction<ChannelArchiverConfig> {
+public class ChannelArchiverListView implements BPLAction {
+
+    private final ChannelArchiverConfig configService;
+
+    public ChannelArchiverListView(ChannelArchiverConfig configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(ChannelArchiverListView.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ChannelArchiverConfig configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Getting a list of Channel Access servers");
         LinkedList<HashMap<String, String>> infoValues = new LinkedList<HashMap<String, String>>();
         Map<String, String> serverlist = configService.getExternalArchiverDataServers();

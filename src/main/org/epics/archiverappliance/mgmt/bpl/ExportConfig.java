@@ -20,12 +20,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ExportConfig implements BPLAction<ClusterTopology> {
+public class ExportConfig implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public ExportConfig(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(ExportConfig.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Exporting PV archiving configuration ");
         LinkedList<String> exportPVTypeInfoURLs = new LinkedList<String>();
         for (ApplianceInfo info : configService.getAppliancesInCluster()) {

@@ -28,12 +28,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class DroppedEventsTypeChangeReport implements BPLAction<ClusterTopology> {
+public class DroppedEventsTypeChangeReport implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public DroppedEventsTypeChangeReport(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(DroppedEventsTypeChangeReport.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Report for PVs that have dropped events because of type changes for "
                 + (limit == null ? "default limit " : ("limit " + limit)));

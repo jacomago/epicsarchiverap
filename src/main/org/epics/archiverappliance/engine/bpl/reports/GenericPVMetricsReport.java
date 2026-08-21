@@ -37,20 +37,22 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GenericPVMetricsReport<T extends Number> implements BPLAction<ConfigService> {
+public class GenericPVMetricsReport<T extends Number> implements BPLAction {
+
     private static final Logger logger = LogManager.getLogger(GenericPVMetricsReport.class);
+    private final ConfigService configService;
     private final Function<PVMetrics, T> getFn;
     private final String metricName;
     private String applianceName;
 
-    public GenericPVMetricsReport(Function<PVMetrics, T> getFn, String metricName) {
+    public GenericPVMetricsReport(ConfigService configService, Function<PVMetrics, T> getFn, String metricName) {
+        this.configService = configService;
         this.getFn = getFn;
         this.metricName = metricName;
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info(metricName + " report for " + (limit == null ? "default limit " : ("limit " + limit)));
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);

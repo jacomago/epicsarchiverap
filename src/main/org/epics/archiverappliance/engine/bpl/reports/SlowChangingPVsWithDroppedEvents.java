@@ -22,7 +22,14 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class SlowChangingPVsWithDroppedEvents implements BPLAction<ConfigService> {
+public class SlowChangingPVsWithDroppedEvents implements BPLAction {
+
+    private final ConfigService configService;
+
+    public SlowChangingPVsWithDroppedEvents(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(SlowChangingPVsWithDroppedEvents.class.getName());
 
     private static class PVDroppedEvents {
@@ -38,8 +45,7 @@ public class SlowChangingPVsWithDroppedEvents implements BPLAction<ConfigService
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Report for PVs that have dropped more events than actual events for "
                 + (limit == null ? "default limit " : ("limit " + limit)));

@@ -27,12 +27,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetClientConfiguration implements BPLAction<InstallationProperties> {
+public class GetClientConfiguration implements BPLAction {
+
+    private final InstallationProperties configService;
+
+    public GetClientConfiguration(InstallationProperties configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(GetClientConfiguration.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, InstallationProperties configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (!configService
                 .getInstallationProperties()
                 .containsKey("org.epics.archiverappliance.retrieval.bpl.GetClientConfiguration.DocumentRoot")) {

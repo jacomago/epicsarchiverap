@@ -31,12 +31,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ArchivedPVsNotInListAction implements BPLAction<PVDirectory> {
+public class ArchivedPVsNotInListAction implements BPLAction {
+
+    private final PVDirectory configService;
+
+    public ArchivedPVsNotInListAction(PVDirectory configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(ArchivedPVsNotInListAction.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, PVDirectory configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Determining PVs that are archived but are not in list.");
         LinkedList<String> incomingPVNamesList = PVsMatchingParameter.getPVNamesFromPostBody(req);
         logger.debug("Incoming list has " + incomingPVNamesList.size() + "PV names");

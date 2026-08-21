@@ -17,12 +17,18 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class PVsByStorageConsumed implements BPLAction<ConfigService> {
+public class PVsByStorageConsumed implements BPLAction {
+
+    private final ConfigService configService;
+
+    public PVsByStorageConsumed(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(PVsByStorageConsumed.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limitStr = req.getParameter("limit");
         logger.info(
                 "Storage consumed report for " + (limitStr == null ? "default limit(100) " : ("limit " + limitStr)));

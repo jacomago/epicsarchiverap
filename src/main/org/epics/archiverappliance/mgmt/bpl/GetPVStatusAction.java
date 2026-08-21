@@ -38,13 +38,19 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetPVStatusAction implements BPLAction<ConfigService> {
+public class GetPVStatusAction implements BPLAction {
+
+    private final ConfigService configService;
+
+    public GetPVStatusAction(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(GetPVStatusAction.class);
 
     @SuppressWarnings("unchecked")
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         LinkedList<String> pvNames;
         if (req.getMethod().equals("POST")) {
 

@@ -25,12 +25,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ResumeArchivingPV implements BPLAction<ConfigService> {
+public class ResumeArchivingPV implements BPLAction {
+
+    private final ConfigService configService;
+
+    public ResumeArchivingPV(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(ResumeArchivingPV.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (req.getMethod().equals("POST")) {
             resumeMultiplePVs(req, resp, configService);
             return;

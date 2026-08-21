@@ -28,12 +28,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetVersions implements BPLAction<ClusterTopology> {
+public class GetVersions implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public GetVersions(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(GetVersions.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String id = req.getParameter("id");
         ApplianceInfo applianceInfo = null;
         if (id == null || id.equals("")) {

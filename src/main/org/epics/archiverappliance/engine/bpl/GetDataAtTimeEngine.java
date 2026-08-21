@@ -40,7 +40,14 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetDataAtTimeEngine implements BPLAction<ConfigService> {
+public class GetDataAtTimeEngine implements BPLAction {
+
+    private final ConfigService configService;
+
+    public GetDataAtTimeEngine(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(GetDataAtTimeEngine.class);
 
     /**
@@ -68,8 +75,7 @@ public class GetDataAtTimeEngine implements BPLAction<ConfigService> {
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         List<String> pvNames = PVsMatchingParameter.getPVNamesFromPostBody(req);
         logger.debug("Getting data at time for PVs " + pvNames.size());
 

@@ -22,12 +22,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetPVTypeInfo implements BPLAction<ConfigService> {
+public class GetPVTypeInfo implements BPLAction {
+
+    private final ConfigService configService;
+
+    public GetPVTypeInfo(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(GetPVTypeInfo.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         logger.debug("Getting typeinfo for PV " + pvName);
         if (pvName == null || pvName.equals("")) {

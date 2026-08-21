@@ -20,12 +20,18 @@ import java.util.LinkedList;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class RecentlyChangedPVsforThisInstance implements BPLAction<ConfigService> {
+public class RecentlyChangedPVsforThisInstance implements BPLAction {
+
+    private final ConfigService configService;
+
+    public RecentlyChangedPVsforThisInstance(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(RecentlyChangedPVsforThisInstance.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limitStr = req.getParameter("limit");
         int limit = 100;
         logger.info("Recently changed PVs report for this instance for "

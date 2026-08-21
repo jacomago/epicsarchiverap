@@ -14,11 +14,16 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetPolicyText implements BPLAction<PolicyService> {
+public class GetPolicyText implements BPLAction {
+
+    private final PolicyService configService;
+
+    public GetPolicyText(PolicyService configService) {
+        this.configService = configService;
+    }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, PolicyService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try (InputStream is = configService.getPolicyText()) {
             resp.setContentType("text/plain");
             try (OutputStream os = resp.getOutputStream()) {

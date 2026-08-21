@@ -21,12 +21,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class NamedFlagsAll implements BPLAction<InstallationProperties> {
+public class NamedFlagsAll implements BPLAction {
+
+    private final InstallationProperties configService;
+
+    public NamedFlagsAll(InstallationProperties configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(NamedFlagsAll.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, InstallationProperties configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         HashMap<String, Boolean> ret = new HashMap<String, Boolean>();
         for (String namedFlagName : configService.getNamedFlagNames()) {
             boolean namedValue = configService.getNamedFlag(namedFlagName);

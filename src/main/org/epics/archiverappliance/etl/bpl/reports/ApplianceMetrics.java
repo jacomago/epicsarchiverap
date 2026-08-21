@@ -22,6 +22,17 @@ import java.util.Map;
  */
 public class ApplianceMetrics implements Metrics {
 
+    private final ApplianceLifecycle configService;
+
+    public ApplianceMetrics(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
+    @Override
+    public ApplianceLifecycle configService() {
+        return configService;
+    }
+
     @Override
     public Map<String, String> metrics(ApplianceLifecycle configService) {
         HashMap<String, String> metrics = new HashMap<String, String>();

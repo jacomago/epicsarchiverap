@@ -20,6 +20,17 @@ import java.util.Map;
  */
 public class PVDetails implements org.epics.archiverappliance.common.reports.PVDetails {
 
+    private final ConfigService configService;
+
+    public PVDetails(ConfigService configService) {
+        this.configService = configService;
+    }
+
+    @Override
+    public ConfigService configService() {
+        return configService;
+    }
+
     @Override
     public LinkedList<Map<String, String>> pvDetails(ConfigService configService, String pvName) throws Exception {
         RetrievalMetrics retrievalMetrics = RetrievalState.of(configService).getPVRetrievalMetrics(pvName);

@@ -26,11 +26,16 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ConnectedPVCountForAppliance implements BPLAction<ApplianceLifecycle> {
+public class ConnectedPVCountForAppliance implements BPLAction {
+
+    private final ApplianceLifecycle configService;
+
+    public ConnectedPVCountForAppliance(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ApplianceLifecycle configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
             EngineMetrics engineMetrics = EngineMetrics.computeEngineMetrics(EngineContext.of(configService));

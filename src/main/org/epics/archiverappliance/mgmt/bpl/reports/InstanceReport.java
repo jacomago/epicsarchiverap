@@ -17,12 +17,18 @@ import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class InstanceReport implements BPLAction<ConfigService> {
+public class InstanceReport implements BPLAction {
+
+    private final ConfigService configService;
+
+    public InstanceReport(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(InstanceReport.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Generating Instance report");
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {

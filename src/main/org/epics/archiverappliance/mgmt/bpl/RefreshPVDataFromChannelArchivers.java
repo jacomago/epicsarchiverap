@@ -20,12 +20,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class RefreshPVDataFromChannelArchivers implements BPLAction<ChannelArchiverConfig> {
+public class RefreshPVDataFromChannelArchivers implements BPLAction {
+
+    private final ChannelArchiverConfig configService;
+
+    public RefreshPVDataFromChannelArchivers(ChannelArchiverConfig configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(RefreshPVDataFromChannelArchivers.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ChannelArchiverConfig configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Updating the PV data from all the ChannelArchivers");
         configService.refreshPVDataFromChannelArchiverDataServers();
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);

@@ -48,12 +48,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class MergeInDataFromExternalStore implements BPLAction<ConfigService> {
+public class MergeInDataFromExternalStore implements BPLAction {
+
+    private final ConfigService configService;
+
+    public MergeInDataFromExternalStore(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(MergeInDataFromExternalStore.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);

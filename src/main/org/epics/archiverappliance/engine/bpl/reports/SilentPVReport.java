@@ -23,7 +23,14 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class SilentPVReport implements BPLAction<ConfigService> {
+public class SilentPVReport implements BPLAction {
+
+    private final ConfigService configService;
+
+    public SilentPVReport(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(SilentPVReport.class.getName());
 
     private static class SilentPV {
@@ -37,8 +44,7 @@ public class SilentPVReport implements BPLAction<ConfigService> {
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Silent PV report for " + (limit == null ? "default limit " : ("limit " + limit)));
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);

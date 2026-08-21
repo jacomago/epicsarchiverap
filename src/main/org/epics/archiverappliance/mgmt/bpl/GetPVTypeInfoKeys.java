@@ -21,12 +21,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetPVTypeInfoKeys implements BPLAction<ClusterTopology> {
+public class GetPVTypeInfoKeys implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public GetPVTypeInfoKeys(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(GetPVTypeInfoKeys.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Getting PVTypeInfo keys");
         LinkedList<String> typeInfoURLs = new LinkedList<String>();
         for (ApplianceInfo info : configService.getAppliancesInCluster()) {

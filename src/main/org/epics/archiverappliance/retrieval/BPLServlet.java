@@ -42,8 +42,8 @@ public class BPLServlet extends HttpServlet {
     private static final long serialVersionUID = 7987830282574602915L;
 
     private ConfigService configService = null;
-    private static final HashMap<String, Class<? extends BPLAction<? super ConfigService>>> getActions =
-            new HashMap<String, Class<? extends BPLAction<? super ConfigService>>>();
+    private static final HashMap<String, Class<? extends BPLAction>> getActions =
+            new HashMap<String, Class<? extends BPLAction>>();
 
     static {
         getActions.put("/getApplianceMetrics", ApplianceMetrics.class);
@@ -64,8 +64,8 @@ public class BPLServlet extends HttpServlet {
         BasicDispatcher.dispatch(req, resp, configService, getActions);
     }
 
-    private static HashMap<String, Class<? extends BPLAction<? super ConfigService>>> postActions =
-            new HashMap<String, Class<? extends BPLAction<? super ConfigService>>>();
+    private static HashMap<String, Class<? extends BPLAction>> postActions =
+            new HashMap<String, Class<? extends BPLAction>>();
 
     static {
         postActions.put("/filterArchivedPVs", FilterArchivedPVs.class);
@@ -81,5 +81,7 @@ public class BPLServlet extends HttpServlet {
     @Override
     public void init() throws ServletException {
         this.configService = (ConfigService) this.getServletContext().getAttribute(ConfigService.CONFIG_SERVICE_NAME);
+        BasicDispatcher.validateActions(getActions, configService);
+        BasicDispatcher.validateActions(postActions, configService);
     }
 }

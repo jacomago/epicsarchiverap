@@ -14,11 +14,16 @@ import java.util.HashMap;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class GetLastKnownEventTimeStamp implements BPLAction<ApplianceLifecycle> {
+public class GetLastKnownEventTimeStamp implements BPLAction {
+
+    private final ApplianceLifecycle configService;
+
+    public GetLastKnownEventTimeStamp(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ApplianceLifecycle configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);

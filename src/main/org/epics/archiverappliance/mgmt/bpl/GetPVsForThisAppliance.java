@@ -18,12 +18,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetPVsForThisAppliance implements BPLAction<ConfigService> {
+public class GetPVsForThisAppliance implements BPLAction {
+
+    private final ConfigService configService;
+
+    public GetPVsForThisAppliance(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(GetPVsForThisAppliance.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.debug("Getting pvs for appliance "
                 + configService.getMyApplianceInfo().getIdentity());
         LinkedList<String> pvsOnThisAppliance = new LinkedList<String>();

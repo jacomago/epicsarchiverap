@@ -12,15 +12,21 @@ import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public interface MetricsDetails extends BPLAction<ApplianceLifecycle> {
+public interface MetricsDetails extends BPLAction {
+
+    /**
+     * The configuration this report reads. An interface cannot hold the field, so the implementing
+     * class supplies it — a record component of this name satisfies this automatically.
+     * @return the configuration supplied to the implementor's constructor
+     */
+    ApplianceLifecycle configService();
 
     @Override
-    default void execute(HttpServletRequest req, HttpServletResponse resp, ApplianceLifecycle configService)
-            throws IOException {
+    default void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
-            out.println(JSONValue.toJSONString(metricsDetails(configService)));
+            out.println(JSONValue.toJSONString(metricsDetails(configService())));
         }
     }
 

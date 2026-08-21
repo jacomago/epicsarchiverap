@@ -26,12 +26,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ResetFailoverCaches implements BPLAction<ClusterTopology> {
+public class ResetFailoverCaches implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public ResetFailoverCaches(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(ResetFailoverCaches.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         LinkedList<String> retrievalURLs = new LinkedList<String>();
         for (ApplianceInfo info : configService.getAppliancesInCluster()) {
             retrievalURLs.add(info.getRetrievalURL() + "/resetFailoverCachesForThisAppliance");

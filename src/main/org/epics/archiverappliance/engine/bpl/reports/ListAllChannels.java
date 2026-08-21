@@ -17,11 +17,16 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ListAllChannels implements BPLAction<ApplianceLifecycle> {
+public class ListAllChannels implements BPLAction {
+
+    private final ApplianceLifecycle configService;
+
+    public ListAllChannels(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ApplianceLifecycle configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         EngineContext engineRuntime = EngineContext.of(configService);
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {

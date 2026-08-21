@@ -35,8 +35,8 @@ class ChangeStoreTest {
         when(response.getWriter()).thenReturn(writer);
 
         try (MockedStatic<ETLExecutor> etlExecutorMock = mockStatic(ETLExecutor.class)) {
-            ChangeStore changeStore = new ChangeStore();
-            changeStore.execute(request, response, configService);
+            ChangeStore changeStore = new ChangeStore(configService);
+            changeStore.execute(request, response);
 
             etlExecutorMock.verify(
                     () -> ETLExecutor.moveDataFromOneStorageToAnother(configService, pvName, storageName, newBackend));
@@ -51,25 +51,25 @@ class ChangeStoreTest {
         HttpServletResponse response = mock(HttpServletResponse.class);
         ConfigService configService = mock(ConfigService.class);
 
-        ChangeStore changeStore = new ChangeStore();
+        ChangeStore changeStore = new ChangeStore(configService);
 
         // Missing pv
         when(request.getParameter("pv")).thenReturn(null);
-        changeStore.execute(request, response, configService);
+        changeStore.execute(request, response);
         verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST);
 
         // Missing storage
         reset(response);
         when(request.getParameter("pv")).thenReturn("testPV");
         when(request.getParameter("storage")).thenReturn(null);
-        changeStore.execute(request, response, configService);
+        changeStore.execute(request, response);
         verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST);
 
         // Missing newbackend
         reset(response);
         when(request.getParameter("storage")).thenReturn("testStorage");
         when(request.getParameter("newbackend")).thenReturn(null);
-        changeStore.execute(request, response, configService);
+        changeStore.execute(request, response);
         verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST);
     }
 
@@ -93,8 +93,8 @@ class ChangeStoreTest {
                             ETLExecutor.moveDataFromOneStorageToAnother(configService, pvName, storageName, newBackend))
                     .thenThrow(new IOException("Test Exception"));
 
-            ChangeStore changeStore = new ChangeStore();
-            changeStore.execute(request, response, configService);
+            ChangeStore changeStore = new ChangeStore(configService);
+            changeStore.execute(request, response);
 
             verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST);
         }

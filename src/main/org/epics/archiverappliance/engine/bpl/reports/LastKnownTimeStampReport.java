@@ -24,12 +24,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class LastKnownTimeStampReport implements BPLAction<ApplianceLifecycle> {
+public class LastKnownTimeStampReport implements BPLAction {
+
+    private final ApplianceLifecycle configService;
+
+    public LastKnownTimeStampReport(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(LastKnownTimeStampReport.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ApplianceLifecycle configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Generating a last known timestamp report");
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
 

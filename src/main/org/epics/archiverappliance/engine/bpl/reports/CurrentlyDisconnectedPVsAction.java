@@ -19,12 +19,18 @@ import java.util.Set;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class CurrentlyDisconnectedPVsAction implements BPLAction<ConfigService> {
+public class CurrentlyDisconnectedPVsAction implements BPLAction {
+
+    private final ConfigService configService;
+
+    public CurrentlyDisconnectedPVsAction(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(CurrentlyDisconnectedPVsAction.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String identity = configService.getMyApplianceInfo().getIdentity();
         logger.info("Currently disconnected PVs for appliance "
                 + configService.getMyApplianceInfo().getIdentity());

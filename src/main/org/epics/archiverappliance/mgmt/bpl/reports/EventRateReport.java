@@ -33,12 +33,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class EventRateReport implements BPLAction<ClusterTopology> {
+public class EventRateReport implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public EventRateReport(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(EventRateReport.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Event rate report for " + (limit == null ? "default limit " : ("limit " + limit)));
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);

@@ -31,12 +31,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetEngineDataAction implements BPLAction<ApplianceLifecycle> {
+public class GetEngineDataAction implements BPLAction {
+
+    private final ApplianceLifecycle configService;
+
+    public GetEngineDataAction(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(GetEngineDataAction.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ApplianceLifecycle configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);

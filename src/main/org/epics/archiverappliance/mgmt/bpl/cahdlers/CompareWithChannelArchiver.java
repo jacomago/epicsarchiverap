@@ -38,7 +38,14 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class CompareWithChannelArchiver implements BPLAction<ConfigService> {
+public class CompareWithChannelArchiver implements BPLAction {
+
+    private final ConfigService configService;
+
+    public CompareWithChannelArchiver(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(CompareWithChannelArchiver.class.getName());
 
     private static void addEventToEventList(
@@ -53,8 +60,7 @@ public class CompareWithChannelArchiver implements BPLAction<ConfigService> {
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pv = req.getParameter("pv");
         String channelArchiverServerURL = req.getParameter("serverURL");
         String channelArchiverKey = req.getParameter("archiveKey");

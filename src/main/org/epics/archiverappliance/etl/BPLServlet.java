@@ -42,8 +42,8 @@ import jakarta.servlet.http.HttpServletResponse;
 public class BPLServlet extends HttpServlet {
     private static final Logger logger = LogManager.getLogger(BPLServlet.class);
 
-    private static HashMap<String, Class<? extends BPLAction<? super ConfigService>>> getActions =
-            new HashMap<String, Class<? extends BPLAction<? super ConfigService>>>();
+    private static HashMap<String, Class<? extends BPLAction>> getActions =
+            new HashMap<String, Class<? extends BPLAction>>();
 
     static {
         getActions.put("/getPVDetails", PVDetails.class);
@@ -71,6 +71,7 @@ public class BPLServlet extends HttpServlet {
         super.init();
         configService =
                 (ConfigService) getServletConfig().getServletContext().getAttribute(ConfigService.CONFIG_SERVICE_NAME);
+        BasicDispatcher.validateActions(getActions, configService);
         logger.info("Done initializing ETL servlet");
     }
 

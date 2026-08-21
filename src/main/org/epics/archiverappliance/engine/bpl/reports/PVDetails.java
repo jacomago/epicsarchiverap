@@ -30,6 +30,18 @@ import java.util.Map;
  *
  */
 public class PVDetails implements org.epics.archiverappliance.common.reports.PVDetails {
+
+    private final ConfigService configService;
+
+    public PVDetails(ConfigService configService) {
+        this.configService = configService;
+    }
+
+    @Override
+    public ConfigService configService() {
+        return configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(PVDetails.class);
 
     @Override

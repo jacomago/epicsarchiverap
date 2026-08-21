@@ -36,7 +36,14 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class AddExternalArchiverServer implements BPLAction<ChannelArchiverConfig> {
+public class AddExternalArchiverServer implements BPLAction {
+
+    private final ChannelArchiverConfig configService;
+
+    public AddExternalArchiverServer(ChannelArchiverConfig configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(AddExternalArchiverServer.class.getName());
 
     enum ExternalServerType {
@@ -45,8 +52,7 @@ public class AddExternalArchiverServer implements BPLAction<ChannelArchiverConfi
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ChannelArchiverConfig configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String serverUrl = req.getParameter("externalarchiverserverurl");
         if (serverUrl == null || serverUrl.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);

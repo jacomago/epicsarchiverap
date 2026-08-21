@@ -29,12 +29,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ImportConfig implements BPLAction<ClusterTopology> {
+public class ImportConfig implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public ImportConfig(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(ImportConfig.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Importing configuration using POST");
 
         HashMap<String, LinkedList<JSONObject>> pvsForAppliances = new HashMap<String, LinkedList<JSONObject>>();

@@ -34,12 +34,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ConsolidatePBFilesForOnePV implements BPLAction<ConfigService> {
+public class ConsolidatePBFilesForOnePV implements BPLAction {
+
+    private final ConfigService configService;
+
+    public ConsolidatePBFilesForOnePV(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(ConsolidatePBFilesForOnePV.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         String storageName = req.getParameter("storage");
 

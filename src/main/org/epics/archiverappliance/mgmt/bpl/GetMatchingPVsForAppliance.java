@@ -26,12 +26,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetMatchingPVsForAppliance implements BPLAction<ConfigService> {
+public class GetMatchingPVsForAppliance implements BPLAction {
+
+    private final ConfigService configService;
+
+    public GetMatchingPVsForAppliance(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(GetMatchingPVsForAppliance.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.debug("Getting PV's matching wildcard or regex for this appliance.");
         int limit = 500;
         String limitParam = req.getParameter("limit");

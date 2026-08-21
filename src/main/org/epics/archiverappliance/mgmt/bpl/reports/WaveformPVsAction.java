@@ -32,12 +32,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class WaveformPVsAction implements BPLAction<ClusterTopology> {
+public class WaveformPVsAction implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public WaveformPVsAction(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(WaveformPVsAction.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Getting a list of waveform PVs for this cluster");
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         LinkedList<String> waveFormURLs = new LinkedList<String>();

@@ -24,6 +24,18 @@ import java.util.Map;
  *
  */
 public class MgmtMetrics implements Metrics {
+
+    private final ApplianceLifecycle configService;
+
+    public MgmtMetrics(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
+    @Override
+    public ApplianceLifecycle configService() {
+        return configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(MgmtMetrics.class);
 
     @Override

@@ -32,22 +32,27 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GenericMultiApplianceReport implements BPLAction<ClusterTopology> {
+public class GenericMultiApplianceReport implements BPLAction {
+
     private static final Logger logger = LogManager.getLogger(GenericMultiApplianceReport.class);
+    private final ClusterTopology configService;
     private Function<ApplianceInfo, String> urlPrefixFn;
     private final String urlSuffix;
     private final String reportName;
 
     public GenericMultiApplianceReport(
-            Function<ApplianceInfo, String> urlPrefixFn, String urlSuffix, String reportName) {
+            ClusterTopology configService,
+            Function<ApplianceInfo, String> urlPrefixFn,
+            String urlSuffix,
+            String reportName) {
+        this.configService = configService;
         this.urlPrefixFn = urlPrefixFn;
         this.urlSuffix = urlSuffix;
         this.reportName = reportName;
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info(reportName + " report for " + (limit == null ? "default limit " : ("limit " + limit)));
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);

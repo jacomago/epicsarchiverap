@@ -26,11 +26,11 @@ class ChangeStoreTest {
         HttpServletResponse response = mock(HttpServletResponse.class);
         ConfigService configService = mock(ConfigService.class);
 
-        ChangeStore changeStore = new ChangeStore();
+        ChangeStore changeStore = new ChangeStore(configService);
 
         // Missing pv
         when(request.getParameter("pv")).thenReturn(null);
-        changeStore.execute(request, response, configService);
+        changeStore.execute(request, response);
         verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST);
 
         // Missing storage
@@ -38,7 +38,7 @@ class ChangeStoreTest {
         when(request.getParameter("pv")).thenReturn("testPV");
         when(request.getParameter("newbackend")).thenReturn("testBackend");
         when(request.getParameter("storage")).thenReturn(null);
-        changeStore.execute(request, response, configService);
+        changeStore.execute(request, response);
         verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST);
 
         // Missing newbackend
@@ -46,7 +46,7 @@ class ChangeStoreTest {
         when(request.getParameter("pv")).thenReturn("testPV");
         when(request.getParameter("storage")).thenReturn("testStorage");
         when(request.getParameter("newbackend")).thenReturn(null);
-        changeStore.execute(request, response, configService);
+        changeStore.execute(request, response);
         verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST);
     }
 
@@ -77,8 +77,8 @@ class ChangeStoreTest {
         PrintWriter writer = new PrintWriter(stringWriter);
         when(response.getWriter()).thenReturn(writer);
 
-        ChangeStore changeStore = new ChangeStore();
-        changeStore.execute(request, response, configService);
+        ChangeStore changeStore = new ChangeStore(configService);
+        changeStore.execute(request, response);
 
         verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST);
         assertTrue(stringWriter.toString().contains("Need to pause PV"));
@@ -112,8 +112,8 @@ class ChangeStoreTest {
         PrintWriter writer = new PrintWriter(stringWriter);
         when(response.getWriter()).thenReturn(writer);
 
-        ChangeStore changeStore = new ChangeStore();
-        changeStore.execute(request, response, configService);
+        ChangeStore changeStore = new ChangeStore(configService);
+        changeStore.execute(request, response);
 
         verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST);
         assertTrue(stringWriter.toString().contains("Cannot find storage with name"));
@@ -155,8 +155,8 @@ class ChangeStoreTest {
                     .when(() -> GetUrlContent.getURLContentAsJSONObject(anyString()))
                     .thenReturn(jsonObject);
 
-            ChangeStore changeStore = new ChangeStore();
-            changeStore.execute(request, response, configService);
+            ChangeStore changeStore = new ChangeStore(configService);
+            changeStore.execute(request, response);
 
             verify(response).setContentType(MimeTypeConstants.APPLICATION_JSON);
             assertTrue(stringWriter.toString().contains("{\"status\":\"ok\"}"));

@@ -38,12 +38,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ApplianceMetricsDetails implements BPLAction<ConfigService> {
+public class ApplianceMetricsDetails implements BPLAction {
+
+    private final ConfigService configService;
+
+    public ApplianceMetricsDetails(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(ApplianceMetricsDetails.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String applianceIdentity = req.getParameter("appliance");
         logger.info("Getting the detailed metrics for the appliance " + applianceIdentity);
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);

@@ -32,12 +32,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class NeverConnectedPVsAction implements BPLAction<ClusterTopology> {
+public class NeverConnectedPVsAction implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public NeverConnectedPVsAction(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(NeverConnectedPVsAction.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Getting the status of pvs from mgmt only that never connected since the start of the archiver");
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         LinkedList<String> neverConnUrls = new LinkedList<String>();

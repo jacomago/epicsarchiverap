@@ -25,12 +25,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class RecentlyAddedPVsforThisInstance implements BPLAction<ConfigService> {
+public class RecentlyAddedPVsforThisInstance implements BPLAction {
+
+    private final ConfigService configService;
+
+    public RecentlyAddedPVsforThisInstance(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(RecentlyAddedPVsforThisInstance.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, final ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limitStr = req.getParameter("limit");
         int limit = 100;
         logger.info("Recently added PVs report for this instance for "

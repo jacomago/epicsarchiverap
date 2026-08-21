@@ -28,12 +28,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class SlowChangingPVsWithDroppedEvents implements BPLAction<ClusterTopology> {
+public class SlowChangingPVsWithDroppedEvents implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public SlowChangingPVsWithDroppedEvents(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(SlowChangingPVsWithDroppedEvents.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Report for PVs that have dropped more events than actual events for "
                 + (limit == null ? "default limit " : ("limit " + limit)));

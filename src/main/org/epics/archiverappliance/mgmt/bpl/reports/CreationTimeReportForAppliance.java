@@ -30,12 +30,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class CreationTimeReportForAppliance implements BPLAction<ConfigService> {
+public class CreationTimeReportForAppliance implements BPLAction {
+
+    private final ConfigService configService;
+
+    public CreationTimeReportForAppliance(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(CreationTimeReportForAppliance.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Getting the creation time for PV's in this appliance");
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
 

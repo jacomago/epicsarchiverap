@@ -23,12 +23,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class AreWeArchivingPV implements BPLAction<ConfigService> {
+public class AreWeArchivingPV implements BPLAction {
+
+    private final ConfigService configService;
+
+    public AreWeArchivingPV(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(AreWeArchivingPV.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         logger.debug("Checking to see if we are archiving PV " + pvName);
 

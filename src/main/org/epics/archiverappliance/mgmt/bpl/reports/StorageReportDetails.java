@@ -16,12 +16,18 @@ import java.net.URLEncoder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class StorageReportDetails implements BPLAction<ClusterTopology> {
+public class StorageReportDetails implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public StorageReportDetails(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(StorageReportDetails.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String applianceIdentity = req.getParameter("appliance");
         logger.info("Getting the storage details for the appliance " + applianceIdentity);
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);

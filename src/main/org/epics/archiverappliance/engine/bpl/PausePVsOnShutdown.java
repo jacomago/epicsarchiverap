@@ -21,12 +21,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class PausePVsOnShutdown implements BPLAction<ConfigService> {
+public class PausePVsOnShutdown implements BPLAction {
+
+    private final ConfigService configService;
+
+    public PausePVsOnShutdown(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger configlogger = LogManager.getLogger("config." + PausePVsOnShutdown.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         configlogger.info("Pausing PVs on potential shutdown");
         EngineContext engineRuntime = EngineContext.of(configService);
         int pvCount = 0;

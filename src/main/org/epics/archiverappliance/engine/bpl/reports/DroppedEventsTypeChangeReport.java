@@ -22,7 +22,14 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class DroppedEventsTypeChangeReport implements BPLAction<ConfigService> {
+public class DroppedEventsTypeChangeReport implements BPLAction {
+
+    private final ConfigService configService;
+
+    public DroppedEventsTypeChangeReport(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(DroppedEventsTypeChangeReport.class.getName());
 
     private static class PVDroppedEvents {
@@ -36,8 +43,7 @@ public class DroppedEventsTypeChangeReport implements BPLAction<ConfigService> {
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Report for PVs that have dropped events because of type changes for "
                 + (limit == null ? "default limit " : ("limit " + limit)));

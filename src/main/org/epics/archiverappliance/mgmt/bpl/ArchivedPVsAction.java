@@ -34,12 +34,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ArchivedPVsAction implements BPLAction<PVTypeInfoLookupView> {
+public class ArchivedPVsAction implements BPLAction {
+
+    private final PVTypeInfoLookupView configService;
+
+    public ArchivedPVsAction(PVTypeInfoLookupView configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(ArchivedPVsAction.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, PVTypeInfoLookupView configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Determining PVs that are archived ");
         LinkedList<String> pvNames = PVsMatchingParameter.getPVNamesFromPostBody(req);
         List<String> archivedPVs = ArchivedPVsInList.getArchivedPVs(pvNames, configService);

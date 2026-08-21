@@ -37,13 +37,19 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class TimeSpanReport implements BPLAction<ClusterTopology> {
+public class TimeSpanReport implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public TimeSpanReport(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(TimeSpanReport.class);
 
     @SuppressWarnings("unchecked")
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Getting the time spans for PVs in the cluster");
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
 

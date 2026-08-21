@@ -22,7 +22,14 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class LostConnectionsReport implements BPLAction<ConfigService> {
+public class LostConnectionsReport implements BPLAction {
+
+    private final ConfigService configService;
+
+    public LostConnectionsReport(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(LostConnectionsReport.class.getName());
 
     private static class PVLostConnections {
@@ -38,8 +45,7 @@ public class LostConnectionsReport implements BPLAction<ConfigService> {
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Lost connections rate report for " + (limit == null ? "default limit " : ("limit " + limit)));
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);

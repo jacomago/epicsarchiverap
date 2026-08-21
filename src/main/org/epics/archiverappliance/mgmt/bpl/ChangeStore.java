@@ -34,12 +34,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * Use with caution.
  *
  */
-public class ChangeStore implements BPLAction<ConfigService> {
+public class ChangeStore implements BPLAction {
+
+    private final ConfigService configService;
+
+    public ChangeStore(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(ChangeStore.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.isEmpty()) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);

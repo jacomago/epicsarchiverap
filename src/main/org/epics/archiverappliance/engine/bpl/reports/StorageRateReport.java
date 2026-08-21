@@ -33,7 +33,14 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class StorageRateReport implements BPLAction<ApplianceLifecycle> {
+public class StorageRateReport implements BPLAction {
+
+    private final ApplianceLifecycle configService;
+
+    public StorageRateReport(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(StorageRateReport.class);
 
     private static class PVStorageRate {
@@ -47,8 +54,7 @@ public class StorageRateReport implements BPLAction<ApplianceLifecycle> {
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ApplianceLifecycle configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Storage rate report for " + (limit == null ? "default limit " : ("limit " + limit)));
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);

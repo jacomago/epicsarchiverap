@@ -45,14 +45,20 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class PVDetails implements BPLAction<ConfigService> {
+public class PVDetails implements BPLAction {
+
+    private final ConfigService configService;
+
+    public PVDetails(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(PVDetails.class);
 
     // JSON Array etc are not generic savvy so we get generics errors when we do
     // fancy stuff like so.
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvNameFromRequest = req.getParameter("pv");
         String pvName = PVNames.channelNamePVName(pvNameFromRequest);
         // Get rid of the V4 prefix

@@ -25,12 +25,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ArchiveChannelObjectDetailsAction implements BPLAction<ApplianceLifecycle> {
+public class ArchiveChannelObjectDetailsAction implements BPLAction {
+
+    private final ApplianceLifecycle configService;
+
+    public ArchiveChannelObjectDetailsAction(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(ArchiveChannelObjectDetailsAction.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ApplianceLifecycle configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);

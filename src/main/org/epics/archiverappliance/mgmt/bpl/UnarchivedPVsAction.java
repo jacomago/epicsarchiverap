@@ -36,12 +36,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class UnarchivedPVsAction implements BPLAction<PVTypeInfoLookupView> {
+public class UnarchivedPVsAction implements BPLAction {
+
+    private final PVTypeInfoLookupView configService;
+
+    public UnarchivedPVsAction(PVTypeInfoLookupView configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(UnarchivedPVsAction.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, PVTypeInfoLookupView configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Determining PVs that are unarchived ");
 
         LinkedList<String> pvNames = PVsMatchingParameter.getPVNamesFromPostBody(req);

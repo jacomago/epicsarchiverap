@@ -25,12 +25,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class CurrentlyDisconnectedPVs implements BPLAction<ClusterTopology> {
+public class CurrentlyDisconnectedPVs implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public CurrentlyDisconnectedPVs(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(CurrentlyDisconnectedPVs.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Getting the list of pvs that are currently disconnected.");
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         LinkedList<String> neverConnUrls = new LinkedList<String>();

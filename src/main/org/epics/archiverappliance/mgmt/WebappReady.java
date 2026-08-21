@@ -19,12 +19,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class WebappReady implements BPLAction<ConfigService> {
+public class WebappReady implements BPLAction {
+
+    private final ConfigService configService;
+
+    public WebappReady(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger configlogger = LogManager.getLogger("config." + WebappReady.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String webApp = req.getParameter("webapp");
         if (webApp == null || webApp.equals("")) {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);

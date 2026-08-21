@@ -20,11 +20,11 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetVersion implements BPLAction<Object> {
+public class GetVersion implements BPLAction {
     private static Logger logger = LogManager.getLogger(GetVersion.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, Object configService) throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
             HashMap<String, String> output = new HashMap<String, String>();

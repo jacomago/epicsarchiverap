@@ -20,12 +20,18 @@ import java.util.LinkedList;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class ProcessMetricsChartData implements BPLAction<ConfigService> {
+public class ProcessMetricsChartData implements BPLAction {
+
+    private final ConfigService configService;
+
+    public ProcessMetricsChartData(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(ProcessMetricsChartData.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String identity = req.getParameter("appliance");
         if (identity == null) {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);

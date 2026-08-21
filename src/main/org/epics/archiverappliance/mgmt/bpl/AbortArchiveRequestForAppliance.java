@@ -26,12 +26,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class AbortArchiveRequestForAppliance implements BPLAction<ApplianceLifecycle> {
+public class AbortArchiveRequestForAppliance implements BPLAction {
+
+    private final ApplianceLifecycle configService;
+
+    public AbortArchiveRequestForAppliance(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(AbortArchiveRequestForAppliance.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ApplianceLifecycle configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);

@@ -8,11 +8,16 @@ import java.io.PrintWriter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class StorageMetricsForAppliance implements BPLAction<AppliancePVsView> {
+public class StorageMetricsForAppliance implements BPLAction {
+
+    private final AppliancePVsView configService;
+
+    public StorageMetricsForAppliance(AppliancePVsView configService) {
+        this.configService = configService;
+    }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, AppliancePVsView configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try (PrintWriter out = resp.getWriter()) {
             out.println(StorageWithLifetime.getStorageMetrics(configService));
         }

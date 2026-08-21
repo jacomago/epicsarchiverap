@@ -15,12 +15,19 @@ import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public interface PVDetails extends BPLAction<ConfigService> {
+public interface PVDetails extends BPLAction {
+
+    /**
+     * The configuration this report reads. An interface cannot hold the field, so the implementing
+     * class supplies it — a record component of this name satisfies this automatically.
+     * @return the configuration supplied to the implementor's constructor
+     */
+    ConfigService configService();
+
     Logger logger = LogManager.getLogger(PVDetails.class);
 
     @Override
-    default void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    default void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         if (StringUtils.isEmpty(pvName)) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -30,7 +37,7 @@ public interface PVDetails extends BPLAction<ConfigService> {
         logger.info("Getting the detailed status for PV " + pvName);
         String detailedStatus = null;
         try {
-            detailedStatus = JSONValue.toJSONString(pvDetails(configService, pvName));
+            detailedStatus = JSONValue.toJSONString(pvDetails(configService(), pvName));
         } catch (Exception e) {
             logger.error("No status for PV " + pvName + " in this.", e);
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);

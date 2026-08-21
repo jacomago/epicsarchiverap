@@ -21,7 +21,14 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetAllAliasesAction implements BPLAction<AliasRegistry> {
+public class GetAllAliasesAction implements BPLAction {
+
+    private final AliasRegistry configService;
+
+    public GetAllAliasesAction(AliasRegistry configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(GetAllAliasesAction.class.getName());
 
     private static class AliasAndSrc {
@@ -43,8 +50,7 @@ public class GetAllAliasesAction implements BPLAction<AliasRegistry> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, AliasRegistry configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {

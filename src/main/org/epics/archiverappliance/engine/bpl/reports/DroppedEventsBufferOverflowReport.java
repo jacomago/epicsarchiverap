@@ -21,7 +21,14 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class DroppedEventsBufferOverflowReport implements BPLAction<ApplianceLifecycle> {
+public class DroppedEventsBufferOverflowReport implements BPLAction {
+
+    private final ApplianceLifecycle configService;
+
+    public DroppedEventsBufferOverflowReport(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(DroppedEventsBufferOverflowReport.class.getName());
 
     private static class PVDroppedEvents {
@@ -35,8 +42,7 @@ public class DroppedEventsBufferOverflowReport implements BPLAction<ApplianceLif
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ApplianceLifecycle configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Report for PVs that have dropped events because of buffer overflows for "
                 + (limit == null ? "default limit " : ("limit " + limit)));

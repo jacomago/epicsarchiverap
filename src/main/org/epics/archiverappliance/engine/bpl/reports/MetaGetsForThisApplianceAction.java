@@ -25,12 +25,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class MetaGetsForThisApplianceAction implements BPLAction<ClusterTopology> {
+public class MetaGetsForThisApplianceAction implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public MetaGetsForThisApplianceAction(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(MetaGetsForThisApplianceAction.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Getting the status of pvs that never connected since the start of this appliance");
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {

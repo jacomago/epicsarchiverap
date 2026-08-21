@@ -18,6 +18,7 @@ import org.json.simple.JSONObject;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
@@ -38,7 +39,7 @@ public class BasicDispatcher {
             HttpServletRequest req,
             HttpServletResponse resp,
             ConfigService configService,
-            Map<String, Class<? extends BPLAction<? super ConfigService>>> actions)
+            Map<String, Class<? extends BPLAction>> actions)
             throws IOException {
         dispatch(req, resp, configService, actions, () -> true);
     }
@@ -59,7 +60,7 @@ public class BasicDispatcher {
             HttpServletRequest req,
             HttpServletResponse resp,
             ConfigService configService,
-            Map<String, Class<? extends BPLAction<? super ConfigService>>> actions,
+            Map<String, Class<? extends BPLAction>> actions,
             BooleanSupplier webappReady)
             throws IOException {
         String requestPath = req.getPathInfo();
@@ -81,7 +82,7 @@ public class BasicDispatcher {
             HttpServletRequest req,
             HttpServletResponse resp,
             ConfigService configService,
-            Map<String, Class<? extends BPLAction<? super ConfigService>>> actions,
+            Map<String, Class<? extends BPLAction>> actions,
             String requestPath,
             BooleanSupplier webappReady)
             throws IOException {
@@ -100,7 +101,7 @@ public class BasicDispatcher {
             }
         }
 
-        Class<? extends BPLAction<? super ConfigService>> actionClass = actions.get(requestPath);
+        Class<? extends BPLAction> actionClass = actions.get(requestPath);
         if (actionClass == null) {
             logger.error("Do not have a appropriate BPL action for " + requestPath
                     + ". Please register the appropriate business method in getActions.");
@@ -108,13 +109,53 @@ public class BasicDispatcher {
             return;
         }
 
-        BPLAction<? super ConfigService> action;
         try {
-            action = actionClass.getConstructor().newInstance();
-            action.execute(req, resp, configService);
+            construct(actionClass, configService).execute(req, resp);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             throw new IOException(e);
+        }
+    }
+
+    /**
+     * Build an action, supplying each constructor parameter from the configuration.
+     * <p>An action declares the concerns it needs as constructor parameters; this resolves each one.
+     * While a single object still implements every concern, resolution is an instance check against it.
+     * Once the concerns have separate implementations this becomes a lookup in the component registry,
+     * and at that point the method body is the only thing that changes.
+     */
+    static BPLAction construct(Class<? extends BPLAction> actionClass, ConfigService configService)
+            throws ReflectiveOperationException {
+        Constructor<?> ctor = actionClass.getDeclaredConstructors()[0];
+        Class<?>[] wanted = ctor.getParameterTypes();
+        Object[] args = new Object[wanted.length];
+        for (int i = 0; i < wanted.length; i++) {
+            if (!wanted[i].isInstance(configService)) {
+                throw new IllegalStateException(actionClass.getName() + " asks for " + wanted[i].getName()
+                        + ", which the configuration does not provide");
+            }
+            args[i] = configService;
+        }
+        ctor.setAccessible(true);
+        return (BPLAction) ctor.newInstance(args);
+    }
+
+    /**
+     * Check at startup that every registered action can actually be built, so a wiring mistake fails
+     * on deployment rather than on the first request to that endpoint.
+     * @param actions the actions registered by this webapp
+     * @param configService the configuration they will be built from
+     */
+    public static void validateActions(Map<String, Class<? extends BPLAction>> actions, ConfigService configService) {
+        for (Map.Entry<String, Class<? extends BPLAction>> e : actions.entrySet()) {
+            Constructor<?> ctor = e.getValue().getDeclaredConstructors()[0];
+            for (Class<?> wanted : ctor.getParameterTypes()) {
+                if (!wanted.isInstance(configService)) {
+                    throw new IllegalStateException("BPL action " + e.getValue().getName() + " registered at "
+                            + e.getKey() + " asks for " + wanted.getName()
+                            + ", which the configuration does not provide");
+                }
+            }
         }
     }
 

@@ -22,6 +22,17 @@ import java.util.Map;
  */
 public class ApplianceMetricsDetails implements MetricsDetails {
 
+    private final ApplianceLifecycle configService;
+
+    public ApplianceMetricsDetails(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
+    @Override
+    public ApplianceLifecycle configService() {
+        return configService;
+    }
+
     @Override
     public LinkedList<Map<String, String>> metricsDetails(ApplianceLifecycle configService) {
         ETLMetrics etlMetrics = PBThreeTierETLPVLookup.of(configService).getApplianceMetrics();

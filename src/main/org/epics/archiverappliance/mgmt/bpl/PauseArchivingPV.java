@@ -24,12 +24,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class PauseArchivingPV implements BPLAction<ConfigService> {
+public class PauseArchivingPV implements BPLAction {
+
+    private final ConfigService configService;
+
+    public PauseArchivingPV(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(PauseArchivingPV.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         if (req.getMethod().equals("POST")) {
             pauseMultiplePVs(req, resp, configService);

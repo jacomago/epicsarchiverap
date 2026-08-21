@@ -18,12 +18,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetApplianceProps implements BPLAction<ConfigService> {
+public class GetApplianceProps implements BPLAction {
+
+    private final ConfigService configService;
+
+    public GetApplianceProps(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(GetApplianceProps.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.debug("Getting appliance properties");
         HashMap<String, Object> props = new HashMap<String, Object>();
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);

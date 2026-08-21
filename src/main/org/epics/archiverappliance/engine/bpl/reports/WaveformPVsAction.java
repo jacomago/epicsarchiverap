@@ -32,12 +32,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class WaveformPVsAction implements BPLAction<ApplianceLifecycle> {
+public class WaveformPVsAction implements BPLAction {
+
+    private final ApplianceLifecycle configService;
+
+    public WaveformPVsAction(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(WaveformPVsAction.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ApplianceLifecycle configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Getting a list of waveform PV's");
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         EngineContext engineContext = EngineContext.of(configService);

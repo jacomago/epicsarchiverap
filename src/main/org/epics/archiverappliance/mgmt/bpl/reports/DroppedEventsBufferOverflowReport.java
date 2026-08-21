@@ -29,12 +29,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class DroppedEventsBufferOverflowReport implements BPLAction<ClusterTopology> {
+public class DroppedEventsBufferOverflowReport implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public DroppedEventsBufferOverflowReport(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(DroppedEventsBufferOverflowReport.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Report for PVs that have dropped events because of buffer overflows for "
                 + (limit == null ? "default limit " : ("limit " + limit)));

@@ -29,12 +29,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class PausedPVsReport implements BPLAction<ConfigService> {
+public class PausedPVsReport implements BPLAction {
+
+    private final ConfigService configService;
+
+    public PausedPVsReport(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(PausedPVsReport.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Paused PVs report for " + (limit == null ? "default limit " : ("limit " + limit)));
         LinkedList<String> pausedPVForThisApplianceURLs = new LinkedList<String>();

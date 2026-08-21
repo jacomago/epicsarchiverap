@@ -13,12 +13,18 @@ import java.util.HashMap;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class GetPolicyList implements BPLAction<ConfigService> {
+public class GetPolicyList implements BPLAction {
+
+    private final ConfigService configService;
+
+    public GetPolicyList(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(GetPolicyList.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.debug("Getting policies in this installation");
         HashMap<String, String> policies = configService.getPoliciesInInstallation();
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);

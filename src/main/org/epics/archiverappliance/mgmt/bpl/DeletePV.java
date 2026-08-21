@@ -32,12 +32,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class DeletePV implements BPLAction<ConfigService> {
+public class DeletePV implements BPLAction {
+
+    private final ConfigService configService;
+
+    public DeletePV(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(DeletePV.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (req.getMethod().equals("POST")) {
             deleteMultiplePVs(req, resp, configService);
             return;

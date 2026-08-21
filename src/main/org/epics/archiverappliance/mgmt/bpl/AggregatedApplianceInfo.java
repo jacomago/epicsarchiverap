@@ -18,12 +18,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class AggregatedApplianceInfo implements BPLAction<ConfigService> {
+public class AggregatedApplianceInfo implements BPLAction {
+
+    private final ConfigService configService;
+
+    public AggregatedApplianceInfo(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(AggregatedApplianceInfo.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.debug("Getting the aggregated appliance information for the appliance"
                 + configService.getMyApplianceInfo().getIdentity());
 

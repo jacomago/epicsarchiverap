@@ -20,11 +20,16 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class FilterArchivedPVs implements BPLAction<PVTypeInfoLookupView> {
+public class FilterArchivedPVs implements BPLAction {
+
+    private final PVTypeInfoLookupView configService;
+
+    public FilterArchivedPVs(PVTypeInfoLookupView configService) {
+        this.configService = configService;
+    }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, PVTypeInfoLookupView configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         LinkedList<String> pvNames = PVsMatchingParameter.getPVNamesFromPostBody(req);
         List<String> archivedPVs = ArchivedPVsInList.getArchivedPVs(pvNames, configService);
 

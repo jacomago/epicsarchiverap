@@ -116,8 +116,8 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 @SuppressWarnings("serial")
 public class BPLServlet extends HttpServlet {
-    private static HashMap<String, Class<? extends BPLAction<? super ConfigService>>> getActions =
-            new HashMap<String, Class<? extends BPLAction<? super ConfigService>>>();
+    private static HashMap<String, Class<? extends BPLAction>> getActions =
+            new HashMap<String, Class<? extends BPLAction>>();
     private static LinkedList<String> actionsSequenceForDocs = new LinkedList<String>();
 
     static {
@@ -227,10 +227,12 @@ public class BPLServlet extends HttpServlet {
         super.init();
         configService =
                 (ConfigService) getServletConfig().getServletContext().getAttribute(ConfigService.CONFIG_SERVICE_NAME);
+        BasicDispatcher.validateActions(getActions, configService);
+        BasicDispatcher.validateActions(postActions, configService);
     }
 
-    private static final HashMap<String, Class<? extends BPLAction<? super ConfigService>>> postActions =
-            new HashMap<String, Class<? extends BPLAction<? super ConfigService>>>();
+    private static final HashMap<String, Class<? extends BPLAction>> postActions =
+            new HashMap<String, Class<? extends BPLAction>>();
 
     static {
         addPostAction("/importChannelArchiverConfiguration", ImportChannelArchiverConfigAction.class);
@@ -259,12 +261,12 @@ public class BPLServlet extends HttpServlet {
      * @param path
      * @param bplClassName
      */
-    private static void addAction(String path, Class<? extends BPLAction<? super ConfigService>> bplClassName) {
+    private static void addAction(String path, Class<? extends BPLAction> bplClassName) {
         getActions.put(path, bplClassName);
         actionsSequenceForDocs.add(path);
     }
 
-    private static void addPostAction(String path, Class<? extends BPLAction<? super ConfigService>> bplClassName) {
+    private static void addPostAction(String path, Class<? extends BPLAction> bplClassName) {
         postActions.put(path, bplClassName);
         if (!actionsSequenceForDocs.contains(path)) {
             actionsSequenceForDocs.add(path);
@@ -280,7 +282,7 @@ public class BPLServlet extends HttpServlet {
     public static void main(String[] args) throws IOException {
         System.out.println("#Path mappings for mgmt BPLs");
         for (String path : actionsSequenceForDocs) {
-            Class<? extends BPLAction<? super ConfigService>> classObj = getActions.get(path);
+            Class<? extends BPLAction> classObj = getActions.get(path);
             if (classObj == null) {
                 classObj = postActions.get(path);
             }

@@ -18,12 +18,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetPausedPVsForThisAppliance implements BPLAction<ConfigService> {
+public class GetPausedPVsForThisAppliance implements BPLAction {
+
+    private final ConfigService configService;
+
+    public GetPausedPVsForThisAppliance(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(GetPausedPVsForThisAppliance.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.debug("Getting paused pvs for appliance "
                 + configService.getMyApplianceInfo().getIdentity());
         LinkedList<String> pausedPVSForThisAppliance = new LinkedList<String>();

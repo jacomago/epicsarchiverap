@@ -21,7 +21,14 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class DroppedEventsTimestampReport implements BPLAction<ApplianceLifecycle> {
+public class DroppedEventsTimestampReport implements BPLAction {
+
+    private final ApplianceLifecycle configService;
+
+    public DroppedEventsTimestampReport(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(DroppedEventsTimestampReport.class.getName());
 
     private static class PVDroppedEvents {
@@ -35,8 +42,7 @@ public class DroppedEventsTimestampReport implements BPLAction<ApplianceLifecycl
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ApplianceLifecycle configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Report for PVs that have dropped events because of incorrect timestamps for "
                 + (limit == null ? "default limit " : ("limit " + limit)));

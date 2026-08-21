@@ -24,12 +24,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetAllPVs implements BPLAction<ConfigService> {
+public class GetAllPVs implements BPLAction {
+
+    private final ConfigService configService;
+
+    public GetAllPVs(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(GetAllPVs.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.debug("Getting all pvs for cluster");
         int defaultLimit = 500;
         LinkedList<String> pvNames = PVsMatchingParameter.getMatchingPVs(req, configService, defaultLimit);

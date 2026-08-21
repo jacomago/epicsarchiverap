@@ -22,12 +22,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ProcessMetricsReport implements BPLAction<ConfigService> {
+public class ProcessMetricsReport implements BPLAction {
+
+    private final ConfigService configService;
+
+    public ProcessMetricsReport(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(ProcessMetricsReport.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         // We are casting to DefaultConfigService here as I do not want to expose processMetrics in the public interface
         // just yet.
         DefaultConfigService defaultConfigService = (DefaultConfigService) configService;

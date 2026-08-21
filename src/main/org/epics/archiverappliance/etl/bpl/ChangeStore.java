@@ -15,12 +15,18 @@ import java.util.HashMap;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class ChangeStore implements BPLAction<ConfigService> {
+public class ChangeStore implements BPLAction {
+
+    private final ConfigService configService;
+
+    public ChangeStore(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(ChangeStore.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         String storageName = req.getParameter("storage");
         String newPlugin = req.getParameter("newbackend");

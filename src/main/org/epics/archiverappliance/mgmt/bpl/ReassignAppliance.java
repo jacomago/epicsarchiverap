@@ -42,12 +42,18 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  * @author mshankar
  */
-public class ReassignAppliance implements BPLAction<ConfigService> {
+public class ReassignAppliance implements BPLAction {
+
+    private final ConfigService configService;
+
+    public ReassignAppliance(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(ReassignAppliance.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (!configService.hasClusterFinishedInitialization()) {
             // If you have defined spare appliances in the appliances.xml that will never come up; you should remove
             // them

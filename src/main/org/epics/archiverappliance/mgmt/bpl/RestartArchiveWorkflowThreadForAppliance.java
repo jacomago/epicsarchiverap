@@ -30,12 +30,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class RestartArchiveWorkflowThreadForAppliance implements BPLAction<ApplianceLifecycle> {
+public class RestartArchiveWorkflowThreadForAppliance implements BPLAction {
+
+    private final ApplianceLifecycle configService;
+
+    public RestartArchiveWorkflowThreadForAppliance(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(RestartArchiveWorkflowThreadForAppliance.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ApplianceLifecycle configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Restarting the archive PV workflow thread for this appliance");
         HashMap<String, Object> infoValues = new HashMap<String, Object>();
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);

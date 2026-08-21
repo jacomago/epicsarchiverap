@@ -27,12 +27,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class RecentlyChangedPVs implements BPLAction<ClusterTopology> {
+public class RecentlyChangedPVs implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public RecentlyChangedPVs(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(RecentlyChangedPVs.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Recently changed PVs report for " + (limit == null ? "default limit " : ("limit " + limit)));
         LinkedList<String> recentlyChangedURLs = new LinkedList<String>();

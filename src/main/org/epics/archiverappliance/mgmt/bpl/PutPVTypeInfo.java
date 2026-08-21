@@ -33,7 +33,14 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class PutPVTypeInfo implements BPLAction<ConfigService> {
+public class PutPVTypeInfo implements BPLAction {
+
+    private final ConfigService configService;
+
+    public PutPVTypeInfo(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(PutPVTypeInfo.class.getName());
 
     class TypeInfoAndJsonObject {
@@ -47,8 +54,7 @@ public class PutPVTypeInfo implements BPLAction<ConfigService> {
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         logger.debug("Updating typeinfo for PV " + pvName);
         if (pvName == null || pvName.equals("")) {

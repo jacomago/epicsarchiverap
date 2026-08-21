@@ -18,12 +18,18 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class NeverConnectedPVsForThisAppliance implements BPLAction<ConfigService> {
+public class NeverConnectedPVsForThisAppliance implements BPLAction {
+
+    private final ConfigService configService;
+
+    public NeverConnectedPVsForThisAppliance(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(NeverConnectedPVsForThisAppliance.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Getting the status of pvs that never connected since the start of this appliance");
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         String myIdentity = configService.getMyApplianceInfo().getIdentity();

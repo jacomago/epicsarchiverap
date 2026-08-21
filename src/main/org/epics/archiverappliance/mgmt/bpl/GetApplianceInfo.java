@@ -27,13 +27,19 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetApplianceInfo implements BPLAction<ClusterTopology> {
+public class GetApplianceInfo implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public GetApplianceInfo(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(GetApplianceInfo.class.getName());
 
     @SuppressWarnings("unchecked")
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String id = req.getParameter("id");
         ApplianceInfo applianceInfo = null;
         if (id == null || id.equals("")) {

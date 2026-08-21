@@ -23,12 +23,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class NamedFlagsSet implements BPLAction<InstallationProperties> {
+public class NamedFlagsSet implements BPLAction {
+
+    private final InstallationProperties configService;
+
+    public NamedFlagsSet(InstallationProperties configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(NamedFlagsSet.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, InstallationProperties configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String name = req.getParameter("name");
         if (name == null || name.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);

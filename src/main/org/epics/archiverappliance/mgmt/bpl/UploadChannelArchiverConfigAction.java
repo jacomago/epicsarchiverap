@@ -36,12 +36,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class UploadChannelArchiverConfigAction implements BPLAction<ConfigService> {
+public class UploadChannelArchiverConfigAction implements BPLAction {
+
+    private final ConfigService configService;
+
+    public UploadChannelArchiverConfigAction(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(UploadChannelArchiverConfigAction.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (!configService.hasClusterFinishedInitialization()) {
             // If you have defined spare appliances in the appliances.xml that will never come up; you should remove
             // them

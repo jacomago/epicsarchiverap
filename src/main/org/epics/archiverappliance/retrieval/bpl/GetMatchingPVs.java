@@ -33,12 +33,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetMatchingPVs implements BPLAction<ConfigService> {
+public class GetMatchingPVs implements BPLAction {
+
+    private final ConfigService configService;
+
+    public GetMatchingPVs(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(GetMatchingPVs.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
 

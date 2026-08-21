@@ -23,12 +23,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ResetFailoverCachesForThisAppliance implements BPLAction<ConfigService> {
+public class ResetFailoverCachesForThisAppliance implements BPLAction {
+
+    private final ConfigService configService;
+
+    public ResetFailoverCachesForThisAppliance(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(ResetFailoverCachesForThisAppliance.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Reseting the failover caches for this appliance");
         try (PrintWriter out = resp.getWriter()) {
             configService.resetFailoverCaches();

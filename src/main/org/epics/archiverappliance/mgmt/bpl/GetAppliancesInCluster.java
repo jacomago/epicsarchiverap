@@ -23,13 +23,19 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetAppliancesInCluster implements BPLAction<ClusterTopology> {
+public class GetAppliancesInCluster implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public GetAppliancesInCluster(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(GetAppliancesInCluster.class.getName());
 
     @SuppressWarnings("unchecked")
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ClusterTopology configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {

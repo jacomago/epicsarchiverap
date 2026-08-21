@@ -19,12 +19,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class ExportConfigForThisInstance implements BPLAction<ConfigService> {
+public class ExportConfigForThisInstance implements BPLAction {
+
+    private final ConfigService configService;
+
+    public ExportConfigForThisInstance(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(ExportConfigForThisInstance.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String identity = configService.getMyApplianceInfo().getIdentity();
         logger.info("Exporting config for this instance" + identity);
 

@@ -26,12 +26,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class AddExternalArchiverServerArchives implements BPLAction<ChannelArchiverConfig> {
+public class AddExternalArchiverServerArchives implements BPLAction {
+
+    private final ChannelArchiverConfig configService;
+
+    public AddExternalArchiverServerArchives(ChannelArchiverConfig configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(AddExternalArchiverServerArchives.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ChannelArchiverConfig configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String serverUrl = req.getParameter("channelarchiverserverurl");
         if (serverUrl == null || serverUrl.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);

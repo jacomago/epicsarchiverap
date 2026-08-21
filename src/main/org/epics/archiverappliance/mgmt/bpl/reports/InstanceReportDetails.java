@@ -22,12 +22,18 @@ import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class InstanceReportDetails implements BPLAction<ConfigService> {
+public class InstanceReportDetails implements BPLAction {
+
+    private final ConfigService configService;
+
+    public InstanceReportDetails(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(InstanceReportDetails.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String applianceIdentity = req.getParameter("appliance");
         logger.info("Getting the detailed instance metrics for the appliance " + applianceIdentity);
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);

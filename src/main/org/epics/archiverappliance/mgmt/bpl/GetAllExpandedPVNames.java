@@ -21,12 +21,18 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetAllExpandedPVNames implements BPLAction<ConfigService> {
+public class GetAllExpandedPVNames implements BPLAction {
+
+    private final ConfigService configService;
+
+    public GetAllExpandedPVNames(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(GetAllExpandedPVNames.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.debug("Getting all expanded pv names for the cluster");
 
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);

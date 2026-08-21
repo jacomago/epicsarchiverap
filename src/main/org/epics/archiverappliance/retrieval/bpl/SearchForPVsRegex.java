@@ -11,12 +11,18 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class SearchForPVsRegex implements BPLAction<ConfigService> {
+public class SearchForPVsRegex implements BPLAction {
+
+    private final ConfigService configService;
+
+    public SearchForPVsRegex(ConfigService configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(SearchForPVsRegex.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String nameToMatch = req.getParameter("regex");
         if (nameToMatch == null || nameToMatch.equals("")) {
             logger.error("This search needs to be called with a regex argument.");
