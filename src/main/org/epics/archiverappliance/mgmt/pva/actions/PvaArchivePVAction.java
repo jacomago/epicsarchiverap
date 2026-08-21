@@ -2,7 +2,12 @@ package org.epics.archiverappliance.mgmt.pva.actions;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.AliasRegistry;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ArchiveRequestWorkflow;
+import org.epics.archiverappliance.config.InstallationProperties;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
+import org.epics.archiverappliance.config.PolicyService;
 import org.epics.archiverappliance.mgmt.bpl.ArchivePVAction;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
@@ -57,10 +62,32 @@ import java.util.Arrays;
  * @author Kunal Shroff, mshankar
  *
  */
-public class PvaArchivePVAction implements PvaAction<ConfigService> {
+public class PvaArchivePVAction implements PvaAction {
 
     public static final Logger logger = LogManager.getLogger(PvaArchivePVAction.class);
     public static final String NAME = "archivePVs";
+
+    private final AliasRegistry aliasRegistry;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final ArchiveRequestWorkflow archiveRequests;
+    private final InstallationProperties installationProperties;
+    private final PolicyService policyService;
+    private final PVTypeInfoStore pvTypeInfoStore;
+
+    public PvaArchivePVAction(
+            AliasRegistry aliasRegistry,
+            ApplianceLifecycle applianceLifecycle,
+            ArchiveRequestWorkflow archiveRequests,
+            InstallationProperties installationProperties,
+            PolicyService policyService,
+            PVTypeInfoStore pvTypeInfoStore) {
+        this.aliasRegistry = aliasRegistry;
+        this.applianceLifecycle = applianceLifecycle;
+        this.archiveRequests = archiveRequests;
+        this.installationProperties = installationProperties;
+        this.policyService = policyService;
+        this.pvTypeInfoStore = pvTypeInfoStore;
+    }
 
     @Override
     public String getName() {
@@ -68,7 +95,7 @@ public class PvaArchivePVAction implements PvaAction<ConfigService> {
     }
 
     @Override
-    public PVAStructure request(PVAStructure args, ConfigService configService) throws PvaActionException {
+    public PVAStructure request(PVAStructure args) throws PvaActionException {
         PVATable ntTable = PVATable.fromStructure(args);
         String[] pvNames = NTUtil.extractStringArray(ntTable.getColumn("pv"));
         String[] samplingperiods = NTUtil.extractStringArray(ntTable.getColumn("samplingperiod"));
@@ -120,12 +147,12 @@ public class PvaArchivePVAction implements PvaAction<ConfigService> {
                         policyName,
                         null,
                         false,
-                        configService,
-                        configService,
-                        configService,
-                        configService,
-                        configService,
-                        ArchivePVAction.getFieldsAsPartOfStream(configService));
+                        aliasRegistry,
+                        archiveRequests,
+                        applianceLifecycle,
+                        installationProperties,
+                        pvTypeInfoStore,
+                        ArchivePVAction.getFieldsAsPartOfStream(policyService));
             } catch (IOException e) {
                 throw new PvaActionException("Archiving pv " + pvName + " failed", e);
             }

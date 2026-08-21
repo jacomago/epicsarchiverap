@@ -14,9 +14,13 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ApplianceLifecycle;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.FailoverConfig;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoLookupView;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.etl.ETLDest;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
@@ -59,12 +63,32 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import jakarta.servlet.ServletException;
 
-public class PvaGetPVData implements PvaAction<ConfigService> {
+public class PvaGetPVData implements PvaAction {
 
     private static final Logger logger = LogManager.getLogger(PvaGetPVData.class.getName());
     public static final String NAME = "getPVsData";
 
-    ConfigService configService;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final ClusterTopology clusterTopology;
+    private final FailoverConfig failoverConfig;
+    private final PVDirectory pvDirectory;
+    private final PVTypeInfoLookupView pvTypeInfoLookup;
+    private final StoragePluginConfigView storageConfig;
+
+    public PvaGetPVData(
+            ApplianceLifecycle applianceLifecycle,
+            ClusterTopology clusterTopology,
+            FailoverConfig failoverConfig,
+            PVDirectory pvDirectory,
+            PVTypeInfoLookupView pvTypeInfoLookup,
+            StoragePluginConfigView storageConfig) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.clusterTopology = clusterTopology;
+        this.failoverConfig = failoverConfig;
+        this.pvDirectory = pvDirectory;
+        this.pvTypeInfoLookup = pvTypeInfoLookup;
+        this.storageConfig = storageConfig;
+    }
 
     @Override
     public String getName() {
@@ -72,16 +96,15 @@ public class PvaGetPVData implements PvaAction<ConfigService> {
     }
 
     @Override
-    public PVAStructure request(PVAStructure pvArgs, ConfigService configService) throws PvaActionException {
-        this.configService = configService;
+    public PVAStructure request(PVAStructure pvArgs) throws PvaActionException {
         try {
             Map<String, String> args = extractQuery(pvArgs);
             // TODO a better check is needed.
             if (args.containsKey("pv")) {
                 if (args.get("pv").split(";").length == 1) {
-                    return doGetSinglePV(args, configService);
+                    return doGetSinglePV(args);
                 } else {
-                    return doGetMultiPV(args, configService);
+                    return doGetMultiPV(args);
                 }
             }
         } catch (ServletException | IOException | NotValueException e) {
@@ -102,13 +125,13 @@ public class PvaGetPVData implements PvaAction<ConfigService> {
         return uri.getQuery();
     }
 
-    private PVAStructure doGetSinglePV(Map<String, String> reqParameters, ConfigService configService)
+    private PVAStructure doGetSinglePV(Map<String, String> reqParameters)
             throws ServletException, IOException, PvaActionException {
 
         PoorMansProfiler pmansProfiler = new PoorMansProfiler();
         String pvName = reqParameters.get("pv");
 
-        if (configService.getStartupState() != ApplianceLifecycle.STARTUP_SEQUENCE.STARTUP_COMPLETE) {
+        if (applianceLifecycle.getStartupState() != ApplianceLifecycle.STARTUP_SEQUENCE.STARTUP_COMPLETE) {
             String msg = "Cannot process data retrieval requests for PV " + pvName
                     + " until the appliance has completely started up.";
             logger.error(msg);
@@ -233,21 +256,22 @@ public class PvaGetPVData implements PvaAction<ConfigService> {
                     + postProcessorUserArg);
         }
         PostProcessor postProcessor = PostProcessors.findPostProcessor(postProcessorUserArg);
-        PVTypeInfo typeInfo = PVNames.determineAppropriatePVTypeInfo(pvName, configService);
+        PVTypeInfo typeInfo = PVNames.determineAppropriatePVTypeInfo(pvName, pvTypeInfoLookup);
         pmansProfiler.mark("After PVTypeInfo");
 
         if (typeInfo == null) {
             if (retiredPVTemplate != null) {
-                PVTypeInfo templateTypeInfo = PVNames.determineAppropriatePVTypeInfo(retiredPVTemplate, configService);
+                PVTypeInfo templateTypeInfo =
+                        PVNames.determineAppropriatePVTypeInfo(retiredPVTemplate, pvTypeInfoLookup);
                 if (templateTypeInfo != null) {
                     typeInfo = new PVTypeInfo(pvName, templateTypeInfo);
                     typeInfo.setPaused(true);
                     typeInfo.setApplianceIdentity(
-                            configService.getMyApplianceInfo().getIdentity());
+                            clusterTopology.getMyApplianceInfo().getIdentity());
                     // Somehow tell the code downstream that this is a fake typeInfo.
                     typeInfo.setSamplingMethod(SamplingMethod.DONT_ARCHIVE);
                     logger.debug("Using a template PV for " + pvName + " Need to determine the actual DBR type.");
-                    setActualDBRTypeFromData(pvName, typeInfo, configService);
+                    setActualDBRTypeFromData(pvName, typeInfo);
                 }
             }
         }
@@ -259,7 +283,7 @@ public class PvaGetPVData implements PvaAction<ConfigService> {
 
         if (postProcessor == null) {
             if (useReduced) {
-                String defaultPPClassName = configService
+                String defaultPPClassName = storageConfig
                         .getInstallationProperties()
                         .getProperty(
                                 "org.epics.archiverappliance.retrieval.DefaultUseReducedPostProcessor",
@@ -280,11 +304,11 @@ public class PvaGetPVData implements PvaAction<ConfigService> {
             postProcessor = new DefaultRawPostProcessor();
         }
 
-        ApplianceInfo applianceForPV = configService.getApplianceForPV(pvName);
+        ApplianceInfo applianceForPV = pvDirectory.getApplianceForPV(pvName);
         if (applianceForPV == null) {
             // TypeInfo cannot be null here...
             assert (typeInfo != null);
-            applianceForPV = configService.getAppliance(typeInfo.getApplianceIdentity());
+            applianceForPV = clusterTopology.getAppliance(typeInfo.getApplianceIdentity());
         }
 
         pmansProfiler.mark("After Appliance Info");
@@ -461,7 +485,7 @@ public class PvaGetPVData implements PvaAction<ConfigService> {
         return result;
     }
 
-    private PVAStructure doGetMultiPV(Map<String, String> reqParameters, ConfigService configService)
+    private PVAStructure doGetMultiPV(Map<String, String> reqParameters)
             throws ServletException, IOException, PvaActionException {
 
         PoorMansProfiler pmansProfiler = new PoorMansProfiler();
@@ -472,7 +496,7 @@ public class PvaGetPVData implements PvaAction<ConfigService> {
         List<String> pvNames = Arrays.asList(reqParameters.get("pv").split(";"));
 
         // Ensuring that the AA has finished starting up before requests are accepted.
-        if (configService.getStartupState() != ApplianceLifecycle.STARTUP_SEQUENCE.STARTUP_COMPLETE) {
+        if (applianceLifecycle.getStartupState() != ApplianceLifecycle.STARTUP_SEQUENCE.STARTUP_COMPLETE) {
             String msg = "Cannot process data retrieval requests for specified PVs (" + StringUtils.join(pvNames, ", ")
                     + ") until the appliance has completely started up.";
             logger.error(msg);
@@ -622,7 +646,7 @@ public class PvaGetPVData implements PvaAction<ConfigService> {
 
         List<PVTypeInfo> typeInfos = new ArrayList<PVTypeInfo>(pvNames.size());
         for (String name : pvNames) {
-            typeInfos.add(PVNames.determineAppropriatePVTypeInfo(name, configService));
+            typeInfos.add(PVNames.determineAppropriatePVTypeInfo(name, pvTypeInfoLookup));
         }
 
         pmansProfiler.mark("After PVTypeInfo");
@@ -637,19 +661,19 @@ public class PvaGetPVData implements PvaAction<ConfigService> {
 
                 if (retiredPVTemplate != null) {
                     PVTypeInfo templateTypeInfo =
-                            PVNames.determineAppropriatePVTypeInfo(retiredPVTemplate, configService);
+                            PVNames.determineAppropriatePVTypeInfo(retiredPVTemplate, pvTypeInfoLookup);
                     if (templateTypeInfo != null) {
                         typeInfos.set(i, new PVTypeInfo(pvNames.get(i), templateTypeInfo));
                         typeInfos.get(i).setPaused(true);
                         typeInfos
                                 .get(i)
                                 .setApplianceIdentity(
-                                        configService.getMyApplianceInfo().getIdentity());
+                                        clusterTopology.getMyApplianceInfo().getIdentity());
                         // Somehow tell the code downstream that this is a fake typeInfos.
                         typeInfos.get(i).setSamplingMethod(SamplingMethod.DONT_ARCHIVE);
                         logger.debug("Using a template PV for " + pvNames.get(i)
                                 + " Need to determine the actual DBR type.");
-                        setActualDBRTypeFromData(pvNames.get(i), typeInfos.get(i), configService);
+                        setActualDBRTypeFromData(pvNames.get(i), typeInfos.get(i));
                     }
                 }
             }
@@ -662,7 +686,7 @@ public class PvaGetPVData implements PvaAction<ConfigService> {
 
             if (postProcessors.get(i) == null) {
                 if (useReduced) {
-                    String defaultPPClassName = configService
+                    String defaultPPClassName = storageConfig
                             .getInstallationProperties()
                             .getProperty(
                                     "org.epics.archiverappliance.retrieval.DefaultUseReducedPostProcessor",
@@ -688,12 +712,12 @@ public class PvaGetPVData implements PvaAction<ConfigService> {
         // Get the appliances for each of the PVs
         List<ApplianceInfo> applianceForPVs = new ArrayList<ApplianceInfo>(pvNames.size());
         for (int i = 0; i < pvNames.size(); i++) {
-            applianceForPVs.add(configService.getApplianceForPV(pvNames.get(i)));
+            applianceForPVs.add(pvDirectory.getApplianceForPV(pvNames.get(i)));
             if (applianceForPVs.get(i) == null) {
                 // TypeInfo cannot be null here...
                 assert (typeInfos.get(i) != null);
                 applianceForPVs.set(
-                        i, configService.getAppliance(typeInfos.get(i).getApplianceIdentity()));
+                        i, clusterTopology.getAppliance(typeInfos.get(i).getApplianceIdentity()));
             }
         }
 
@@ -708,7 +732,7 @@ public class PvaGetPVData implements PvaAction<ConfigService> {
         Map<String, ArrayList<PVInfoForClusterRetrieval>> applianceToPVs =
                 new HashMap<String, ArrayList<PVInfoForClusterRetrieval>>();
         for (int i = 0; i < pvNames.size(); i++) {
-            if (!applianceForPVs.get(i).equals(configService.getMyApplianceInfo())) {
+            if (!applianceForPVs.get(i).equals(clusterTopology.getMyApplianceInfo())) {
 
                 ArrayList<PVInfoForClusterRetrieval> appliancePVs =
                         applianceToPVs.get(applianceForPVs.get(i).getMgmtURL());
@@ -1097,11 +1121,10 @@ public class PvaGetPVData implements PvaAction<ConfigService> {
      * @return
      * @throws IOException
      */
-    private boolean setActualDBRTypeFromData(String pvName, PVTypeInfo typeInfo, ConfigService configService)
-            throws IOException {
+    private boolean setActualDBRTypeFromData(String pvName, PVTypeInfo typeInfo) throws IOException {
         String[] dataStores = typeInfo.getDataStores();
         for (String dataStore : dataStores) {
-            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(dataStore, configService);
+            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(dataStore, storageConfig);
             if (plugin instanceof ETLDest) {
                 ETLDest etlDest = (ETLDest) plugin;
                 try (BasicContext context = new BasicContext()) {
@@ -1314,7 +1337,8 @@ public class PvaGetPVData implements PvaAction<ConfigService> {
          * Gets the object responsible for resolving data sources (e.g., where data is
          * stored for this appliance.
          */
-        DataSourceResolution datasourceresolver = new DataSourceResolution(configService, configService, configService, configService);
+        DataSourceResolution datasourceresolver =
+                new DataSourceResolution(applianceLifecycle, clusterTopology, failoverConfig, storageConfig);
 
         for (TimeSpan timespan : executorResult.requestTimespans) {
             // Resolve data sources for the given PV and the given time frames

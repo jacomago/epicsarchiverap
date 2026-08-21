@@ -58,7 +58,14 @@ import java.util.Map.Entry;
  * @author mshankar, shroffk
  *
  */
-public class PvaGetArchivedPVs implements PvaAction<PVTypeInfoLookupView> {
+public class PvaGetArchivedPVs implements PvaAction {
+
+    private final PVTypeInfoLookupView pvTypeInfoLookup;
+
+    public PvaGetArchivedPVs(PVTypeInfoLookupView pvTypeInfoLookup) {
+        this.pvTypeInfoLookup = pvTypeInfoLookup;
+    }
+
     private static final Logger logger = LogManager.getLogger(PvaGetArchivedPVs.class);
 
     public static final String NAME = "archivedPVStatus";
@@ -69,28 +76,28 @@ public class PvaGetArchivedPVs implements PvaAction<PVTypeInfoLookupView> {
     }
 
     @Override
-    public PVAStructure request(PVAStructure args, PVTypeInfoLookupView configService) throws PvaActionException {
+    public PVAStructure request(PVAStructure args) throws PvaActionException {
         logger.info("Determining PVs that are archived ");
         LinkedHashMap<String, String> map = new LinkedHashMap<>();
         for (String pvName :
                 NTUtil.extractStringArray(PVATable.fromStructure(args).getColumn("pv"))) {
             PVTypeInfo typeInfo = null;
             logger.debug("Check for the name as it came in from the user " + pvName);
-            typeInfo = configService.getTypeInfoForPV(pvName);
+            typeInfo = pvTypeInfoLookup.getTypeInfoForPV(pvName);
             if (typeInfo != null) {
                 map.put(pvName, "Archived");
                 continue;
             }
             logger.debug("Check for the normalized name");
-            typeInfo = configService.getTypeInfoForPV(PVNames.normalizeChannelName(pvName));
+            typeInfo = pvTypeInfoLookup.getTypeInfoForPV(PVNames.normalizeChannelName(pvName));
             if (typeInfo != null) {
                 map.put(pvName, "Archived");
                 continue;
             }
             logger.debug("Check for aliases");
-            String aliasRealName = configService.getRealNameForAlias(PVNames.normalizeChannelName(pvName));
+            String aliasRealName = pvTypeInfoLookup.getRealNameForAlias(PVNames.normalizeChannelName(pvName));
             if (aliasRealName != null) {
-                typeInfo = configService.getTypeInfoForPV(aliasRealName);
+                typeInfo = pvTypeInfoLookup.getTypeInfoForPV(aliasRealName);
                 if (typeInfo != null) {
                     map.put(pvName, "Archived");
                     continue;
@@ -99,7 +106,7 @@ public class PvaGetArchivedPVs implements PvaAction<PVTypeInfoLookupView> {
             logger.debug("Check for fields");
             String fieldName = PVNames.getFieldName(pvName);
             if (fieldName != null) {
-                typeInfo = configService.getTypeInfoForPV(PVNames.channelNamePVName(pvName));
+                typeInfo = pvTypeInfoLookup.getTypeInfoForPV(PVNames.channelNamePVName(pvName));
                 if (typeInfo != null) {
                     if (Arrays.asList(typeInfo.getArchiveFields()).contains(fieldName)) {
                         map.put(pvName, "Archived");

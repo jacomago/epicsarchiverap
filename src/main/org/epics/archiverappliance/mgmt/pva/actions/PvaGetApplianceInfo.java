@@ -21,7 +21,13 @@ import java.util.Map;
  * @author Kunal Shroff, mshankar
  *
  */
-public class PvaGetApplianceInfo implements PvaAction<ClusterTopology> {
+public class PvaGetApplianceInfo implements PvaAction {
+
+    private final ClusterTopology clusterTopology;
+
+    public PvaGetApplianceInfo(ClusterTopology clusterTopology) {
+        this.clusterTopology = clusterTopology;
+    }
 
     private static Logger logger = LogManager.getLogger(PvaGetApplianceInfo.class.getName());
 
@@ -33,7 +39,7 @@ public class PvaGetApplianceInfo implements PvaAction<ClusterTopology> {
     }
 
     @Override
-    public PVAStructure request(PVAStructure args, ClusterTopology configService) throws PvaActionException {
+    public PVAStructure request(PVAStructure args) throws PvaActionException {
         String id = null;
         LinkedHashMap<String, String> applianceInfoMap;
         PVAURI uri = PVAURI.fromStructure(args);
@@ -49,11 +55,11 @@ public class PvaGetApplianceInfo implements PvaAction<ClusterTopology> {
 
         ApplianceInfo applianceInfo;
         if (id == null || id.equals("")) {
-            applianceInfo = configService.getMyApplianceInfo();
+            applianceInfo = clusterTopology.getMyApplianceInfo();
             logger.debug("No id specified, returning the id of this appliance " + applianceInfo.getIdentity());
         } else {
             logger.debug("Getting Appliance info for appliance with identity " + id);
-            applianceInfo = configService.getAppliance(id);
+            applianceInfo = clusterTopology.getAppliance(id);
         }
 
         if (applianceInfo == null) {

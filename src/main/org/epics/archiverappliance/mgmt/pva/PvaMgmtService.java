@@ -26,14 +26,12 @@ import java.util.Map;
 public class PvaMgmtService implements RPCService {
 
     private static Logger logger = LogManager.getLogger(PvaMgmtService.class.getName());
-    private final ConfigService configService;
-
     public static final String PVA_MGMT_SERVICE = "pvaMgmtService";
 
     /**
      * List of supported operations
      */
-    Map<String, PvaAction<? super ConfigService>> actions = new HashMap<>();
+    Map<String, PvaAction> actions = new HashMap<>();
 
     /**
      * Construct the mgmt service.
@@ -41,13 +39,16 @@ public class PvaMgmtService implements RPCService {
      * @param configService
      */
     public PvaMgmtService(ConfigService configService) {
-        this.configService = configService;
         logger.info("Creating an instance of PvaMgmtService");
-        actions.put(PvaGetAllPVs.NAME, new PvaGetAllPVs());
-        actions.put(PvaGetApplianceInfo.NAME, new PvaGetApplianceInfo());
-        actions.put(PvaArchivePVAction.NAME, new PvaArchivePVAction());
-        actions.put(PvaGetArchivedPVs.NAME, new PvaGetArchivedPVs());
-        actions.put(PvaGetPVStatus.NAME, new PvaGetPVStatus());
+        actions.put(PvaGetAllPVs.NAME, new PvaGetAllPVs(configService, configService));
+        actions.put(PvaGetApplianceInfo.NAME, new PvaGetApplianceInfo(configService));
+        actions.put(
+                PvaArchivePVAction.NAME,
+                new PvaArchivePVAction(
+                        configService, configService, configService, configService, configService, configService));
+        actions.put(PvaGetArchivedPVs.NAME, new PvaGetArchivedPVs(configService));
+        actions.put(
+                PvaGetPVStatus.NAME, new PvaGetPVStatus(configService, configService, configService, configService));
     }
 
     @Override
@@ -56,13 +57,13 @@ public class PvaMgmtService implements RPCService {
         PVATable table = PVATable.fromStructure(args);
         if (uri != null) {
             if (actions.get(uri.getPath()) != null) {
-                return actions.get(uri.getPath()).request(args, configService);
+                return actions.get(uri.getPath()).request(args);
             } else {
                 throw new UnsupportedOperationException("The requested operation is not supported " + uri.getPath());
             }
         } else if (table != null) {
             if (actions.get(table.getDescriptor().get()) != null) {
-                return actions.get(table.getDescriptor().get()).request(args, configService);
+                return actions.get(table.getDescriptor().get()).request(args);
             } else {
                 throw new UnsupportedOperationException("The requested operation is not supported "
                         + table.getDescriptor().get());
