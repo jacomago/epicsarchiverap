@@ -77,6 +77,8 @@ public class ChannelTest {
                     SamplingMethod.SCAN,
                     writer,
                     testConfigService,
+                    testConfigService,
+                    testConfigService,
                     ArchDBRTypes.DBR_SCALAR_DOUBLE,
                     null,
                     false,
@@ -112,6 +114,8 @@ public class ChannelTest {
                     0.1F,
                     SamplingMethod.MONITOR,
                     writer,
+                    testConfigService,
+                    testConfigService,
                     testConfigService,
                     ArchDBRTypes.DBR_SCALAR_DOUBLE,
                     null,
@@ -155,6 +159,8 @@ public class ChannelTest {
                     SamplingMethod.SCAN,
                     writer,
                     testConfigService,
+                    testConfigService,
+                    testConfigService,
                     ArchDBRTypes.DBR_SCALAR_DOUBLE,
                     null,
                     false,
@@ -166,7 +172,7 @@ public class ChannelTest {
             Assertions.assertNotNull(archiveChannel, "the channel for " + pvName + " should be created but it is not");
             boolean hasData = !writer.getCollectedSamples().isEmpty();
             Assertions.assertTrue(hasData, "the channel for " + pvName + " should have data but it don't");
-            ArchiveEngine.pauseArchivingPV(pvName, testConfigService);
+            ArchiveEngine.pauseArchivingPV(pvName, testConfigService, testConfigService, testConfigService);
             Awaitility.await().atMost(10, TimeUnit.SECONDS).until(() -> {
                 PVMetrics m = ArchiveEngine.getMetricsforPV(pvName, testConfigService);
                 return m == null || !m.isConnected();
@@ -181,7 +187,7 @@ public class ChannelTest {
                     !archiveChannel.getSampleBuffer().getCurrentSamples().isEmpty();
             Assertions.assertFalse(hasData2, "the channel for " + pvName + " should not have data but it has");
 
-            ArchiveEngine.resumeArchivingPV(pvName, testConfigService, writer);
+            ArchiveEngine.resumeArchivingPV(pvName, testConfigService, testConfigService, testConfigService, writer);
             Awaitility.await().atMost(30, TimeUnit.SECONDS).until(() -> {
                 PVMetrics m = ArchiveEngine.getMetricsforPV(pvName, testConfigService);
                 return m != null
@@ -223,6 +229,8 @@ public class ChannelTest {
                         0.1F,
                         SamplingMethod.SCAN,
                         writer,
+                        testConfigService,
+                        testConfigService,
                         testConfigService,
                         ArchDBRTypes.DBR_SCALAR_DOUBLE,
                         null,
@@ -276,6 +284,8 @@ public class ChannelTest {
                         SamplingMethod.MONITOR,
                         writer,
                         testConfigService,
+                        testConfigService,
+                        testConfigService,
                         ArchDBRTypes.DBR_SCALAR_DOUBLE,
                         null,
                         false,
@@ -322,6 +332,8 @@ public class ChannelTest {
                     2,
                     SamplingMethod.SCAN,
                     writer,
+                    testConfigService,
+                    testConfigService,
                     testConfigService,
                     ArchDBRTypes.DBR_SCALAR_DOUBLE,
                     null,

@@ -61,16 +61,23 @@ public class MetaTest {
         try {
 
             String[] metaFied = {"MDEL", "ADEL", "RTYP"};
-            ArchiveEngine.getArchiveInfo(pvPrefix + "test_0", testConfigService, metaFied, false, metaInfo -> {
-                System.out.println(metaInfo.toString());
-                String MDELStr = metaInfo.getOtherMetaInfo().get("MDEL");
-                String ADELStr = metaInfo.getOtherMetaInfo().get("ADEL");
-                String RTYPStr = metaInfo.getOtherMetaInfo().get("RTYP");
-                Assertions.assertTrue(MDELStr != null, "MDEL of meta data should not be null");
-                Assertions.assertTrue(ADELStr != null, "ADEL of meta data should not be null");
-                Assertions.assertTrue(RTYPStr != null, "RTYP of meta data should not be null");
-                latch.countDown();
-            });
+            ArchiveEngine.getArchiveInfo(
+                    pvPrefix + "test_0",
+                    testConfigService,
+                    testConfigService,
+                    testConfigService,
+                    metaFied,
+                    false,
+                    metaInfo -> {
+                        System.out.println(metaInfo.toString());
+                        String MDELStr = metaInfo.getOtherMetaInfo().get("MDEL");
+                        String ADELStr = metaInfo.getOtherMetaInfo().get("ADEL");
+                        String RTYPStr = metaInfo.getOtherMetaInfo().get("RTYP");
+                        Assertions.assertTrue(MDELStr != null, "MDEL of meta data should not be null");
+                        Assertions.assertTrue(ADELStr != null, "ADEL of meta data should not be null");
+                        Assertions.assertTrue(RTYPStr != null, "RTYP of meta data should not be null");
+                        latch.countDown();
+                    });
 
             Assertions.assertTrue(latch.await(70, TimeUnit.SECONDS));
 
@@ -143,14 +150,21 @@ public class MetaTest {
             boolean usePVAccess) {
         String[] metaFied = {"MDEL", "ADEL", "RTYP"};
         try {
-            ArchiveEngine.getArchiveInfo(pvName, testConfigService, metaFied, usePVAccess, metaInfo -> {
-                logger.info("Metadata completed for " + pvName + "aliasName " + metaInfo.getAliasName() + "Name: "
-                        + metaInfo.getOtherMetaInfo().get("NAME"));
-                aliasNames.get(pvName).metaGetAliasName = metaInfo.getAliasName();
-                aliasNames.get(pvName).metaGetOtherInfoName =
-                        metaInfo.getOtherMetaInfo().get("NAME");
-                latch.countDown();
-            });
+            ArchiveEngine.getArchiveInfo(
+                    pvName,
+                    testConfigService,
+                    testConfigService,
+                    testConfigService,
+                    metaFied,
+                    usePVAccess,
+                    metaInfo -> {
+                        logger.info("Metadata completed for " + pvName + "aliasName " + metaInfo.getAliasName()
+                                + "Name: " + metaInfo.getOtherMetaInfo().get("NAME"));
+                        aliasNames.get(pvName).metaGetAliasName = metaInfo.getAliasName();
+                        aliasNames.get(pvName).metaGetOtherInfoName =
+                                metaInfo.getOtherMetaInfo().get("NAME");
+                        latch.countDown();
+                    });
         } catch (Exception ex) {
             logger.error(ex);
             Assertions.fail("Exception thrown " + ex.getMessage());

@@ -29,10 +29,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.POJOEvent;
 import org.epics.archiverappliance.common.TimeUtils;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.JCA2ArchDBRType;
 import org.epics.archiverappliance.config.MetaInfo;
+import org.epics.archiverappliance.config.PolicyService;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.data.ScalarStringSampleValue;
 import org.epics.archiverappliance.engine.ArchiveEngine;
@@ -133,8 +135,11 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
         }
     }
 
-    /**configservice used by this pv*/
-    private final ConfigService configservice;
+    /**storageConfig, applianceLifecycle, policyService used by this pv*/
+    private final StoragePluginConfigView storageConfig;
+
+    private final ApplianceLifecycle applianceLifecycle;
+    private final PolicyService policyService;
 
     /** PVListeners of this PV */
     private final CopyOnWriteArrayList<PVListener> listeners = new CopyOnWriteArrayList<PVListener>();
@@ -248,12 +253,12 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
             if (event.getStatus().isSuccessful()) {
                 state = PVConnectionState.GotMetaData;
                 final DBR dbr = event.getDBR();
-                totalMetaInfo.applyBasicInfo(EPICS_V3_PV.this.name, dbr, EPICS_V3_PV.this.configservice);
+                totalMetaInfo.applyBasicInfo(EPICS_V3_PV.this.name, dbr, EPICS_V3_PV.this.storageConfig);
             } else {
                 logger.error("The meta get listener was not successful for EPICS_V3_PV " + name);
             }
             PVContext.scheduleCommand(
-                    EPICS_V3_PV.this.configservice,
+                    EPICS_V3_PV.this.applianceLifecycle,
                     EPICS_V3_PV.this.name,
                     EPICS_V3_PV.this.jcaCommandThreadId,
                     EPICS_V3_PV.this.theChannel,
@@ -281,7 +286,9 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
      *
      * @param name
      *            The PV name.
-     * @param configservice  The config service used by this pv
+     * @param storageConfig The configuration the storage plugins and type system come from
+     * @param applianceLifecycle Keys this appliance's engine context
+     * @param policyService The policy fields archived with the stream
      * @param isControlPV true if this is a pv controlling other pvs
      * @param archDBRTypes ArchDBRTypes
      * @param jcaCommandThreadId The JCA Command thread.
@@ -289,16 +296,18 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
      */
     EPICS_V3_PV(
             final String name,
-            ConfigService configservice,
+            StoragePluginConfigView storageConfig,
+            ApplianceLifecycle applianceLifecycle,
+            PolicyService policyService,
             boolean isControlPV,
             ArchDBRTypes archDBRTypes,
             int jcaCommandThreadId,
             boolean isDBEProperties) {
-        this(name, false, configservice, jcaCommandThreadId);
+        this(name, false, storageConfig, applianceLifecycle, policyService, jcaCommandThreadId);
         this.archDBRType = archDBRTypes;
         this.isDBEProperties = isDBEProperties;
         if (archDBRTypes != null) {
-            this.con = configservice.getArchiverTypeSystem().getJCADBRConstructor(archDBRType);
+            this.con = storageConfig.getArchiverTypeSystem().getJCADBRConstructor(archDBRType);
         }
         if (isControlPV) {
             this.controlledPVList = new ArrayList<String>();
@@ -310,12 +319,17 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
      *
      * @param name
      *            The PV name.
-     * @param  configservice The config service used by this pv
+     * @param  storageConfig, applianceLifecycle, policyService The config service used by this pv
      * @param jcaCommandThreadId The JCA Command thread
      */
     // isControlPV
-    EPICS_V3_PV(final String name, ConfigService configservice, int jcaCommandThreadId) {
-        this(name, false, configservice, jcaCommandThreadId);
+    EPICS_V3_PV(
+            final String name,
+            StoragePluginConfigView storageConfig,
+            ApplianceLifecycle applianceLifecycle,
+            PolicyService policyService,
+            int jcaCommandThreadId) {
+        this(name, false, storageConfig, applianceLifecycle, policyService, jcaCommandThreadId);
     }
 
     /**
@@ -327,13 +341,23 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
      *            When <code>true</code>, only the plain value is requested. No
      *            time etc. Some PVs only work in plain mode, example:
      *            "record.RTYP".
-     * @param configservice  The config service used by this pv
+     * @param storageConfig The configuration the storage plugins and type system come from
+     * @param applianceLifecycle Keys this appliance's engine context
+     * @param policyService The policy fields archived with the stream
      * @param jcaCommandThreadId  The JCA Command thread
      */
-    private EPICS_V3_PV(final String name, final boolean plain, ConfigService configservice, int jcaCommandThreadId) {
+    private EPICS_V3_PV(
+            final String name,
+            final boolean plain,
+            StoragePluginConfigView storageConfig,
+            ApplianceLifecycle applianceLifecycle,
+            PolicyService policyService,
+            int jcaCommandThreadId) {
         this.name = name;
         this.plain = plain;
-        this.configservice = configservice;
+        this.storageConfig = storageConfig;
+        this.applianceLifecycle = applianceLifecycle;
+        this.policyService = policyService;
         this.jcaCommandThreadId = jcaCommandThreadId;
     }
 
@@ -361,7 +385,12 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
     private void connect() throws Exception {
         logger.debug("pv of" + this.name + " connectting");
         PVContext.scheduleCommand(
-                this.configservice, this.name, this.jcaCommandThreadId, this.theChannel, "connect", new Runnable() {
+                this.applianceLifecycle,
+                this.name,
+                this.jcaCommandThreadId,
+                this.theChannel,
+                "connect",
+                new Runnable() {
                     @Override
                     public void run() {
                         //
@@ -371,7 +400,7 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
                             synchronized (this) {
                                 if (theChannel == null) {
                                     theChannel = PVContext.getChannel(
-                                            EPICS_V3_PV.this.configservice,
+                                            EPICS_V3_PV.this.applianceLifecycle,
                                             name,
                                             EPICS_V3_PV.this.jcaCommandThreadId,
                                             EPICS_V3_PV.this);
@@ -535,7 +564,7 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
     public void stop() {
         running = false;
         PVContext.scheduleCommand(
-                this.configservice, this.name, this.jcaCommandThreadId, this.theChannel, "stop", () -> {
+                this.applianceLifecycle, this.name, this.jcaCommandThreadId, this.theChannel, "stop", () -> {
                     logger.debug("Stopping channel " + EPICS_V3_PV.this.name);
                     unsubscribe();
                     disconnect();
@@ -559,7 +588,7 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
             //
             // EngineContext.getInstance().getScheduler().execute(new Runnable()
             PVContext.scheduleCommand(
-                    this.configservice,
+                    this.applianceLifecycle,
                     this.name,
                     this.jcaCommandThreadId,
                     this.theChannel,
@@ -572,7 +601,7 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
                     });
         } else {
             PVContext.scheduleCommand(
-                    this.configservice,
+                    this.applianceLifecycle,
                     this.name,
                     this.jcaCommandThreadId,
                     this.theChannel,
@@ -728,7 +757,7 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
                 ArchDBRTypes generatedDBRType = JCA2ArchDBRType.valueOf(dbr);
                 if (archDBRType == null) {
                     archDBRType = generatedDBRType;
-                    con = configservice.getArchiverTypeSystem().getJCADBRConstructor(archDBRType);
+                    con = storageConfig.getArchiverTypeSystem().getJCADBRConstructor(archDBRType);
                 } else {
                     assert (con != null);
                     if (generatedDBRType != archDBRType) {
@@ -801,13 +830,13 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
             enableAllPV = true;
             for (String pvName : copyOfControlledPVList) {
                 logger.debug(pvName + " will be resumed");
-                ArchiveEngine.resumeArchivingPV(pvName, configservice);
+                ArchiveEngine.resumeArchivingPV(pvName, storageConfig, applianceLifecycle, policyService);
             }
         } else {
             enableAllPV = false;
             for (String pvName : copyOfControlledPVList) {
                 logger.debug(pvName + " will be paused");
-                ArchiveEngine.pauseArchivingPV(pvName, configservice);
+                ArchiveEngine.pauseArchivingPV(pvName, storageConfig, applianceLifecycle, policyService);
             }
         }
     }
@@ -939,7 +968,7 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
             if (event.getStatus().isSuccessful()) {
                 final DBR dbr = event.getDBR();
                 logger.debug("Updating metadata (EGU/PREC etc) for pv " + EPICS_V3_PV.this.name);
-                totalMetaInfo.applyBasicInfo(EPICS_V3_PV.this.name, dbr, EPICS_V3_PV.this.configservice);
+                totalMetaInfo.applyBasicInfo(EPICS_V3_PV.this.name, dbr, EPICS_V3_PV.this.storageConfig);
             } else {
                 logger.error("The meta get listener was not successful for EPICS_V3_PV " + name);
             }

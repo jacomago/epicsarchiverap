@@ -22,7 +22,7 @@ public class EngineServletContextListener extends ArchServletContextListener {
 
     @Override
     protected void createRuntimeState(ConfigService configService) throws ConfigException {
-        EngineContext.create(configService);
+        EngineContext.create(configService, configService, configService, configService, configService, configService);
         if (EngineContext.of(configService) == null) {
             throw new ConfigException("Unable to publish the engine context");
         }

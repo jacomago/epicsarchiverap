@@ -969,6 +969,8 @@ public class DefaultConfigService implements ConfigService {
                         samplingMethod,
                         firstDest,
                         this,
+                        this,
+                        this,
                         dbrType,
                         lastKnownTimestamp,
                         typeInfo.getControllingPV(),

@@ -99,6 +99,8 @@ public class PVAccessUtil {
                     PolicyConfig.SamplingMethod.MONITOR,
                     writer,
                     configService,
+                    configService,
+                    configService,
                     type,
                     null,
                     metaFields,

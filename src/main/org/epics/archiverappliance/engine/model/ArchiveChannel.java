@@ -18,9 +18,11 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Writer;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.remotable.ArrayListEventStream;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNames;
+import org.epics.archiverappliance.config.PolicyService;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.engine.pv.EPICS_V3_PV;
 import org.epics.archiverappliance.engine.pv.EPICS_V4_PV;
@@ -71,7 +73,9 @@ public abstract class ArchiveChannel {
      * for the runtime fields.
      *
      * @param metaFields
-     * @param configservice
+     * @param storageConfig The configuration the storage plugins and type system come from
+     * @param applianceLifecycle Keys this appliance's engine context
+     * @param policyService The policy fields archived with the stream
      * @param usePVAccess
      * @param useDBEProperties
      * @throws IOException
@@ -171,7 +175,9 @@ public abstract class ArchiveChannel {
      * @param writer                  the writer for this pv
      * @param buffer_capacity         the sample buffer's capacity for this pv
      * @param last_archived_timestamp the last time stamp when this pv was archived
-     * @param configservice           the configservice of new archiver
+     * @param storageConfig The configuration the storage plugins and type system come from
+     * @param applianceLifecycle Keys this appliance's engine context
+     * @param policyService The policy fields archived with the stream
      * @param archdbrtype             the archiving dbr type
      * @param controlPVname           the pv's name who control this pv to start archiving or stop archiving
      * @param commandThreadID         - this is the index into the array of JCA command threads that processes this
@@ -184,14 +190,16 @@ public abstract class ArchiveChannel {
             final Writer writer,
             final int buffer_capacity,
             final Instant last_archived_timestamp,
-            final ConfigService configservice,
+            final StoragePluginConfigView storageConfig,
+            final ApplianceLifecycle applianceLifecycle,
+            final PolicyService policyService,
             final ArchDBRTypes archdbrtype,
             final String controlPVname,
             final int commandThreadID,
             final boolean usePVAccess)
             throws Exception {
         this.name = name;
-        this.SERVER_IOC_DRIFT_SECONDS = Integer.parseInt(configservice
+        this.SERVER_IOC_DRIFT_SECONDS = Integer.parseInt(storageConfig
                 .getInstallationProperties()
                 .getProperty("org.epics.archiverappliance.engine.epics.server_ioc_drift_seconds", "1800"));
         this.controlPVname = controlPVname;
@@ -201,7 +209,16 @@ public abstract class ArchiveChannel {
         this.buffer = new SampleBuffer(name, buffer_capacity, archdbrtype, this.pvMetrics);
         this.JCACommandThreadID = commandThreadID;
 
-        this.pv = PVFactory.createPV(name, configservice, false, archdbrtype, commandThreadID, usePVAccess, false);
+        this.pv = PVFactory.createPV(
+                name,
+                storageConfig,
+                applianceLifecycle,
+                policyService,
+                false,
+                archdbrtype,
+                commandThreadID,
+                usePVAccess,
+                false);
 
         pv.addListener(new PVListener() {
             @Override
@@ -288,7 +305,9 @@ public abstract class ArchiveChannel {
 
     public void initializeMetaFieldPVS(
             final String[] metaFields,
-            final ConfigService configservice,
+            final StoragePluginConfigView storageConfig,
+            final ApplianceLifecycle applianceLifecycle,
+            final PolicyService policyService,
             final boolean usePVAccess,
             final boolean useDBEProperties)
             throws IOException {
@@ -305,8 +324,8 @@ public abstract class ArchiveChannel {
             }
         }
 
-        if (!configservice.getRuntimeFields().isEmpty()) {
-            for (String metaField : configservice.getRuntimeFields()) {
+        if (!policyService.getRuntimeFields().isEmpty()) {
+            for (String metaField : policyService.getRuntimeFields()) {
                 if (useDBEProperties && fieldsAvailableFromDBRControl.contains(metaField)) {
                     DBEPropertiesFields.add(metaField);
                 } else if (nonDBEPropertiesFields.contains(metaField)) {
@@ -319,18 +338,18 @@ public abstract class ArchiveChannel {
 
         if (!DBEPropertiesFields.isEmpty()) {
             logger.debug("Adding a DBE_PROPERTY monitor for pv " + name);
-            this.addMetaField(name, configservice, false, usePVAccess, true);
+            this.addMetaField(name, storageConfig, applianceLifecycle, policyService, false, usePVAccess, true);
         }
 
         for (String fieldName : nonDBEPropertiesFields) {
             logger.debug("Adding non DBE_PROPERTY monitor for meta field " + fieldName);
-            this.addMetaField(fieldName, configservice, false, usePVAccess, false);
+            this.addMetaField(fieldName, storageConfig, applianceLifecycle, policyService, false, usePVAccess, false);
             runtTimeFieldsCopy.remove(fieldName);
         }
 
         for (String runtimeField : runtTimeFieldsCopy) {
             logger.debug("Adding non DBE_PROPERTY monitor for runtime field " + runtimeField);
-            this.addMetaField(runtimeField, configservice, true, usePVAccess, false);
+            this.addMetaField(runtimeField, storageConfig, applianceLifecycle, policyService, true, usePVAccess, false);
         }
     }
 
@@ -339,7 +358,9 @@ public abstract class ArchiveChannel {
      */
     private void addMetaField(
             String fieldName,
-            ConfigService configservice,
+            StoragePluginConfigView storageConfig,
+            ApplianceLifecycle applianceLifecycle,
+            PolicyService policyService,
             boolean isRuntimeOnly,
             boolean usePVAccess,
             boolean useDBEProperties)
@@ -349,7 +370,8 @@ public abstract class ArchiveChannel {
 
         if (!usePVAccess) {
             EPICS_V3_PV v3Pv = (EPICS_V3_PV) this.pv;
-            v3AddMetaField(v3Pv, fieldName, configservice, isRuntimeOnly, useDBEProperties);
+            v3AddMetaField(
+                    v3Pv, fieldName, storageConfig, applianceLifecycle, policyService, isRuntimeOnly, useDBEProperties);
         } else {
             EPICS_V4_PV v4Pv = (EPICS_V4_PV) this.pv;
             v4Pv.addMetaField(fieldName);
@@ -359,7 +381,9 @@ public abstract class ArchiveChannel {
     private void v3AddMetaField(
             EPICS_V3_PV v3Pv,
             String fieldName,
-            ConfigService configservice,
+            StoragePluginConfigView storageConfig,
+            ApplianceLifecycle applianceLifecycle,
+            PolicyService policyService,
             boolean isRuntimeOnly,
             boolean useDBEProperties) {
         if (useDBEProperties) {
@@ -377,7 +401,15 @@ public abstract class ArchiveChannel {
         logger.debug("Initializing the metafield for field " + pvNameForField + " as ArchDBRType "
                 + metaFieldDBRType.toString() + " DBE_PROPERTIES is " + false);
         EPICS_V3_PV metaPV = (EPICS_V3_PV) PVFactory.createPV(
-                pvNameForField, configservice, false, metaFieldDBRType, this.JCACommandThreadID, false, false);
+                pvNameForField,
+                storageConfig,
+                applianceLifecycle,
+                policyService,
+                false,
+                metaFieldDBRType,
+                this.JCACommandThreadID,
+                false,
+                false);
         metaPV.setMetaFieldParentPV(v3Pv, isRuntimeOnly);
         this.metaPVs.put(fieldName, metaPV);
     }

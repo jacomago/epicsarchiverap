@@ -3,9 +3,10 @@ package org.epics.archiverappliance.engine.pv;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.TimeUtils;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.MetaInfo;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.pva.client.ClientChannelListener;
 import org.epics.pva.client.ClientChannelState;
@@ -36,8 +37,10 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
 
     private PVAChannel pvaChannel;
 
-    /**configservice used by this pv*/
-    private final ConfigService configservice;
+    /**The type system this pv decodes with*/
+    private final StoragePluginConfigView storageConfig;
+    /**Keys this pv's engine context*/
+    private final ApplianceLifecycle applianceLifecycle;
 
     /** PVListeners of this PV */
     private final CopyOnWriteArrayList<PVListener> listeners = new CopyOnWriteArrayList<>();
@@ -97,20 +100,26 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
 
     EPICS_V4_PV(
             final String name,
-            ConfigService configservice,
+            StoragePluginConfigView storageConfig,
+            ApplianceLifecycle applianceLifecycle,
             boolean isControlPV,
             ArchDBRTypes archDBRTypes,
             int jcaCommandThreadId) {
-        this(name, configservice, jcaCommandThreadId);
+        this(name, storageConfig, applianceLifecycle, jcaCommandThreadId);
         this.archDBRType = archDBRTypes;
         if (archDBRTypes != null) {
-            this.con = configservice.getArchiverTypeSystem().getV4Constructor(this.archDBRType);
+            this.con = storageConfig.getArchiverTypeSystem().getV4Constructor(this.archDBRType);
         }
     }
 
-    EPICS_V4_PV(final String name, ConfigService configservice, int jcaCommandThreadId) {
+    EPICS_V4_PV(
+            final String name,
+            StoragePluginConfigView storageConfig,
+            ApplianceLifecycle applianceLifecycle,
+            int jcaCommandThreadId) {
         this.name = name;
-        this.configservice = configservice;
+        this.storageConfig = storageConfig;
+        this.applianceLifecycle = applianceLifecycle;
         this.jcaCommandThreadId = jcaCommandThreadId;
     }
 
@@ -257,7 +266,7 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
                 archDBRType = determineDBRType(structureID, valueField.getType(), valueField.formatType());
             }
 
-            con = configservice.getArchiverTypeSystem().getV4Constructor(archDBRType);
+            con = storageConfig.getArchiverTypeSystem().getV4Constructor(archDBRType);
             logger.debug("Determined ArchDBRTypes for " + this.name + " as " + archDBRType);
         }
     }
@@ -339,7 +348,9 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
     }
 
     private void scheduleCommand(final Runnable command) {
-        EngineContext.of(configservice).getJCACommandThread(jcaCommandThreadId).addCommand(command);
+        EngineContext.of(applianceLifecycle)
+                .getJCACommandThread(jcaCommandThreadId)
+                .addCommand(command);
     }
 
     private void connect() {
@@ -351,7 +362,7 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
                     state = PVConnectionState.Connecting;
                     synchronized (this) {
                         if (pvaChannel == null) {
-                            pvaChannel = EngineContext.of(configservice)
+                            pvaChannel = EngineContext.of(applianceLifecycle)
                                     .getPVAClient()
                                     .getChannel(name, EPICS_V4_PV.this);
                         }

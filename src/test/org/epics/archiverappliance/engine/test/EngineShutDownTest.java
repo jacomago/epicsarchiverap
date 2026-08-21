@@ -65,6 +65,8 @@ public class EngineShutDownTest {
                         SamplingMethod.SCAN,
                         writer,
                         testConfigService,
+                        testConfigService,
+                        testConfigService,
                         ArchDBRTypes.DBR_SCALAR_DOUBLE,
                         null,
                         false,

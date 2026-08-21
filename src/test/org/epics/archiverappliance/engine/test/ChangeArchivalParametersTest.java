@@ -71,6 +71,8 @@ public class ChangeArchivalParametersTest {
                     SamplingMethod.SCAN,
                     writer,
                     testConfigService,
+                    testConfigService,
+                    testConfigService,
                     ArchDBRTypes.DBR_SCALAR_DOUBLE,
                     null,
                     false,
@@ -83,7 +85,15 @@ public class ChangeArchivalParametersTest {
                                     .isConnected());
 
             ArchiveEngine.changeArchivalParameters(
-                    pvName, 8, SamplingMethod.SCAN, testConfigService, writer, false, false);
+                    pvName,
+                    8,
+                    SamplingMethod.SCAN,
+                    testConfigService,
+                    testConfigService,
+                    testConfigService,
+                    writer,
+                    false,
+                    false);
 
             Awaitility.await().atMost(30, TimeUnit.SECONDS).until(() -> {
                 PVMetrics m = ArchiveEngine.getMetricsforPV(pvName, testConfigService);
@@ -133,6 +143,8 @@ public class ChangeArchivalParametersTest {
                     SamplingMethod.SCAN,
                     writer,
                     testConfigService,
+                    testConfigService,
+                    testConfigService,
                     ArchDBRTypes.DBR_SCALAR_DOUBLE,
                     null,
                     false,
@@ -145,7 +157,15 @@ public class ChangeArchivalParametersTest {
                                     .isConnected());
 
             ArchiveEngine.changeArchivalParameters(
-                    pvName, 0.1F, SamplingMethod.MONITOR, testConfigService, writer, false, false);
+                    pvName,
+                    0.1F,
+                    SamplingMethod.MONITOR,
+                    testConfigService,
+                    testConfigService,
+                    testConfigService,
+                    writer,
+                    false,
+                    false);
 
             Awaitility.await().atMost(15, TimeUnit.SECONDS).until(() -> {
                 PVMetrics m = ArchiveEngine.getMetricsforPV(pvName, testConfigService);
@@ -187,6 +207,8 @@ public class ChangeArchivalParametersTest {
                     SamplingMethod.MONITOR,
                     writer,
                     testConfigService,
+                    testConfigService,
+                    testConfigService,
                     ArchDBRTypes.DBR_SCALAR_DOUBLE,
                     null,
                     false,
@@ -199,7 +221,15 @@ public class ChangeArchivalParametersTest {
                                     .isConnected());
 
             ArchiveEngine.changeArchivalParameters(
-                    pvName, 2, SamplingMethod.SCAN, testConfigService, writer, false, false);
+                    pvName,
+                    2,
+                    SamplingMethod.SCAN,
+                    testConfigService,
+                    testConfigService,
+                    testConfigService,
+                    writer,
+                    false,
+                    false);
 
             Awaitility.await().atMost(15, TimeUnit.SECONDS).until(() -> {
                 PVMetrics m = ArchiveEngine.getMetricsforPV(pvName, testConfigService);
@@ -240,6 +270,8 @@ public class ChangeArchivalParametersTest {
                     SamplingMethod.MONITOR,
                     writer,
                     testConfigService,
+                    testConfigService,
+                    testConfigService,
                     ArchDBRTypes.DBR_SCALAR_DOUBLE,
                     null,
                     false,
@@ -250,13 +282,29 @@ public class ChangeArchivalParametersTest {
                             && ArchiveEngine.getMetricsforPV(pvName, testConfigService)
                                     .isConnected());
             ArchiveEngine.changeArchivalParameters(
-                    pvName, 0.1F, SamplingMethod.MONITOR, testConfigService, writer, false, false);
+                    pvName,
+                    0.1F,
+                    SamplingMethod.MONITOR,
+                    testConfigService,
+                    testConfigService,
+                    testConfigService,
+                    writer,
+                    false,
+                    false);
             Awaitility.await().atMost(15, TimeUnit.SECONDS).until(() -> {
                 PVMetrics m = ArchiveEngine.getMetricsforPV(pvName, testConfigService);
                 return m != null && m.isMonitor();
             });
             ArchiveEngine.changeArchivalParameters(
-                    pvName, 2, SamplingMethod.MONITOR, testConfigService, writer, false, false);
+                    pvName,
+                    2,
+                    SamplingMethod.MONITOR,
+                    testConfigService,
+                    testConfigService,
+                    testConfigService,
+                    writer,
+                    false,
+                    false);
             Awaitility.await().atMost(15, TimeUnit.SECONDS).until(() -> {
                 PVMetrics m = ArchiveEngine.getMetricsforPV(pvName, testConfigService);
                 return m != null && m.isMonitor() && Math.abs(m.getSamplingPeriod() - 2.0) < 0.001;

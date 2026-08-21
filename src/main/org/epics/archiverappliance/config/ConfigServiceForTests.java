@@ -232,7 +232,8 @@ public class ConfigServiceForTests extends DefaultConfigService {
             return t;
         });
 
-        EngineContext.create(this).setDisconnectCheckTimeoutInSecondsForTestingPurposesOnly(defaultSecondsDisconnect);
+        EngineContext.create(this, this, this, this, this, this)
+                .setDisconnectCheckTimeoutInSecondsForTestingPurposesOnly(defaultSecondsDisconnect);
         PBThreeTierETLPVLookup.create(this, this, this);
         RetrievalState.create(this, cs -> new SampleRetrievalState(this));
         MgmtRuntimeState.create(this);

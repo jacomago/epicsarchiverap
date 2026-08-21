@@ -10,10 +10,12 @@ package org.epics.archiverappliance.engine.metadata;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.TimeUtils;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.MetaInfo;
 import org.epics.archiverappliance.config.PVNames;
+import org.epics.archiverappliance.config.PolicyService;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.data.SampleValue;
 import org.epics.archiverappliance.data.ScalarStringSampleValue;
@@ -54,7 +56,9 @@ public class MetaGet implements Runnable {
     private final Hashtable<String, PV> pvList = new Hashtable<>();
     private final ConcurrentHashMap<String, DBRTimeEvent> fieldValues = new ConcurrentHashMap<>();
 
-    private final ConfigService configservice;
+    private final StoragePluginConfigView storageConfig;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final PolicyService policyService;
     private static final Logger logger = LogManager.getLogger(MetaGet.class.getName());
     private boolean isScheduled = false;
     private long scheduleStartEpochSecs = -1L;
@@ -62,7 +66,9 @@ public class MetaGet implements Runnable {
 
     public MetaGet(
             String pvName,
-            ConfigService configservice,
+            StoragePluginConfigView storageConfig,
+            ApplianceLifecycle applianceLifecycle,
+            PolicyService policyService,
             String[] metadatafields,
             boolean usePVAccess,
             MetaCompletedListener metaListener) {
@@ -70,7 +76,9 @@ public class MetaGet implements Runnable {
         this.usePVAccess = usePVAccess;
         this.metadatafields = metadatafields;
         this.metaListener = metaListener;
-        this.configservice = configservice;
+        this.storageConfig = storageConfig;
+        this.applianceLifecycle = applianceLifecycle;
+        this.policyService = policyService;
         metaGets.put(pvName, this);
     }
     /**
@@ -80,8 +88,9 @@ public class MetaGet implements Runnable {
     public void initpv() throws Exception {
         try {
 
-            int jcaCommandThreadId = EngineContext.of(configservice).assignJCACommandThread(pvName, null);
-            PV pv = PVFactory.createPV(pvName, configservice, jcaCommandThreadId, usePVAccess);
+            int jcaCommandThreadId = EngineContext.of(applianceLifecycle).assignJCACommandThread(pvName, null);
+            PV pv = PVFactory.createPV(
+                    pvName, storageConfig, applianceLifecycle, policyService, jcaCommandThreadId, usePVAccess);
             pv.addListener(new PVListener() {
                 @Override
                 public void pvValueUpdate(PV pv, DBRTimeEvent ev) {}
@@ -96,7 +105,7 @@ public class MetaGet implements Runnable {
                                 "Starting the timer to measure event and storage rates for about 60 seconds for pv "
                                         + MetaGet.this.pvName);
                         ScheduledThreadPoolExecutor scheduler =
-                                EngineContext.of(configservice).getMiscTasksScheduler();
+                                EngineContext.of(applianceLifecycle).getMiscTasksScheduler();
                         samplingFuture = scheduler.schedule(MetaGet.this, 60, TimeUnit.SECONDS);
                         MetaGet.this.scheduleStartEpochSecs = System.currentTimeMillis() / 1000;
                         isScheduled = true;
@@ -141,7 +150,9 @@ public class MetaGet implements Runnable {
                 public void genFieldPV() throws Exception {
                     PV pv = PVFactory.createPV(
                             PVNames.normalizePVNameWithField(pvName, fieldName),
-                            configservice,
+                            storageConfig,
+                            applianceLifecycle,
+                            policyService,
                             jcaCommandThreadId,
                             usePVAccess);
                     pv.addListener(this);
