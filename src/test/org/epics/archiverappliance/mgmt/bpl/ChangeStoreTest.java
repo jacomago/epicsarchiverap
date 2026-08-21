@@ -26,7 +26,7 @@ class ChangeStoreTest {
         HttpServletResponse response = mock(HttpServletResponse.class);
         ConfigService configService = mock(ConfigService.class);
 
-        ChangeStore changeStore = new ChangeStore(configService);
+        ChangeStore changeStore = new ChangeStore(configService, configService, configService, configService);
 
         // Missing pv
         when(request.getParameter("pv")).thenReturn(null);
@@ -77,7 +77,7 @@ class ChangeStoreTest {
         PrintWriter writer = new PrintWriter(stringWriter);
         when(response.getWriter()).thenReturn(writer);
 
-        ChangeStore changeStore = new ChangeStore(configService);
+        ChangeStore changeStore = new ChangeStore(configService, configService, configService, configService);
         changeStore.execute(request, response);
 
         verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -112,7 +112,7 @@ class ChangeStoreTest {
         PrintWriter writer = new PrintWriter(stringWriter);
         when(response.getWriter()).thenReturn(writer);
 
-        ChangeStore changeStore = new ChangeStore(configService);
+        ChangeStore changeStore = new ChangeStore(configService, configService, configService, configService);
         changeStore.execute(request, response);
 
         verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -155,7 +155,7 @@ class ChangeStoreTest {
                     .when(() -> GetUrlContent.getURLContentAsJSONObject(anyString()))
                     .thenReturn(jsonObject);
 
-            ChangeStore changeStore = new ChangeStore(configService);
+            ChangeStore changeStore = new ChangeStore(configService, configService, configService, configService);
             changeStore.execute(request, response);
 
             verify(response).setContentType(MimeTypeConstants.APPLICATION_JSON);

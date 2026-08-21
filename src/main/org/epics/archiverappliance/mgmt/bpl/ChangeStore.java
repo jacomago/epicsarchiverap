@@ -4,9 +4,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.config.AliasRegistry;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -36,10 +39,20 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class ChangeStore implements BPLAction {
 
-    private final ConfigService configService;
+    private final AliasRegistry aliasRegistry;
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvDirectory;
+    private final StoragePluginConfigView storageConfig;
 
-    public ChangeStore(ConfigService configService) {
-        this.configService = configService;
+    public ChangeStore(
+            AliasRegistry aliasRegistry,
+            ClusterTopology clusterTopology,
+            PVDirectory pvDirectory,
+            StoragePluginConfigView storageConfig) {
+        this.aliasRegistry = aliasRegistry;
+        this.clusterTopology = clusterTopology;
+        this.pvDirectory = pvDirectory;
+        this.storageConfig = storageConfig;
     }
 
     private static final Logger logger = LogManager.getLogger(ChangeStore.class.getName());
@@ -63,17 +76,17 @@ public class ChangeStore implements BPLAction {
             return;
         }
 
-        String realName = configService.getRealNameForAlias(pvName);
+        String realName = aliasRegistry.getRealNameForAlias(pvName);
         if (realName != null) pvName = realName;
 
-        ApplianceInfo info = configService.getApplianceForPV(pvName);
+        ApplianceInfo info = pvDirectory.getApplianceForPV(pvName);
         if (info == null) {
             logger.debug("Unable to find appliance for PV " + pvName);
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-        if (!info.getIdentity().equals(configService.getMyApplianceInfo().getIdentity())) {
+        if (!info.getIdentity().equals(clusterTopology.getMyApplianceInfo().getIdentity())) {
             // We should proxy this call to the actual appliance hosting the PV.
             String redirectURL =
                     info.getMgmtURL() + "/changeStore?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8)
@@ -88,7 +101,7 @@ public class ChangeStore implements BPLAction {
             return;
         }
 
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = storageConfig.getTypeInfoForPV(pvName);
         if (typeInfo == null) {
             logger.debug("Unable to find typeinfo for PV " + pvName);
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -111,7 +124,7 @@ public class ChangeStore implements BPLAction {
 
         boolean foundPlugin = false;
         for (String store : typeInfo.getDataStores()) {
-            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, configService);
+            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, storageConfig);
             if (plugin.getName().equals(storage)) {
                 logger.debug("Found the storage plugin identifier by " + storage);
                 foundPlugin = true;
@@ -137,7 +150,7 @@ public class ChangeStore implements BPLAction {
         JSONObject pvStatus = GetUrlContent.getURLContentAsJSONObject(etlChangeStoreUrl);
         if (pvStatus != null && !pvStatus.equals("")) {
             // Update the type info in the database.
-            updateTheTypeInfoDataStore(configService, typeInfo, storage, newbackend, pvName);
+            updateTheTypeInfoDataStore(storageConfig, typeInfo, storage, newbackend, pvName);
 
             try (PrintWriter out = resp.getWriter()) {
                 out.println(JSONValue.toJSONString(pvStatus));
@@ -152,12 +165,16 @@ public class ChangeStore implements BPLAction {
     }
 
     private static void updateTheTypeInfoDataStore(
-            ConfigService configService, final PVTypeInfo typeInfo, String storage, String newbackend, String pvName)
+            StoragePluginConfigView storageConfig,
+            final PVTypeInfo typeInfo,
+            String storage,
+            String newbackend,
+            String pvName)
             throws IOException {
         String[] newStores = new String[typeInfo.getDataStores().length];
         for (int i = 0; i < typeInfo.getDataStores().length; i++) {
             if (Objects.requireNonNull(
-                            StoragePluginURLParser.parseStoragePlugin(typeInfo.getDataStores()[i], configService))
+                            StoragePluginURLParser.parseStoragePlugin(typeInfo.getDataStores()[i], storageConfig))
                     .getName()
                     .equals(storage)) {
                 newStores[i] = newbackend;
@@ -166,7 +183,7 @@ public class ChangeStore implements BPLAction {
             }
         }
         typeInfo.setDataStores(newStores);
-        configService.updateTypeInfoForPV(pvName, typeInfo);
+        storageConfig.updateTypeInfoForPV(pvName, typeInfo);
         logger.info("Updating the typeinfo for " + pvName + " with storage plugins " + typeInfo.getDataStores());
     }
 }

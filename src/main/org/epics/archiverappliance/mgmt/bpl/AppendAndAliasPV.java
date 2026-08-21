@@ -9,10 +9,12 @@ import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
+import org.epics.archiverappliance.config.AliasRegistry;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ClusterTopology;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
 import org.epics.archiverappliance.retrieval.postprocessors.DefaultRawPostProcessor;
@@ -61,10 +63,20 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class AppendAndAliasPV implements BPLAction {
 
-    private final ConfigService configService;
+    private final AliasRegistry aliasRegistry;
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvDirectory;
+    private final StoragePluginConfigView storageConfig;
 
-    public AppendAndAliasPV(ConfigService configService) {
-        this.configService = configService;
+    public AppendAndAliasPV(
+            AliasRegistry aliasRegistry,
+            ClusterTopology clusterTopology,
+            PVDirectory pvDirectory,
+            StoragePluginConfigView storageConfig) {
+        this.aliasRegistry = aliasRegistry;
+        this.clusterTopology = clusterTopology;
+        this.pvDirectory = pvDirectory;
+        this.storageConfig = storageConfig;
     }
 
     private static Logger logger = LogManager.getLogger(AppendAndAliasPV.class.getName());
@@ -88,18 +100,18 @@ public class AppendAndAliasPV implements BPLAction {
             return;
         }
 
-        String realOlderName = configService.getRealNameForAlias(olderPVName);
+        String realOlderName = aliasRegistry.getRealNameForAlias(olderPVName);
         if (realOlderName != null) olderPVName = realOlderName;
-        String realNewerName = configService.getRealNameForAlias(newerPVName);
+        String realNewerName = aliasRegistry.getRealNameForAlias(newerPVName);
         if (realNewerName != null) newerPVName = realNewerName;
 
-        PVTypeInfo olderTypeInfo = configService.getTypeInfoForPV(olderPVName);
+        PVTypeInfo olderTypeInfo = storageConfig.getTypeInfoForPV(olderPVName);
         if (olderTypeInfo == null) {
             logger.debug("Unable to find typeinfo for PV " + olderPVName);
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
-        PVTypeInfo newerTypeInfo = configService.getTypeInfoForPV(newerPVName);
+        PVTypeInfo newerTypeInfo = storageConfig.getTypeInfoForPV(newerPVName);
         if (newerTypeInfo == null) {
             logger.debug("Unable to find typeinfo for PV " + newerPVName);
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -141,7 +153,7 @@ public class AppendAndAliasPV implements BPLAction {
 
         boolean foundSrcPlugin = false;
         for (String store : newerTypeInfo.getDataStores()) {
-            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, configService);
+            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, storageConfig);
             if (plugin.getName().equals(storageName)) {
                 logger.debug("Found the storage plugin identifier by " + storageName);
                 foundSrcPlugin = true;
@@ -157,14 +169,14 @@ public class AppendAndAliasPV implements BPLAction {
             }
         }
 
-        ApplianceInfo newerApplianceInfo = configService.getApplianceForPV(newerPVName);
+        ApplianceInfo newerApplianceInfo = pvDirectory.getApplianceForPV(newerPVName);
         if (newerApplianceInfo == null) {
             logger.error("Unable to find appliance for PV " + newerPVName);
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-        ApplianceInfo olderApplianceInfo = configService.getApplianceForPV(olderPVName);
+        ApplianceInfo olderApplianceInfo = pvDirectory.getApplianceForPV(olderPVName);
         if (olderApplianceInfo == null) {
             logger.error("Unable to find appliance for PV " + olderPVName);
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -173,7 +185,7 @@ public class AppendAndAliasPV implements BPLAction {
 
         if (!newerApplianceInfo
                 .getIdentity()
-                .equals(configService.getMyApplianceInfo().getIdentity())) {
+                .equals(clusterTopology.getMyApplianceInfo().getIdentity())) {
             String redirectURL = newerApplianceInfo.getMgmtURL()
                     + "/appendAndAliasPV?olderpv="
                     + URLEncoder.encode(olderPVName, "UTF-8")
@@ -218,7 +230,7 @@ public class AppendAndAliasPV implements BPLAction {
         Random rand = new Random();
         String destPVName = newerPVName + "_appendAlias_" + rand.nextLong();
         int nameTries = 0;
-        while (configService.getApplianceForPV(destPVName) != null) {
+        while (pvDirectory.getApplianceForPV(destPVName) != null) {
             logger.error(destPVName + " seems to exist. This is highly improbable. Trying again.");
             if (nameTries++ > 100) {
                 try (PrintWriter out = resp.getWriter()) {
@@ -237,9 +249,10 @@ public class AppendAndAliasPV implements BPLAction {
         destTypeInfo.setCreationTime(newerTypeInfo.getCreationTime());
         destTypeInfo.setModificationTime(TimeUtils.now());
         try {
-            destTypeInfo.setApplianceIdentity(configService.getMyApplianceInfo().getIdentity());
-            configService.updateTypeInfoForPV(destPVName, destTypeInfo);
-            configService.registerPVToAppliance(destPVName, configService.getMyApplianceInfo());
+            destTypeInfo.setApplianceIdentity(
+                    clusterTopology.getMyApplianceInfo().getIdentity());
+            storageConfig.updateTypeInfoForPV(destPVName, destTypeInfo);
+            pvDirectory.registerPVToAppliance(destPVName, clusterTopology.getMyApplianceInfo());
         } catch (AlreadyRegisteredException ex) {
             try (PrintWriter out = resp.getWriter()) {
                 String errorMsg = "Temporary PV name is already registered " + destPVName + ". Giving up on appending "
@@ -252,11 +265,11 @@ public class AppendAndAliasPV implements BPLAction {
         }
 
         logger.info("Registered temp PV " + destPVName + " to appliance "
-                + configService.getMyApplianceInfo().getIdentity());
+                + clusterTopology.getMyApplianceInfo().getIdentity());
 
         StoragePlugin destPlugin = null;
         for (String store : destTypeInfo.getDataStores()) {
-            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, configService);
+            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, storageConfig);
             if (plugin.getName().equals(storageName)) {
                 logger.debug("Found the storage plugin identifier by " + storageName);
                 destPlugin = plugin;
@@ -270,7 +283,7 @@ public class AppendAndAliasPV implements BPLAction {
                 logger.error(errorMsg);
                 infoValues.put("validation", errorMsg);
                 out.println(JSONValue.toJSONString(infoValues));
-                cleanupTemporaryPV(configService, destPVName);
+                cleanupTemporaryPV(clusterTopology, destPVName);
                 return;
             }
         }
@@ -283,7 +296,7 @@ public class AppendAndAliasPV implements BPLAction {
 
         long epochForFirstEvent = distantFutureEpochSeconds;
         for (String store : newerTypeInfo.getDataStores()) {
-            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, configService);
+            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, storageConfig);
             try (BasicContext context = new BasicContext(newerTypeInfo.getDBRType(), newerPVName)) {
                 Event ev = plugin.getFirstKnownEvent(context, newerPVName);
                 if (ev != null) {
@@ -307,9 +320,9 @@ public class AppendAndAliasPV implements BPLAction {
         Instant firstEventTS = TimeUtils.convertFromEpochSeconds(epochForFirstEvent, 0);
 
         long beforeEventCountOlder =
-                getEventCount(configService, olderApplianceInfo, olderPVName, distantPast, firstEventTS);
+                getEventCount(storageConfig, olderApplianceInfo, olderPVName, distantPast, firstEventTS);
         long beforeEventCountNewer =
-                getEventCount(configService, newerApplianceInfo, olderPVName, firstEventTS, distantFuture);
+                getEventCount(storageConfig, newerApplianceInfo, olderPVName, firstEventTS, distantFuture);
         long beforeEventCountTotal = beforeEventCountOlder + beforeEventCountNewer;
         logger.info("Before data transfer, we have " + beforeEventCountTotal + " events");
 
@@ -317,7 +330,7 @@ public class AppendAndAliasPV implements BPLAction {
             String olderPVRetrievalURL = olderApplianceInfo.getRetrievalURL().replace("/bpl", "") + "/data/getData.raw";
             logger.info("Getting data for older PV using URL " + olderPVRetrievalURL);
             StoragePlugin olderPVStoragePlugin = StoragePluginURLParser.parseStoragePlugin(
-                    "pbraw://localhost?rawURL=" + olderPVRetrievalURL + "&skipExternalServers=true", configService);
+                    "pbraw://localhost?rawURL=" + olderPVRetrievalURL + "&skipExternalServers=true", storageConfig);
             try (BasicContext context = new BasicContext()) {
                 List<Callable<EventStream>> callables = olderPVStoragePlugin.getDataForPV(
                         context, olderPVName, distantPast, firstEventTS, new DefaultRawPostProcessor());
@@ -335,7 +348,7 @@ public class AppendAndAliasPV implements BPLAction {
                                 + ". Giving up on append and alias  " + olderPVName;
                         infoValues.put("validation", errorMsg);
                         out.println(JSONValue.toJSONString(infoValues));
-                        cleanupTemporaryPV(configService, destPVName);
+                        cleanupTemporaryPV(clusterTopology, destPVName);
                         return;
                     }
                 }
@@ -346,7 +359,7 @@ public class AppendAndAliasPV implements BPLAction {
                     logger.error(errorMsg, ex);
                     infoValues.put("validation", errorMsg);
                     out.println(JSONValue.toJSONString(infoValues));
-                    cleanupTemporaryPV(configService, destPVName);
+                    cleanupTemporaryPV(clusterTopology, destPVName);
                     return;
                 }
             }
@@ -356,7 +369,7 @@ public class AppendAndAliasPV implements BPLAction {
             String newerPVRetrievalURL = olderApplianceInfo.getRetrievalURL().replace("/bpl", "") + "/data/getData.raw";
             logger.info("Getting data for newer PV using URL " + newerPVRetrievalURL);
             StoragePlugin newerPVStoragePlugin = StoragePluginURLParser.parseStoragePlugin(
-                    "pbraw://localhost?rawURL=" + newerPVRetrievalURL + "&skipExternalServers=true", configService);
+                    "pbraw://localhost?rawURL=" + newerPVRetrievalURL + "&skipExternalServers=true", storageConfig);
             try (BasicContext context = new BasicContext()) {
                 List<Callable<EventStream>> callables = newerPVStoragePlugin.getDataForPV(
                         context, newerPVName, firstEventTS, distantFuture, new DefaultRawPostProcessor());
@@ -378,14 +391,14 @@ public class AppendAndAliasPV implements BPLAction {
                     logger.error(errorMsg, ex);
                     infoValues.put("validation", errorMsg);
                     out.println(JSONValue.toJSONString(infoValues));
-                    cleanupTemporaryPV(configService, destPVName);
+                    cleanupTemporaryPV(clusterTopology, destPVName);
                     return;
                 }
             }
         }
 
         long afterEventCountDest =
-                getEventCount(configService, newerApplianceInfo, destPVName, distantPast, distantFuture);
+                getEventCount(storageConfig, newerApplianceInfo, destPVName, distantPast, distantFuture);
         logger.info("After data transfer, we have " + afterEventCountDest + " events with a difference of "
                 + Math.abs(beforeEventCountTotal - afterEventCountDest) + " events");
 
@@ -396,7 +409,7 @@ public class AppendAndAliasPV implements BPLAction {
                         + (beforeEventCountTotal - afterEventCountDest) + " events";
                 infoValues.put("validation", errorMsg);
                 out.println(JSONValue.toJSONString(infoValues));
-                cleanupTemporaryPV(configService, destPVName);
+                cleanupTemporaryPV(clusterTopology, destPVName);
                 return;
             }
         }
@@ -438,7 +451,7 @@ public class AppendAndAliasPV implements BPLAction {
             } else {
                 logger.info("Renamed temporary PV from system using " + renameURL);
                 // Cleanup the temporary PV after the rename is successful.
-                cleanupTemporaryPV(configService, destPVName);
+                cleanupTemporaryPV(clusterTopology, destPVName);
             }
         }
 
@@ -502,12 +515,12 @@ public class AppendAndAliasPV implements BPLAction {
      * @return
      */
     private long getEventCount(
-            ConfigService configService, ApplianceInfo info, String pvName, Instant from, Instant to) {
+            StoragePluginConfigView storageConfig, ApplianceInfo info, String pvName, Instant from, Instant to) {
         long eventCount = 0;
         String dataRetrievalURL = info.getRetrievalURL().replace("/bpl", "") + "/data/getData.raw";
         try {
             StoragePlugin srcStoragePlugin = StoragePluginURLParser.parseStoragePlugin(
-                    "pbraw://localhost?rawURL=" + dataRetrievalURL + "&skipExternalServers=true", configService);
+                    "pbraw://localhost?rawURL=" + dataRetrievalURL + "&skipExternalServers=true", storageConfig);
             try (BasicContext context = new BasicContext()) {
                 List<Callable<EventStream>> callables =
                         srcStoragePlugin.getDataForPV(context, pvName, from, to, new DefaultRawPostProcessor());
