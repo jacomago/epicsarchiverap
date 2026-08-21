@@ -10,7 +10,7 @@ package org.epics.archiverappliance.retrieval.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.InstallationProperties;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 
 import java.io.FileInputStream;
@@ -27,11 +27,11 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class GetClientConfiguration implements BPLAction<ConfigService> {
+public class GetClientConfiguration implements BPLAction<InstallationProperties> {
     private static Logger logger = LogManager.getLogger(GetClientConfiguration.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, InstallationProperties configService)
             throws IOException {
         if (!configService
                 .getInstallationProperties()
