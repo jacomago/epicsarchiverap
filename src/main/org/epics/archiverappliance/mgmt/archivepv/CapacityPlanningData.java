@@ -5,7 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceAggregateInfo;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.json.simple.JSONArray;
@@ -52,7 +52,7 @@ public class CapacityPlanningData {
     private boolean isAvailable = true;
     // Cached per config service: a single static slot would leak one appliance's cluster metrics
     // into another's when several appliances share a JVM. Weak keys so undeployed webapps can be GC'd.
-    private static final Map<ConfigService, CPStaticData> cachedCPStaticData =
+    private static final Map<ClusterTopology, CPStaticData> cachedCPStaticData =
             Collections.synchronizedMap(new WeakHashMap<>());
 
     class ETLMetrics {
@@ -126,9 +126,10 @@ public class CapacityPlanningData {
         }
     }
 
-    public static CPStaticData getMetricsForAppliances(ConfigService configService) throws IOException {
+    public static CPStaticData getMetricsForAppliances(ClusterTopology clusterTopology, PVDirectory pvDirectory)
+            throws IOException {
         Instant now = TimeUtils.now();
-        CPStaticData cachedData = cachedCPStaticData.get(configService);
+        CPStaticData cachedData = cachedCPStaticData.get(clusterTopology);
         if (cachedData != null) {
             if ((now.toEpochMilli() - cachedData.timeofData.toEpochMilli()) > MEASURED_DATA_CACHE_TIME) {
                 logger.debug("Refetching static data for capacity planning as it is stale "
@@ -142,17 +143,17 @@ public class CapacityPlanningData {
         logger.debug("Fetching new capacity planning static data");
         ConcurrentHashMap<ApplianceInfo, CapacityPlanningData> capacityMetrics =
                 new ConcurrentHashMap<ApplianceInfo, CapacityPlanningData>();
-        for (ApplianceInfo applianceInfo : configService.getAppliancesInCluster()) {
-            capacityMetrics.put(applianceInfo, new CapacityPlanningData(configService, applianceInfo));
+        for (ApplianceInfo applianceInfo : clusterTopology.getAppliancesInCluster()) {
+            capacityMetrics.put(applianceInfo, new CapacityPlanningData(pvDirectory, applianceInfo));
         }
 
         CPStaticData newStaticData = new CPStaticData(capacityMetrics, now);
-        cachedCPStaticData.put(configService, newStaticData);
+        cachedCPStaticData.put(clusterTopology, newStaticData);
         return newStaticData;
     }
 
-    public static CPStaticData getCachedMetricsForAppliances(ConfigService configService) throws IOException {
-        return cachedCPStaticData.get(configService);
+    public static CPStaticData getCachedMetricsForAppliances(ClusterTopology clusterTopology) throws IOException {
+        return cachedCPStaticData.get(clusterTopology);
     }
 
     public static class CPStaticData {
@@ -186,14 +187,15 @@ public class CapacityPlanningData {
 
     /**
      * Return the difference between the appliance aggregate info as of "now" and from the time we last fetched the static data.
-     * @param configService ConfigService
+     * @param clusterTopology ClusterTopology
+     * @param pvDirectory PVDirectory
      * @return ApplianceAggregateInfo  &emsp;
      * @throws IOException  &emsp;
      */
-    public ApplianceAggregateInfo getApplianceAggregateDifferenceFromLastFetch(ConfigService configService)
-            throws IOException {
+    public ApplianceAggregateInfo getApplianceAggregateDifferenceFromLastFetch(
+            ClusterTopology clusterTopology, PVDirectory pvDirectory) throws IOException {
         ApplianceAggregateInfo freshData =
-                configService.getAggregatedApplianceInfo(configService.getAppliance(identity));
+                pvDirectory.getAggregatedApplianceInfo(clusterTopology.getAppliance(identity));
         return freshData.getDifference(applianceAggregateInfoAsOfLastFetch);
     }
 

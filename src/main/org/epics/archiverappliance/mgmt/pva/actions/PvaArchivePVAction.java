@@ -121,6 +121,10 @@ public class PvaArchivePVAction implements PvaAction<ConfigService> {
                         null,
                         false,
                         configService,
+                        configService,
+                        configService,
+                        configService,
+                        configService,
                         ArchivePVAction.getFieldsAsPartOfStream(configService));
             } catch (IOException e) {
                 throw new PvaActionException("Archiving pv " + pvName + " failed", e);

@@ -12,8 +12,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ApplianceAggregateInfo;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.etl.ETLDest;
 import org.epics.archiverappliance.etl.ETLSource;
@@ -48,13 +50,20 @@ public class CapacityPlanningBPL {
      * get the appliance for this pv.
      * this method implements the capacity planning
      * @param pvName the name of the pv.
-     * @param configService the local configService
+     * @param clusterTopology the appliances in the cluster
+     * @param pvDirectory the PV to appliance mapping
+     * @param storageConfig the configuration the storage plugins are built from
      * @param pvTypeInfo the pvTypeInfo of this pv.
      * @return  the ApplianceInfo of the appliance which this pv will be added
      * @throws IOException  error occurs during the capacity planning.
      * in this case, this method will return the ApplianceInfo of the local  appliance
      */
-    public static ApplianceInfo pickApplianceForPV(String pvName, ConfigService configService, PVTypeInfo pvTypeInfo)
+    public static ApplianceInfo pickApplianceForPV(
+            String pvName,
+            ClusterTopology clusterTopology,
+            PVDirectory pvDirectory,
+            StoragePluginConfigView storageConfig,
+            PVTypeInfo pvTypeInfo)
             throws IOException {
 
         try {
@@ -62,14 +71,14 @@ public class CapacityPlanningBPL {
 
             HashMap<String, Integer> destinationPartitionSeconds = new HashMap<String, Integer>();
             for (String dataStore : dataStores) {
-                ETLSource etlSource = StoragePluginURLParser.parseETLSource(dataStore, configService);
+                ETLSource etlSource = StoragePluginURLParser.parseETLSource(dataStore, storageConfig);
                 if (etlSource == null) {
                     logger.debug("the ETLSource of " + dataStore + " is null");
                     if (isDebug) logger.error("the ETLSource of " + dataStore + " is null");
                     continue;
                 }
 
-                ETLDest etlDest = StoragePluginURLParser.parseETLDest(dataStore, configService);
+                ETLDest etlDest = StoragePluginURLParser.parseETLDest(dataStore, storageConfig);
                 if (etlDest instanceof StorageMetrics) {
                     int partitionSecond = etlSource.getPartitionGranularity().getApproxSecondsPerChunk();
                     String destinationName = ((StorageMetrics) etlDest).getName();
@@ -82,7 +91,7 @@ public class CapacityPlanningBPL {
 
             float pvStorageRate = pvTypeInfo.getComputedStorageRate();
 
-            CPStaticData cpStaticData = CapacityPlanningData.getMetricsForAppliances(configService);
+            CPStaticData cpStaticData = CapacityPlanningData.getMetricsForAppliances(clusterTopology, pvDirectory);
             ConcurrentHashMap<ApplianceInfo, CapacityPlanningData> appliances = cpStaticData.cpApplianceMetrics;
 
             HashMap<ApplianceInfo, CapacityPlanningData> nullETLMetricsAppliances =
@@ -119,7 +128,7 @@ public class CapacityPlanningBPL {
 
                     CapacityPlanningData rateMetrics = rateEntry.getValue();
                     ApplianceAggregateInfo rateAggregateInfo =
-                            rateMetrics.getApplianceAggregateDifferenceFromLastFetch(configService);
+                            rateMetrics.getApplianceAggregateDifferenceFromLastFetch(clusterTopology, pvDirectory);
 
                     float totalDataRate = (float) rateAggregateInfo.getTotalStorageRate()
                             + rateEntry.getValue().getCurrentTotalStorageRate();
@@ -160,7 +169,7 @@ public class CapacityPlanningBPL {
                 ConcurrentHashMap<String, ETLMetrics> etlMetrics = cpMetrics.getEtlMetrics();
 
                 ApplianceAggregateInfo aggregateInfo =
-                        cpMetrics.getApplianceAggregateDifferenceFromLastFetch(configService);
+                        cpMetrics.getApplianceAggregateDifferenceFromLastFetch(clusterTopology, pvDirectory);
                 float totalDataRate = cpMetrics.getCurrentTotalStorageRate();
 
                 float totalDataRateForPvAdded = (float) aggregateInfo.getTotalStorageRate();
@@ -230,7 +239,7 @@ public class CapacityPlanningBPL {
                 }
 
                 float currentUsedWriterPercentage =
-                        cpMetrics.getEngineWriteThreadUsage(PVTypeInfo.getSecondsToBuffer(configService));
+                        cpMetrics.getEngineWriteThreadUsage(PVTypeInfo.getSecondsToBuffer(storageConfig));
                 if (currentUsedWriterPercentage > CapacityPlanningBPL.percentageLimitation) {
                     cpMetrics.setAvailable(false);
                     if (isDebug) logger.error("test exceed the limitation");
@@ -342,7 +351,7 @@ public class CapacityPlanningBPL {
             if (isDebug) logger.error("availableAppliancesNum=" + availableAppliancesNum);
             if (availableAppliancesNum == 0) {
                 configlogger.error("there is no appliance available and use the local appliance as the default");
-                return configService.getMyApplianceInfo();
+                return clusterTopology.getMyApplianceInfo();
             }
             averagePercentageWriter = averagePercentageWriter / availableAppliancesNum;
             allNormalizationFactor.add(new NormalizationFactor("writer", averagePercentageWriter));
@@ -368,7 +377,7 @@ public class CapacityPlanningBPL {
                 configlogger.error("there are some error in computing the max (percentage)");
                 configlogger.error(
                         "there is one error during capacity planning computing and use the local appliance as the default");
-                return configService.getMyApplianceInfo();
+                return clusterTopology.getMyApplianceInfo();
             }
             logger.debug("the max (percentage) is :" + resultFactor.getIdentify() + ",value:"
                     + resultFactor.getPercentage());
@@ -418,13 +427,13 @@ public class CapacityPlanningBPL {
             if (minResultApplianceInfo == null) {
                 logger.error(
                         "there is one error during capacity planning computing and use the local appliance as the default");
-                return configService.getMyApplianceInfo();
+                return clusterTopology.getMyApplianceInfo();
             }
             return minResultApplianceInfo;
 
         } catch (Exception e) {
             logger.error("Exception during capacity planning, returning this appliance", e);
-            return configService.getMyApplianceInfo();
+            return clusterTopology.getMyApplianceInfo();
         }
     }
 }

@@ -21,7 +21,14 @@ public class MgmtServletContextListener extends ArchServletContextListener {
 
     @Override
     protected void createRuntimeState(ConfigService configService) throws ConfigException {
-        MgmtRuntimeState.create(configService);
+        MgmtRuntimeState.create(
+                configService,
+                configService,
+                configService,
+                configService,
+                configService,
+                configService,
+                configService);
         if (MgmtRuntimeState.of(configService) == null) {
             throw new ConfigException("Unable to publish the mgmt runtime state");
         }

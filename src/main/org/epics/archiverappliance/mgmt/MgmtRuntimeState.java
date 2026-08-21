@@ -6,8 +6,13 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ApplianceLifecycle.WAR_FILE;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ArchiveRequestWorkflow;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.config.MetaInfo;
+import org.epics.archiverappliance.config.PVDirectory;
+import org.epics.archiverappliance.config.PVTypeInfoLookupView;
+import org.epics.archiverappliance.config.PolicyService;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.pubsub.PubSubEvent;
 import org.epics.archiverappliance.mgmt.archivepv.ArchivePVState;
 import org.epics.archiverappliance.mgmt.archivepv.ArchivePVState.ArchivePVStateMachine;
@@ -50,32 +55,58 @@ public class MgmtRuntimeState {
     /**
      * Build the mgmt webapp's runtime state and publish it against this config service.
      * A runtime state already published for this config service wins, so publishing is idempotent.
-     * @param configService &emsp;
+     * @param applianceLifecycle &emsp;
+     * @param archiveRequests &emsp;
+     * @param clusterTopology &emsp;
+     * @param pvDirectory &emsp;
+     * @param pvTypeInfoLookup &emsp;
+     * @param policyService &emsp;
+     * @param storageConfig &emsp;
      * @return MgmtRuntimeState &emsp;
      */
-    public static MgmtRuntimeState create(ConfigService configService) {
+    public static MgmtRuntimeState create(
+            ApplianceLifecycle applianceLifecycle,
+            ArchiveRequestWorkflow archiveRequests,
+            ClusterTopology clusterTopology,
+            PVDirectory pvDirectory,
+            PVTypeInfoLookupView pvTypeInfoLookup,
+            PolicyService policyService,
+            StoragePluginConfigView storageConfig) {
         synchronized (INSTANCES) {
-            MgmtRuntimeState existing = INSTANCES.get(configService);
+            MgmtRuntimeState existing = INSTANCES.get(applianceLifecycle);
             if (existing != null) {
                 logger.debug("Mgmt runtime state already published for this config service");
                 return existing;
             }
-            MgmtRuntimeState created = new MgmtRuntimeState(configService);
-            INSTANCES.put(configService, created);
-            configService.addShutdownHook(() -> INSTANCES.remove(configService));
+            MgmtRuntimeState created = new MgmtRuntimeState(
+                    applianceLifecycle,
+                    archiveRequests,
+                    clusterTopology,
+                    pvDirectory,
+                    pvTypeInfoLookup,
+                    policyService,
+                    storageConfig);
+            INSTANCES.put(applianceLifecycle, created);
+            applianceLifecycle.addShutdownHook(() -> INSTANCES.remove(applianceLifecycle));
             return created;
         }
     }
 
     /**
-     * @param configService &emsp;
+     * @param applianceLifecycle &emsp;
      * @return This appliance's mgmt runtime state, or null if this webapp is not the mgmt webapp.
      */
-    public static MgmtRuntimeState of(ApplianceLifecycle configService) {
-        return INSTANCES.get(configService);
+    public static MgmtRuntimeState of(ApplianceLifecycle applianceLifecycle) {
+        return INSTANCES.get(applianceLifecycle);
     }
 
-    private ConfigService configService;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final ArchiveRequestWorkflow archiveRequests;
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvDirectory;
+    private final PVTypeInfoLookupView pvTypeInfoLookup;
+    private final PolicyService policyService;
+    private final StoragePluginConfigView storageConfig;
     private Map<String, ArchivePVState> currentPVRequests =
             Collections.synchronizedMap(new HashMap<String, ArchivePVState>());
     private static Logger logger = LogManager.getLogger(MgmtRuntimeState.class.getName());
@@ -111,7 +142,15 @@ public class MgmtRuntimeState {
     public void startPVWorkflow(String pvName) throws IOException {
         if (!currentPVRequests.containsKey(pvName)) {
             logger.debug("Starting pv archiving workflow for " + pvName);
-            ArchivePVState pvState = new ArchivePVState(pvName, configService);
+            ArchivePVState pvState = new ArchivePVState(
+                    pvName,
+                    applianceLifecycle,
+                    archiveRequests,
+                    clusterTopology,
+                    pvDirectory,
+                    pvTypeInfoLookup,
+                    policyService,
+                    storageConfig);
             currentPVRequests.put(pvName, pvState);
         } else {
             logger.error("We already have a request for pv " + pvName + " in the workflow.");
@@ -126,11 +165,11 @@ public class MgmtRuntimeState {
             logger.debug("Aborting pv archiving workflow for " + pvName);
             currentPVRequests.remove(pvName);
             logger.debug("Removing " + pvName + " from config service archive pv requests");
-            configService.archiveRequestWorkflowCompleted(pvName);
+            archiveRequests.archiveRequestWorkflowCompleted(pvName);
             logger.debug("Aborted pv archiving workflow for " + pvName + "Publishing event for engine...");
             PubSubEvent pubSubEvent = new PubSubEvent(
                     "AbortComputeMetaInfo", myIdentity + "_" + ApplianceLifecycle.WAR_FILE.ENGINE, pvName);
-            configService.getEventBus().post(pubSubEvent);
+            applianceLifecycle.getEventBus().post(pubSubEvent);
             return true;
         }
     }
@@ -147,17 +186,30 @@ public class MgmtRuntimeState {
 
     private ScheduledFuture<?> theArchiveWorkflow = null;
 
-    private MgmtRuntimeState(final ConfigService configService) {
-        this.configService = configService;
-        myIdentity = this.configService.getMyApplianceInfo().getIdentity();
-        configService.addShutdownHook(new Runnable() {
+    private MgmtRuntimeState(
+            ApplianceLifecycle applianceLifecycle,
+            ArchiveRequestWorkflow archiveRequests,
+            ClusterTopology clusterTopology,
+            PVDirectory pvDirectory,
+            PVTypeInfoLookupView pvTypeInfoLookup,
+            PolicyService policyService,
+            StoragePluginConfigView storageConfig) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.archiveRequests = archiveRequests;
+        this.clusterTopology = clusterTopology;
+        this.pvDirectory = pvDirectory;
+        this.pvTypeInfoLookup = pvTypeInfoLookup;
+        this.policyService = policyService;
+        this.storageConfig = storageConfig;
+        myIdentity = this.clusterTopology.getMyApplianceInfo().getIdentity();
+        applianceLifecycle.addShutdownHook(new Runnable() {
             @Override
             public void run() {
                 archivePVWorkflow.shutdown();
             }
         });
-        configService.getEventBus().register(this);
-        Properties installationProperties = configService.getInstallationProperties();
+        applianceLifecycle.getEventBus().register(this);
+        Properties installationProperties = storageConfig.getInstallationProperties();
         String batchSizeName = "org.epics.archiverappliance.mgmt.MgmtRuntimeState.archivePVWorkflowBatchSize";
         if (installationProperties.containsKey(batchSizeName)) {
             this.archivePVWorkflowBatchSize = Integer.parseInt(installationProperties.getProperty(batchSizeName));
@@ -190,7 +242,7 @@ public class MgmtRuntimeState {
                     @Override
                     public void run() {
                         try {
-                            if (!configService.hasClusterFinishedInitialization()) {
+                            if (!clusterTopology.hasClusterFinishedInitialization()) {
                                 // If you have defined spare appliances in the appliances.xml that will never come up;
                                 // you should remove them
                                 // This seems to be one of the few ways we can prevent split brain clusters from messing
@@ -323,10 +375,10 @@ public class MgmtRuntimeState {
     }
 
     private void startArchivePVRequests() {
-        int initialDelayInSeconds = configService.getInitialDelayBeforeStartingArchiveRequestWorkflow();
+        int initialDelayInSeconds = archiveRequests.getInitialDelayBeforeStartingArchiveRequestWorkflow();
         configlogger.info("Starting archive requests after an initial delay (in s) of " + initialDelayInSeconds);
 
-        for (String pvNameFromPersistence : configService.getArchiveRequestsCurrentlyInWorkflow()) {
+        for (String pvNameFromPersistence : archiveRequests.getArchiveRequestsCurrentlyInWorkflow()) {
             try {
                 this.startPVWorkflow(pvNameFromPersistence);
             } catch (IOException ex) {

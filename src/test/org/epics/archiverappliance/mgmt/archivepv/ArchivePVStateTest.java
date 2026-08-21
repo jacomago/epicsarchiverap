@@ -47,7 +47,15 @@ public class ArchivePVStateTest {
         MetaInfo metaInfo = new MetaInfo();
         metaInfo.setArchDBRTypes(ArchDBRTypes.DBR_SCALAR_DOUBLE);
 
-        ArchivePVState state = new ArchivePVState(pvName, configService);
+        ArchivePVState state = new ArchivePVState(
+                pvName,
+                configService,
+                configService,
+                configService,
+                configService,
+                configService,
+                configService,
+                configService);
         state.metaInfoObtained(metaInfo);
         return state;
     }

@@ -4,8 +4,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.epics.archiverappliance.mgmt.archivepv.ArchivePVState;
 import org.epics.archiverappliance.utils.ui.JSONDecoder;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -31,17 +34,27 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class ImportConfigForAppliance implements BPLAction {
 
-    private final ConfigService configService;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvDirectory;
+    private final PVTypeInfoStore pvTypeInfoStore;
 
-    public ImportConfigForAppliance(ConfigService configService) {
-        this.configService = configService;
+    public ImportConfigForAppliance(
+            ApplianceLifecycle applianceLifecycle,
+            ClusterTopology clusterTopology,
+            PVDirectory pvDirectory,
+            PVTypeInfoStore pvTypeInfoStore) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.clusterTopology = clusterTopology;
+        this.pvDirectory = pvDirectory;
+        this.pvTypeInfoStore = pvTypeInfoStore;
     }
 
     private static Logger logger = LogManager.getLogger(ImportConfigForAppliance.class.getName());
 
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        ApplianceInfo myApplianceInfo = configService.getMyApplianceInfo();
+        ApplianceInfo myApplianceInfo = clusterTopology.getMyApplianceInfo();
         String myIdentity = myApplianceInfo.getIdentity();
         logger.info("Importing configuration for appliance " + myIdentity + " using POST");
 
@@ -62,16 +75,16 @@ public class ImportConfigForAppliance implements BPLAction {
                     continue;
                 }
                 // We now have a valid PVTypeInfo for this PV.
-                PVTypeInfo existingTypeInfo = configService.getTypeInfoForPV(pvName);
+                PVTypeInfo existingTypeInfo = pvTypeInfoStore.getTypeInfoForPV(pvName);
                 if (existingTypeInfo != null) {
                     logger.error("PV is already being archived " + pvName);
                     errorPVs.add(pvName);
                     continue;
                 }
 
-                configService.updateTypeInfoForPV(pvName, unmarshalledTypeInfo);
-                configService.registerPVToAppliance(pvName, myApplianceInfo);
-                ArchivePVState.startArchivingPV(pvName, configService, myApplianceInfo);
+                pvTypeInfoStore.updateTypeInfoForPV(pvName, unmarshalledTypeInfo);
+                pvDirectory.registerPVToAppliance(pvName, myApplianceInfo);
+                ArchivePVState.startArchivingPV(pvName, applianceLifecycle, pvTypeInfoStore, myApplianceInfo);
             }
         } catch (Exception ex) {
             throw new IOException(ex);

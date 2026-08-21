@@ -10,9 +10,15 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.config.AliasRegistry;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ArchiveRequestWorkflow;
 import org.epics.archiverappliance.config.ChannelArchiver.EngineConfigParser;
 import org.epics.archiverappliance.config.ChannelArchiver.PVConfig;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.InstallationProperties;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
+import org.epics.archiverappliance.config.PolicyService;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 
@@ -34,17 +40,36 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class ImportChannelArchiverConfigAction implements BPLAction {
 
-    private final ConfigService configService;
+    private final AliasRegistry aliasRegistry;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final ArchiveRequestWorkflow archiveRequests;
+    private final ClusterTopology clusterTopology;
+    private final InstallationProperties installationProperties;
+    private final PolicyService policyService;
+    private final PVTypeInfoStore pvTypeInfoStore;
 
-    public ImportChannelArchiverConfigAction(ConfigService configService) {
-        this.configService = configService;
+    public ImportChannelArchiverConfigAction(
+            AliasRegistry aliasRegistry,
+            ApplianceLifecycle applianceLifecycle,
+            ArchiveRequestWorkflow archiveRequests,
+            ClusterTopology clusterTopology,
+            InstallationProperties installationProperties,
+            PolicyService policyService,
+            PVTypeInfoStore pvTypeInfoStore) {
+        this.aliasRegistry = aliasRegistry;
+        this.applianceLifecycle = applianceLifecycle;
+        this.archiveRequests = archiveRequests;
+        this.clusterTopology = clusterTopology;
+        this.installationProperties = installationProperties;
+        this.policyService = policyService;
+        this.pvTypeInfoStore = pvTypeInfoStore;
     }
 
     private static final Logger logger = LogManager.getLogger(ImportChannelArchiverConfigAction.class);
 
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        if (!configService.hasClusterFinishedInitialization()) {
+        if (!clusterTopology.hasClusterFinishedInitialization()) {
             // If you have defined spare appliances in the appliances.xml that will never come up; you should remove
             // them
             // This seems to be one of the few ways we can prevent split brain clusters from messing up the pv <->
@@ -54,7 +79,7 @@ public class ImportChannelArchiverConfigAction implements BPLAction {
         }
         InputStream is = null;
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
-        List<String> fieldsAsPartOfStream = ArchivePVAction.getFieldsAsPartOfStream(configService);
+        List<String> fieldsAsPartOfStream = ArchivePVAction.getFieldsAsPartOfStream(policyService);
         try (PrintWriter out = resp.getWriter()) {
             boolean isFirst = true;
             out.println("[");
@@ -85,7 +110,11 @@ public class ImportChannelArchiverConfigAction implements BPLAction {
                         null,
                         null,
                         false,
-                        configService,
+                        aliasRegistry,
+                        archiveRequests,
+                        applianceLifecycle,
+                        installationProperties,
+                        pvTypeInfoStore,
                         fieldsAsPartOfStream);
             }
             out.println("]");
