@@ -122,7 +122,7 @@ class ChangeStoreTest {
 
         // 5. Execute the move operation
         ETLExecutor.moveDataFromOneStorageToAnother(
-                configService, pvName, srcPlugin.getName(), destPlugin.getURLRepresentation());
+                configService, configService, pvName, srcPlugin.getName(), destPlugin.getURLRepresentation());
         logger.info("Completed call to moveDataFromOneStorageToAnother.");
 
         // 6. Verify the results
@@ -240,7 +240,7 @@ class ChangeStoreTest {
 
         // 3. Move Data
         ETLExecutor.moveDataFromOneStorageToAnother(
-                configService, pvName, srcPlugin.getName(), destPlugin.getURLRepresentation());
+                configService, configService, pvName, srcPlugin.getName(), destPlugin.getURLRepresentation());
 
         // 4. Validate
         validateDestinationFiles(destPlugin, pvName);

@@ -13,7 +13,8 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.etl.ETLExecutor;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
@@ -32,10 +33,12 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class ConsolidatePBFilesForOnePV implements BPLAction {
 
-    private final ConfigService configService;
+    private final StoragePluginConfigView storageConfig;
+    private final ApplianceLifecycle applianceLifecycle;
 
-    public ConsolidatePBFilesForOnePV(ConfigService configService) {
-        this.configService = configService;
+    public ConsolidatePBFilesForOnePV(StoragePluginConfigView storageConfig, ApplianceLifecycle applianceLifecycle) {
+        this.storageConfig = storageConfig;
+        this.applianceLifecycle = applianceLifecycle;
     }
 
     private static final Logger logger = LogManager.getLogger(ConsolidatePBFilesForOnePV.class);
@@ -56,7 +59,8 @@ public class ConsolidatePBFilesForOnePV implements BPLAction {
                 0);
         Instant etlProcessTime = TimeUtils.fromString(optionalDate, oneYearLaterTimeStamp);
         try {
-            ETLExecutor.runPvETLsBeforeOneStorage(configService, etlProcessTime, pvName, storageName);
+            ETLExecutor.runPvETLsBeforeOneStorage(
+                    storageConfig, applianceLifecycle, etlProcessTime, pvName, storageName);
             resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
             HashMap<String, Object> infoValues = new HashMap<String, Object>();
             try (PrintWriter out = resp.getWriter()) {

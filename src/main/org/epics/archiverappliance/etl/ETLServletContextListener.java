@@ -24,7 +24,7 @@ public class ETLServletContextListener extends ArchServletContextListener {
 
     @Override
     protected void createRuntimeState(ConfigService configService) throws ConfigException {
-        PBThreeTierETLPVLookup etlPVLookup = PBThreeTierETLPVLookup.create(configService);
+        PBThreeTierETLPVLookup etlPVLookup = PBThreeTierETLPVLookup.create(configService, configService, configService);
         if (PBThreeTierETLPVLookup.of(configService) == null) {
             throw new ConfigException("Unable to publish the ETL lookup");
         }

@@ -7,7 +7,8 @@ import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.InstallationProperties;
 import org.epics.archiverappliance.etl.StorageMetrics;
 
 import java.io.IOException;
@@ -29,12 +30,18 @@ public class ETLStages implements Runnable {
     private final ExecutorService theWorker;
     private final LinkedList<ETLStage> etlStages = new LinkedList<ETLStage>();
     private ScheduledFuture<?> cancellingFuture;
-    private final ConfigService configService;
+    private final InstallationProperties installationProperties;
+    private final ApplianceLifecycle applianceLifecycle;
 
-    public ETLStages(String pvName, ExecutorService theWorker, ConfigService configService) {
+    public ETLStages(
+            String pvName,
+            ExecutorService theWorker,
+            InstallationProperties installationProperties,
+            ApplianceLifecycle applianceLifecycle) {
         this.pvName = pvName;
         this.theWorker = theWorker;
-        this.configService = configService;
+        this.installationProperties = installationProperties;
+        this.applianceLifecycle = applianceLifecycle;
     }
 
     public void addStage(ETLStage stage) {
@@ -108,9 +115,12 @@ public class ETLStages implements Runnable {
             CompletableFuture<Void> f = null;
             for (ETLStage etlStage : this.etlStages) {
                 f = (f == null)
-                        ? CompletableFuture.runAsync(new ETLJob(etlStage, runAsIfAtTime, configService), this.theWorker)
+                        ? CompletableFuture.runAsync(
+                                new ETLJob(etlStage, runAsIfAtTime, installationProperties, applianceLifecycle),
+                                this.theWorker)
                         : f.thenCompose(b -> CompletableFuture.runAsync(
-                                new ETLJob(etlStage, runAsIfAtTime, configService), this.theWorker));
+                                new ETLJob(etlStage, runAsIfAtTime, installationProperties, applianceLifecycle),
+                                this.theWorker));
             }
             if (f == null) {
                 throw new IOException("Completable future is null");
@@ -126,9 +136,12 @@ public class ETLStages implements Runnable {
             CompletableFuture<Void> f = null;
             for (ETLStage etlStage : this.etlStages) {
                 f = (f == null)
-                        ? CompletableFuture.runAsync(new ETLJob(etlStage, null, configService, true), this.theWorker)
+                        ? CompletableFuture.runAsync(
+                                new ETLJob(etlStage, null, installationProperties, applianceLifecycle, true),
+                                this.theWorker)
                         : f.thenCompose(b -> CompletableFuture.runAsync(
-                                new ETLJob(etlStage, null, configService, true), this.theWorker));
+                                new ETLJob(etlStage, null, installationProperties, applianceLifecycle, true),
+                                this.theWorker));
             }
             if (f == null) {
                 throw new IOException("Completable future is null");
@@ -157,7 +170,8 @@ public class ETLStages implements Runnable {
                                 + 365L * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(),
                         0);
                 try {
-                    consolidateTasks.add(new ETLJob(etlStage, oneYearLaterTimeStamp, configService));
+                    consolidateTasks.add(
+                            new ETLJob(etlStage, oneYearLaterTimeStamp, installationProperties, applianceLifecycle));
                 } catch (Exception ex) {
                     logger.error("Exception running ETL Job for PV " + pvName, ex);
                 }

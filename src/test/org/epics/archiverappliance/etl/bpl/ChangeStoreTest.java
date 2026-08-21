@@ -35,11 +35,11 @@ class ChangeStoreTest {
         when(response.getWriter()).thenReturn(writer);
 
         try (MockedStatic<ETLExecutor> etlExecutorMock = mockStatic(ETLExecutor.class)) {
-            ChangeStore changeStore = new ChangeStore(configService);
+            ChangeStore changeStore = new ChangeStore(configService, configService);
             changeStore.execute(request, response);
 
-            etlExecutorMock.verify(
-                    () -> ETLExecutor.moveDataFromOneStorageToAnother(configService, pvName, storageName, newBackend));
+            etlExecutorMock.verify(() -> ETLExecutor.moveDataFromOneStorageToAnother(
+                    configService, configService, pvName, storageName, newBackend));
             String responseString = stringWriter.toString();
             assertTrue(responseString.contains("Successfully changed the storage for PV"));
         }
@@ -51,7 +51,7 @@ class ChangeStoreTest {
         HttpServletResponse response = mock(HttpServletResponse.class);
         ConfigService configService = mock(ConfigService.class);
 
-        ChangeStore changeStore = new ChangeStore(configService);
+        ChangeStore changeStore = new ChangeStore(configService, configService);
 
         // Missing pv
         when(request.getParameter("pv")).thenReturn(null);
@@ -89,11 +89,11 @@ class ChangeStoreTest {
 
         try (MockedStatic<ETLExecutor> etlExecutorMock = mockStatic(ETLExecutor.class)) {
             etlExecutorMock
-                    .when(() ->
-                            ETLExecutor.moveDataFromOneStorageToAnother(configService, pvName, storageName, newBackend))
+                    .when(() -> ETLExecutor.moveDataFromOneStorageToAnother(
+                            configService, configService, pvName, storageName, newBackend))
                     .thenThrow(new IOException("Test Exception"));
 
-            ChangeStore changeStore = new ChangeStore(configService);
+            ChangeStore changeStore = new ChangeStore(configService, configService);
             changeStore.execute(request, response);
 
             verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST);

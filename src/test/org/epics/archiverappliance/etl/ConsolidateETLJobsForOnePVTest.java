@@ -195,7 +195,7 @@ class ConsolidateETLJobsForOnePVTest {
         // The ConfigServiceForTests automatically adds a ETL Job for each PV. For consolidate, we need to have "paused"
         // the PV; we fake this by deleting the jobs.
         PBThreeTierETLPVLookup.of(configService).deleteETLJobs(pvName);
-        ETLExecutor.runPvETLsBeforeOneStorage(configService, etlTime, pvName, consolidateStorage);
+        ETLExecutor.runPvETLsBeforeOneStorage(configService, configService, etlTime, pvName, consolidateStorage);
         // make sure there are no pb files in short term storage , medium term storage and all files in long term
         // storage
     }

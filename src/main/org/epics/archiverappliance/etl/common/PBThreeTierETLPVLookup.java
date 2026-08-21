@@ -12,11 +12,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.config.ApplianceLifecycle;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.AppliancePVsView;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.config.InstallationProperties;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.PVTypeInfoEvent;
 import org.epics.archiverappliance.config.PVTypeInfoEvent.ChangeType;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.etl.ETLDest;
 import org.epics.archiverappliance.etl.ETLSource;
@@ -61,32 +63,39 @@ public final class PBThreeTierETLPVLookup {
     /**
      * Build the ETL webapp's runtime state and publish it against this config service.
      * A lookup already published for this config service wins, so publishing is idempotent.
-     * @param configService &emsp;
+     * @param appliancePVs the lifecycle and PV directory this lookup is published against
+     * @param clusterTopology &emsp;
+     * @param storageConfig &emsp;
      * @return PBThreeTierETLPVLookup &emsp;
      */
-    public static PBThreeTierETLPVLookup create(ConfigService configService) {
+    public static PBThreeTierETLPVLookup create(
+            AppliancePVsView appliancePVs, ClusterTopology clusterTopology, StoragePluginConfigView storageConfig) {
         synchronized (INSTANCES) {
-            PBThreeTierETLPVLookup existing = INSTANCES.get(configService);
+            PBThreeTierETLPVLookup existing = INSTANCES.get(appliancePVs);
             if (existing != null) {
                 logger.debug("ETL lookup already published for this config service");
                 return existing;
             }
-            PBThreeTierETLPVLookup created = new PBThreeTierETLPVLookup(configService);
-            INSTANCES.put(configService, created);
-            configService.addShutdownHook(() -> INSTANCES.remove(configService));
+            PBThreeTierETLPVLookup created = new PBThreeTierETLPVLookup(appliancePVs, clusterTopology, storageConfig);
+            INSTANCES.put(appliancePVs, created);
+            appliancePVs.addShutdownHook(() -> INSTANCES.remove(appliancePVs));
             return created;
         }
     }
 
     /**
-     * @param configService &emsp;
+     * @param applianceLifecycle &emsp;
      * @return This appliance's ETL lookup, or null if this webapp is not the ETL webapp.
      */
-    public static PBThreeTierETLPVLookup of(ApplianceLifecycle configService) {
-        return INSTANCES.get(configService);
+    public static PBThreeTierETLPVLookup of(ApplianceLifecycle applianceLifecycle) {
+        return INSTANCES.get(applianceLifecycle);
     }
 
-    private ConfigService configService = null;
+    private final AppliancePVsView appliancePVs;
+
+    private final ClusterTopology clusterTopology;
+
+    private final StoragePluginConfigView storageConfig;
 
     private boolean isRunningInsideUnitTests = false;
 
@@ -111,9 +120,12 @@ public final class PBThreeTierETLPVLookup {
      */
     private final ETLMetrics applianceMetrics = new ETLMetrics();
 
-    private PBThreeTierETLPVLookup(ConfigService configService) {
-        this.configService = configService;
-        configService.addShutdownHook(new ETLShutdownThread(this));
+    private PBThreeTierETLPVLookup(
+            AppliancePVsView appliancePVs, ClusterTopology clusterTopology, StoragePluginConfigView storageConfig) {
+        this.appliancePVs = appliancePVs;
+        this.clusterTopology = clusterTopology;
+        this.storageConfig = storageConfig;
+        appliancePVs.addShutdownHook(new ETLShutdownThread(this));
     }
 
     /**
@@ -128,7 +140,7 @@ public final class PBThreeTierETLPVLookup {
     @Subscribe
     public void pvTypeInfoChanged(PVTypeInfoEvent event) {
         String pvName = event.pvName();
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = storageConfig.getTypeInfoForPV(pvName);
         logger.debug(
                 "Received PVTypeInfo changed event for {} ChangeType: {} Paused: {} Appliance: {}",
                 pvName,
@@ -138,12 +150,12 @@ public final class PBThreeTierETLPVLookup {
         if (event.changeType() == ChangeType.TYPEINFO_DELETED
                 || typeInfo.isPaused()
                 || !typeInfo.getApplianceIdentity()
-                        .equals(configService.getMyApplianceInfo().getIdentity())) {
+                        .equals(clusterTopology.getMyApplianceInfo().getIdentity())) {
             logger.debug("Deleting ETL jobs for {} based on PVTypeInfo change ", pvName);
             deleteETLJobs(pvName);
         } else if (!typeInfo.isPaused()
                 && typeInfo.getApplianceIdentity()
-                        .equals(configService.getMyApplianceInfo().getIdentity())) {
+                        .equals(clusterTopology.getMyApplianceInfo().getIdentity())) {
             logger.debug("Adding ETL jobs for {} based on PVTypeInfo change", pvName);
             addETLJobs(pvName, typeInfo);
         }
@@ -152,12 +164,12 @@ public final class PBThreeTierETLPVLookup {
     private void startETLJobsOnStartup() {
         configlogger.info("Beginning ETL post startup");
         try {
-            configService.getEventBus().register(this);
-            Set<String> pVsForThisAppliance = configService.getPVsForThisAppliance();
+            appliancePVs.getEventBus().register(this);
+            Set<String> pVsForThisAppliance = appliancePVs.getPVsForThisAppliance();
             if (pVsForThisAppliance != null) {
                 for (String pvName : pVsForThisAppliance) {
                     if (!etlStagesForPVs.containsKey(pvName)) {
-                        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+                        PVTypeInfo typeInfo = storageConfig.getTypeInfoForPV(pvName);
                         if (!typeInfo.isPaused()) {
                             addETLJobs(pvName, typeInfo);
                         } else {
@@ -188,15 +200,15 @@ public final class PBThreeTierETLPVLookup {
                 return;
             }
 
-            ETLStages etlStages = new ETLStages(pvName, theWorker, configService);
+            ETLStages etlStages = new ETLStages(pvName, theWorker, storageConfig, appliancePVs);
             etlStagesForPVs.put(pvName, etlStages);
 
             for (int etllifetimeid = 0; etllifetimeid < dataSources.length - 1; etllifetimeid++) {
                 try {
                     String sourceStr = dataSources[etllifetimeid];
-                    ETLSource etlSource = StoragePluginURLParser.parseETLSource(sourceStr, configService);
+                    ETLSource etlSource = StoragePluginURLParser.parseETLSource(sourceStr, storageConfig);
                     String destStr = dataSources[etllifetimeid + 1];
-                    ETLDest etlDest = StoragePluginURLParser.parseETLDest(destStr, configService);
+                    ETLDest etlDest = StoragePluginURLParser.parseETLDest(destStr, storageConfig);
                     applianceMetrics.createMetricIfNoExists(etlSource.getName());
                     applianceMetrics.createMetricIfNoExists(etlDest.getName());
                     ETLStage etlStage = new ETLStage(
@@ -206,7 +218,7 @@ public final class PBThreeTierETLPVLookup {
                             etlDest,
                             etllifetimeid,
                             applianceMetrics.get(etlDest.getName()),
-                            determineOutOfSpaceHandling(configService));
+                            determineOutOfSpaceHandling(storageConfig));
                     if (etlDest instanceof StorageMetrics) {
                         // At least on some of the test machines, checking free space seems to take the longest time. In
                         // this, getting the fileStore seems to take the longest time.
