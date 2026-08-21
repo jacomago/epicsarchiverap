@@ -5,7 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceLifecycle;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.PVMetrics;
@@ -25,10 +25,12 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public class SilentPVReport implements BPLAction {
 
-    private final ConfigService configService;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final ClusterTopology clusterTopology;
 
-    public SilentPVReport(ConfigService configService) {
-        this.configService = configService;
+    public SilentPVReport(ApplianceLifecycle applianceLifecycle, ClusterTopology clusterTopology) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.clusterTopology = clusterTopology;
     }
 
     private static Logger logger = LogManager.getLogger(SilentPVReport.class.getName());
@@ -48,9 +50,9 @@ public class SilentPVReport implements BPLAction {
         String limit = req.getParameter("limit");
         logger.info("Silent PV report for " + (limit == null ? "default limit " : ("limit " + limit)));
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
-        List<SilentPV> silentPVs = getSilentPVs(configService, limit);
+        List<SilentPV> silentPVs = getSilentPVs(applianceLifecycle, limit);
         LinkedList<HashMap<String, String>> result = new LinkedList<HashMap<String, String>>();
-        String identity = configService.getMyApplianceInfo().getIdentity();
+        String identity = clusterTopology.getMyApplianceInfo().getIdentity();
         try (PrintWriter out = resp.getWriter()) {
             for (SilentPV silentPV : silentPVs) {
                 HashMap<String, String> pvStatus = new HashMap<String, String>();

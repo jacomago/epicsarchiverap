@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceLifecycle;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.PVMetrics;
@@ -24,10 +24,12 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public class LostConnectionsReport implements BPLAction {
 
-    private final ConfigService configService;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final ClusterTopology clusterTopology;
 
-    public LostConnectionsReport(ConfigService configService) {
-        this.configService = configService;
+    public LostConnectionsReport(ApplianceLifecycle applianceLifecycle, ClusterTopology clusterTopology) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.clusterTopology = clusterTopology;
     }
 
     private static Logger logger = LogManager.getLogger(LostConnectionsReport.class.getName());
@@ -49,9 +51,9 @@ public class LostConnectionsReport implements BPLAction {
         String limit = req.getParameter("limit");
         logger.info("Lost connections rate report for " + (limit == null ? "default limit " : ("limit " + limit)));
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
-        List<PVLostConnections> lostConnections = getLostConnections(configService, limit);
+        List<PVLostConnections> lostConnections = getLostConnections(applianceLifecycle, limit);
         LinkedList<HashMap<String, String>> result = new LinkedList<HashMap<String, String>>();
-        String identity = configService.getMyApplianceInfo().getIdentity();
+        String identity = clusterTopology.getMyApplianceInfo().getIdentity();
         try (PrintWriter out = resp.getWriter()) {
             for (PVLostConnections lostConnection : lostConnections) {
                 HashMap<String, String> pvStatus = new HashMap<String, String>();

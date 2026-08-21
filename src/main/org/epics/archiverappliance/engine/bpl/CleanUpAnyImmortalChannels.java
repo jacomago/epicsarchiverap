@@ -5,8 +5,9 @@ import gov.aps.jca.Channel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.EngineContext.CommandThreadChannel;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -32,10 +33,12 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class CleanUpAnyImmortalChannels implements BPLAction {
 
-    private final ConfigService configService;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final PVTypeInfoStore pvtypeInfoStore;
 
-    public CleanUpAnyImmortalChannels(ConfigService configService) {
-        this.configService = configService;
+    public CleanUpAnyImmortalChannels(ApplianceLifecycle applianceLifecycle, PVTypeInfoStore pvtypeInfoStore) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.pvtypeInfoStore = pvtypeInfoStore;
     }
 
     private static Logger logger = LogManager.getLogger(CleanUpAnyImmortalChannels.class.getName());
@@ -48,7 +51,7 @@ public class CleanUpAnyImmortalChannels implements BPLAction {
             return;
         }
 
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pvName);
         if (typeInfo == null) {
             logger.error("Cannot get typeinfo for PV " + pvName);
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -62,7 +65,7 @@ public class CleanUpAnyImmortalChannels implements BPLAction {
         }
 
         List<CommandThreadChannel> immortalChannelsForPV =
-                EngineContext.of(configService).getAllChannelsForPV(pvName);
+                EngineContext.of(applianceLifecycle).getAllChannelsForPV(pvName);
         for (final CommandThreadChannel immortalCommandThreadChannel : immortalChannelsForPV) {
             immortalCommandThreadChannel.getCommandThread().addCommand(new Runnable() {
                 @Override

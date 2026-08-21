@@ -6,7 +6,7 @@ import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ApplianceLifecycle.WAR_FILE;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 
 import java.io.IOException;
@@ -21,10 +21,12 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class WebappReady implements BPLAction {
 
-    private final ConfigService configService;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final ClusterTopology clusterTopology;
 
-    public WebappReady(ConfigService configService) {
-        this.configService = configService;
+    public WebappReady(ApplianceLifecycle applianceLifecycle, ClusterTopology clusterTopology) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.clusterTopology = clusterTopology;
     }
 
     private static Logger configlogger = LogManager.getLogger("config." + WebappReady.class.getName());
@@ -45,25 +47,25 @@ public class WebappReady implements BPLAction {
                     "Received a webAppReady with an invalid webapp parameter to identify the webapp - " + webApp);
             return;
         }
-        if (configService.isStartupComplete()) {
-            ApplianceInfo myApplianceInfo = configService.getMyApplianceInfo();
+        if (applianceLifecycle.isStartupComplete()) {
+            ApplianceInfo myApplianceInfo = clusterTopology.getMyApplianceInfo();
             switch (warFile) {
                 case RETRIEVAL: {
                     String url = myApplianceInfo.getRetrievalURL() + "/postStartup";
                     GetUrlContent.checkURL(url);
-                    MgmtRuntimeState.of(configService).componentStartedUp(ApplianceLifecycle.WAR_FILE.RETRIEVAL);
+                    MgmtRuntimeState.of(applianceLifecycle).componentStartedUp(ApplianceLifecycle.WAR_FILE.RETRIEVAL);
                     break;
                 }
                 case ETL: {
                     String url = myApplianceInfo.getEtlURL() + "/postStartup";
                     GetUrlContent.checkURL(url);
-                    MgmtRuntimeState.of(configService).componentStartedUp(ApplianceLifecycle.WAR_FILE.ETL);
+                    MgmtRuntimeState.of(applianceLifecycle).componentStartedUp(ApplianceLifecycle.WAR_FILE.ETL);
                     break;
                 }
                 case ENGINE: {
                     String url = myApplianceInfo.getEngineURL() + "/postStartup";
                     GetUrlContent.checkURL(url);
-                    MgmtRuntimeState.of(configService).componentStartedUp(ApplianceLifecycle.WAR_FILE.ENGINE);
+                    MgmtRuntimeState.of(applianceLifecycle).componentStartedUp(ApplianceLifecycle.WAR_FILE.ENGINE);
                     break;
                 }
                 case MGMT: {

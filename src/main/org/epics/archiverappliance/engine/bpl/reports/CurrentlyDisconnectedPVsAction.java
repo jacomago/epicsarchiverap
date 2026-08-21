@@ -4,7 +4,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.PVMetrics;
@@ -21,25 +23,30 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public class CurrentlyDisconnectedPVsAction implements BPLAction {
 
-    private final ConfigService configService;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvdirectory;
 
-    public CurrentlyDisconnectedPVsAction(ConfigService configService) {
-        this.configService = configService;
+    public CurrentlyDisconnectedPVsAction(
+            ApplianceLifecycle applianceLifecycle, ClusterTopology clusterTopology, PVDirectory pvdirectory) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.clusterTopology = clusterTopology;
+        this.pvdirectory = pvdirectory;
     }
 
     private static Logger logger = LogManager.getLogger(CurrentlyDisconnectedPVsAction.class.getName());
 
     @Override
     public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String identity = configService.getMyApplianceInfo().getIdentity();
+        String identity = clusterTopology.getMyApplianceInfo().getIdentity();
         logger.info("Currently disconnected PVs for appliance "
-                + configService.getMyApplianceInfo().getIdentity());
+                + clusterTopology.getMyApplianceInfo().getIdentity());
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         LinkedList<HashMap<String, String>> result = new LinkedList<HashMap<String, String>>();
-        Set<String> pausedPVs = configService.getPausedPVsInThisAppliance();
+        Set<String> pausedPVs = pvdirectory.getPausedPVsInThisAppliance();
         try (PrintWriter out = resp.getWriter()) {
             for (ArchiveChannel channel :
-                    EngineContext.of(configService).getChannelList().values()) {
+                    EngineContext.of(applianceLifecycle).getChannelList().values()) {
                 PVMetrics pvMetrics = channel.getPVMetrics();
                 if (!pvMetrics.isConnected()) {
                     String pvName = pvMetrics.getPvName();
@@ -60,13 +67,13 @@ public class CurrentlyDisconnectedPVsAction implements BPLAction {
                             connectionLastLostEpochSeconds > 0
                                     ? TimeUtils.convertToHumanReadableString(connectionLastLostEpochSeconds)
                                     : TimeUtils.convertToHumanReadableString(
-                                            configService.getTimeOfAppserverStartup()));
+                                            applianceLifecycle.getTimeOfAppserverStartup()));
                     pvStatus.put(
                             "noConnectionAsOfEpochSecs",
                             Long.toString(
                                     connectionLastLostEpochSeconds > 0
                                             ? connectionLastLostEpochSeconds
-                                            : configService.getTimeOfAppserverStartup()));
+                                            : applianceLifecycle.getTimeOfAppserverStartup()));
                     String hostName = channel.getHostName();
                     pvStatus.put("hostName", hostName != null ? hostName : "N/A");
                     pvStatus.put("commandThreadID", Integer.toString(channel.getJCACommandThreadID()));

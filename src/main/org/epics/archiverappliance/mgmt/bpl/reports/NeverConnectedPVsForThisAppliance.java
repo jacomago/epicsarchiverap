@@ -4,7 +4,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.epics.archiverappliance.mgmt.MgmtRuntimeState.NeverConnectedRequestState;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -20,10 +21,12 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public class NeverConnectedPVsForThisAppliance implements BPLAction {
 
-    private final ConfigService configService;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final ClusterTopology clusterTopology;
 
-    public NeverConnectedPVsForThisAppliance(ConfigService configService) {
-        this.configService = configService;
+    public NeverConnectedPVsForThisAppliance(ApplianceLifecycle applianceLifecycle, ClusterTopology clusterTopology) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.clusterTopology = clusterTopology;
     }
 
     private static Logger logger = LogManager.getLogger(NeverConnectedPVsForThisAppliance.class.getName());
@@ -32,8 +35,8 @@ public class NeverConnectedPVsForThisAppliance implements BPLAction {
     public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Getting the status of pvs that never connected since the start of this appliance");
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
-        String myIdentity = configService.getMyApplianceInfo().getIdentity();
-        MgmtRuntimeState mgmtRunTimeState = MgmtRuntimeState.of(configService);
+        String myIdentity = clusterTopology.getMyApplianceInfo().getIdentity();
+        MgmtRuntimeState mgmtRunTimeState = MgmtRuntimeState.of(applianceLifecycle);
         LinkedList<HashMap<String, String>> result = new LinkedList<HashMap<String, String>>();
         try (PrintWriter out = resp.getWriter()) {
             List<NeverConnectedRequestState> NeverConnectedRequestState = mgmtRunTimeState.getNeverConnectedRequests();
