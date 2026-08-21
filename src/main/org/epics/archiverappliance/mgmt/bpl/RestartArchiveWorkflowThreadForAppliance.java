@@ -10,7 +10,7 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
@@ -30,11 +30,11 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class RestartArchiveWorkflowThreadForAppliance implements BPLAction<ConfigService> {
+public class RestartArchiveWorkflowThreadForAppliance implements BPLAction<ApplianceLifecycle> {
     private static final Logger logger = LogManager.getLogger(RestartArchiveWorkflowThreadForAppliance.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, ApplianceLifecycle configService)
             throws IOException {
         logger.info("Restarting the archive PV workflow thread for this appliance");
         HashMap<String, Object> infoValues = new HashMap<String, Object>();
