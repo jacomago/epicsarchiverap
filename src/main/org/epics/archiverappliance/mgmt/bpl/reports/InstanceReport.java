@@ -29,7 +29,7 @@ public class InstanceReport implements BPLAction<ConfigService> {
             LinkedList<Map<String, String>> result = new LinkedList<Map<String, String>>();
             Map<String, Long> pvCounts = ApplianceMetrics.getAppliancePVCounts(configService);
             for (ApplianceInfo info : configService.getAppliancesInCluster()) {
-                var applianceInfo = ApplianceMetrics.getBasicMetrics(configService, result, info, pvCounts);
+                var applianceInfo = ApplianceMetrics.getBasicMetrics(result, info, pvCounts);
                 JSONObject mgmtMetrics =
                         GetUrlContent.getURLContentAsJSONObject(info.getMgmtURL() + "/getMgmtMetricsForAppliance");
                 applianceInfo.put(

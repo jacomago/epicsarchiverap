@@ -29,7 +29,7 @@ public class StorageReport implements BPLAction<ConfigService> {
             LinkedList<Map<String, String>> result = new LinkedList<Map<String, String>>();
             Map<String, Long> pvCounts = ApplianceMetrics.getAppliancePVCounts(configService);
             for (ApplianceInfo info : configService.getAppliancesInCluster()) {
-                var applianceInfo = ApplianceMetrics.getBasicMetrics(configService, result, info, pvCounts);
+                var applianceInfo = ApplianceMetrics.getBasicMetrics(result, info, pvCounts);
 
                 // The getApplianceMetrics here is not a typo. We redisplay some of the appliance metrics in this page.
                 JSONObject engineMetrics =

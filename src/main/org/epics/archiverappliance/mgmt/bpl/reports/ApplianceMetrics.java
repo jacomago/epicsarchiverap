@@ -46,7 +46,7 @@ public class ApplianceMetrics implements BPLAction<ConfigService> {
             LinkedList<Map<String, String>> result = new LinkedList<Map<String, String>>();
             Map<String, Long> pvCounts = ApplianceMetrics.getAppliancePVCounts(configService);
             for (ApplianceInfo info : configService.getAppliancesInCluster()) {
-                HashMap<String, String> applianceInfo = getBasicMetrics(configService, result, info, pvCounts);
+                HashMap<String, String> applianceInfo = getBasicMetrics(result, info, pvCounts);
 
                 logger.debug("Asking for appliance metrics from engine using " + info.getEngineURL()
                         + "/getApplianceMetrics");
@@ -86,10 +86,7 @@ public class ApplianceMetrics implements BPLAction<ConfigService> {
     }
 
     static HashMap<String, String> getBasicMetrics(
-            ConfigService configService,
-            LinkedList<Map<String, String>> result,
-            ApplianceInfo info,
-            Map<String, Long> pvCounts) {
+            LinkedList<Map<String, String>> result, ApplianceInfo info, Map<String, Long> pvCounts) {
         HashMap<String, String> applianceInfo = new HashMap<String, String>();
         result.add(applianceInfo);
         applianceInfo.put("instance", info.getIdentity());
