@@ -3,7 +3,7 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ChannelArchiverConfig;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -20,11 +20,11 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
-public class RefreshPVDataFromChannelArchivers implements BPLAction<ConfigService> {
+public class RefreshPVDataFromChannelArchivers implements BPLAction<ChannelArchiverConfig> {
     private static Logger logger = LogManager.getLogger(RefreshPVDataFromChannelArchivers.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public void execute(HttpServletRequest req, HttpServletResponse resp, ChannelArchiverConfig configService)
             throws IOException {
         logger.info("Updating the PV data from all the ChannelArchivers");
         configService.refreshPVDataFromChannelArchiverDataServers();
