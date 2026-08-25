@@ -335,7 +335,6 @@ public class GetDataAtTime {
      * @param pvName
      * @param atTime
      * @param pvTypeInfoLookup Alias resolution plus the type info store
-     * @param channelArchiverConfig External data servers
      * @param clusterTopology The appliances in the cluster
      * @param storageConfig The configuration the storage plugins are built from
      * @return
