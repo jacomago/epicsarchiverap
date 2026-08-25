@@ -41,6 +41,7 @@ import org.epics.archiverappliance.config.ChannelArchiverDataServerPVInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.data.ScalarValue;
 import org.epics.archiverappliance.etl.ETLDest;
@@ -1627,11 +1628,11 @@ public class DataRetrievalServlet extends HttpServlet {
      * @return
      * @throws IOException
      */
-    private boolean setActualDBRTypeFromData(String pvName, PVTypeInfo typeInfo, ConfigService configService)
-            throws IOException {
+    private boolean setActualDBRTypeFromData(
+            String pvName, PVTypeInfo typeInfo, StoragePluginConfigView storagePluginConfigView) throws IOException {
         String[] dataStores = typeInfo.getDataStores();
         for (String dataStore : dataStores) {
-            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(dataStore, configService);
+            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(dataStore, storagePluginConfigView);
             if (plugin instanceof ETLDest etlDest) {
                 try (BasicContext context = new BasicContext()) {
                     Event e = etlDest.getLastKnownEvent(context, pvName);

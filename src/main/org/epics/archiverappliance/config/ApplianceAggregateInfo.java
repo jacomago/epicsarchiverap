@@ -35,7 +35,7 @@ public class ApplianceAggregateInfo {
         return retval;
     }
 
-    public void addInfoForPV(String pvName, PVTypeInfo typeInfo, ConfigService configService) {
+    public void addInfoForPV(String pvName, PVTypeInfo typeInfo, StoragePluginConfigView storagePluginConfigView) {
         synchronized (this) {
             totalStorageRate += typeInfo.getComputedStorageRate();
             totalEventRate += typeInfo.getComputedEventRate();
@@ -43,7 +43,7 @@ public class ApplianceAggregateInfo {
             if (typeInfo.getDataStores() != null && typeInfo.getDataStores().length > 0) {
                 for (String dataStore : typeInfo.getDataStores()) {
                     try {
-                        ETLDest etlDest = StoragePluginURLParser.parseETLDest(dataStore, configService);
+                        ETLDest etlDest = StoragePluginURLParser.parseETLDest(dataStore, storagePluginConfigView);
                         if (etlDest instanceof StorageMetrics) {
                             StorageMetrics stMetrics = (StorageMetrics) etlDest;
                             String identity = stMetrics.getName();
