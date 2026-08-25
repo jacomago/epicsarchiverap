@@ -7,7 +7,7 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl.bpl.reports;
 
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.etl.common.ETLStageDetails;
 
 import java.util.LinkedList;
@@ -20,20 +20,15 @@ import java.util.Map;
  */
 public class PVDetails implements org.epics.archiverappliance.common.reports.PVDetails {
 
-    private final ConfigService configService;
+    private final ApplianceLifecycle applianceLifecycle;
 
-    public PVDetails(ConfigService configService) {
-        this.configService = configService;
+    public PVDetails(ApplianceLifecycle applianceLifecycle) {
+        this.applianceLifecycle = applianceLifecycle;
     }
 
     @Override
-    public ConfigService configService() {
-        return configService;
-    }
-
-    @Override
-    public LinkedList<Map<String, String>> pvDetails(ConfigService configService, String pvName) throws Exception {
+    public LinkedList<Map<String, String>> pvDetails(String pvName) throws Exception {
         ETLStageDetails details = new ETLStageDetails(pvName);
-        return details.details(configService);
+        return details.details(applianceLifecycle);
     }
 }

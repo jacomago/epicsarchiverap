@@ -17,7 +17,6 @@ import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ChannelArchiverConfig;
 import org.epics.archiverappliance.config.ChannelArchiverDataServerPVInfo;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
@@ -204,7 +203,7 @@ public class PVDetails implements BPLAction {
     private static void getStatusFromOtherWar(
             String info,
             String pvDetailsURLSnippet,
-            ConfigService.WAR_FILE war,
+            ApplianceLifecycle.WAR_FILE war,
             LinkedList<Map<String, String>> result) {
         JSONArray pvDetails = GetUrlContent.getURLContentAsJSONArray(info + pvDetailsURLSnippet);
         if (pvDetails == null) {

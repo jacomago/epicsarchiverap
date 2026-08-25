@@ -4,7 +4,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -16,13 +15,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public interface PVDetails extends BPLAction {
-
-    /**
-     * The configuration this report reads. An interface cannot hold the field, so the implementing
-     * class supplies it — a record component of this name satisfies this automatically.
-     * @return the configuration supplied to the implementor's constructor
-     */
-    ConfigService configService();
 
     Logger logger = LogManager.getLogger(PVDetails.class);
 
@@ -37,7 +29,7 @@ public interface PVDetails extends BPLAction {
         logger.info("Getting the detailed status for PV " + pvName);
         String detailedStatus = null;
         try {
-            detailedStatus = JSONValue.toJSONString(pvDetails(configService(), pvName));
+            detailedStatus = JSONValue.toJSONString(pvDetails(pvName));
         } catch (Exception e) {
             logger.error("No status for PV " + pvName + " in this.", e);
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -55,5 +47,12 @@ public interface PVDetails extends BPLAction {
         }
     }
 
-    LinkedList<Map<String, String>> pvDetails(ConfigService configService, String pvName) throws Exception;
+    /**
+     * The per-service detail for one PV. The implementor takes the concerns it needs through its
+     * constructor, so this method needs nothing but the name.
+     * @param pvName the PV to report on
+     * @return one map per detail line
+     * @throws Exception if the PV is not known to this service
+     */
+    LinkedList<Map<String, String>> pvDetails(String pvName) throws Exception;
 }
