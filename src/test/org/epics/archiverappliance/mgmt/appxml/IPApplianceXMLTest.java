@@ -4,7 +4,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.TomcatSetup;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.json.simple.JSONArray;
@@ -58,7 +57,7 @@ public class IPApplianceXMLTest {
                     + ipaddress + ":17665/retrieval/bpl</retrieval_url>\n\t\t<data_retrieval_url>http://" + ipaddress
                     + ":17665/retrieval</data_retrieval_url>\n\t" + "</appliance>\n\t</appliances>");
         }
-        System.getProperties().put(ConfigService.ARCHAPPL_APPLIANCES, appliancesFilename);
+        System.getProperties().put(ClusterTopology.ARCHAPPL_APPLIANCES, appliancesFilename);
 
         tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
 
