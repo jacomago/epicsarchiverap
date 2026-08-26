@@ -4,6 +4,7 @@ import static org.epics.archiverappliance.mgmt.pva.PvaMgmtService.PVA_MGMT_SERVI
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ArchServletContextListener;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.pva.server.PVAServer;
@@ -43,8 +44,8 @@ public class PvaServlet extends GenericServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
-        ConfigService configService =
-                (ConfigService) getServletConfig().getServletContext().getAttribute(ConfigService.CONFIG_SERVICE_NAME);
+        ConfigService configService = (ConfigService)
+                getServletConfig().getServletContext().getAttribute(ApplianceLifecycle.CONFIG_SERVICE_NAME);
         serverPV = server.createPV(PVA_MGMT_SERVICE, new PvaMgmtService(configService));
         logger.info(ZonedDateTime.now(ZoneId.systemDefault()) + PVA_MGMT_SERVICE + " is operational.");
     }

@@ -11,6 +11,7 @@ import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.BasicDispatcher;
 import org.epics.archiverappliance.common.ProcessMetricsChartData;
 import org.epics.archiverappliance.common.ProcessMetricsReport;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.mgmt.bpl.AbortArchiveRequest;
 import org.epics.archiverappliance.mgmt.bpl.AbortArchiveRequestForAppliance;
@@ -225,8 +226,8 @@ public class BPLServlet extends HttpServlet {
     @Override
     public void init() throws ServletException {
         super.init();
-        configService =
-                (ConfigService) getServletConfig().getServletContext().getAttribute(ConfigService.CONFIG_SERVICE_NAME);
+        configService = (ConfigService)
+                getServletConfig().getServletContext().getAttribute(ApplianceLifecycle.CONFIG_SERVICE_NAME);
         BasicDispatcher.validateActions(getActions, configService);
         BasicDispatcher.validateActions(postActions, configService);
     }

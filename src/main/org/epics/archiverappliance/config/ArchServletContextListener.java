@@ -49,17 +49,19 @@ public class ArchServletContextListener implements ServletContextListener {
 
             configService.initialize(sce.getServletContext());
             createRuntimeState(configService);
-            sce.getServletContext().setAttribute(ConfigService.CONFIG_SERVICE_NAME, configService);
+            sce.getServletContext().setAttribute(ApplianceLifecycle.CONFIG_SERVICE_NAME, configService);
         } catch (Exception e) {
             logger.fatal("Exception initializing config service ", e);
             try {
-                sce.getServletContext().setAttribute(ConfigService.CONFIG_SERVICE_NAME + ".exception", e.getMessage());
+                sce.getServletContext()
+                        .setAttribute(ApplianceLifecycle.CONFIG_SERVICE_NAME + ".exception", e.getMessage());
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
                 PrintWriter stackTraceOut = new PrintWriter(bos, true);
                 e.printStackTrace(stackTraceOut);
                 bos.flush();
                 bos.close();
-                sce.getServletContext().setAttribute(ConfigService.CONFIG_SERVICE_NAME + ".stacktrace", bos.toString());
+                sce.getServletContext()
+                        .setAttribute(ApplianceLifecycle.CONFIG_SERVICE_NAME + ".stacktrace", bos.toString());
             } catch (Exception ex) {
                 logger.warn("Exception setting reason for failure", ex);
             }
@@ -79,7 +81,7 @@ public class ArchServletContextListener implements ServletContextListener {
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
         ApplianceLifecycle applianceLifecycle =
-                (ApplianceLifecycle) sce.getServletContext().getAttribute(ConfigService.CONFIG_SERVICE_NAME);
+                (ApplianceLifecycle) sce.getServletContext().getAttribute(ApplianceLifecycle.CONFIG_SERVICE_NAME);
         try {
             applianceLifecycle.shutdownNow();
         } catch (Throwable t) {

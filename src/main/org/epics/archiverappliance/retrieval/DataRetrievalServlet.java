@@ -1368,7 +1368,7 @@ public class DataRetrievalServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
-        configService = (ConfigService) this.getServletContext().getAttribute(ConfigService.CONFIG_SERVICE_NAME);
+        configService = (ConfigService) this.getServletContext().getAttribute(ApplianceLifecycle.CONFIG_SERVICE_NAME);
     }
 
     /**

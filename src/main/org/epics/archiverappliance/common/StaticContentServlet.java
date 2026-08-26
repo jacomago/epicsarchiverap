@@ -66,7 +66,8 @@ public class StaticContentServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        this.configService = (ConfigService) config.getServletContext().getAttribute(ConfigService.CONFIG_SERVICE_NAME);
+        this.configService =
+                (ConfigService) config.getServletContext().getAttribute(ApplianceLifecycle.CONFIG_SERVICE_NAME);
         templateReplacementPaths.add("viewer/index.html");
         templateReplacementPaths.add("js/mgmt.js");
     }
