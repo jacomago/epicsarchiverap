@@ -10,7 +10,7 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -32,11 +32,17 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class ArchivedPVsNotInListAction implements BPLAction {
+
+    private final PVDirectory configService;
+
+    public ArchivedPVsNotInListAction(PVDirectory configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(ArchivedPVsNotInListAction.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Determining PVs that are archived but are not in list.");
         LinkedList<String> incomingPVNamesList = PVsMatchingParameter.getPVNamesFromPostBody(req);
         logger.debug("Incoming list has " + incomingPVNamesList.size() + "PV names");

@@ -2,7 +2,7 @@ package org.epics.archiverappliance.etl.common;
 
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.reports.Details;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 
 import java.text.DecimalFormat;
 import java.util.HashMap;
@@ -11,13 +11,14 @@ import java.util.LinkedList;
 import java.util.Map;
 
 public class ETLMetrics implements Details {
-    private final LinkedHashMap<String, ETLMetricsIntoStore> etlMetricsIntoStores = new LinkedHashMap<String, ETLMetricsIntoStore>();
+    private final LinkedHashMap<String, ETLMetricsIntoStore> etlMetricsIntoStores =
+            new LinkedHashMap<String, ETLMetricsIntoStore>();
 
     public void createMetricIfNoExists(String destName) {
-        synchronized(etlMetricsIntoStores) {
-            if(!etlMetricsIntoStores.containsKey(destName)) {
+        synchronized (etlMetricsIntoStores) {
+            if (!etlMetricsIntoStores.containsKey(destName)) {
                 etlMetricsIntoStores.put(destName, new ETLMetricsIntoStore(destName));
-            }            
+            }
         }
     }
 
@@ -47,7 +48,7 @@ public class ETLMetrics implements Details {
     }
 
     @Override
-    public LinkedList<Map<String, String>> details(ConfigService configService) {
+    public LinkedList<Map<String, String>> details(ApplianceLifecycle configService) {
         DecimalFormat twoSignificantDigits = new DecimalFormat("###,###,###,###,###,###.##");
         LinkedList<Map<String, String>> details = new LinkedList<Map<String, String>>();
         if (etlMetricsIntoStores.isEmpty()) {
@@ -91,7 +92,8 @@ public class ETLMetrics implements Details {
                                     etlMetricsIntoStore.getTimeinMillSecond4prepareForNewPartition())));
                     details.add(metricDetail(
                             "Avg time spent by appendToETLAppendData() (s/run)",
-                            runsFormatter.getFormatted(etlMetricsIntoStore.getTimeinMillSecond4appendToETLAppendData())));
+                            runsFormatter.getFormatted(
+                                    etlMetricsIntoStore.getTimeinMillSecond4appendToETLAppendData())));
                     details.add(metricDetail(
                             "Avg time spent by commitETLAppendData() (s/run)",
                             runsFormatter.getFormatted(etlMetricsIntoStore.getTimeinMillSecond4commitETLAppendData())));
@@ -136,7 +138,7 @@ public class ETLMetrics implements Details {
     }
 
     @Override
-    public ConfigService.WAR_FILE source() {
-        return ConfigService.WAR_FILE.ETL;
+    public ApplianceLifecycle.WAR_FILE source() {
+        return ApplianceLifecycle.WAR_FILE.ETL;
     }
 }

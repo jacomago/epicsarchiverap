@@ -3,7 +3,7 @@ package org.epics.archiverappliance.mgmt.pva.actions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.mgmt.bpl.GetApplianceInfo;
 import org.epics.pva.data.PVAStringArray;
 import org.epics.pva.data.PVAStructure;
@@ -17,65 +17,73 @@ import java.util.Map;
 
 /**
  * Based on {@link GetApplianceInfo}
- * 
+ *
  * @author Kunal Shroff, mshankar
  *
  */
 public class PvaGetApplianceInfo implements PvaAction {
 
-	private static Logger logger = LogManager.getLogger(PvaGetApplianceInfo.class.getName());
+    private final ClusterTopology clusterTopology;
 
-	public static final String NAME = "getApplianceInfo";
+    public PvaGetApplianceInfo(ClusterTopology clusterTopology) {
+        this.clusterTopology = clusterTopology;
+    }
 
-	@Override
-	public String getName() {
-		return NAME;
-	}
+    private static Logger logger = LogManager.getLogger(PvaGetApplianceInfo.class.getName());
 
-	@Override
-	public PVAStructure request(PVAStructure args, ConfigService configService) throws PvaActionException {
-		String id = null;
-		LinkedHashMap<String, String> applianceInfoMap;
-		PVAURI uri = PVAURI.fromStructure(args);
-		Map<String, String> queryName;
-		try {
-			queryName = uri.getQuery();
-			if (queryName.containsKey("id")) {
-				id = queryName.get("id");
-			}
-		} catch (NotValueException e) {
-			logger.error("Failed to parse input args: " + args, e);
-		}
+    public static final String NAME = "getApplianceInfo";
 
-		ApplianceInfo applianceInfo;
-		if (id == null || id.equals("")) {
-			applianceInfo = configService.getMyApplianceInfo();
-			logger.debug("No id specified, returning the id of this appliance " + applianceInfo.getIdentity());
-		} else {
-			logger.debug("Getting Appliance info for appliance with identity " + id);
-			applianceInfo = configService.getAppliance(id);
-		}
+    @Override
+    public String getName() {
+        return NAME;
+    }
 
-		if (applianceInfo == null) {
-			logger.warn("Cannot find appliance info for " + id);
-			throw new PvaActionException("Cannot find appliance info for " + id);
-		} else {
-			applianceInfoMap = new LinkedHashMap<String, String>();
-			applianceInfoMap.put("identity", applianceInfo.getIdentity());
-			applianceInfoMap.put("mgmtURL", applianceInfo.getMgmtURL());
-			applianceInfoMap.put("engineURL", applianceInfo.getEngineURL());
-			applianceInfoMap.put("retrievalURL", applianceInfo.getRetrievalURL());
-			applianceInfoMap.put("etlURL", applianceInfo.getEtlURL());
-		}
+    @Override
+    public PVAStructure request(PVAStructure args) throws PvaActionException {
+        String id = null;
+        LinkedHashMap<String, String> applianceInfoMap;
+        PVAURI uri = PVAURI.fromStructure(args);
+        Map<String, String> queryName;
+        try {
+            queryName = uri.getQuery();
+            if (queryName.containsKey("id")) {
+                id = queryName.get("id");
+            }
+        } catch (NotValueException e) {
+            logger.error("Failed to parse input args: " + args, e);
+        }
 
-		try {
-			return PVATable.PVATableBuilder.aPVATable()
-					.name(NAME)
-					.addColumn(new PVAStringArray("Key", applianceInfoMap.keySet().toArray(new String[applianceInfoMap.size()])))
-					.addColumn(new PVAStringArray("Value", applianceInfoMap.values().toArray(new String[applianceInfoMap.size()])))
-					.build();
-		} catch (MustBeArrayException e) {
-			throw new ResponseConstructionException(e);
-		}
-	}
+        ApplianceInfo applianceInfo;
+        if (id == null || id.equals("")) {
+            applianceInfo = clusterTopology.getMyApplianceInfo();
+            logger.debug("No id specified, returning the id of this appliance " + applianceInfo.getIdentity());
+        } else {
+            logger.debug("Getting Appliance info for appliance with identity " + id);
+            applianceInfo = clusterTopology.getAppliance(id);
+        }
+
+        if (applianceInfo == null) {
+            logger.warn("Cannot find appliance info for " + id);
+            throw new PvaActionException("Cannot find appliance info for " + id);
+        } else {
+            applianceInfoMap = new LinkedHashMap<String, String>();
+            applianceInfoMap.put("identity", applianceInfo.getIdentity());
+            applianceInfoMap.put("mgmtURL", applianceInfo.getMgmtURL());
+            applianceInfoMap.put("engineURL", applianceInfo.getEngineURL());
+            applianceInfoMap.put("retrievalURL", applianceInfo.getRetrievalURL());
+            applianceInfoMap.put("etlURL", applianceInfo.getEtlURL());
+        }
+
+        try {
+            return PVATable.PVATableBuilder.aPVATable()
+                    .name(NAME)
+                    .addColumn(new PVAStringArray(
+                            "Key", applianceInfoMap.keySet().toArray(new String[applianceInfoMap.size()])))
+                    .addColumn(new PVAStringArray(
+                            "Value", applianceInfoMap.values().toArray(new String[applianceInfoMap.size()])))
+                    .build();
+        } catch (MustBeArrayException e) {
+            throw new ResponseConstructionException(e);
+        }
+    }
 }

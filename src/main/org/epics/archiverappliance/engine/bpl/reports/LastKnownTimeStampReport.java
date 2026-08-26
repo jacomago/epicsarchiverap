@@ -3,8 +3,9 @@ package org.epics.archiverappliance.engine.bpl.reports;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.PVMetrics;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
@@ -24,11 +25,17 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class LastKnownTimeStampReport implements BPLAction {
+
+    private final ApplianceLifecycle configService;
+
+    public LastKnownTimeStampReport(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(LastKnownTimeStampReport.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Generating a last known timestamp report");
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
 
@@ -43,7 +50,7 @@ public class LastKnownTimeStampReport implements BPLAction {
             out.println("[");
             boolean first = true;
             for (ArchiveChannel channel :
-                    configService.getEngineContext().getChannelList().values()) {
+                    EngineContext.of(configService).getChannelList().values()) {
                 if (pattern != null && !pattern.matcher(channel.getName()).matches()) continue;
 
                 PVMetrics pvMetrics = channel.getPVMetrics();

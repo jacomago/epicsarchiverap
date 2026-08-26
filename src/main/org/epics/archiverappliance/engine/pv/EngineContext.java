@@ -14,15 +14,21 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigService.CachedPVCounts;
-import org.epics.archiverappliance.config.ConfigService.EAABulkOperation;
+import org.epics.archiverappliance.config.ClusterExecutor;
+import org.epics.archiverappliance.config.ClusterExecutor.EAABulkOperation;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.InstallationProperties;
 import org.epics.archiverappliance.config.MetaInfo;
+import org.epics.archiverappliance.config.PVDirectory;
+import org.epics.archiverappliance.config.PVDirectory.CachedPVCounts;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.PVTypeInfoEvent;
 import org.epics.archiverappliance.config.PVTypeInfoEvent.ChangeType;
+import org.epics.archiverappliance.config.PolicyService;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.config.UserSpecifiedSamplingParams;
 import org.epics.archiverappliance.config.exception.ConfigException;
@@ -42,11 +48,13 @@ import org.json.simple.JSONValue;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
@@ -64,6 +72,57 @@ public class EngineContext {
 
     private static double MAXIMUM_DISCONNECTED_CHANNEL_PERCENTAGE_BEFORE_STARTING_METACHANNELS = 5.0;
     private static int METACHANNELS_TO_START_AT_A_TIME = 10000;
+
+    /**
+     * The engine context belonging to each config service. Entries are removed by a shutdown hook;
+     * the context holds its config service, so the weak keys alone would not reclaim them.
+     * Keyed on identity, DefaultConfigService overriding neither equals nor hashCode. There is an entry
+     * per config service rather than a singleton because tests hold several config services at once.
+     */
+    private static final Map<ApplianceLifecycle, EngineContext> INSTANCES =
+            Collections.synchronizedMap(new WeakHashMap<>());
+
+    /**
+     * Build the engine webapp's runtime state and publish it against this config service.
+     * A context already published for this config service wins, so publishing is idempotent.
+     * @param storageConfig &emsp;
+     * @param applianceLifecycle the lifecycle this context is published against
+     * @param policyService &emsp;
+     * @param clusterExecutor &emsp;
+     * @param clusterTopology &emsp;
+     * @param pvDirectory &emsp;
+     * @return EngineContext &emsp;
+     * @throws ConfigException &emsp;
+     */
+    public static EngineContext create(
+            StoragePluginConfigView storageConfig,
+            ApplianceLifecycle applianceLifecycle,
+            PolicyService policyService,
+            ClusterExecutor clusterExecutor,
+            ClusterTopology clusterTopology,
+            PVDirectory pvDirectory)
+            throws ConfigException {
+        synchronized (INSTANCES) {
+            EngineContext existing = INSTANCES.get(applianceLifecycle);
+            if (existing != null) {
+                logger.debug("Engine context already published for this config service");
+                return existing;
+            }
+            EngineContext created = new EngineContext(
+                    storageConfig, applianceLifecycle, policyService, clusterExecutor, clusterTopology, pvDirectory);
+            INSTANCES.put(applianceLifecycle, created);
+            applianceLifecycle.addShutdownHook(() -> INSTANCES.remove(applianceLifecycle));
+            return created;
+        }
+    }
+
+    /**
+     * @param applianceLifecycle &emsp;
+     * @return This appliance's engine context, or null if this webapp is not the engine webapp.
+     */
+    public static EngineContext of(ApplianceLifecycle applianceLifecycle) {
+        return INSTANCES.get(applianceLifecycle);
+    }
 
     /** writing thread to write samplebuffer to protocol buffer */
     private final WriterRunnable writer;
@@ -95,7 +154,12 @@ public class EngineContext {
     private final ConcurrentHashMap<String, ControllingPV> controlingPVList =
             new ConcurrentHashMap<String, ControllingPV>();
 
-    private final ConfigService configService;
+    private final StoragePluginConfigView storageConfig;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final PolicyService policyService;
+    private final ClusterExecutor clusterExecutor;
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvDirectory;
     private final String myIdentity;
 
     /** A scheduler for all the SCAN PV's in the archiver. */
@@ -176,13 +240,25 @@ public class EngineContext {
     }
 
     /**
-     * This EngineContext should always be singleton
-     * @param configService the config service to initialize the engine context
+     * There is one EngineContext per config service; go through {@link #create(ConfigService)}.
+     * @param storageConfig the configuration the storage plugins are built from
+     * @param applianceLifecycle the lifecycle this context is published against
+     * @param policyService the policy fields archived with the stream
+     * @param clusterExecutor runs the PV count callback cluster-wide
+     * @param clusterTopology the appliances in the cluster
+     * @param pvDirectory the PV to appliance mapping
      */
-    public EngineContext(final ConfigService configService) throws ConfigException {
+    private EngineContext(
+            StoragePluginConfigView storageConfig,
+            ApplianceLifecycle applianceLifecycle,
+            PolicyService policyService,
+            ClusterExecutor clusterExecutor,
+            ClusterTopology clusterTopology,
+            PVDirectory pvDirectory)
+            throws ConfigException {
         String commandThreadCountVarName = "org.epics.archiverappliance.engine.epics.commandThreadCount";
         String commandThreadCountStr =
-                configService.getInstallationProperties().getProperty(commandThreadCountVarName, "10");
+                storageConfig.getInstallationProperties().getProperty(commandThreadCountVarName, "10");
         configlogger.info("Creating " + commandThreadCountStr + " command threads as specified by "
                 + commandThreadCountVarName + " in archappl.properties");
         int commandThreadCount = Integer.parseInt(commandThreadCountStr);
@@ -193,12 +269,12 @@ public class EngineContext {
             command_threads[threadNum].start();
         }
 
-        MAXIMUM_DISCONNECTED_CHANNEL_PERCENTAGE_BEFORE_STARTING_METACHANNELS = Double.parseDouble(configService
+        MAXIMUM_DISCONNECTED_CHANNEL_PERCENTAGE_BEFORE_STARTING_METACHANNELS = Double.parseDouble(storageConfig
                 .getInstallationProperties()
                 .getProperty(
                         "org.epics.archiverappliance.engine.maximum_disconnected_channel_percentage_before_starting_metachannels",
                         Double.toString(MAXIMUM_DISCONNECTED_CHANNEL_PERCENTAGE_BEFORE_STARTING_METACHANNELS)));
-        METACHANNELS_TO_START_AT_A_TIME = Integer.parseInt(configService
+        METACHANNELS_TO_START_AT_A_TIME = Integer.parseInt(storageConfig
                 .getInstallationProperties()
                 .getProperty(
                         "org.epics.archiverappliance.engine.metachannels_to_start_at_a_time",
@@ -209,20 +285,25 @@ public class EngineContext {
                 + " at a time");
 
         String writeThreadCountName = "org.epics.archiverappliance.engine.epics.writeThreadCount";
-        String writeThreadCountStr = configService.getInstallationProperties().getProperty(writeThreadCountName, "0");
+        String writeThreadCountStr = storageConfig.getInstallationProperties().getProperty(writeThreadCountName, "0");
         this.writeThreadCount = Integer.parseInt(writeThreadCountStr);
         configlogger.info("Write concurrency limit: " + writeThreadCountStr + " (0=unlimited) as specified by "
                 + writeThreadCountName + " in archappl.properties");
 
-        writer = new WriterRunnable(configService);
+        writer = new WriterRunnable(storageConfig, this);
         channelList = new ConcurrentHashMap<String, ArchiveChannel>();
         logger.debug("Registering EngineContext for events");
-        this.configService = configService;
-        this.myIdentity = configService.getMyApplianceInfo().getIdentity();
-        this.configService.getEventBus().register(this);
+        this.storageConfig = storageConfig;
+        this.applianceLifecycle = applianceLifecycle;
+        this.policyService = policyService;
+        this.clusterExecutor = clusterExecutor;
+        this.clusterTopology = clusterTopology;
+        this.pvDirectory = pvDirectory;
+        this.myIdentity = clusterTopology.getMyApplianceInfo().getIdentity();
+        this.applianceLifecycle.getEventBus().register(this);
 
         String scanThreadCountName = "org.epics.archiverappliance.engine.epics.scanThreadCount";
-        String scanThreadCountStr = configService.getInstallationProperties().getProperty(scanThreadCountName, "1");
+        String scanThreadCountStr = storageConfig.getInstallationProperties().getProperty(scanThreadCountName, "1");
         configlogger.info("Creating " + scanThreadCountStr + " scan threads as specified by " + scanThreadCountName
                 + " in archappl.properties");
         int scanThreadCount = Integer.parseInt(scanThreadCountStr);
@@ -230,7 +311,7 @@ public class EngineContext {
         // Start the scan thread
         scanScheduler = new ScheduledThreadPoolExecutor(scanThreadCount, r -> new Thread(r, "The SCAN scheduler."));
 
-        configService.addShutdownHook(() -> {
+        applianceLifecycle.addShutdownHook(() -> {
             logger.info("the archive engine will shutdown");
             try {
 
@@ -279,9 +360,9 @@ public class EngineContext {
             logger.info("the archive engine has been shutdown");
         });
 
-        if (configService.getInstallationProperties() != null) {
+        if (storageConfig.getInstallationProperties() != null) {
             try {
-                String disConnStr = configService
+                String disConnStr = storageConfig
                         .getInstallationProperties()
                         .getProperty(
                                 "org.epics.archiverappliance.engine.util.EngineContext.disconnectCheckTimeoutInMinutes",
@@ -295,7 +376,7 @@ public class EngineContext {
             }
         }
 
-        startMiscTasksScheduler(configService);
+        startMiscTasksScheduler(storageConfig, applianceLifecycle, policyService);
 
         boolean allContextsHaveBeenInitialized = false;
         for (int loopcount = 0; loopcount < 60 && !allContextsHaveBeenInitialized; loopcount++) {
@@ -315,7 +396,7 @@ public class EngineContext {
 
         this.iniV4ChannelProvidert();
 
-        this.sampleBufferCapacityAdjustment = Double.parseDouble(configService
+        this.sampleBufferCapacityAdjustment = Double.parseDouble(storageConfig
                 .getInstallationProperties()
                 .getProperty("org.epics.archiverappliance.config.PVTypeInfo.sampleBufferCapacityAdjustment", "1.0"));
         logger.debug("Buffer capacity adjustment is " + this.sampleBufferCapacityAdjustment);
@@ -323,12 +404,17 @@ public class EngineContext {
 
     /**
      * Start up the scheduler for misc tasks.
-     * @param configService
+     * @param storageConfig The configuration the storage plugins are built from
+     * @param applianceLifecycle The lifecycle whose shutdown hook stops the scheduler
+     * @param policyService The policy fields archived with the stream
      */
-    private void startMiscTasksScheduler(final ConfigService configService) {
+    private void startMiscTasksScheduler(
+            final StoragePluginConfigView storageConfig,
+            final ApplianceLifecycle applianceLifecycle,
+            final PolicyService policyService) {
         miscTasksScheduler = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, "Engine scheduler for misc tasks."));
 
-        configService.addShutdownHook(() -> {
+        applianceLifecycle.addShutdownHook(() -> {
             logger.info("Shutting down the engine scheduler for misc tasks.");
             miscTasksScheduler.shutdown();
         });
@@ -337,7 +423,7 @@ public class EngineContext {
         assert (disconnectCheckerPeriodInSeconds > 0);
         logger.info("Running the disconnect checker every {} seconds", disconnectCheckerPeriodInSeconds);
         disconnectFuture = miscTasksScheduler.scheduleAtFixedRate(
-                new DisconnectChecker(configService),
+                new DisconnectChecker(),
                 disconnectCheckerPeriodInSeconds,
                 disconnectCheckerPeriodInSeconds,
                 TimeUnit.SECONDS);
@@ -419,10 +505,10 @@ public class EngineContext {
 
     /**
      * start the write thread of the engine and this is actually called by the first pv when creating channel
-     * @param configservice  configservice used by this writer
+     * @param installationProperties the properties the write period comes from
      */
-    public void startWriteThread(ConfigService configservice) {
-        int defaultWritePeriod = PVTypeInfo.getSecondsToBuffer(configservice);
+    public void startWriteThread(InstallationProperties installationProperties) {
+        int defaultWritePeriod = PVTypeInfo.getSecondsToBuffer(installationProperties);
         double actualWrite_period = writer.setWritingPeriod(defaultWritePeriod);
         this.write_period = actualWrite_period;
         if (scheduler == null) {
@@ -451,14 +537,14 @@ public class EngineContext {
     public void computeMetaInfo(PubSubEvent pubSubEvent) {
         if (pubSubEvent.getDestination().equals("ALL")
                 || (pubSubEvent.getDestination().startsWith(myIdentity)
-                        && pubSubEvent.getDestination().endsWith(ConfigService.WAR_FILE.ENGINE.toString()))) {
+                        && pubSubEvent.getDestination().endsWith(ApplianceLifecycle.WAR_FILE.ENGINE.toString()))) {
             switch (pubSubEvent.getType()) {
                 case "ComputeMetaInfo" -> {
                     String pvName = pubSubEvent.getPvName();
                     try {
                         logger.debug("ComputeMetaInfo called for " + pvName);
                         String fieldName = PVNames.getFieldName(pvName);
-                        String[] extraFields = configService.getExtraFields();
+                        String[] extraFields = policyService.getExtraFields();
                         if (fieldName != null && !fieldName.isEmpty()) {
                             logger.debug("We are not asking for extra fields for a field value " + fieldName
                                     + " for pv " + pvName);
@@ -472,15 +558,17 @@ public class EngineContext {
 
                         ArchiveEngine.getArchiveInfo(
                                 pvName,
-                                configService,
+                                storageConfig,
+                                applianceLifecycle,
+                                policyService,
                                 extraFields,
                                 userSpec.isUsePVAccess(),
-                                new ArchivePVMetaCompletedListener(pvName, configService, myIdentity));
+                                new ArchivePVMetaCompletedListener(pvName, applianceLifecycle, myIdentity));
                         PubSubEvent confirmationEvent = new PubSubEvent(
                                 "MetaInfoRequested",
-                                pubSubEvent.getSource() + "_" + ConfigService.WAR_FILE.MGMT,
+                                pubSubEvent.getSource() + "_" + ApplianceLifecycle.WAR_FILE.MGMT,
                                 pvName);
-                        configService.getEventBus().post(confirmationEvent);
+                        applianceLifecycle.getEventBus().post(confirmationEvent);
                     } catch (Exception ex) {
                         logger.error("Exception requesting metainfo for pv " + pvName, ex);
                     }
@@ -491,9 +579,9 @@ public class EngineContext {
                         this.startArchivingPV(pvName);
                         PubSubEvent confirmationEvent = new PubSubEvent(
                                 "StartedArchivingPV",
-                                pubSubEvent.getSource() + "_" + ConfigService.WAR_FILE.MGMT,
+                                pubSubEvent.getSource() + "_" + ApplianceLifecycle.WAR_FILE.MGMT,
                                 pvName);
-                        configService.getEventBus().post(confirmationEvent);
+                        applianceLifecycle.getEventBus().post(confirmationEvent);
                     } catch (Exception ex) {
                         logger.error("Exception beginnning archiving pv " + pvName, ex);
                     }
@@ -506,7 +594,7 @@ public class EngineContext {
                         // PubSubEvent confirmationEvent = new PubSubEvent("MetaInfoAborted", pubSubEvent.getSource() +
                         // "_"
                         // + ConfigService.WAR_FILE.MGMT, pvName);
-                        // configService.getEventBus().post(confirmationEvent);
+                        // applianceLifecycle.getEventBus().post(confirmationEvent);
                     } catch (Exception ex) {
                         logger.error("Exception aborting metainfo for PV " + pvName, ex);
                     }
@@ -520,7 +608,7 @@ public class EngineContext {
     @Subscribe
     public void pvTypeInfoChanged(PVTypeInfoEvent event) {
         String pvName = event.pvName();
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = storageConfig.getTypeInfoForPV(pvName);
         logger.debug(
                 "Received PVTypeInfo changed event for {} ChangeType: {} Paused: {} Appliance: {}",
                 pvName,
@@ -530,19 +618,19 @@ public class EngineContext {
         if (event.changeType() == ChangeType.TYPEINFO_DELETED
                 || typeInfo.isPaused()
                 || !typeInfo.getApplianceIdentity()
-                        .equals(configService.getMyApplianceInfo().getIdentity())) {
+                        .equals(clusterTopology.getMyApplianceInfo().getIdentity())) {
             try {
                 logger.debug("Stopping CA/PVA channels for {} based on PVTypeInfo change", pvName);
-                ArchiveEngine.pauseArchivingPV(pvName, configService);
+                ArchiveEngine.pauseArchivingPV(pvName, storageConfig, applianceLifecycle, policyService);
             } catch (Exception ex) {
                 logger.error("Exception pausing PV " + pvName, ex);
             }
         } else if (!typeInfo.isPaused()
                 && typeInfo.getApplianceIdentity()
-                        .equals(configService.getMyApplianceInfo().getIdentity())) {
+                        .equals(clusterTopology.getMyApplianceInfo().getIdentity())) {
             try {
                 logger.debug("Resuming CA/PVA channels for {} based on PVTypeInfo change", pvName);
-                ArchiveEngine.resumeArchivingPV(pvName, configService);
+                ArchiveEngine.resumeArchivingPV(pvName, storageConfig, applianceLifecycle, policyService);
             } catch (Exception ex) {
                 logger.error("Exception resuming PV " + pvName, ex);
             }
@@ -566,17 +654,17 @@ public class EngineContext {
             miscTasksScheduler.shutdown();
             this.miscTasksScheduler = null;
         }
-        this.startMiscTasksScheduler(configService);
+        this.startMiscTasksScheduler(storageConfig, applianceLifecycle, policyService);
     }
 
     static class ArchivePVMetaCompletedListener implements MetaCompletedListener {
         String pvName;
-        ConfigService configService;
+        ApplianceLifecycle applianceLifecycle;
         String myIdentity;
 
-        ArchivePVMetaCompletedListener(String pvName, ConfigService configService, String myIdentity) {
+        ArchivePVMetaCompletedListener(String pvName, ApplianceLifecycle applianceLifecycle, String myIdentity) {
             this.pvName = pvName;
-            this.configService = configService;
+            this.applianceLifecycle = applianceLifecycle;
             this.myIdentity = myIdentity;
         }
 
@@ -584,12 +672,12 @@ public class EngineContext {
         public void completed(MetaInfo metaInfo) {
             try {
                 logger.debug("Completed computing archive info for pv " + pvName);
-                PubSubEvent confirmationEvent =
-                        new PubSubEvent("MetaInfoFinished", myIdentity + "_" + ConfigService.WAR_FILE.MGMT, pvName);
+                PubSubEvent confirmationEvent = new PubSubEvent(
+                        "MetaInfoFinished", myIdentity + "_" + ApplianceLifecycle.WAR_FILE.MGMT, pvName);
                 JSONEncoder<MetaInfo> encoder = JSONEncoder.getEncoder(MetaInfo.class);
                 JSONObject metaInfoObj = encoder.encode(metaInfo);
                 confirmationEvent.setEventData(JSONValue.toJSONString(metaInfoObj));
-                configService.getEventBus().post(confirmationEvent);
+                applianceLifecycle.getEventBus().post(confirmationEvent);
             } catch (Exception ex) {
                 logger.error("Exception sending across metainfo for pv " + pvName, ex);
             }
@@ -597,7 +685,7 @@ public class EngineContext {
     }
 
     private void startArchivingPV(String pvName) throws Exception {
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = storageConfig.getTypeInfoForPV(pvName);
         if (typeInfo == null) {
             logger.error(
                     "Unable to find pvTypeInfo for PV" + pvName
@@ -607,11 +695,11 @@ public class EngineContext {
 
         ArchDBRTypes dbrType = typeInfo.getDBRType();
         // The first data store in the policy is always the first destination; hence thePolicy.getDataStores()[0]
-        StoragePlugin firstDest = StoragePluginURLParser.parseStoragePlugin(typeInfo.getDataStores()[0], configService);
+        StoragePlugin firstDest = StoragePluginURLParser.parseStoragePlugin(typeInfo.getDataStores()[0], storageConfig);
         SamplingMethod samplingMethod = typeInfo.getSamplingMethod();
         float samplingPeriod = typeInfo.getSamplingPeriod();
 
-        Instant lastKnownTimeStamp = typeInfo.determineLastKnownEventFromStores(configService);
+        Instant lastKnownTimeStamp = typeInfo.determineLastKnownEventFromStores(storageConfig);
         String controllingPV = typeInfo.getControllingPV();
         String[] archiveFields = typeInfo.getArchiveFields();
 
@@ -622,7 +710,9 @@ public class EngineContext {
                 samplingPeriod,
                 samplingMethod,
                 firstDest,
-                configService,
+                storageConfig,
+                applianceLifecycle,
+                policyService,
                 dbrType,
                 lastKnownTimeStamp,
                 controllingPV,
@@ -643,11 +733,7 @@ public class EngineContext {
      *
      */
     private final class DisconnectChecker implements Runnable {
-        private final ConfigService configService;
-
-        private DisconnectChecker(ConfigService configService) {
-            this.configService = configService;
-        }
+        private DisconnectChecker() {}
 
         @Override
         public void run() {
@@ -655,7 +741,7 @@ public class EngineContext {
                 // We run thru all the channels
                 // - if a channel has not reconnected in disconnectCheckTimeoutInMinutes,
                 // we pause and resume the channel. (No longer done)
-                if (EngineContext.this.configService.isShuttingDown()) {
+                if (EngineContext.this.applianceLifecycle.isShuttingDown()) {
                     logger.debug("Skipping checking for disconnected channels as the system is shutting down.");
                     return;
                 }
@@ -687,10 +773,10 @@ public class EngineContext {
                             < MAXIMUM_DISCONNECTED_CHANNEL_PERCENTAGE_BEFORE_STARTING_METACHANNELS) {
                         boolean kickOffMetaChannels = true;
                         // Then we repeat the same check for the other appliances in this cluster
-                        for (ApplianceInfo applianceInfo : configService.getAppliancesInCluster()) {
+                        for (ApplianceInfo applianceInfo : clusterTopology.getAppliancesInCluster()) {
                             if (applianceInfo
                                     .getIdentity()
-                                    .equals(configService.getMyApplianceInfo().getIdentity())) {
+                                    .equals(clusterTopology.getMyApplianceInfo().getIdentity())) {
                                 // We do not check for ourself...
                             } else {
                                 String connectedPVCountURL =
@@ -711,7 +797,7 @@ public class EngineContext {
                                         logger.debug("Appliance " + applianceInfo.getIdentity()
                                                 + " has connected to most of its channels");
                                     } else {
-                                        if (configService.hasClusterFinishedInitialization()
+                                        if (clusterTopology.hasClusterFinishedInitialization()
                                                 && applianceTotalPVCount != 0) {
                                             logger.info(
                                                     "Appliance " + applianceInfo.getIdentity()
@@ -927,17 +1013,17 @@ public class EngineContext {
         return ret;
     }
 
-    static class PVCounts implements EAABulkOperation<CachedPVCounts> {
+    static class PVCounts implements EAABulkOperation<PVDirectory, CachedPVCounts> {
         @Override
-        public CachedPVCounts call(ConfigService configService) {
-            return configService.getCachedPVCountsForThisAppliance();
+        public CachedPVCounts call(PVDirectory pvDirectory) {
+            return pvDirectory.getCachedPVCountsForThisAppliance();
         }
     }
 
     public int getPausedPVCount() {
-        Map<String, CachedPVCounts> pvCountsByAppliance = configService.executeClusterWide(new PVCounts());
+        Map<String, CachedPVCounts> pvCountsByAppliance = clusterExecutor.executeClusterWide(new PVCounts());
         return pvCountsByAppliance
-                .getOrDefault(configService.getMyApplianceInfo().getIdentity(), new CachedPVCounts(0, 0))
+                .getOrDefault(clusterTopology.getMyApplianceInfo().getIdentity(), new CachedPVCounts(0, 0))
                 .pausedPVCount();
     }
 

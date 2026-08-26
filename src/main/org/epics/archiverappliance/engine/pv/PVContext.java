@@ -12,7 +12,7 @@ import gov.aps.jca.Channel;
 import gov.aps.jca.event.ConnectionListener;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 
 /**
  * Handle PV context, pool PVs by name.
@@ -85,14 +85,13 @@ public class PVContext {
      * @see #releaseChannel
      */
     public static synchronized Channel getChannel(
-            final ConfigService configservice,
+            final ApplianceLifecycle applianceLifecycle,
             final String name,
             int jcaCommandThreadId,
             final ConnectionListener conn_callback)
             throws Exception {
 
-        final Channel channel = configservice
-                .getEngineContext()
+        final Channel channel = EngineContext.of(applianceLifecycle)
                 .getJCACommandThread(jcaCommandThreadId)
                 .createChannel(name, conn_callback);
 
@@ -124,7 +123,7 @@ public class PVContext {
 
     /**
      * Add a command to the JCACommandThread.
-     * @param configservice The config service of the engine this PV belongs to.
+     * @param applianceLifecycle The config service of the engine this PV belongs to.
      * @param pvName The name of the PV that this applies to
      * @param jcaCommandThreadId The JCA Command thread for this PV.
      * @param theChannel this can be null
@@ -132,7 +131,7 @@ public class PVContext {
      * @param command The runnable that will run in the specified command thread
      */
     public static void scheduleCommand(
-            ConfigService configservice,
+            ApplianceLifecycle applianceLifecycle,
             String pvName,
             int jcaCommandThreadId,
             Channel theChannel,
@@ -140,8 +139,7 @@ public class PVContext {
             final Runnable command) {
         try {
             if (theChannel != null) {
-                if (!configservice
-                        .getEngineContext()
+                if (!EngineContext.of(applianceLifecycle)
                         .doesChannelContextMatchThreadContext(theChannel, jcaCommandThreadId)) {
                     logger.error("Command for pv " + pvName + " is incorrectly scheduled on thread "
                             + jcaCommandThreadId + " in " + msg);
@@ -156,6 +154,8 @@ public class PVContext {
         } catch (Throwable t) {
             logger.error("Exception scheduling command for pv " + pvName, t);
         }
-        configservice.getEngineContext().getJCACommandThread(jcaCommandThreadId).addCommand(command);
+        EngineContext.of(applianceLifecycle)
+                .getJCACommandThread(jcaCommandThreadId)
+                .addCommand(command);
     }
 }

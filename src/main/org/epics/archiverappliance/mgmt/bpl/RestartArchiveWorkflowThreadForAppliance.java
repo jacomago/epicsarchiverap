@@ -10,7 +10,8 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -30,16 +31,22 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class RestartArchiveWorkflowThreadForAppliance implements BPLAction {
+
+    private final ApplianceLifecycle configService;
+
+    public RestartArchiveWorkflowThreadForAppliance(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(RestartArchiveWorkflowThreadForAppliance.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Restarting the archive PV workflow thread for this appliance");
         HashMap<String, Object> infoValues = new HashMap<String, Object>();
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
-            configService.getMgmtRuntimeState().abortAllAndRestartArchiveRequestsThread();
+            MgmtRuntimeState.of(configService).abortAllAndRestartArchiveRequestsThread();
             infoValues.put("status", "ok");
             out.println(JSONValue.toJSONString(infoValues));
         }

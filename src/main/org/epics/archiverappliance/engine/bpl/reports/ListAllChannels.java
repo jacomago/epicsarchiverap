@@ -1,7 +1,7 @@
 package org.epics.archiverappliance.engine.bpl.reports;
 
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -19,10 +19,15 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class ListAllChannels implements BPLAction {
 
+    private final ApplianceLifecycle configService;
+
+    public ListAllChannels(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
-        EngineContext engineRuntime = configService.getEngineContext();
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        EngineContext engineRuntime = EngineContext.of(configService);
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
             out.println("[");

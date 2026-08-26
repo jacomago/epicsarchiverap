@@ -10,7 +10,7 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ChannelArchiverConfig;
 import org.epics.archiverappliance.mgmt.bpl.cahdlers.ArchivesHandler;
 import org.epics.archiverappliance.mgmt.bpl.cahdlers.InfoHandler;
 import org.epics.archiverappliance.retrieval.channelarchiver.XMLRPCClient;
@@ -37,6 +37,13 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class AddExternalArchiverServer implements BPLAction {
+
+    private final ChannelArchiverConfig configService;
+
+    public AddExternalArchiverServer(ChannelArchiverConfig configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(AddExternalArchiverServer.class.getName());
 
     enum ExternalServerType {
@@ -45,8 +52,7 @@ public class AddExternalArchiverServer implements BPLAction {
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String serverUrl = req.getParameter("externalarchiverserverurl");
         if (serverUrl == null || serverUrl.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);

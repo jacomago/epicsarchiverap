@@ -546,11 +546,11 @@ public class PVTypeInfo implements Serializable {
 
     /**
      * Loop thru the stores outlined in this typeinfo and determine the most recent event for this pv
-     * @param configService ConfigService
+     * @param configService The configuration the stores named in this typeinfo need to initialize
      * @throws IOException  &emsp;
      * @return Instant  &emsp;
      */
-    public Instant determineLastKnownEventFromStores(ConfigService configService) throws IOException {
+    public Instant determineLastKnownEventFromStores(StoragePluginConfigView configService) throws IOException {
         try (BasicContext context = new BasicContext()) {
             for (String storeUrl : this.dataStores) {
                 try {
@@ -568,11 +568,11 @@ public class PVTypeInfo implements Serializable {
     /**
      * The secondsToBuffer is a system wide property.
      * Use this method to get the proper defaults.
-     * @param configService ConfigService
+     * @param installationProperties ConfigService
      * @return secondsToBuffer  &emsp;
      */
-    public static int getSecondsToBuffer(ConfigService configService) {
-        String secondsToBufferStr = configService
+    public static int getSecondsToBuffer(InstallationProperties installationProperties) {
+        String secondsToBufferStr = installationProperties
                 .getInstallationProperties()
                 .getProperty("org.epics.archiverappliance.config.PVTypeInfo.secondsToBuffer", "10");
         int secondsToBuffer = Integer.parseInt(secondsToBufferStr);

@@ -3,8 +3,10 @@ package org.epics.archiverappliance.retrieval.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.AliasRegistry;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.JSONEncoder;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -29,11 +31,22 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class GetPVMetaData implements BPLAction {
+
+    private final AliasRegistry aliasRegistry;
+    private final ClusterTopology clusterTopology;
+    private final PVTypeInfoStore pvtypeInfoStore;
+
+    public GetPVMetaData(
+            AliasRegistry aliasRegistry, ClusterTopology clusterTopology, PVTypeInfoStore pvtypeInfoStore) {
+        this.aliasRegistry = aliasRegistry;
+        this.clusterTopology = clusterTopology;
+        this.pvtypeInfoStore = pvtypeInfoStore;
+    }
+
     private static Logger logger = LogManager.getLogger(GetPVMetaData.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         logger.debug("Getting metadata for PV " + pvName);
 
@@ -45,10 +58,10 @@ public class GetPVMetaData implements BPLAction {
         }
 
         // String pvNameFromRequest = pvName;
-        String realName = configService.getRealNameForAlias(pvName);
+        String realName = aliasRegistry.getRealNameForAlias(pvName);
         if (realName != null) pvName = realName;
 
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pvName);
         if (typeInfo == null) {
             logger.warn("Cannot find typeinfo for " + pvName);
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -60,9 +73,9 @@ public class GetPVMetaData implements BPLAction {
             JSONEncoder<PVTypeInfo> jsonEncoder = JSONEncoder.getEncoder(PVTypeInfo.class);
             JSONObject typeInfoJSON = jsonEncoder.encode(typeInfo);
             GetUrlContent.combineJSONObjects(retVal, typeInfoJSON);
-            String engineURL =
-                    configService.getAppliance(typeInfo.getApplianceIdentity()).getEngineURL() + "/getMetadata?pv="
-                            + URLEncoder.encode(pvName, "UTF-8");
+            String engineURL = clusterTopology
+                            .getAppliance(typeInfo.getApplianceIdentity())
+                            .getEngineURL() + "/getMetadata?pv=" + URLEncoder.encode(pvName, "UTF-8");
             JSONObject engineMetaData = GetUrlContent.getURLContentAsJSONObject(engineURL);
             if (engineMetaData != null) {
                 GetUrlContent.combineJSONObjects(retVal, engineMetaData);

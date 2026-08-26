@@ -51,16 +51,12 @@ import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.config.persistence.MySQLPersistence;
 import org.epics.archiverappliance.config.pubsub.PubSubEvent;
 import org.epics.archiverappliance.engine.ArchiveEngine;
-import org.epics.archiverappliance.engine.pv.EngineContext;
-import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.mgmt.MgmtPostStartup;
-import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.epics.archiverappliance.mgmt.NonMgmtPostStartup;
 import org.epics.archiverappliance.mgmt.bpl.cahdlers.NamesHandler;
 import org.epics.archiverappliance.mgmt.policy.ExecutePolicy;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
-import org.epics.archiverappliance.retrieval.RetrievalState;
 import org.epics.archiverappliance.retrieval.channelarchiver.XMLRPCClient;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.JSONDecoder;
@@ -167,10 +163,7 @@ public class DefaultConfigService implements ConfigService {
 
     // Runtime state begins here
     protected LinkedList<Runnable> shutdownHooks = new LinkedList<>();
-    protected PBThreeTierETLPVLookup etlPVLookup = null;
-    protected RetrievalState retrievalState = null;
-    protected MgmtRuntimeState mgmtRuntime = null;
-    protected EngineContext engineContext = null;
+    protected LinkedList<Runnable> postStartupHooks = new LinkedList<>();
     protected ConcurrentSkipListSet<String> appliancesInCluster = new ConcurrentSkipListSet<String>();
     // Runtime state ends here
 
@@ -331,18 +324,14 @@ public class DefaultConfigService implements ConfigService {
         switch (contextPath) {
             case "/mgmt":
                 warFile = WAR_FILE.MGMT;
-                this.mgmtRuntime = new MgmtRuntimeState(this);
                 break;
             case "/engine":
                 warFile = WAR_FILE.ENGINE;
-                this.engineContext = new EngineContext(this);
                 break;
             case "/retrieval":
                 warFile = WAR_FILE.RETRIEVAL;
-                this.retrievalState = new RetrievalState(this);
                 break;
             case "/etl":
-                this.etlPVLookup = new PBThreeTierETLPVLookup(this);
                 warFile = WAR_FILE.ETL;
                 break;
             default:
@@ -398,13 +387,13 @@ public class DefaultConfigService implements ConfigService {
         this.startupState = STARTUP_SEQUENCE.READY_TO_JOIN_APPLIANCE;
         if (this.warFile == WAR_FILE.MGMT) {
             logger.info("Scheduling webappReady's for the mgmt webapp ");
-            MgmtPostStartup mgmtPostStartup = new MgmtPostStartup(this);
+            MgmtPostStartup mgmtPostStartup = new MgmtPostStartup(this, this);
             ScheduledFuture<?> postStartupFuture =
                     startupExecutor.scheduleAtFixedRate(mgmtPostStartup, 10, 20, TimeUnit.SECONDS);
             mgmtPostStartup.setCancellingFuture(postStartupFuture);
         } else {
             logger.info("Scheduling webappReady's for the non-mgmt webapp " + this.warFile.toString());
-            NonMgmtPostStartup nonMgmtPostStartup = new NonMgmtPostStartup(this, this.warFile.toString());
+            NonMgmtPostStartup nonMgmtPostStartup = new NonMgmtPostStartup(this, this, this.warFile.toString());
             ScheduledFuture<?> postStartupFuture =
                     startupExecutor.scheduleAtFixedRate(nonMgmtPostStartup, 10, 20, TimeUnit.SECONDS);
             nonMgmtPostStartup.setCancellingFuture(postStartupFuture);
@@ -730,8 +719,6 @@ public class DefaultConfigService implements ConfigService {
                     },
                     1,
                     TimeUnit.SECONDS);
-        } else if (this.warFile == WAR_FILE.ETL) {
-            this.etlPVLookup.postStartup();
         } else if (this.warFile == WAR_FILE.MGMT) {
             initializePersistenceLayer();
 
@@ -750,6 +737,10 @@ public class DefaultConfigService implements ConfigService {
         } else if (this.warFile == WAR_FILE.RETRIEVAL) {
             initializeFailoverServerCache();
         }
+
+        // Let this webapp's runtime state, if it registered a hook, join the startup sequence. ETL is the
+        // only registrant today; its hook occupies the slot its WAR_FILE.ETL branch used to.
+        postStartupHooks.forEach(Runnable::run);
 
         // Register for changes to the typeinfo map.
         logger.info("Registering for changes to typeinfos");
@@ -978,6 +969,8 @@ public class DefaultConfigService implements ConfigService {
                         samplingMethod,
                         firstDest,
                         this,
+                        this,
+                        this,
                         dbrType,
                         lastKnownTimestamp,
                         typeInfo.getControllingPV(),
@@ -1093,29 +1086,37 @@ public class DefaultConfigService implements ConfigService {
         return new CachedPVCounts(this.totalPVCountOnThisAppliance, this.pausedPVCountOnThisAppliance);
     }
 
+    /**
+     * Adapts a storage agnostic {@link PVTypeInfoProjection} onto the Hz projection that IMap.project expects.
+     * Serializable by way of Projection; the delegate it holds is serializable for the same reason.
+     */
+    private record HzProjection<T>(PVTypeInfoProjection<T> delegate)
+            implements Projection<Map.Entry<String, PVTypeInfo>, T> {
+        @Override
+        public T transform(Map.Entry<String, PVTypeInfo> entry) {
+            return this.delegate.transform(entry.getKey(), entry.getValue());
+        }
+    }
+
     @Override
-    public <T> Collection<T> queryPVTypeInfos(
-            Predicate<String, PVTypeInfo> predicate, Projection<Map.Entry<String, PVTypeInfo>, T> projection) {
-        Collection<T> projectedTypeInfos = this.typeInfos.project(projection, predicate);
-        return projectedTypeInfos;
+    public <T> Collection<T> queryPVTypeInfos(Collection<String> pvNames, PVTypeInfoProjection<T> projection) {
+        Predicate<String, PVTypeInfo> predicate = Predicates.in("__key", pvNames.toArray(new String[0]));
+        return this.typeInfos.project(new HzProjection<>(projection), predicate);
     }
 
     private static record PVAppId(String pvName, String appliance) implements Serializable {}
     ;
 
-    private static class PVAppidProj implements Projection<Map.Entry<String, PVTypeInfo>, PVAppId> {
+    private static class PVAppidProj implements PVTypeInfoProjection<PVAppId> {
         @Override
-        public PVAppId transform(Map.Entry<String, PVTypeInfo> entry) {
-            String pvName = entry.getKey();
-            PVTypeInfo value = entry.getValue();
-            return new PVAppId(pvName, value.getApplianceIdentity());
+        public PVAppId transform(String pvName, PVTypeInfo typeInfo) {
+            return new PVAppId(pvName, typeInfo.getApplianceIdentity());
         }
     }
 
     @Override
     public Map<String, List<String>> breakDownPVsByAppliance(List<String> pvNames) {
-        Collection<PVAppId> vals =
-                this.queryPVTypeInfos(Predicates.in("__key", pvNames.toArray(new String[0])), new PVAppidProj());
+        Collection<PVAppId> vals = this.queryPVTypeInfos(pvNames, new PVAppidProj());
         return vals.stream()
                 .collect(Collectors.groupingBy(
                         PVAppId::appliance, Collectors.mapping(PVAppId::pvName, Collectors.toList())));
@@ -1125,16 +1126,16 @@ public class DefaultConfigService implements ConfigService {
 
     private static class EAAClusterWideOperation<T>
             implements Callable<Tuple<T>>, Serializable, HazelcastInstanceAware {
-        private transient ConfigService theConfigService;
-        private final EAABulkOperation<T> theOperation;
+        private transient ClusterCallbackView theConfigService;
+        private final EAABulkOperation<? super ClusterCallbackView, T> theOperation;
 
-        public EAAClusterWideOperation(EAABulkOperation<T> theOperation) {
+        public EAAClusterWideOperation(EAABulkOperation<? super ClusterCallbackView, T> theOperation) {
             this.theOperation = theOperation;
         }
 
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             theConfigService =
-                    (ConfigService) hazelcastInstance.getUserContext().get(CONFIGSERVICE_HZ_NAME);
+                    (ClusterCallbackView) hazelcastInstance.getUserContext().get(CONFIGSERVICE_HZ_NAME);
         }
 
         public Tuple<T> call() {
@@ -1144,7 +1145,7 @@ public class DefaultConfigService implements ConfigService {
     }
 
     @Override
-    public <T> Map<String, T> executeClusterWide(EAABulkOperation<T> theOperation) {
+    public <T> Map<String, T> executeClusterWide(EAABulkOperation<? super ClusterCallbackView, T> theOperation) {
         HashMap<String, T> ret = new HashMap<String, T>();
         IExecutorService executorService = this.hzinstance.getExecutorService("default");
         Map<Member, Future<Tuple<T>>> futures = executorService.submitToMembers(
@@ -1163,7 +1164,8 @@ public class DefaultConfigService implements ConfigService {
     }
 
     @Override
-    public <T> T executeOnAppliance(ApplianceInfo applianceInfo, EAABulkOperation<T> theOperation) {
+    public <T> T executeOnAppliance(
+            ApplianceInfo applianceInfo, EAABulkOperation<? super ClusterCallbackView, T> theOperation) {
         IExecutorService executorService = this.hzinstance.getExecutorService("default");
         for (Entry<String, String> c2a : this.clusterInet2ApplianceIdentity.entrySet()) {
             if (c2a.getValue().equals(applianceInfo.getIdentity())) {
@@ -1463,18 +1465,13 @@ public class DefaultConfigService implements ConfigService {
     }
 
     @Override
-    public PBThreeTierETLPVLookup getETLLookup() {
-        return etlPVLookup;
-    }
-
-    @Override
-    public RetrievalState getRetrievalRuntimeState() {
-        return retrievalState;
-    }
-
-    @Override
     public boolean isShuttingDown() {
         return startupExecutor.isShutdown();
+    }
+
+    @Override
+    public void addPostStartupHook(Runnable runnable) {
+        postStartupHooks.add(runnable);
     }
 
     @Override
@@ -1828,16 +1825,6 @@ public class DefaultConfigService implements ConfigService {
     }
 
     @Override
-    public EngineContext getEngineContext() {
-        return engineContext;
-    }
-
-    @Override
-    public MgmtRuntimeState getMgmtRuntimeState() {
-        return mgmtRuntime;
-    }
-
-    @Override
     public WAR_FILE getWarFile() {
         return warFile;
     }
@@ -2029,9 +2016,9 @@ public class DefaultConfigService implements ConfigService {
      * @throws ConfigException
      */
     private void initializePersistenceLayer() throws ConfigException {
-        String persistenceFromEnv = System.getenv(ARCHAPPL_PERSISTENCE_LAYER);
+        String persistenceFromEnv = System.getenv(ConfigPersistence.ARCHAPPL_PERSISTENCE_LAYER);
         if (persistenceFromEnv == null || persistenceFromEnv.isEmpty()) {
-            persistenceFromEnv = System.getProperty(ARCHAPPL_PERSISTENCE_LAYER);
+            persistenceFromEnv = System.getProperty(ConfigPersistence.ARCHAPPL_PERSISTENCE_LAYER);
         }
         if (persistenceFromEnv == null || persistenceFromEnv.isEmpty()) {
             logger.info("Using MYSQL for persistence; we expect to find a JNDI connection pool called jdbc/archappl");

@@ -5,8 +5,9 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONArray;
@@ -30,15 +31,23 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class PausedPVsReport implements BPLAction {
+
+    private final ClusterTopology clusterTopology;
+    private final PVTypeInfoStore pvtypeInfoStore;
+
+    public PausedPVsReport(ClusterTopology clusterTopology, PVTypeInfoStore pvtypeInfoStore) {
+        this.clusterTopology = clusterTopology;
+        this.pvtypeInfoStore = pvtypeInfoStore;
+    }
+
     private static Logger logger = LogManager.getLogger(PausedPVsReport.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Paused PVs report for " + (limit == null ? "default limit " : ("limit " + limit)));
         LinkedList<String> pausedPVForThisApplianceURLs = new LinkedList<String>();
-        for (ApplianceInfo info : configService.getAppliancesInCluster()) {
+        for (ApplianceInfo info : clusterTopology.getAppliancesInCluster()) {
             String mgmtURL = info.getMgmtURL();
             String pausedPVForThisApplianceURL =
                     mgmtURL + "/getPausedPVsForThisAppliance" + (limit == null ? "" : ("?limit=" + limit));
@@ -54,7 +63,7 @@ public class PausedPVsReport implements BPLAction {
             String pvName = (String) pausedPVObj;
             HashMap<String, String> pvDetails = new HashMap<String, String>();
             pvDetails.put("pvName", pvName);
-            PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+            PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pvName);
             pvDetails.put("instance", typeInfo.getApplianceIdentity());
             pvDetails.put("modificationTime", TimeUtils.convertToHumanReadableString(typeInfo.getModificationTime()));
             retVal.add(pvDetails);

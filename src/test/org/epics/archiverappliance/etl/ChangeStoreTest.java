@@ -16,6 +16,7 @@ import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.exception.ConfigException;
+import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.retrieval.workers.CurrentThreadWorkerEventStream;
 import org.epics.archiverappliance.utils.nio.ArchPaths;
 import org.epics.archiverappliance.utils.simulation.SimulationEventStream;
@@ -102,7 +103,7 @@ class ChangeStoreTest {
         typeInfo.setDataStores(dataStores);
         configService.updateTypeInfoForPV(pvName, typeInfo);
         configService.registerPVToAppliance(pvName, configService.getMyApplianceInfo());
-        configService.getETLLookup().manualControlForUnitTests(); // Prevent regular ETL from running
+        PBThreeTierETLPVLookup.of(configService).manualControlForUnitTests(); // Prevent regular ETL from running
 
         // 3. Generate sample data and write it only to the source store
         Instant startTime = TimeUtils.getStartOfYear(TimeUtils.getCurrentYear());
@@ -121,7 +122,7 @@ class ChangeStoreTest {
 
         // 5. Execute the move operation
         ETLExecutor.moveDataFromOneStorageToAnother(
-                configService, pvName, srcPlugin.getName(), destPlugin.getURLRepresentation());
+                configService, configService, pvName, srcPlugin.getName(), destPlugin.getURLRepresentation());
         logger.info("Completed call to moveDataFromOneStorageToAnother.");
 
         // 6. Verify the results
@@ -199,7 +200,7 @@ class ChangeStoreTest {
         typeInfo.setDataStores(new String[] {srcPlugin.getURLRepresentation()});
         configService.updateTypeInfoForPV(pvName, typeInfo);
         configService.registerPVToAppliance(pvName, configService.getMyApplianceInfo());
-        configService.getETLLookup().manualControlForUnitTests();
+        PBThreeTierETLPVLookup.of(configService).manualControlForUnitTests();
 
         SimulationEventStream simstream =
                 new SimulationEventStream(ArchDBRTypes.DBR_SCALAR_DOUBLE, new SineGenerator(0), startTime, endTime, 1);
@@ -239,7 +240,7 @@ class ChangeStoreTest {
 
         // 3. Move Data
         ETLExecutor.moveDataFromOneStorageToAnother(
-                configService, pvName, srcPlugin.getName(), destPlugin.getURLRepresentation());
+                configService, configService, pvName, srcPlugin.getName(), destPlugin.getURLRepresentation());
 
         // 4. Validate
         validateDestinationFiles(destPlugin, pvName);

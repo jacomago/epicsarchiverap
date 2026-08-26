@@ -10,7 +10,7 @@ package org.epics.archiverappliance.engine.bpl.reports;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.PVMetrics;
@@ -34,6 +34,13 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class StorageRateReport implements BPLAction {
+
+    private final ApplianceLifecycle configService;
+
+    public StorageRateReport(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(StorageRateReport.class);
 
     private static class PVStorageRate {
@@ -47,8 +54,7 @@ public class StorageRateReport implements BPLAction {
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Storage rate report for " + (limit == null ? "default limit " : ("limit " + limit)));
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
@@ -71,9 +77,9 @@ public class StorageRateReport implements BPLAction {
         }
     }
 
-    private static List<PVStorageRate> getStorageRates(ConfigService configService, String limit) {
+    private static List<PVStorageRate> getStorageRates(ApplianceLifecycle applianceLifecycle, String limit) {
         ArrayList<PVStorageRate> storageRates = new ArrayList<PVStorageRate>();
-        EngineContext engineContext = configService.getEngineContext();
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
         for (ArchiveChannel channel : engineContext.getChannelList().values()) {
             PVMetrics pvMetrics = channel.getPVMetrics();
             storageRates.add(new PVStorageRate(pvMetrics.getPvName(), pvMetrics.getStorageRate()));

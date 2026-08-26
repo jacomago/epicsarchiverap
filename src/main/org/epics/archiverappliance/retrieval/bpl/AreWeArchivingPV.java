@@ -3,9 +3,10 @@ package org.epics.archiverappliance.retrieval.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.AliasRegistry;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -24,11 +25,19 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class AreWeArchivingPV implements BPLAction {
+
+    private final AliasRegistry aliasRegistry;
+    private final PVTypeInfoStore pvtypeInfoStore;
+
+    public AreWeArchivingPV(AliasRegistry aliasRegistry, PVTypeInfoStore pvtypeInfoStore) {
+        this.aliasRegistry = aliasRegistry;
+        this.pvtypeInfoStore = pvtypeInfoStore;
+    }
+
     private static Logger logger = LogManager.getLogger(AreWeArchivingPV.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         logger.debug("Checking to see if we are archiving PV " + pvName);
 
@@ -40,14 +49,14 @@ public class AreWeArchivingPV implements BPLAction {
         }
 
         // String pvNameFromRequest = pvName;
-        String realName = configService.getRealNameForAlias(pvName);
+        String realName = aliasRegistry.getRealNameForAlias(pvName);
         if (realName != null) pvName = realName;
 
         HashMap<String, String> retVal = new HashMap<String, String>();
 
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pvName);
         if (typeInfo == null) {
-            typeInfo = configService.getTypeInfoForPV(PVNames.channelNamePVName(pvName));
+            typeInfo = pvtypeInfoStore.getTypeInfoForPV(PVNames.channelNamePVName(pvName));
             if (typeInfo == null) {
                 retVal.put("status", Boolean.FALSE.toString());
             } else {

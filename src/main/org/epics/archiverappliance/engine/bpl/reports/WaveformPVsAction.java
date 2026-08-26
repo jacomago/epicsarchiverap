@@ -10,7 +10,7 @@ package org.epics.archiverappliance.engine.bpl.reports;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.model.MonitoredArchiveChannel;
 import org.epics.archiverappliance.engine.model.ScannedArchiveChannel;
@@ -33,14 +33,20 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class WaveformPVsAction implements BPLAction {
+
+    private final ApplianceLifecycle configService;
+
+    public WaveformPVsAction(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(WaveformPVsAction.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Getting a list of waveform PV's");
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
-        EngineContext engineContext = configService.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configService);
         LinkedList<HashMap<String, String>> result = new LinkedList<HashMap<String, String>>();
         try (PrintWriter out = resp.getWriter()) {
             for (ArchiveChannel channel : engineContext.getChannelList().values()) {

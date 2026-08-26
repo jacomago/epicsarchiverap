@@ -4,7 +4,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.PVMetrics;
@@ -23,6 +24,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public class SilentPVReport implements BPLAction {
+
+    private final ApplianceLifecycle applianceLifecycle;
+    private final ClusterTopology clusterTopology;
+
+    public SilentPVReport(ApplianceLifecycle applianceLifecycle, ClusterTopology clusterTopology) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.clusterTopology = clusterTopology;
+    }
+
     private static Logger logger = LogManager.getLogger(SilentPVReport.class.getName());
 
     private static class SilentPV {
@@ -36,14 +46,13 @@ public class SilentPVReport implements BPLAction {
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Silent PV report for " + (limit == null ? "default limit " : ("limit " + limit)));
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
-        List<SilentPV> silentPVs = getSilentPVs(configService, limit);
+        List<SilentPV> silentPVs = getSilentPVs(applianceLifecycle, limit);
         LinkedList<HashMap<String, String>> result = new LinkedList<HashMap<String, String>>();
-        String identity = configService.getMyApplianceInfo().getIdentity();
+        String identity = clusterTopology.getMyApplianceInfo().getIdentity();
         try (PrintWriter out = resp.getWriter()) {
             for (SilentPV silentPV : silentPVs) {
                 HashMap<String, String> pvStatus = new HashMap<String, String>();
@@ -58,9 +67,9 @@ public class SilentPVReport implements BPLAction {
         }
     }
 
-    private static List<SilentPV> getSilentPVs(ConfigService configService, String limit) {
+    private static List<SilentPV> getSilentPVs(ApplianceLifecycle applianceLifecycle, String limit) {
         ArrayList<SilentPV> silentPVs = new ArrayList<SilentPV>();
-        EngineContext engineContext = configService.getEngineContext();
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
         for (ArchiveChannel channel : engineContext.getChannelList().values()) {
             PVMetrics pvMetrics = channel.getPVMetrics();
             silentPVs.add(new SilentPV(pvMetrics.getPvName(), pvMetrics.getSecondsOfLastEvent()));

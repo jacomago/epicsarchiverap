@@ -35,12 +35,13 @@ import org.epics.archiverappliance.common.TimeSpan;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
 import org.epics.archiverappliance.config.ApplianceInfo;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ChannelArchiverDataServerPVInfo;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigService.STARTUP_SEQUENCE;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.data.ScalarValue;
 import org.epics.archiverappliance.etl.ETLDest;
@@ -314,14 +315,14 @@ public class DataRetrievalServlet extends HttpServlet {
             }
             case "getDataAtTime" -> {
                 try {
-                    GetDataAtTime.getDataAtTime(req, resp, configService);
+                    GetDataAtTime.getDataAtTime(req, resp, configService, configService, configService, configService);
                 } catch (ExecutionException | InterruptedException ex) {
                     throw new IOException(ex);
                 }
             }
             case "getDataAtTimeForAppliance" -> {
                 try {
-                    GetDataAtTime.getDataAtTimeForAppliance(req, resp, configService);
+                    GetDataAtTime.getDataAtTimeForAppliance(req, resp, configService, configService, configService);
                 } catch (ExecutionException | InterruptedException ex) {
                     throw new IOException(ex);
                 }
@@ -339,7 +340,7 @@ public class DataRetrievalServlet extends HttpServlet {
         String pvName = req.getParameter("pv");
 
         if (check(
-                configService.getStartupState() != STARTUP_SEQUENCE.STARTUP_COMPLETE,
+                configService.getStartupState() != ApplianceLifecycle.STARTUP_SEQUENCE.STARTUP_COMPLETE,
                 "Cannot process data retrieval requests for PV " + pvName
                         + " until the appliance has completely started up.",
                 resp,
@@ -405,7 +406,7 @@ public class DataRetrievalServlet extends HttpServlet {
 
         pvName = PVNames.stripPrefixFromName(pvName);
         pvName = PVNames.normalizeChannelName(pvName);
-        configService.getRetrievalRuntimeState().updateRetrievalMetrics(pvName, Instant.now(), req.getRemoteAddr());
+        RetrievalState.of(configService).updateRetrievalMetrics(pvName, Instant.now(), req.getRemoteAddr());
 
         PVTypeInfo typeInfo = PVNames.determineAppropriatePVTypeInfo(pvName, configService);
         pmansProfiler.mark("After PVTypeInfo");
@@ -742,7 +743,7 @@ public class DataRetrievalServlet extends HttpServlet {
 
         // Ensuring that the AA has finished starting up before requests are accepted.
         if (check(
-                configService.getStartupState() != STARTUP_SEQUENCE.STARTUP_COMPLETE,
+                configService.getStartupState() != ApplianceLifecycle.STARTUP_SEQUENCE.STARTUP_COMPLETE,
                 "Cannot process data retrieval requests for specified PVs (" + StringUtils.join(pvNames, ", ")
                         + ") until the appliance has completely started up.",
                 resp,
@@ -1027,9 +1028,7 @@ public class DataRetrievalServlet extends HttpServlet {
                     HashMap<String, String> engineMetadata = fetchLatestMetadata ? engineMetadatas.get(i) : null;
                     PostProcessor postProcessor = postProcessors.get(i);
 
-                    configService
-                            .getRetrievalRuntimeState()
-                            .updateRetrievalMetrics(pvName, Instant.now(), req.getRemoteAddr());
+                    RetrievalState.of(configService).updateRetrievalMetrics(pvName, Instant.now(), req.getRemoteAddr());
 
                     logger.debug("Done with the RetrievalResults; moving onto the individual event stream "
                             + "from each source for " + StringUtils.join(pvNames, ", "));
@@ -1150,7 +1149,8 @@ public class DataRetrievalServlet extends HttpServlet {
          * Gets the object responsible for resolving data sources (e.g., where data is stored
          * for this appliance.
          */
-        DataSourceResolution datasourceresolver = new DataSourceResolution(configService);
+        DataSourceResolution datasourceresolver =
+                new DataSourceResolution(configService, configService, configService, configService);
 
         for (TimeSpan timespan : executorResult.requestTimespans) {
             // Resolve data sources for the given PV and the given time frames
@@ -1368,7 +1368,7 @@ public class DataRetrievalServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
-        configService = (ConfigService) this.getServletContext().getAttribute(ConfigService.CONFIG_SERVICE_NAME);
+        configService = (ConfigService) this.getServletContext().getAttribute(ApplianceLifecycle.CONFIG_SERVICE_NAME);
     }
 
     /**
@@ -1628,11 +1628,11 @@ public class DataRetrievalServlet extends HttpServlet {
      * @return
      * @throws IOException
      */
-    private boolean setActualDBRTypeFromData(String pvName, PVTypeInfo typeInfo, ConfigService configService)
-            throws IOException {
+    private boolean setActualDBRTypeFromData(
+            String pvName, PVTypeInfo typeInfo, StoragePluginConfigView storagePluginConfigView) throws IOException {
         String[] dataStores = typeInfo.getDataStores();
         for (String dataStore : dataStores) {
-            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(dataStore, configService);
+            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(dataStore, storagePluginConfigView);
             if (plugin instanceof ETLDest etlDest) {
                 try (BasicContext context = new BasicContext()) {
                     Event e = etlDest.getLastKnownEvent(context, pvName);

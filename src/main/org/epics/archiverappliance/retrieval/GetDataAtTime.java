@@ -1,7 +1,5 @@
 package org.epics.archiverappliance.retrieval;
 
-import com.hazelcast.projection.Projection;
-import com.hazelcast.query.Predicates;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -13,9 +11,13 @@ import org.epics.archiverappliance.common.PoorMansProfiler;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ChannelArchiverConfig;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoLookupView;
+import org.epics.archiverappliance.config.PVTypeInfoStore.PVTypeInfoProjection;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.mgmt.bpl.PVsMatchingParameter;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
@@ -140,16 +142,11 @@ public class GetDataAtTime {
     private record ProjRecord(String pvName, String appliance, ArchDBRTypes DBRType, String[] archiveFields)
             implements Serializable {}
 
-    private static class GDATProjection implements Projection<Map.Entry<String, PVTypeInfo>, ProjRecord> {
+    private static class GDATProjection implements PVTypeInfoProjection<ProjRecord> {
         @Override
-        public ProjRecord transform(Map.Entry<String, PVTypeInfo> entry) {
-            String pvName = entry.getKey();
-            PVTypeInfo value = entry.getValue();
+        public ProjRecord transform(String pvName, PVTypeInfo typeInfo) {
             return new ProjRecord(
-                    pvName,
-                    value.getApplianceIdentity(),
-                    entry.getValue().getDBRType(),
-                    entry.getValue().getArchiveFields());
+                    pvName, typeInfo.getApplianceIdentity(), typeInfo.getDBRType(), typeInfo.getArchiveFields());
         }
     }
 
@@ -157,13 +154,22 @@ public class GetDataAtTime {
      * The main getDataAtTime function. Pass in a list of PVs and a time.
      * @param req
      * @param resp
-     * @param configService
+     * @param pvTypeInfoLookup Alias resolution plus the type info store
+     * @param channelArchiverConfig External data servers
+     * @param clusterTopology The appliances in the cluster
+     * @param storageConfig The configuration the storage plugins are built from
      * @throws ServletException
      * @throws IOException
      * @throws InterruptedException
      * @throws ExecutionException
      */
-    public static void getDataAtTime(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    public static void getDataAtTime(
+            HttpServletRequest req,
+            HttpServletResponse resp,
+            PVTypeInfoLookupView pvTypeInfoLookup,
+            ChannelArchiverConfig channelArchiverConfig,
+            ClusterTopology clusterTopology,
+            StoragePluginConfigView storageConfig)
             throws ServletException, IOException, InterruptedException, ExecutionException {
         PoorMansProfiler pmansProfiler = new PoorMansProfiler();
 
@@ -197,7 +203,7 @@ public class GetDataAtTime {
                 nameMappings.add(new PVNameMapping(pvName, cname));
             }
             // Patch pvNames to add real names of any aliased PVs
-            String realName = configService.getRealNameForAlias(cname);
+            String realName = pvTypeInfoLookup.getRealNameForAlias(cname);
             if (realName != null) {
                 paddedPVNames.add(realName);
                 nameMappings.add(new PVNameMapping(pvName, realName));
@@ -210,8 +216,7 @@ public class GetDataAtTime {
         HashMap<String, Appliance2PVs> valuesGatherer = new HashMap<String, Appliance2PVs>();
         HashSet<String> namesForPredicate = new HashSet<>(paddedPVNames);
 
-        Collection<ProjRecord> projRecords = configService.queryPVTypeInfos(
-                Predicates.in("__key", namesForPredicate.toArray(new String[0])), new GDATProjection());
+        Collection<ProjRecord> projRecords = pvTypeInfoLookup.queryPVTypeInfos(namesForPredicate, new GDATProjection());
         Map<String, ProjRecord> pvName2proj =
                 projRecords.stream().collect(Collectors.toMap(ProjRecord::pvName, pr -> pr));
 
@@ -219,7 +224,7 @@ public class GetDataAtTime {
 
         Map<String, List<ProjRecord>> appliance2Records =
                 projRecords.stream().collect(Collectors.groupingBy(ProjRecord::appliance));
-        for (ApplianceInfo applianceInfo : configService.getAppliancesInCluster()) {
+        for (ApplianceInfo applianceInfo : clusterTopology.getAppliancesInCluster()) {
             Appliance2PVs gatherer = new Appliance2PVs(applianceInfo);
             valuesGatherer.put(applianceInfo.getIdentity(), gatherer);
             List<ProjRecord> recsInAppliance =
@@ -242,7 +247,7 @@ public class GetDataAtTime {
         pmansProfiler.mark("After filtering calls.");
 
         List<CompletableFuture<Appliance2PVs>> engineCalls = new LinkedList<>();
-        for (ApplianceInfo applianceInfo : configService.getAppliancesInCluster()) {
+        for (ApplianceInfo applianceInfo : clusterTopology.getAppliancesInCluster()) {
             try {
                 engineCalls.add(CompletableFuture.supplyAsync(
                         () -> getDataFromEngine(valuesGatherer.get(applianceInfo.getIdentity()), atTime)));
@@ -254,7 +259,7 @@ public class GetDataAtTime {
         pmansProfiler.mark("After engine calls.");
 
         List<CompletableFuture<Appliance2PVs>> retrievalCalls = new LinkedList<>();
-        for (ApplianceInfo applianceInfo : configService.getAppliancesInCluster()) {
+        for (ApplianceInfo applianceInfo : clusterTopology.getAppliancesInCluster()) {
             try {
                 retrievalCalls.add(CompletableFuture.supplyAsync(() ->
                         getDataFromRetrieval(valuesGatherer.get(applianceInfo.getIdentity()), atTime, searchPeriod)));
@@ -281,7 +286,7 @@ public class GetDataAtTime {
         });
 
         if (fetchFromExternalAppliances) {
-            Map<String, String> externalServers = configService.getExternalArchiverDataServers();
+            Map<String, String> externalServers = channelArchiverConfig.getExternalArchiverDataServers();
             if (externalServers != null) {
                 HashSet<String> remainingPVs = new HashSet<String>(pvNames);
                 // We only has for PVs that we do not already have the answer for.
@@ -329,16 +334,23 @@ public class GetDataAtTime {
      * Walk thru the store till you find the closest sample before the requested time.
      * @param pvName
      * @param atTime
-     * @param configService
+     * @param pvTypeInfoLookup Alias resolution plus the type info store
+     * @param clusterTopology The appliances in the cluster
+     * @param storageConfig The configuration the storage plugins are built from
      * @return
      */
     public static PVWithData getDataAtTimeForPVFromStores(
-            String pvName, Instant atTime, Period searchPeriod, ConfigService configService) {
+            String pvName,
+            Instant atTime,
+            Period searchPeriod,
+            PVTypeInfoLookupView pvTypeInfoLookup,
+            ClusterTopology clusterTopology,
+            StoragePluginConfigView storageConfig) {
 
-        PVTypeInfo typeInfo = PVNames.determineAppropriatePVTypeInfo(pvName, configService);
+        PVTypeInfo typeInfo = PVNames.determineAppropriatePVTypeInfo(pvName, pvTypeInfoLookup);
         if (typeInfo == null) return null;
         if (!typeInfo.getApplianceIdentity()
-                .equals(configService.getMyApplianceInfo().getIdentity())) return null;
+                .equals(clusterTopology.getMyApplianceInfo().getIdentity())) return null;
 
         pvName = typeInfo.getPvName();
 
@@ -348,10 +360,10 @@ public class GetDataAtTime {
             // Very important we make a copy of the datastores here...
             List<String> datastores = new ArrayList<>(Arrays.asList(typeInfo.getDataStores()));
             for (String store : datastores) {
-                StoragePlugin storagePlugin = StoragePluginURLParser.parseStoragePlugin(store, configService);
+                StoragePlugin storagePlugin = StoragePluginURLParser.parseStoragePlugin(store, storageConfig);
                 // Check to see if there is a named flag that turns off this data source.
                 String namedFlagForSkippingDataSource = "SKIP_" + storagePlugin.getName() + "_FOR_RETRIEVAL";
-                if (configService.getNamedFlag(namedFlagForSkippingDataSource)) {
+                if (storageConfig.getNamedFlag(namedFlagForSkippingDataSource)) {
                     logger.warn("Skipping " + storagePlugin.getName() + " as the named flag "
                             + namedFlagForSkippingDataSource + " is set");
                     continue;
@@ -393,7 +405,11 @@ public class GetDataAtTime {
      * This only returns data for those PV's that are on this appliance.
      */
     public static void getDataAtTimeForAppliance(
-            HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+            HttpServletRequest req,
+            HttpServletResponse resp,
+            PVTypeInfoLookupView pvTypeInfoLookup,
+            ClusterTopology clusterTopology,
+            StoragePluginConfigView storageConfig)
             throws ServletException, IOException, InterruptedException, ExecutionException {
         LinkedList<String> pvNames = PVsMatchingParameter.getPVNamesFromPostBody(req);
         String timeStr = req.getParameter("at");
@@ -412,8 +428,8 @@ public class GetDataAtTime {
 
         List<CompletableFuture<PVWithData>> retrievalCalls = new LinkedList<>();
         for (String pvName : pvNames) {
-            retrievalCalls.add(CompletableFuture.supplyAsync(
-                    () -> getDataAtTimeForPVFromStores(pvName, atTime, searchPeriod, configService)));
+            retrievalCalls.add(CompletableFuture.supplyAsync(() -> getDataAtTimeForPVFromStores(
+                    pvName, atTime, searchPeriod, pvTypeInfoLookup, clusterTopology, storageConfig)));
         }
 
         CompletableFuture.allOf(toArray(retrievalCalls)).join();

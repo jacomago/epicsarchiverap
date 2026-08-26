@@ -10,8 +10,8 @@ import org.epics.archiverappliance.common.BiDirectionalIterable;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.etl.ConversionFunction;
 import org.epics.archiverappliance.etl.ETLContext;
@@ -87,7 +87,7 @@ public class MergeDedupStoragePlugin
     private StoragePlugin dest;
     private StoragePlugin other;
     private String desc = MergeDedupStoragePlugin.class.getName();
-    private ConfigService configService;
+    private StoragePluginConfigView configService;
 
     @Override
     public List<Callable<EventStream>> getDataForPV(
@@ -239,7 +239,7 @@ public class MergeDedupStoragePlugin
     }
 
     @Override
-    public void initialize(String configURL, ConfigService configService) throws IOException {
+    public void initialize(String configURL, StoragePluginConfigView configService) throws IOException {
         try {
             this.configService = configService;
             URI srcURI = new URI(configURL);

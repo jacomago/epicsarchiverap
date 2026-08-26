@@ -185,7 +185,7 @@ public class PVNames {
     /**
      * A standard process for dealing with aliases, standard fields and the like and getting to the PVTypeInfo.
      * @param pvName The name of PV.
-     * @param configService ConfigService
+     * @param configService Alias resolution plus the type info store
      * @return PVTypeInfo  &emsp;
      * <p>
      * Places where we look for the typeinfo.
@@ -205,7 +205,7 @@ public class PVNames {
      * </ul>
      *
      */
-    public static PVTypeInfo determineAppropriatePVTypeInfo(String pvName, ConfigService configService) {
+    public static PVTypeInfo determineAppropriatePVTypeInfo(String pvName, PVTypeInfoLookupView configService) {
         boolean pvDoesNotHaveField = !PVNames.isFieldOrFieldModifier(pvName);
 
         if (pvDoesNotHaveField) {
@@ -286,7 +286,8 @@ public class PVNames {
     /**
      * A standard process for dealing with aliases, standard fields and the like and checking to see if the PV is in the archive workflow.
      * @param pvName
-     * @param configService
+     * @param archiveRequests The archive request workflow
+     * @param aliasRegistry Alias resolution
      * @return True if the PV or its avatars are in the archive workflow.
      * It is not possible to state this accurately for all fields.
      * For example, for fields that are archived as part of the stream, if the main PV is in the archive workflow, then the field is as well.
@@ -308,12 +309,13 @@ public class PVNames {
      * Note that this translates to the fact that regardless of whether the PV is a field or not, we look in the same places.
      * </ul>
      */
-    public static boolean determineIfPVInWorkflow(String pvName, ConfigService configService) {
+    public static boolean determineIfPVInWorkflow(
+            String pvName, ArchiveRequestWorkflow archiveRequests, AliasRegistry aliasRegistry) {
         logger.debug("Looking for archiverequests for PV " + pvName);
 
         // ArchivePVRequests for full PV name
         {
-            if (configService.doesPVHaveArchiveRequestInWorkflow(pvName)) {
+            if (archiveRequests.doesPVHaveArchiveRequestInWorkflow(pvName)) {
                 logger.debug("Found PV in archive request workflow " + pvName);
                 return true;
             }
@@ -321,9 +323,9 @@ public class PVNames {
 
         // Alias for full PV name + ArchivePVRequests for full PV name
         {
-            String realName = configService.getRealNameForAlias(pvName);
+            String realName = aliasRegistry.getRealNameForAlias(pvName);
             if (realName != null) {
-                if (configService.doesPVHaveArchiveRequestInWorkflow(realName)) {
+                if (archiveRequests.doesPVHaveArchiveRequestInWorkflow(realName)) {
                     logger.debug("Found aliased PV in archive request workflow " + realName);
                     return true;
                 }

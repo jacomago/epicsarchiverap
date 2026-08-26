@@ -10,7 +10,7 @@ package org.epics.archiverappliance.engine.epics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.reports.Details;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.engine.metadata.MetaGet;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EngineContext;
@@ -130,8 +130,8 @@ public class EngineMetrics implements Details {
     }
 
     @Override
-    public LinkedList<Map<String, String>> details(ConfigService configService) {
-        EngineContext context = configService.getEngineContext();
+    public LinkedList<Map<String, String>> details(ApplianceLifecycle configService) {
+        EngineContext context = EngineContext.of(configService);
         DecimalFormat twoSignificantDigits = new DecimalFormat("###,###,###,###,###,###.##");
         LinkedList<Map<String, String>> details = new LinkedList<Map<String, String>>();
         details.add(this.metricDetail("Total PV count", Integer.toString(pvCount)));
@@ -190,7 +190,7 @@ public class EngineMetrics implements Details {
         details.add(obj);
     }
 
-    public static EngineMetrics computeEngineMetrics(EngineContext engineContext, ConfigService configService) {
+    public static EngineMetrics computeEngineMetrics(EngineContext engineContext) {
         EngineMetrics engineMetrics = new EngineMetrics();
         // Event rate is in events/sec
         double eventRate = 0.0;
@@ -276,7 +276,7 @@ public class EngineMetrics implements Details {
     }
 
     @Override
-    public ConfigService.WAR_FILE source() {
-        return ConfigService.WAR_FILE.ENGINE;
+    public ApplianceLifecycle.WAR_FILE source() {
+        return ApplianceLifecycle.WAR_FILE.ENGINE;
     }
 }

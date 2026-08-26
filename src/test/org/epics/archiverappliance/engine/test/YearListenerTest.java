@@ -58,6 +58,8 @@ public class YearListenerTest {
                     SamplingMethod.SCAN,
                     writer,
                     testConfigService,
+                    testConfigService,
+                    testConfigService,
                     ArchDBRTypes.DBR_SCALAR_DOUBLE,
                     null,
                     false,

@@ -2,7 +2,7 @@ package org.epics.archiverappliance.retrieval;
 
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.reports.Details;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -43,8 +43,8 @@ public class RetrievalMetrics implements Details {
         return this;
     }
 
-    public static RetrievalMetrics calculateSummedMetrics(ConfigService configService) {
-        var allMetrics = configService.getRetrievalRuntimeState().getRetrievalMetrics();
+    public static RetrievalMetrics calculateSummedMetrics(ApplianceLifecycle applianceLifecycle) {
+        var allMetrics = RetrievalState.of(applianceLifecycle).getRetrievalMetrics();
         return allMetrics.values().stream().reduce(new RetrievalMetrics(), RetrievalMetrics::sumMetrics);
     }
 
@@ -59,12 +59,12 @@ public class RetrievalMetrics implements Details {
     }
 
     @Override
-    public ConfigService.WAR_FILE source() {
-        return ConfigService.WAR_FILE.RETRIEVAL;
+    public ApplianceLifecycle.WAR_FILE source() {
+        return ApplianceLifecycle.WAR_FILE.RETRIEVAL;
     }
 
     @Override
-    public LinkedList<Map<String, String>> details(ConfigService configService) {
+    public LinkedList<Map<String, String>> details(ApplianceLifecycle configService) {
         LinkedList<Map<String, String>> result = new LinkedList<>();
         result.add(metricDetail(NUMBER_OF_RETRIEVAL_REQUESTS, String.valueOf(this.numberOfRequests)));
         result.add(metricDetail(LAST_RETRIEVAL_REQUEST, TimeUtils.convertToHumanReadableString(lastRequest)));

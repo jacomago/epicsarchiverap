@@ -17,6 +17,7 @@ import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.engine.ArchiveEngine;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -74,17 +75,18 @@ public class ArchiveFieldsTest {
                     SamplingMethod.MONITOR,
                     myWriter,
                     testConfigService,
+                    testConfigService,
+                    testConfigService,
                     ArchDBRTypes.DBR_SCALAR_DOUBLE,
                     null,
                     typeInfo.getArchiveFields(),
                     false,
                     false);
             Thread.sleep(15 * 1000);
-            testConfigService.getEngineContext().getChannelList().get(pvName).startUpMetaChannels();
+            EngineContext.of(testConfigService).getChannelList().get(pvName).startUpMetaChannels();
             Thread.sleep(15 * 1000);
             Assertions.assertFalse(
-                    testConfigService
-                            .getEngineContext()
+                    EngineContext.of(testConfigService)
                             .getChannelList()
                             .get(pvName)
                             .metaChannelsNeedStartingUp(),
@@ -150,17 +152,18 @@ public class ArchiveFieldsTest {
                     SamplingMethod.MONITOR,
                     myWriter,
                     testConfigService,
+                    testConfigService,
+                    testConfigService,
                     ArchDBRTypes.DBR_SCALAR_DOUBLE,
                     null,
                     typeInfo.getArchiveFields(),
                     false,
                     false);
             Thread.sleep(15 * 1000);
-            testConfigService.getEngineContext().getChannelList().get(pvName).startUpMetaChannels();
+            EngineContext.of(testConfigService).getChannelList().get(pvName).startUpMetaChannels();
             Thread.sleep(15 * 1000);
             Assertions.assertFalse(
-                    testConfigService
-                            .getEngineContext()
+                    EngineContext.of(testConfigService)
                             .getChannelList()
                             .get(pvName)
                             .metaChannelsNeedStartingUp(),
@@ -220,6 +223,8 @@ public class ArchiveFieldsTest {
                     SamplingMethod.SCAN,
                     myWriter,
                     testConfigService,
+                    testConfigService,
+                    testConfigService,
                     ArchDBRTypes.DBR_SCALAR_DOUBLE,
                     null,
                     controlPVName,
@@ -228,17 +233,16 @@ public class ArchiveFieldsTest {
                     false,
                     false);
             Thread.sleep(10 * 1000);
-            testConfigService.getEngineContext().getChannelList().get(pvName).startUpMetaChannels();
+            EngineContext.of(testConfigService).getChannelList().get(pvName).startUpMetaChannels();
             Thread.sleep(10 * 1000);
             Assertions.assertFalse(
-                    testConfigService
-                            .getEngineContext()
+                    EngineContext.of(testConfigService)
                             .getChannelList()
                             .get(pvName)
                             .metaChannelsNeedStartingUp(),
                     "Not enough delay - metafields still need starting up");
             ArchiveChannel archiveChannel =
-                    testConfigService.getEngineContext().getChannelList().get(pvName);
+                    EngineContext.of(testConfigService).getChannelList().get(pvName);
 
             boolean samplesExist = !myWriter.getCollectedSamples().isEmpty();
             boolean result = archiveChannel.isConnected() && samplesExist;
@@ -252,10 +256,10 @@ public class ArchiveFieldsTest {
             }
             Thread.sleep(10 * 1000);
             SIOCSetup.caput(controlPVName, 0);
-            testConfigService.getEngineContext().getWriteThead().flushBuffer();
+            EngineContext.of(testConfigService).getWriteThead().flushBuffer();
             Thread.sleep(10 * 1000);
             archiveChannel =
-                    testConfigService.getEngineContext().getChannelList().get(pvName);
+                    EngineContext.of(testConfigService).getChannelList().get(pvName);
             Assertions.assertTrue(
                     archiveChannel == null || !archiveChannel.isConnected(),
                     pvName + "is not stopped successfully and it should be stopped successfully");
@@ -280,7 +284,7 @@ public class ArchiveFieldsTest {
             SIOCSetup.caput(controlPVName, 1);
             Thread.sleep(10 * 1000);
             archiveChannel =
-                    testConfigService.getEngineContext().getChannelList().get(pvName);
+                    EngineContext.of(testConfigService).getChannelList().get(pvName);
             Assertions.assertNotNull(
                     archiveChannel,
                     "After resuming the control channel, the archive channel for pv " + pvName + " is still null");
@@ -289,11 +293,10 @@ public class ArchiveFieldsTest {
                     result3, pvName + "is not started successfully and it should be started successfully");
 
             Thread.sleep(15 * 1000);
-            testConfigService.getEngineContext().getChannelList().get(pvName).startUpMetaChannels();
+            EngineContext.of(testConfigService).getChannelList().get(pvName).startUpMetaChannels();
             Thread.sleep(15 * 1000);
             Assertions.assertFalse(
-                    testConfigService
-                            .getEngineContext()
+                    EngineContext.of(testConfigService)
                             .getChannelList()
                             .get(pvName)
                             .metaChannelsNeedStartingUp(),

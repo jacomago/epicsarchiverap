@@ -3,8 +3,10 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.JSONDecoder;
@@ -34,6 +36,17 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class PutPVTypeInfo implements BPLAction {
+
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvdirectory;
+    private final PVTypeInfoStore pvtypeInfoStore;
+
+    public PutPVTypeInfo(ClusterTopology clusterTopology, PVDirectory pvdirectory, PVTypeInfoStore pvtypeInfoStore) {
+        this.clusterTopology = clusterTopology;
+        this.pvdirectory = pvdirectory;
+        this.pvtypeInfoStore = pvtypeInfoStore;
+    }
+
     private static Logger logger = LogManager.getLogger(PutPVTypeInfo.class.getName());
 
     class TypeInfoAndJsonObject {
@@ -47,8 +60,7 @@ public class PutPVTypeInfo implements BPLAction {
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         logger.debug("Updating typeinfo for PV " + pvName);
         if (pvName == null || pvName.equals("")) {
@@ -76,7 +88,7 @@ public class PutPVTypeInfo implements BPLAction {
             return;
         }
 
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pvName);
         TypeInfoAndJsonObject updatedTypeInfo = this.readInNewTypeInfo(
                 req,
                 resp,
@@ -138,8 +150,8 @@ public class PutPVTypeInfo implements BPLAction {
         }
 
         // Route this to the mgmt server
-        if (!applianceIdentity.equals(configService.getMyApplianceInfo().getIdentity())) {
-            String mgmtURL = configService.getAppliance(applianceIdentity).getMgmtURL();
+        if (!applianceIdentity.equals(clusterTopology.getMyApplianceInfo().getIdentity())) {
+            String mgmtURL = clusterTopology.getAppliance(applianceIdentity).getMgmtURL();
             String updateTypeInfoURL = mgmtURL + "/putPVTypeInfo?pv="
                     + URLEncoder.encode(pvName, "UTF-8")
                     + "&override=" + Boolean.toString(override)
@@ -149,8 +161,8 @@ public class PutPVTypeInfo implements BPLAction {
             logger.info("Updating typeInfo for PV " + pvName);
             if (newPVTypeInfo) {
                 try {
-                    configService.updateTypeInfoForPV(pvName, updatedTypeInfo.typeInfo);
-                    configService.registerPVToAppliance(pvName, configService.getAppliance(applianceIdentity));
+                    pvtypeInfoStore.updateTypeInfoForPV(pvName, updatedTypeInfo.typeInfo);
+                    pvdirectory.registerPVToAppliance(pvName, clusterTopology.getAppliance(applianceIdentity));
                 } catch (AlreadyRegisteredException ex) {
                     String msg = "Exception registering new PV " + pvName + " to appliance " + applianceIdentity;
                     logger.info(msg);
@@ -158,13 +170,13 @@ public class PutPVTypeInfo implements BPLAction {
                     return;
                 }
             } else {
-                configService.updateTypeInfoForPV(pvName, updatedTypeInfo.typeInfo);
+                pvtypeInfoStore.updateTypeInfoForPV(pvName, updatedTypeInfo.typeInfo);
             }
         }
 
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try {
-            PVTypeInfo typeInfoAfterConfigServiceUpdate = configService.getTypeInfoForPV(pvName);
+            PVTypeInfo typeInfoAfterConfigServiceUpdate = pvtypeInfoStore.getTypeInfoForPV(pvName);
             JSONEncoder<PVTypeInfo> jsonEncoder = JSONEncoder.getEncoder(PVTypeInfo.class);
             try (PrintWriter out = resp.getWriter()) {
                 out.println(jsonEncoder.encode(typeInfoAfterConfigServiceUpdate));

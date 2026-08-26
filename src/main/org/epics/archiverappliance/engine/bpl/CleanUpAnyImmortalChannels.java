@@ -5,8 +5,10 @@ import gov.aps.jca.Channel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.EngineContext.CommandThreadChannel;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
@@ -30,18 +32,26 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class CleanUpAnyImmortalChannels implements BPLAction {
+
+    private final ApplianceLifecycle applianceLifecycle;
+    private final PVTypeInfoStore pvtypeInfoStore;
+
+    public CleanUpAnyImmortalChannels(ApplianceLifecycle applianceLifecycle, PVTypeInfoStore pvtypeInfoStore) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.pvtypeInfoStore = pvtypeInfoStore;
+    }
+
     private static Logger logger = LogManager.getLogger(CleanUpAnyImmortalChannels.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pvName);
         if (typeInfo == null) {
             logger.error("Cannot get typeinfo for PV " + pvName);
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -55,7 +65,7 @@ public class CleanUpAnyImmortalChannels implements BPLAction {
         }
 
         List<CommandThreadChannel> immortalChannelsForPV =
-                configService.getEngineContext().getAllChannelsForPV(pvName);
+                EngineContext.of(applianceLifecycle).getAllChannelsForPV(pvName);
         for (final CommandThreadChannel immortalCommandThreadChannel : immortalChannelsForPV) {
             immortalCommandThreadChannel.getCommandThread().addCommand(new Runnable() {
                 @Override

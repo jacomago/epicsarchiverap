@@ -7,6 +7,7 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.data.SampleValue;
 import org.epics.archiverappliance.engine.ArchiveEngine;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.test.MemBufWriter;
 import org.epics.archiverappliance.retrieval.client.RawDataRetrievalAsEventStream;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
@@ -53,7 +54,7 @@ public class ArchiveTestUtils {
     public static void waitForChannelInList(String pvName, ConfigService configService) {
         Awaitility.await()
                 .atMost(10, TimeUnit.SECONDS)
-                .until(() -> configService.getEngineContext().getChannelList().get(pvName) != null);
+                .until(() -> EngineContext.of(configService).getChannelList().get(pvName) != null);
     }
 
     /**
@@ -62,7 +63,7 @@ public class ArchiveTestUtils {
     public static void waitForChannelRemovedFromList(String pvName, ConfigService configService) {
         Awaitility.await()
                 .atMost(10, TimeUnit.SECONDS)
-                .until(() -> configService.getEngineContext().getChannelList().get(pvName) == null);
+                .until(() -> EngineContext.of(configService).getChannelList().get(pvName) == null);
     }
 
     // -------------------------------------------------------------------------
@@ -164,7 +165,7 @@ public class ArchiveTestUtils {
 
     public static HashMap<Instant, Event> getReceivedEvents(MemBufWriter writer, ConfigService configService)
             throws Exception {
-        double secondsToBuffer = configService.getEngineContext().getWritePeriod();
+        double secondsToBuffer = EngineContext.of(configService).getWritePeriod();
         Thread.sleep((long) secondsToBuffer * 1000);
 
         HashMap<Instant, Event> actualValues = new HashMap<>();

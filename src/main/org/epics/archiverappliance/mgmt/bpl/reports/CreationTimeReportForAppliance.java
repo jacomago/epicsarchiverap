@@ -10,8 +10,10 @@ package org.epics.archiverappliance.mgmt.bpl.reports;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.config.ChannelArchiverConfig;
 import org.epics.archiverappliance.config.ChannelArchiverDataServerPVInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.PVDirectory;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
 
@@ -31,11 +33,22 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class CreationTimeReportForAppliance implements BPLAction {
+
+    private final ChannelArchiverConfig channelArchiverConfig;
+    private final PVDirectory pvdirectory;
+    private final PVTypeInfoStore pvtypeInfoStore;
+
+    public CreationTimeReportForAppliance(
+            ChannelArchiverConfig channelArchiverConfig, PVDirectory pvdirectory, PVTypeInfoStore pvtypeInfoStore) {
+        this.channelArchiverConfig = channelArchiverConfig;
+        this.pvdirectory = pvdirectory;
+        this.pvtypeInfoStore = pvtypeInfoStore;
+    }
+
     private static final Logger logger = LogManager.getLogger(CreationTimeReportForAppliance.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Getting the creation time for PV's in this appliance");
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
 
@@ -46,11 +59,11 @@ public class CreationTimeReportForAppliance implements BPLAction {
             pattern = Pattern.compile(nameToMatch);
         }
 
-        Set<String> pausedPVs = configService.getPausedPVsInThisAppliance();
+        Set<String> pausedPVs = pvdirectory.getPausedPVsInThisAppliance();
         try (PrintWriter out = resp.getWriter()) {
             out.println("[");
             boolean first = true;
-            for (String pvName : configService.getPVsForThisAppliance()) {
+            for (String pvName : pvdirectory.getPVsForThisAppliance()) {
                 if (pattern != null && !pattern.matcher(pvName).matches()) continue;
 
                 if (first) {
@@ -61,10 +74,13 @@ public class CreationTimeReportForAppliance implements BPLAction {
                 HashMap<String, String> ret = new HashMap<String, String>();
                 ret.put("pvName", pvName);
                 // We approx the earliest sample to be the creation time of the PVTypeInfo.
-                long earliestSample =
-                        configService.getTypeInfoForPV(pvName).getCreationTime().toEpochMilli() / 1000;
+                long earliestSample = pvtypeInfoStore
+                                .getTypeInfoForPV(pvName)
+                                .getCreationTime()
+                                .toEpochMilli()
+                        / 1000;
                 List<ChannelArchiverDataServerPVInfo> externalServerInfos =
-                        configService.getChannelArchiverDataServers(pvName);
+                        channelArchiverConfig.getChannelArchiverDataServers(pvName);
                 if (externalServerInfos != null && !externalServerInfos.isEmpty()) {
                     // If we have ChannelArchiver integration, we pick up the timestamp from there...
                     for (ChannelArchiverDataServerPVInfo externalServerInfo : externalServerInfos) {

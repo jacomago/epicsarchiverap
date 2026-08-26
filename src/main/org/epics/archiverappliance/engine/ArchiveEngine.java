@@ -18,9 +18,11 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.Writer;
 import org.epics.archiverappliance.common.TimeUtils;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PolicyService;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.engine.metadata.MetaCompletedListener;
 import org.epics.archiverappliance.engine.metadata.MetaGet;
@@ -67,7 +69,9 @@ public class ArchiveEngine {
      * @param enablement Enablement
      * @param sample_mode SampleMode
      * @param last_sampleTimestamp Instant
-     * @param configservice ConfigService
+     * @param storageConfig The configuration the storage plugins and type system come from
+     * @param applianceLifecycle Keys this appliance's engine context
+     * @param policyService The policy fields archived with the stream
      * @param archdbrtype   ArchDBRTypes
      * @param controlPVname  &emsp;
      * @param iocHostName - Can be null.
@@ -79,13 +83,15 @@ public class ArchiveEngine {
             final Writer writer,
             final SampleMode sample_mode,
             final Instant last_sampleTimestamp,
-            final ConfigService configservice,
+            final StoragePluginConfigView storageConfig,
+            final ApplianceLifecycle applianceLifecycle,
+            final PolicyService policyService,
             final ArchDBRTypes archdbrtype,
             final String controlPVname,
             final String iocHostName,
             final boolean usePVAccess)
             throws Exception {
-        EngineContext engineContext = configservice.getEngineContext();
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
         ArchiveChannel channel = null;
         // Is this an existing channel?
         channel = engineContext.getChannelList().get(name);
@@ -95,7 +101,7 @@ public class ArchiveEngine {
         }
 
         // Determine buffer capacity
-        double write_period = configservice.getEngineContext().getWritePeriod();
+        double write_period = EngineContext.of(applianceLifecycle).getWritePeriod();
         double pvSamplingPeriod = sample_mode.getPeriod();
         if (pvSamplingPeriod <= 0.0) {
             logger.warn("Sampling period is invalid " + pvSamplingPeriod + ". Resetting this to "
@@ -124,7 +130,9 @@ public class ArchiveEngine {
                         last_sampleTimestamp,
                         pvSamplingPeriod,
                         sample_mode.getDelta(),
-                        configservice,
+                        storageConfig,
+                        applianceLifecycle,
+                        policyService,
                         archdbrtype,
                         controlPVname,
                         JCACommandThreadID,
@@ -136,7 +144,9 @@ public class ArchiveEngine {
                         buffer_capacity,
                         last_sampleTimestamp,
                         pvSamplingPeriod,
-                        configservice,
+                        storageConfig,
+                        applianceLifecycle,
+                        policyService,
                         archdbrtype,
                         controlPVname,
                         JCACommandThreadID,
@@ -149,14 +159,16 @@ public class ArchiveEngine {
                     buffer_capacity,
                     last_sampleTimestamp,
                     pvSamplingPeriod,
-                    configservice,
+                    storageConfig,
+                    applianceLifecycle,
+                    policyService,
                     archdbrtype,
                     controlPVname,
                     JCACommandThreadID,
                     usePVAccess);
         }
 
-        configservice.getEngineContext().getChannelList().put(channel.getName(), channel);
+        EngineContext.of(applianceLifecycle).getChannelList().put(channel.getName(), channel);
         engineContext.getWriteThead().addChannel(channel);
         return channel;
     }
@@ -166,7 +178,9 @@ public class ArchiveEngine {
             final float samplingPeriod,
             final SamplingMethod mode,
             final Writer writer,
-            final ConfigService configservice,
+            final StoragePluginConfigView storageConfig,
+            final ApplianceLifecycle applianceLifecycle,
+            final PolicyService policyService,
             final ArchDBRTypes archdbrtype,
             final Instant lastKnownEventTimeStamp,
             final boolean start,
@@ -176,10 +190,10 @@ public class ArchiveEngine {
             final boolean usePVAccess,
             final boolean useDBEProperties)
             throws Exception {
-        EngineContext engineContext = configservice.getEngineContext();
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
 
         if (!engineContext.isWriteThreadStarted()) {
-            engineContext.startWriteThread(configservice);
+            engineContext.startWriteThread(storageConfig);
         }
 
         if (mode == SamplingMethod.SCAN) {
@@ -189,7 +203,9 @@ public class ArchiveEngine {
                     writer,
                     scan_mode2,
                     lastKnownEventTimeStamp,
-                    configservice,
+                    storageConfig,
+                    applianceLifecycle,
+                    policyService,
                     archdbrtype,
                     controlPVname,
                     iocHostName,
@@ -204,7 +220,8 @@ public class ArchiveEngine {
                     .scheduleAtFixedRate(
                             (ScannedArchiveChannel) channel, 0, (long) (samplingPeriod * 1000), TimeUnit.MILLISECONDS);
 
-            channel.initializeMetaFieldPVS(metaFields, configservice, usePVAccess, useDBEProperties);
+            channel.initializeMetaFieldPVS(
+                    metaFields, storageConfig, applianceLifecycle, policyService, usePVAccess, useDBEProperties);
         } else if (mode == SamplingMethod.MONITOR) {
             SampleMode scan_mode2 = new SampleMode(true, 0, samplingPeriod);
             ArchiveChannel channel = ArchiveEngine.addChannel(
@@ -212,7 +229,9 @@ public class ArchiveEngine {
                     writer,
                     scan_mode2,
                     lastKnownEventTimeStamp,
-                    configservice,
+                    storageConfig,
+                    applianceLifecycle,
+                    policyService,
                     archdbrtype,
                     controlPVname,
                     iocHostName,
@@ -223,7 +242,8 @@ public class ArchiveEngine {
             }
 
             // handle the meta field
-            channel.initializeMetaFieldPVS(metaFields, configservice, usePVAccess, useDBEProperties);
+            channel.initializeMetaFieldPVS(
+                    metaFields, storageConfig, applianceLifecycle, policyService, usePVAccess, useDBEProperties);
         } else if (mode == SamplingMethod.DONT_ARCHIVE) {
             // Do nothing..
         }
@@ -233,7 +253,9 @@ public class ArchiveEngine {
      * Get the meta data for pv - used for policy computation.
      *
      * @param pvName Name of the channel (PV)
-     * @param configservice ConfigService
+     * @param storageConfig The configuration the storage plugins and type system come from
+     * @param applianceLifecycle Keys this appliance's engine context
+     * @param policyService The policy fields archived with the stream
      * @param metadatafields other field such as MDEL,ADEL, except basical info in DBR_CTRL
      * @param usePVAccess  Should we use PV access to connect to this PV.
      * @param metaListener the callback interface where you handle the info.
@@ -241,12 +263,15 @@ public class ArchiveEngine {
      */
     public static void getArchiveInfo(
             final String pvName,
-            final ConfigService configservice,
+            final StoragePluginConfigView storageConfig,
+            final ApplianceLifecycle applianceLifecycle,
+            final PolicyService policyService,
             final String metadatafields[],
             boolean usePVAccess,
             final MetaCompletedListener metaListener)
             throws Exception {
-        MetaGet metaget = new MetaGet(pvName, configservice, metadatafields, usePVAccess, metaListener);
+        MetaGet metaget = new MetaGet(
+                pvName, storageConfig, applianceLifecycle, policyService, metadatafields, usePVAccess, metaListener);
         metaget.initpv();
     }
 
@@ -255,7 +280,9 @@ public class ArchiveEngine {
      * @param samplingPeriod The minimal sample period for channel in scan mode.  Attention: the same data with same value and timestamp is not saved again in scan mode. This period is meanlingless for channel in monitor mode.
      * @param mode scan or monitor
      * @param writer First destination
-     * @param configservice ConfigService
+     * @param storageConfig The configuration the storage plugins and type system come from
+     * @param applianceLifecycle Keys this appliance's engine context
+     * @param policyService The policy fields archived with the stream
      * @param archdbrtype Expected DBR type.
      * @param lastKnownEventTimeStamp Last known event from all the stores.
      * @param controllingPVName The PV that controls archiving for this PV
@@ -268,7 +295,9 @@ public class ArchiveEngine {
             final float samplingPeriod,
             final SamplingMethod mode,
             final Writer writer,
-            final ConfigService configservice,
+            final StoragePluginConfigView storageConfig,
+            final ApplianceLifecycle applianceLifecycle,
+            final PolicyService policyService,
             final ArchDBRTypes archdbrtype,
             final Instant lastKnownEventTimeStamp,
             final String controllingPVName,
@@ -280,7 +309,9 @@ public class ArchiveEngine {
                 samplingPeriod,
                 mode,
                 writer,
-                configservice,
+                storageConfig,
+                applianceLifecycle,
+                policyService,
                 archdbrtype,
                 lastKnownEventTimeStamp,
                 controllingPVName,
@@ -295,7 +326,9 @@ public class ArchiveEngine {
      * @param samplingPeriod The minimal sample period for channel in scan mode.  Attention: the same data with same value and timestamp is not saved again in scan mode. This period is meanlingless for channel in monitor mode.
      * @param mode scan or monitor
      * @param writer First destination
-     * @param configservice ConfigService
+     * @param storageConfig The configuration the storage plugins and type system come from
+     * @param applianceLifecycle Keys this appliance's engine context
+     * @param policyService The policy fields archived with the stream
      * @param archdbrtype Expected DBR type.
      * @param lastKnownEventTimeStamp Last known event from all the stores.
      * @param usePVAccess Should we use PVAccess to connect to this PV.
@@ -307,7 +340,9 @@ public class ArchiveEngine {
             final float samplingPeriod,
             final SamplingMethod mode,
             final Writer writer,
-            final ConfigService configservice,
+            final StoragePluginConfigView storageConfig,
+            final ApplianceLifecycle applianceLifecycle,
+            final PolicyService policyService,
             final ArchDBRTypes archdbrtype,
             final Instant lastKnownEventTimeStamp,
             final boolean usePVAccess,
@@ -318,7 +353,9 @@ public class ArchiveEngine {
                 samplingPeriod,
                 mode,
                 writer,
-                configservice,
+                storageConfig,
+                applianceLifecycle,
+                policyService,
                 archdbrtype,
                 lastKnownEventTimeStamp,
                 null,
@@ -333,7 +370,9 @@ public class ArchiveEngine {
      * @param samplingPeriod The minimal sample period for channel in scan mode.  Attention: the same data with same value and timestamp is not saved again in scan mode. This period is meanlingless for channel in monitor mode.
      * @param mode scan or monitor
      * @param writer First destination
-     * @param configservice ConfigService
+     * @param storageConfig The configuration the storage plugins and type system come from
+     * @param applianceLifecycle Keys this appliance's engine context
+     * @param policyService The policy fields archived with the stream
      * @param archdbrtype Expected DBR type.
      * @param lastKnownEventTimeStamp Last known event from all the stores.
      * @param metaFieldNames An array of EPICS fields that gets stored along with the stream. Needs rethinking once we have EPICS V4
@@ -346,7 +385,9 @@ public class ArchiveEngine {
             final float samplingPeriod,
             final SamplingMethod mode,
             final Writer writer,
-            final ConfigService configservice,
+            final StoragePluginConfigView storageConfig,
+            final ApplianceLifecycle applianceLifecycle,
+            final PolicyService policyService,
             final ArchDBRTypes archdbrtype,
             final Instant lastKnownEventTimeStamp,
             final String[] metaFieldNames,
@@ -358,7 +399,9 @@ public class ArchiveEngine {
                 samplingPeriod,
                 mode,
                 writer,
-                configservice,
+                storageConfig,
+                applianceLifecycle,
+                policyService,
                 archdbrtype,
                 lastKnownEventTimeStamp,
                 null,
@@ -374,7 +417,9 @@ public class ArchiveEngine {
      * @param samplingPeriod The minimal sample period for channel in scan mode.  Attention: the same data with same value and timestamp is not saved again in scan mode. This period is meanlingless for channel in monitor mode.
      * @param mode scan or monitor
      * @param writer First destination
-     * @param configservice   ConfigService
+     * @param storageConfig The configuration the storage plugins and type system come from
+     * @param applianceLifecycle Keys this appliance's engine context
+     * @param policyService The policy fields archived with the stream
      * @param archdbrtype Expected DBR type.
      * @param lastKnownEventTimeStamp Last known event from all the stores.
      * @param controllingPVName The PV that controls archiving for this PV
@@ -389,7 +434,9 @@ public class ArchiveEngine {
             final float samplingPeriod,
             final SamplingMethod mode,
             final Writer writer,
-            final ConfigService configservice,
+            final StoragePluginConfigView storageConfig,
+            final ApplianceLifecycle applianceLifecycle,
+            final PolicyService policyService,
             final ArchDBRTypes archdbrtype,
             final Instant lastKnownEventTimeStamp,
             final String controllingPVName,
@@ -402,7 +449,7 @@ public class ArchiveEngine {
         boolean start = true;
         if (controllingPVName != null) {
             ConcurrentHashMap<String, ControllingPV> controlingPVList =
-                    configservice.getEngineContext().getControlingPVList();
+                    EngineContext.of(applianceLifecycle).getControlingPVList();
             ControllingPV controllingPV = controlingPVList.get(controllingPVName);
 
             if (controllingPV == null) {
@@ -411,7 +458,9 @@ public class ArchiveEngine {
                         samplingPeriod,
                         mode,
                         writer,
-                        configservice,
+                        storageConfig,
+                        applianceLifecycle,
+                        policyService,
                         archdbrtype,
                         lastKnownEventTimeStamp,
                         start,
@@ -422,10 +471,12 @@ public class ArchiveEngine {
                         useDBEProperties);
                 controllingPV = PVFactory.createControllingPV(
                         controllingPVName,
-                        configservice,
+                        storageConfig,
+                        applianceLifecycle,
+                        policyService,
                         true,
                         archdbrtype,
-                        configservice.getEngineContext().assignJCACommandThread(controllingPVName, null),
+                        EngineContext.of(applianceLifecycle).assignJCACommandThread(controllingPVName, null),
                         false);
                 controlingPVList.put(controllingPVName, controllingPV);
                 controllingPV.addControledPV(pvName);
@@ -439,7 +490,9 @@ public class ArchiveEngine {
                         samplingPeriod,
                         mode,
                         writer,
-                        configservice,
+                        storageConfig,
+                        applianceLifecycle,
+                        policyService,
                         archdbrtype,
                         lastKnownEventTimeStamp,
                         start,
@@ -455,7 +508,9 @@ public class ArchiveEngine {
                     samplingPeriod,
                     mode,
                     writer,
-                    configservice,
+                    storageConfig,
+                    applianceLifecycle,
+                    policyService,
                     archdbrtype,
                     lastKnownEventTimeStamp,
                     start,
@@ -471,18 +526,25 @@ public class ArchiveEngine {
      * pause the pv
      *
      * @param pvName Name of the channel (PV)
-     * @param configservice  ConfigService
+     * @param storageConfig The configuration the storage plugins and type system come from
+     * @param applianceLifecycle Keys this appliance's engine context
+     * @param policyService The policy fields archived with the stream
      * @throws Exception error in pausing the channel .
      */
-    public static void pauseArchivingPV(final String pvName, ConfigService configservice) throws Exception {
-        EngineContext engineContext = configservice.getEngineContext();
+    public static void pauseArchivingPV(
+            final String pvName,
+            StoragePluginConfigView storageConfig,
+            ApplianceLifecycle applianceLifecycle,
+            PolicyService policyService)
+            throws Exception {
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
         // pause the pv
         ArchiveChannel channel = engineContext.getChannelList().get(pvName);
         if (channel != null) {
             channel.shutdownMetaChannels();
             channel.stop();
             channel.setPaused(true);
-            destoryPv(pvName, configservice);
+            destoryPv(pvName, applianceLifecycle);
         }
     }
 
@@ -491,12 +553,19 @@ public class ArchiveEngine {
      *
      * @param pvName
      *            Name of the channel (PV)
-     * @param configservice  ConfigService
+     * @param storageConfig The configuration the storage plugins and type system come from
+     * @param applianceLifecycle Keys this appliance's engine context
+     * @param policyService The policy fields archived with the stream
      * @throws Exception
      *              error in restarting the channel .
      */
-    public static void resumeArchivingPV(final String pvName, ConfigService configservice) throws Exception {
-        EngineContext engineContext = configservice.getEngineContext();
+    public static void resumeArchivingPV(
+            final String pvName,
+            StoragePluginConfigView storageConfig,
+            ApplianceLifecycle applianceLifecycle,
+            PolicyService policyService)
+            throws Exception {
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
         ArchiveChannel channel = engineContext.getChannelList().get(pvName);
         if (channel != null) {
             if (channel.isRunning() && !channel.isPaused()) {
@@ -513,7 +582,7 @@ public class ArchiveEngine {
             // We have not created the channel on startup.
             // We should start it up
             logger.debug("We had not created the channel on startup. Creating it " + pvName);
-            startChannelsForPV(pvName, configservice);
+            startChannelsForPV(pvName, storageConfig, applianceLifecycle, policyService);
         }
     }
 
@@ -521,12 +590,19 @@ public class ArchiveEngine {
      * restart the pv
      *
      * @param pvName        Name of the channel (PV)
-     * @param configservice ConfigService
+     * @param storageConfig The configuration the storage plugins and type system come from
+     * @param applianceLifecycle Keys this appliance's engine context
+     * @param policyService The policy fields archived with the stream
      * @throws Exception error in restarting the channel .
      */
-    public static void resumeArchivingPV(final String pvName, ConfigService configservice, Writer writer)
+    public static void resumeArchivingPV(
+            final String pvName,
+            StoragePluginConfigView storageConfig,
+            ApplianceLifecycle applianceLifecycle,
+            PolicyService policyService,
+            Writer writer)
             throws Exception {
-        EngineContext engineContext = configservice.getEngineContext();
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
         ArchiveChannel channel = engineContext.getChannelList().get(pvName);
         if (channel != null) {
             if (channel.isRunning() && !channel.isPaused()) {
@@ -539,7 +615,13 @@ public class ArchiveEngine {
             // We have not created the channel on startup.
             // We should start it up
             logger.debug("We had not created the channel on startup. Creating it " + pvName);
-            startChannelsForPV(pvName, configservice, configservice.getTypeInfoForPV(pvName), writer);
+            startChannelsForPV(
+                    pvName,
+                    storageConfig,
+                    applianceLifecycle,
+                    policyService,
+                    storageConfig.getTypeInfoForPV(pvName),
+                    writer);
         }
     }
 
@@ -547,32 +629,45 @@ public class ArchiveEngine {
      * Start up the channels for a PV.
      * Should be called on startup or on resume of a PV that was paused on startup.
      * @param pvName The Name of PV.
-     * @param configservice  ConfigService
-     * @throws IOException  &emsp;
-     * @throws Exception  &emsp;
-     */
-    public static void startChannelsForPV(final String pvName, ConfigService configservice)
-            throws IOException, Exception {
-        logger.debug("Starting up channels for pv " + pvName);
-        PVTypeInfo typeInfo = configservice.getTypeInfoForPV(pvName);
-        if (typeInfo == null) {
-            logger.error("Cannot resume PV for which we cannot typeinfo " + pvName);
-            return;
-        }
-        StoragePlugin firstDest = StoragePluginURLParser.parseStoragePlugin(typeInfo.getDataStores()[0], configservice);
-        startChannelsForPV(pvName, configservice, typeInfo, firstDest);
-    }
-
-    /**
-     * Start up the channels for a PV.
-     * Should be called on startup or on resume of a PV that was paused on startup.
-     * @param pvName The Name of PV.
-     * @param configservice  ConfigService
+     * @param storageConfig The configuration the storage plugins and type system come from
+     * @param applianceLifecycle Keys this appliance's engine context
+     * @param policyService The policy fields archived with the stream
      * @throws IOException  &emsp;
      * @throws Exception  &emsp;
      */
     public static void startChannelsForPV(
-            final String pvName, ConfigService configservice, PVTypeInfo typeInfo, Writer writer)
+            final String pvName,
+            StoragePluginConfigView storageConfig,
+            ApplianceLifecycle applianceLifecycle,
+            PolicyService policyService)
+            throws IOException, Exception {
+        logger.debug("Starting up channels for pv " + pvName);
+        PVTypeInfo typeInfo = storageConfig.getTypeInfoForPV(pvName);
+        if (typeInfo == null) {
+            logger.error("Cannot resume PV for which we cannot typeinfo " + pvName);
+            return;
+        }
+        StoragePlugin firstDest = StoragePluginURLParser.parseStoragePlugin(typeInfo.getDataStores()[0], storageConfig);
+        startChannelsForPV(pvName, storageConfig, applianceLifecycle, policyService, typeInfo, firstDest);
+    }
+
+    /**
+     * Start up the channels for a PV.
+     * Should be called on startup or on resume of a PV that was paused on startup.
+     * @param pvName The Name of PV.
+     * @param storageConfig The configuration the storage plugins and type system come from
+     * @param applianceLifecycle Keys this appliance's engine context
+     * @param policyService The policy fields archived with the stream
+     * @throws IOException  &emsp;
+     * @throws Exception  &emsp;
+     */
+    public static void startChannelsForPV(
+            final String pvName,
+            StoragePluginConfigView storageConfig,
+            ApplianceLifecycle applianceLifecycle,
+            PolicyService policyService,
+            PVTypeInfo typeInfo,
+            Writer writer)
             throws IOException, Exception {
         logger.debug("Starting up channels for pv " + pvName);
         if (typeInfo == null) {
@@ -582,7 +677,7 @@ public class ArchiveEngine {
         ArchDBRTypes dbrType = typeInfo.getDBRType();
         float samplingPeriod = typeInfo.getSamplingPeriod();
         SamplingMethod samplingMethod = typeInfo.getSamplingMethod();
-        Instant lastKnownTimestamp = typeInfo.determineLastKnownEventFromStores(configservice);
+        Instant lastKnownTimestamp = typeInfo.determineLastKnownEventFromStores(storageConfig);
         if (logger.isDebugEnabled())
             logger.debug("Last known timestamp from ETL stores is for pv " + pvName + " is "
                     + TimeUtils.convertToHumanReadableString(lastKnownTimestamp));
@@ -592,7 +687,9 @@ public class ArchiveEngine {
                 samplingPeriod,
                 samplingMethod,
                 writer,
-                configservice,
+                storageConfig,
+                applianceLifecycle,
+                policyService,
                 dbrType,
                 lastKnownTimestamp,
                 typeInfo.getControllingPV(),
@@ -606,13 +703,13 @@ public class ArchiveEngine {
      * get the pv's info and status
      * @param pvName
      *            Name of the channel (PV)
-     * @param configservice  ConfigService
+     * @param applianceLifecycle  ConfigService
      * @return  PVMetrics  &emsp;
      * @throws Exception
      *             On error in getting the pv info and status .
      */
-    public static PVMetrics getMetricsforPV(String pvName, ConfigService configservice) throws Exception {
-        EngineContext engineContext = configservice.getEngineContext();
+    public static PVMetrics getMetricsforPV(String pvName, ApplianceLifecycle applianceLifecycle) throws Exception {
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
         ArchiveChannel channel = engineContext.getChannelList().get(pvName);
         if (channel == null) {
             return null;
@@ -623,13 +720,14 @@ public class ArchiveEngine {
     /**
      * Return info from CAJ
      * @param pvName The name of PV.
-     * @param configservice  ConfigService
+     * @param applianceLifecycle  ConfigService
      * @param statuses  Add a list of key value pairs to the status
      * @throws Exception  &emsp;
      */
     public static void getLowLevelStateInfo(
-            String pvName, ConfigService configservice, LinkedList<Map<String, String>> statuses) throws Exception {
-        EngineContext engineContext = configservice.getEngineContext();
+            String pvName, ApplianceLifecycle applianceLifecycle, LinkedList<Map<String, String>> statuses)
+            throws Exception {
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
         ArchiveChannel channel = engineContext.getChannelList().get(pvName);
         if (channel == null) return;
         channel.getLowLevelChannelStateInfo(statuses);
@@ -643,7 +741,9 @@ public class ArchiveEngine {
      * @param samplingPeriod
      *            new sampling Period of the channel (PV)
      * @param mode scan or monitor
-     * @param configservice ConfigService
+     * @param storageConfig The configuration the storage plugins and type system come from
+     * @param applianceLifecycle Keys this appliance's engine context
+     * @param policyService The policy fields archived with the stream
      * @param writer
      *            the writer to protocol buffer
      * @param usePVAccess Should we use PVAccess to connect to this PV.
@@ -655,12 +755,14 @@ public class ArchiveEngine {
             final String pvName,
             final float samplingPeriod,
             final SamplingMethod mode,
-            final ConfigService configservice,
+            final StoragePluginConfigView storageConfig,
+            final ApplianceLifecycle applianceLifecycle,
+            final PolicyService policyService,
             final Writer writer,
             final boolean usePVAccess,
             final boolean useDBEPropeties)
             throws Exception {
-        EngineContext engineContext = configservice.getEngineContext();
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
         ArchiveChannel channel = engineContext.getChannelList().get(pvName);
         if (channel == null) {
             throw new Exception(String.format(" Channel '%s' doesn't exist'", pvName));
@@ -682,7 +784,9 @@ public class ArchiveEngine {
                         samplingPeriod,
                         SamplingMethod.SCAN,
                         writer,
-                        configservice,
+                        storageConfig,
+                        applianceLifecycle,
+                        policyService,
                         pvMetrics.getArchDBRTypes(),
                         null,
                         usePVAccess,
@@ -709,7 +813,9 @@ public class ArchiveEngine {
                             samplingPeriod,
                             SamplingMethod.SCAN,
                             writer,
-                            configservice,
+                            storageConfig,
+                            applianceLifecycle,
+                            policyService,
                             pvMetrics.getArchDBRTypes(),
                             null,
                             usePVAccess,
@@ -729,7 +835,9 @@ public class ArchiveEngine {
                         samplingPeriod,
                         SamplingMethod.MONITOR,
                         writer,
-                        configservice,
+                        storageConfig,
+                        applianceLifecycle,
+                        policyService,
                         pvMetrics.getArchDBRTypes(),
                         null,
                         usePVAccess,
@@ -748,7 +856,9 @@ public class ArchiveEngine {
                         samplingPeriod,
                         SamplingMethod.MONITOR,
                         writer,
-                        configservice,
+                        storageConfig,
+                        applianceLifecycle,
+                        policyService,
                         pvMetrics.getArchDBRTypes(),
                         null,
                         usePVAccess,
@@ -760,12 +870,12 @@ public class ArchiveEngine {
     /**
      * destroy the pv
      * @param pvName  the pv's name to destroy
-     * @param configservice the configSerivice of the application
+     * @param applianceLifecycle the configSerivice of the application
      * @throws Exception
      *        error when destroy the PV
      */
-    public static void destoryPv(String pvName, final ConfigService configservice) throws Exception {
-        EngineContext engineContext = configservice.getEngineContext();
+    public static void destoryPv(String pvName, final ApplianceLifecycle applianceLifecycle) throws Exception {
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
         ArchiveChannel channel = engineContext.getChannelList().get(pvName);
 
         if (channel == null) {

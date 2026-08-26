@@ -215,9 +215,9 @@ public class MetaInfo {
      * save the basical info from dbr
      * @param pvName the name of the PV
      * @param dbr EPICS DB record
-     * @param configService ConfigService
+     * @param pvTypeInfoStore The type info store, updated if the units or precision changed
      */
-    public void applyBasicInfo(String pvName, final DBR dbr, ConfigService configService) {
+    public void applyBasicInfo(String pvName, final DBR dbr, PVTypeInfoStore pvTypeInfoStore) {
         if (dbr.isLABELS()) {
             logger.debug("Updating labels for ENUM pv " + pvName);
             final DBR_LABELS_Enum labels = (DBR_LABELS_Enum) dbr;
@@ -235,7 +235,7 @@ public class MetaInfo {
             this.upperAlarmLimit = ctrl.getUpperAlarmLimit().doubleValue();
             this.precision = ctrl.getPrecision();
             this.unit = ctrl.getUnits();
-            updateTypeInfo(pvName, configService);
+            updateTypeInfo(pvName, pvTypeInfoStore);
         } else if (dbr instanceof DBR_CTRL_Int) {
             logger.debug("Updating metafields for DBR_CTRL_Int pv " + pvName);
             final DBR_CTRL_Int ctrl = (DBR_CTRL_Int) dbr;
@@ -249,7 +249,7 @@ public class MetaInfo {
             this.upperAlarmLimit = ctrl.getUpperAlarmLimit().doubleValue();
             this.precision = 0;
             this.unit = ctrl.getUnits();
-            updateTypeInfo(pvName, configService);
+            updateTypeInfo(pvName, pvTypeInfoStore);
         } else if (dbr instanceof GR) {
             logger.debug("Updating metafields for GR pv " + pvName);
             final GR ctrl = (GR) dbr;
@@ -263,7 +263,7 @@ public class MetaInfo {
             this.upperAlarmLimit = ctrl.getUpperAlarmLimit().doubleValue();
             this.precision = (dbr instanceof PRECISION) ? ((PRECISION) dbr).getPrecision() : 0;
             this.unit = ctrl.getUnits();
-            updateTypeInfo(pvName, configService);
+            updateTypeInfo(pvName, pvTypeInfoStore);
         } else {
             logger.error("In applyBasicInfo, cannot determine dbr type for "
                     + (dbr != null ? dbr.getClass().getName() : "Null DBR"));
@@ -652,10 +652,10 @@ public class MetaInfo {
      * This should accommodate changes in EGU and precision.
      * However, this should happen rarely or else performance will suffer.
      * @param pvName The name of PV.
-     * @param configService ConfigService
+     * @param pvTypeInfoStore The type info store
      */
-    private void updateTypeInfo(String pvName, ConfigService configService) {
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+    private void updateTypeInfo(String pvName, PVTypeInfoStore pvTypeInfoStore) {
+        PVTypeInfo typeInfo = pvTypeInfoStore.getTypeInfoForPV(pvName);
         boolean updated = false;
         if (typeInfo != null) {
             if ((typeInfo.getUnits() == null && this.unit != null)
@@ -680,7 +680,7 @@ public class MetaInfo {
 
             if (updated) {
                 logger.debug("Saving typeinfo in persistence for pv " + pvName);
-                configService.updateTypeInfoForPV(pvName, typeInfo);
+                pvTypeInfoStore.updateTypeInfoForPV(pvName, typeInfo);
             }
         }
     }

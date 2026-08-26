@@ -9,9 +9,12 @@ import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
+import org.epics.archiverappliance.config.AliasRegistry;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
 import org.epics.archiverappliance.retrieval.postprocessors.DefaultRawPostProcessor;
@@ -58,12 +61,28 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author mshankar
  */
 public class ReshardPV implements BPLAction {
+
+    private final AliasRegistry aliasRegistry;
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvDirectory;
+    private final StoragePluginConfigView storageConfig;
+
+    public ReshardPV(
+            AliasRegistry aliasRegistry,
+            ClusterTopology clusterTopology,
+            PVDirectory pvDirectory,
+            StoragePluginConfigView storageConfig) {
+        this.aliasRegistry = aliasRegistry;
+        this.clusterTopology = clusterTopology;
+        this.pvDirectory = pvDirectory;
+        this.storageConfig = storageConfig;
+    }
+
     private static Logger logger = LogManager.getLogger(ReshardPV.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
-        if (!configService.hasClusterFinishedInitialization()) {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        if (!clusterTopology.hasClusterFinishedInitialization()) {
             // If you have defined spare appliances in the appliances.xml that will never come up; you should remove
             // them
             // This seems to be one of the few ways we can prevent split brain clusters from messing up the pv <->
@@ -91,17 +110,17 @@ public class ReshardPV implements BPLAction {
         }
 
         // String pvNameFromRequest = pvName;
-        String realName = configService.getRealNameForAlias(srcPVName);
+        String realName = aliasRegistry.getRealNameForAlias(srcPVName);
         if (realName != null) srcPVName = realName;
 
-        ApplianceInfo srcApplianceInfo = configService.getApplianceForPV(srcPVName);
+        ApplianceInfo srcApplianceInfo = pvDirectory.getApplianceForPV(srcPVName);
         if (srcApplianceInfo == null) {
             logger.error("Unable to find appliance for PV " + srcPVName);
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-        ApplianceInfo destApplianceInfo = configService.getAppliance(destApplianceIdentity);
+        ApplianceInfo destApplianceInfo = clusterTopology.getAppliance(destApplianceIdentity);
         if (destApplianceInfo == null) {
             logger.error("Unable to find appliance with identity " + destApplianceIdentity);
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -115,7 +134,7 @@ public class ReshardPV implements BPLAction {
             return;
         }
 
-        PVTypeInfo srcTypeInfo = configService.getTypeInfoForPV(srcPVName);
+        PVTypeInfo srcTypeInfo = storageConfig.getTypeInfoForPV(srcPVName);
         if (srcTypeInfo == null) {
             logger.debug("Unable to find typeinfo for PV...");
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -125,7 +144,7 @@ public class ReshardPV implements BPLAction {
         HashMap<String, Object> infoValues = new HashMap<String, Object>();
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
 
-        if (!destApplianceIdentity.equals(configService.getMyApplianceInfo().getIdentity())) {
+        if (!destApplianceIdentity.equals(clusterTopology.getMyApplianceInfo().getIdentity())) {
             String redirectURL = destApplianceInfo.getMgmtURL()
                     + "/reshardPV?pv="
                     + URLEncoder.encode(srcPVName, "UTF-8")
@@ -145,7 +164,7 @@ public class ReshardPV implements BPLAction {
 
         boolean foundSrcPlugin = false;
         for (String store : srcTypeInfo.getDataStores()) {
-            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, configService);
+            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, storageConfig);
             if (plugin.getName().equals(storageName)) {
                 logger.debug("Found the storage plugin identifier by " + storageName);
                 foundSrcPlugin = true;
@@ -194,7 +213,7 @@ public class ReshardPV implements BPLAction {
         Random rand = new Random();
         String destPVName = srcPVName + "_reshard_" + rand.nextLong();
         int nameTries = 0;
-        while (configService.getApplianceForPV(destPVName) != null) {
+        while (pvDirectory.getApplianceForPV(destPVName) != null) {
             logger.error(destPVName + " seems to exist. This is highly improbable. Trying again.");
             if (nameTries++ > 100) {
                 try (PrintWriter out = resp.getWriter()) {
@@ -213,9 +232,10 @@ public class ReshardPV implements BPLAction {
         destTypeInfo.setCreationTime(srcTypeInfo.getCreationTime());
         destTypeInfo.setModificationTime(TimeUtils.now());
         try {
-            destTypeInfo.setApplianceIdentity(configService.getMyApplianceInfo().getIdentity());
-            configService.updateTypeInfoForPV(destPVName, destTypeInfo);
-            configService.registerPVToAppliance(destPVName, configService.getMyApplianceInfo());
+            destTypeInfo.setApplianceIdentity(
+                    clusterTopology.getMyApplianceInfo().getIdentity());
+            storageConfig.updateTypeInfoForPV(destPVName, destTypeInfo);
+            pvDirectory.registerPVToAppliance(destPVName, clusterTopology.getMyApplianceInfo());
         } catch (AlreadyRegisteredException ex) {
             try (PrintWriter out = resp.getWriter()) {
                 String errorMsg = "Temporary PV name is already registered " + destPVName + ". Giving up on resharding "
@@ -228,11 +248,11 @@ public class ReshardPV implements BPLAction {
         }
 
         logger.info("Registered temp PV " + destPVName + " to appliance "
-                + configService.getMyApplianceInfo().getIdentity());
+                + clusterTopology.getMyApplianceInfo().getIdentity());
 
         StoragePlugin destPlugin = null;
         for (String store : destTypeInfo.getDataStores()) {
-            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, configService);
+            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, storageConfig);
             if (plugin.getName().equals(storageName)) {
                 logger.debug("Found the storage plugin identifier by " + storageName);
                 destPlugin = plugin;
@@ -246,7 +266,7 @@ public class ReshardPV implements BPLAction {
                 logger.error(errorMsg);
                 infoValues.put("validation", errorMsg);
                 out.println(JSONValue.toJSONString(infoValues));
-                cleanupTemporaryPV(configService, destPVName);
+                cleanupTemporaryPV(clusterTopology, destPVName);
                 return;
             }
         }
@@ -255,13 +275,13 @@ public class ReshardPV implements BPLAction {
                 + 2 * 365 * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
         Instant distantFuture = TimeUtils.convertFromEpochSeconds(distantFutureEpochSeconds, 0);
         Instant distantPast = TimeUtils.minusDays(srcTypeInfo.getCreationTime(), 5 * 366);
-        long beforeEventCount = getEventCount(configService, srcApplianceInfo, srcPVName, distantPast, distantFuture);
+        long beforeEventCount = getEventCount(storageConfig, srcApplianceInfo, srcPVName, distantPast, distantFuture);
         logger.info("Before data transfer, we have " + beforeEventCount + " events");
 
         String dataRetrievalURL = srcApplianceInfo.getRetrievalURL().replace("/bpl", "") + "/data/getData.raw";
         logger.info("Getting data for source PV using URL " + dataRetrievalURL);
         StoragePlugin srcStoragePlugin = StoragePluginURLParser.parseStoragePlugin(
-                "pbraw://localhost?rawURL=" + dataRetrievalURL + "&skipExternalServers=true", configService);
+                "pbraw://localhost?rawURL=" + dataRetrievalURL + "&skipExternalServers=true", storageConfig);
         try (BasicContext context = new BasicContext()) {
             List<Callable<EventStream>> callables = srcStoragePlugin.getDataForPV(
                     context, srcPVName, distantPast, distantFuture, new DefaultRawPostProcessor());
@@ -283,13 +303,13 @@ public class ReshardPV implements BPLAction {
                 logger.error(errorMsg, ex);
                 infoValues.put("validation", errorMsg);
                 out.println(JSONValue.toJSONString(infoValues));
-                cleanupTemporaryPV(configService, destPVName);
+                cleanupTemporaryPV(clusterTopology, destPVName);
                 return;
             }
         }
 
         long afterEventCount = getEventCount(
-                configService, configService.getMyApplianceInfo(), destPVName, distantPast, distantFuture);
+                storageConfig, clusterTopology.getMyApplianceInfo(), destPVName, distantPast, distantFuture);
         logger.info("After data transfer, we have " + afterEventCount + " events");
 
         if (beforeEventCount != afterEventCount) {
@@ -303,7 +323,7 @@ public class ReshardPV implements BPLAction {
                 logger.error(errorMsg);
                 infoValues.put("validation", errorMsg);
                 out.println(JSONValue.toJSONString(infoValues));
-                cleanupTemporaryPV(configService, destPVName);
+                cleanupTemporaryPV(clusterTopology, destPVName);
                 logger.error(errorMsg);
                 return;
             }
@@ -327,7 +347,7 @@ public class ReshardPV implements BPLAction {
             infoValues.put("deleteOriginal", "ok");
         }
 
-        String renameURL = configService.getMyApplianceInfo().getMgmtURL() + "/renamePV?pv="
+        String renameURL = clusterTopology.getMyApplianceInfo().getMgmtURL() + "/renamePV?pv="
                 + URLEncoder.encode(destPVName, "UTF-8")
                 + "&newname="
                 + URLEncoder.encode(srcPVName, "UTF-8");
@@ -347,7 +367,7 @@ public class ReshardPV implements BPLAction {
         } else {
             logger.info("Renamed temporary PV from system using " + renameURL);
             // Cleanup the temporary PV after the rename is successful.
-            cleanupTemporaryPV(configService, destPVName);
+            cleanupTemporaryPV(clusterTopology, destPVName);
             try (PrintWriter out = resp.getWriter()) {
                 infoValues.put("status", "ok");
                 infoValues.put("desc", "Successfully assigned " + srcPVName + " to appliance " + destApplianceIdentity);
@@ -358,9 +378,9 @@ public class ReshardPV implements BPLAction {
         }
     }
 
-    private void cleanupTemporaryPV(ConfigService configService, String destPVName) {
+    private void cleanupTemporaryPV(ClusterTopology clusterTopology, String destPVName) {
         try {
-            String deleteURL = configService.getMyApplianceInfo().getMgmtURL() + "/deletePV?pv="
+            String deleteURL = clusterTopology.getMyApplianceInfo().getMgmtURL() + "/deletePV?pv="
                     + URLEncoder.encode(destPVName, "UTF-8") + "&deleteData=true";
             logger.info("Deleting temporary PV from system using " + deleteURL);
             GetUrlContent.getURLContentAsJSONObject(deleteURL);
@@ -377,12 +397,12 @@ public class ReshardPV implements BPLAction {
      * @return
      */
     private long getEventCount(
-            ConfigService configService, ApplianceInfo info, String pvName, Instant from, Instant to) {
+            StoragePluginConfigView storageConfig, ApplianceInfo info, String pvName, Instant from, Instant to) {
         long eventCount = 0;
         String dataRetrievalURL = info.getRetrievalURL().replace("/bpl", "") + "/data/getData.raw";
         try {
             StoragePlugin srcStoragePlugin = StoragePluginURLParser.parseStoragePlugin(
-                    "pbraw://localhost?rawURL=" + dataRetrievalURL + "&skipExternalServers=true", configService);
+                    "pbraw://localhost?rawURL=" + dataRetrievalURL + "&skipExternalServers=true", storageConfig);
             try (BasicContext context = new BasicContext()) {
                 List<Callable<EventStream>> callables =
                         srcStoragePlugin.getDataForPV(context, pvName, from, to, new DefaultRawPostProcessor());

@@ -50,7 +50,8 @@ import java.net.URISyntaxException;
 public class StoragePluginURLParser {
     private static final Logger logger = LogManager.getLogger(StoragePluginURLParser.class.getName());
 
-    public static StoragePlugin parseStoragePlugin(String srcURIStr, ConfigService configService) throws IOException {
+    public static StoragePlugin parseStoragePlugin(String srcURIStr, StoragePluginConfigView configService)
+            throws IOException {
         try {
             srcURIStr = expandMacros(srcURIStr);
             URI srcURI = new URI(srcURIStr);
@@ -85,7 +86,7 @@ public class StoragePluginURLParser {
         return null;
     }
 
-    public static ETLSource parseETLSource(String srcURIStr, ConfigService configService) throws IOException {
+    public static ETLSource parseETLSource(String srcURIStr, StoragePluginConfigView configService) throws IOException {
         try {
             srcURIStr = expandMacros(srcURIStr);
             URI srcURI = new URI(srcURIStr);
@@ -115,7 +116,7 @@ public class StoragePluginURLParser {
         return null;
     }
 
-    public static ETLDest parseETLDest(String srcURIStr, ConfigService configService) throws IOException {
+    public static ETLDest parseETLDest(String srcURIStr, StoragePluginConfigView configService) throws IOException {
         try {
             srcURIStr = expandMacros(srcURIStr);
             URI srcURI = new URI(srcURIStr);
@@ -145,20 +146,21 @@ public class StoragePluginURLParser {
     }
 
     private static PlainStoragePlugin parsePlainStoragePlugin(
-            String srcURIStr, ConfigService configService, PlainStorageType plainStorageType) throws IOException {
+            String srcURIStr, StoragePluginConfigView configService, PlainStorageType plainStorageType)
+            throws IOException {
         PlainStoragePlugin ret = new PlainStoragePlugin(plainStorageType);
         ret.initialize(expandMacros(srcURIStr), configService);
         return ret;
     }
 
-    private static PBOverHTTPStoragePlugin parseHTTPStoragePlugin(String srcURIStr, ConfigService configService)
-            throws IOException {
+    private static PBOverHTTPStoragePlugin parseHTTPStoragePlugin(
+            String srcURIStr, StoragePluginConfigView configService) throws IOException {
         PBOverHTTPStoragePlugin ret = new PBOverHTTPStoragePlugin();
         ret.initialize(srcURIStr, configService);
         return ret;
     }
 
-    private static BlackholeStoragePlugin parseBlackHolePlugin(String srcURIStr, ConfigService configService)
+    private static BlackholeStoragePlugin parseBlackHolePlugin(String srcURIStr, StoragePluginConfigView configService)
             throws IOException {
         BlackholeStoragePlugin ret = new BlackholeStoragePlugin();
         ret.initialize(srcURIStr, configService);
@@ -166,14 +168,14 @@ public class StoragePluginURLParser {
     }
 
     private static ChannelArchiverReadOnlyPlugin parseChannelArchiverPlugin(
-            String srcURIStr, ConfigService configService) throws IOException {
+            String srcURIStr, StoragePluginConfigView configService) throws IOException {
         ChannelArchiverReadOnlyPlugin ret = new ChannelArchiverReadOnlyPlugin();
         ret.initialize(srcURIStr, configService);
         return ret;
     }
 
-    private static MergeDedupStoragePlugin parseMergeDedupPlugin(String srcURIStr, ConfigService configService)
-            throws IOException {
+    private static MergeDedupStoragePlugin parseMergeDedupPlugin(
+            String srcURIStr, StoragePluginConfigView configService) throws IOException {
         MergeDedupStoragePlugin ret = new MergeDedupStoragePlugin();
         ret.initialize(srcURIStr, configService);
         return ret;

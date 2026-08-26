@@ -11,11 +11,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
+import org.epics.archiverappliance.config.AliasRegistry;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ArchiveRequestWorkflow;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.InstallationProperties;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
+import org.epics.archiverappliance.config.PolicyService;
 import org.epics.archiverappliance.config.UserSpecifiedSamplingParams;
+import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
@@ -77,12 +84,37 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class ArchivePVAction implements BPLAction {
+
+    private final AliasRegistry aliasRegistry;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final ArchiveRequestWorkflow archiveRequests;
+    private final ClusterTopology clusterTopology;
+    private final InstallationProperties installationProperties;
+    private final PolicyService policyService;
+    private final PVTypeInfoStore pvTypeInfoStore;
+
+    public ArchivePVAction(
+            AliasRegistry aliasRegistry,
+            ApplianceLifecycle applianceLifecycle,
+            ArchiveRequestWorkflow archiveRequests,
+            ClusterTopology clusterTopology,
+            InstallationProperties installationProperties,
+            PolicyService policyService,
+            PVTypeInfoStore pvTypeInfoStore) {
+        this.aliasRegistry = aliasRegistry;
+        this.applianceLifecycle = applianceLifecycle;
+        this.archiveRequests = archiveRequests;
+        this.clusterTopology = clusterTopology;
+        this.installationProperties = installationProperties;
+        this.policyService = policyService;
+        this.pvTypeInfoStore = pvTypeInfoStore;
+    }
+
     public static final Logger logger = LogManager.getLogger(ArchivePVAction.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
-        if (!configService.hasClusterFinishedInitialization()) {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        if (!clusterTopology.hasClusterFinishedInitialization()) {
             // If you have defined spare appliances in the appliances.xml that will never come up; you should remove
             // them
             // This seems to be one of the few ways we can prevent split brain clusters from messing up the pv <->
@@ -93,7 +125,7 @@ public class ArchivePVAction implements BPLAction {
 
         String contentType = req.getContentType();
         if (contentType != null && contentType.equals(MimeTypeConstants.APPLICATION_JSON)) {
-            processJSONRequest(req, resp, configService);
+            processJSONRequest(req, resp);
             return;
         }
 
@@ -121,7 +153,7 @@ public class ArchivePVAction implements BPLAction {
         if (policyName != null && !policyName.isEmpty()) {
             logger.info("We have a user override for policy " + policyName);
         }
-        List<String> fieldsAsPartOfStream = ArchivePVAction.getFieldsAsPartOfStream(configService);
+        List<String> fieldsAsPartOfStream = ArchivePVAction.getFieldsAsPartOfStream(policyService);
 
         if (pvs.length < 1) {
             return;
@@ -132,9 +164,9 @@ public class ArchivePVAction implements BPLAction {
         if (applianceId != null) {
             logger.debug("Appliance specified " + applianceId);
             skipCapacityPlanning = true;
-            String myIdentity = configService.getMyApplianceInfo().getIdentity();
+            String myIdentity = clusterTopology.getMyApplianceInfo().getIdentity();
             if (!applianceId.equals(myIdentity)) {
-                ApplianceInfo applInfo = configService.getAppliance(applianceId);
+                ApplianceInfo applInfo = clusterTopology.getAppliance(applianceId);
                 StringWriter buf = new StringWriter();
                 buf.append(applInfo.getMgmtURL());
                 buf.append("/archivePV?");
@@ -172,7 +204,11 @@ public class ArchivePVAction implements BPLAction {
                         policyName,
                         null,
                         skipCapacityPlanning,
-                        configService,
+                        aliasRegistry,
+                        archiveRequests,
+                        applianceLifecycle,
+                        installationProperties,
+                        pvTypeInfoStore,
                         fieldsAsPartOfStream);
             }
             out.println("]");
@@ -181,13 +217,13 @@ public class ArchivePVAction implements BPLAction {
 
     /**
      * Performance optimization - pass in fieldsArchivedAsPartOfStream as part of archivePV call.
-     * @param configService ConfigService
+     * @param policyService PolicyService
      * @return All Fields as stream
      */
-    public static List<String> getFieldsAsPartOfStream(ConfigService configService) {
+    public static List<String> getFieldsAsPartOfStream(PolicyService policyService) {
         List<String> fieldsArchivedAsPartOfStream = new LinkedList<String>();
         try {
-            fieldsArchivedAsPartOfStream = configService.getFieldsArchivedAsPartOfStream();
+            fieldsArchivedAsPartOfStream = policyService.getFieldsArchivedAsPartOfStream();
         } catch (IOException ex) {
             logger.error("Exception fetching standard fields", ex);
         }
@@ -228,7 +264,11 @@ public class ArchivePVAction implements BPLAction {
      * @param policyName  If you want to override the policy on a per PV basis.
      * @param alias Optional, any alias that you'd like to register at the same time.
      * @param skipCapacityPlanning  By default false. However, if you want to skip capacity planning and assign to this appliance, set this to true.
-     * @param configService ConfigService
+     * @param aliasRegistry AliasRegistry
+     * @param archiveRequests ArchiveRequestWorkflow
+     * @param applianceLifecycle ApplianceLifecycle
+     * @param installationProperties InstallationProperties
+     * @param pvTypeInfoStore PVTypeInfoStore
      * @param fieldsArchivedAsPartOfStream  &emsp;
      * @throws IOException  &emsp;
      */
@@ -242,7 +282,11 @@ public class ArchivePVAction implements BPLAction {
             String policyName,
             String alias,
             boolean skipCapacityPlanning,
-            ConfigService configService,
+            AliasRegistry aliasRegistry,
+            ArchiveRequestWorkflow archiveRequests,
+            ApplianceLifecycle applianceLifecycle,
+            InstallationProperties installationProperties,
+            PVTypeInfoStore pvTypeInfoStore,
             List<String> fieldsArchivedAsPartOfStream)
             throws IOException {
         String fieldName = PVNames.getFieldName(pvName);
@@ -267,14 +311,14 @@ public class ArchivePVAction implements BPLAction {
         }
 
         // Check for V4 syntax, V3 syntax or default protocol; here's where we lose the prefix
-        String defaultProtocol = configService
+        String defaultProtocol = installationProperties
                 .getInstallationProperties()
                 .getProperty("org.epics.archiverappliance.mgmt.bpl.ArchivePVAction.defaultAccessProtocol", "CA");
 
         boolean usePVAccess = usePVAccess(pvName, defaultProtocol);
         pvName = PVNames.stripPrefixFromName(pvName);
 
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = pvTypeInfoStore.getTypeInfoForPV(pvName);
         if (typeInfo != null) {
             logger.debug("We are already archiving this pv " + pvName + " and have a typeInfo");
             if (fieldName != null && !fieldName.isEmpty()) {
@@ -286,23 +330,23 @@ public class ArchivePVAction implements BPLAction {
                         logger.debug("Adding field " + fieldName + " to a pv that is already being archived");
                         typeInfo.addArchiveField(fieldName);
                         typeInfo.setModificationTime(TimeUtils.now());
-                        configService.updateTypeInfoForPV(pvName, typeInfo);
+                        pvTypeInfoStore.updateTypeInfoForPV(pvName, typeInfo);
                         // If we determine we need to kick off a pause/resume; here's where we need to do it.
                     }
                 }
             }
 
             if (alias != null) {
-                configService.addAlias(alias, pvName);
+                aliasRegistry.addAlias(alias, pvName);
             }
 
             out.println("{ \"pvName\": \"" + pvName + "\", \"status\": \"Already submitted\" }");
             return;
         }
 
-        boolean requestAlreadyMade = configService.doesPVHaveArchiveRequestInWorkflow(pvName);
+        boolean requestAlreadyMade = archiveRequests.doesPVHaveArchiveRequestInWorkflow(pvName);
         if (requestAlreadyMade) {
-            UserSpecifiedSamplingParams userParams = configService.getUserSpecifiedSamplingParams(pvName);
+            UserSpecifiedSamplingParams userParams = archiveRequests.getUserSpecifiedSamplingParams(pvName);
             if (fieldName != null && !fieldName.isEmpty()) {
                 if (isStandardFieldName) {
                     if (userParams != null && !userParams.checkIfFieldAlreadySepcified(fieldName)) {
@@ -327,7 +371,7 @@ public class ArchivePVAction implements BPLAction {
             String actualPVName = pvName;
 
             if (overridePolicyParams) {
-                String minumumSamplingPeriodStr = configService
+                String minumumSamplingPeriodStr = installationProperties
                         .getInstallationProperties()
                         .getProperty(
                                 "org.epics.archiverappliance.mgmt.bpl.ArchivePVAction.minimumSamplingPeriod", "0.1");
@@ -358,7 +402,7 @@ public class ArchivePVAction implements BPLAction {
                     userSpecifiedSamplingParams.addAlias(alias);
                 }
 
-                configService.addToArchiveRequests(actualPVName, userSpecifiedSamplingParams);
+                archiveRequests.addToArchiveRequests(actualPVName, userSpecifiedSamplingParams);
             } else {
                 UserSpecifiedSamplingParams userSpecifiedSamplingParams = new UserSpecifiedSamplingParams();
                 if (fieldName != null && !fieldName.isEmpty() && isStandardFieldName) {
@@ -382,12 +426,12 @@ public class ArchivePVAction implements BPLAction {
                     userSpecifiedSamplingParams.setPolicyName(policyName);
                 }
 
-                configService.addToArchiveRequests(actualPVName, userSpecifiedSamplingParams);
+                archiveRequests.addToArchiveRequests(actualPVName, userSpecifiedSamplingParams);
             }
             // Submit the request to the archive engine.
             // We have to make this a call into the engine to get over that fact that only the engine can load JCA
             // libraries
-            configService.getMgmtRuntimeState().startPVWorkflow(pvName);
+            MgmtRuntimeState.of(applianceLifecycle).startPVWorkflow(pvName);
             out.println("{ \"pvName\": \"" + pvName + "\", \"status\": \"Archive request submitted\" }");
         } catch (Exception ex) {
             logger.error("Exception archiving PV " + pvName, ex);
@@ -395,20 +439,19 @@ public class ArchivePVAction implements BPLAction {
         }
     }
 
-    private void processJSONRequest(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    private void processJSONRequest(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.debug("Archiving multiple PVs from a JSON POST request");
-        List<String> fieldsAsPartOfStream = ArchivePVAction.getFieldsAsPartOfStream(configService);
+        List<String> fieldsAsPartOfStream = ArchivePVAction.getFieldsAsPartOfStream(policyService);
         try (LineNumberReader lineReader =
                 new LineNumberReader(new InputStreamReader(new BufferedInputStream(req.getInputStream())))) {
             JSONParser parser = new JSONParser();
             JSONArray pvArchiveParams = (JSONArray) parser.parse(lineReader);
             logger.debug("PV count " + pvArchiveParams.size());
 
-            String myIdentity = configService.getMyApplianceInfo().getIdentity();
+            String myIdentity = clusterTopology.getMyApplianceInfo().getIdentity();
             if (!allRequestsCanBeSampledOnThisAppliance(pvArchiveParams, myIdentity)) {
                 logger.debug("Breaking down the requests into appliance calls.");
-                breakDownPVRequestsByAssignedAppliance(pvArchiveParams, myIdentity, configService, resp);
+                breakDownPVRequestsByAssignedAppliance(pvArchiveParams, myIdentity, clusterTopology, resp);
                 return;
             }
 
@@ -461,7 +504,11 @@ public class ArchivePVAction implements BPLAction {
                             (String) pvArchiveParam.get("policy"),
                             (String) pvArchiveParam.get("alias"),
                             skipCapacityPlanning,
-                            configService,
+                            aliasRegistry,
+                            archiveRequests,
+                            applianceLifecycle,
+                            installationProperties,
+                            pvTypeInfoStore,
                             fieldsAsPartOfStream);
                 }
 
@@ -501,11 +548,11 @@ public class ArchivePVAction implements BPLAction {
      * All archive requests that do not have an appliance specified will be sampled on this appliance and go thru capacity planning.
      * @param pvArchiveParams JSONArray
      * @param myIdentity emsp
-     * @param configService ConfigServic
+     * @param clusterTopology Cluster topology
      */
     @SuppressWarnings("unchecked")
     private void breakDownPVRequestsByAssignedAppliance(
-            JSONArray pvArchiveParams, String myIdentity, ConfigService configService, HttpServletResponse resp)
+            JSONArray pvArchiveParams, String myIdentity, ClusterTopology clusterTopology, HttpServletResponse resp)
             throws IOException {
         HashMap<String, List<JSONObject>> archiveRequestsByAppliance = new HashMap<String, List<JSONObject>>();
         archiveRequestsByAppliance.put(myIdentity, new LinkedList<JSONObject>());
@@ -513,7 +560,7 @@ public class ArchivePVAction implements BPLAction {
             JSONObject pvArchiveParam = (JSONObject) pvArchiveParamObj;
             if (pvArchiveParam.containsKey("appliance")) {
                 String assignedAppliance = (String) pvArchiveParam.get("appliance");
-                if (configService.getAppliance(assignedAppliance) == null) {
+                if (clusterTopology.getAppliance(assignedAppliance) == null) {
                     throw new IOException("Cannot find appliance info for " + assignedAppliance + " for pv "
                             + pvArchiveParam.get("pv"));
                 }
@@ -534,7 +581,7 @@ public class ArchivePVAction implements BPLAction {
         for (String appliance : archiveRequestsByAppliance.keySet()) {
             List<JSONObject> requestsForAppliance = archiveRequestsByAppliance.get(appliance);
             if (!requestsForAppliance.isEmpty()) {
-                String archiveURL = configService.getAppliance(appliance).getMgmtURL() + "/archivePV";
+                String archiveURL = clusterTopology.getAppliance(appliance).getMgmtURL() + "/archivePV";
                 JSONArray archiveResponse = GetUrlContent.postDataAndGetContentAsJSONArray(
                         archiveURL, GetUrlContent.from(requestsForAppliance));
                 finalResult.addAll(archiveResponse);

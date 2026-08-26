@@ -86,9 +86,9 @@ public class AppliancesList {
 
     private static InputStream determineApplianceXMLFileAndReturnStream(ServletContext servletContext)
             throws IOException, FileNotFoundException {
-        String applianceFileFromEnvVar = System.getenv(ConfigService.ARCHAPPL_APPLIANCES);
+        String applianceFileFromEnvVar = System.getenv(ClusterTopology.ARCHAPPL_APPLIANCES);
         if (applianceFileFromEnvVar == null || applianceFileFromEnvVar.equals("")) {
-            applianceFileFromEnvVar = System.getProperty(ConfigService.ARCHAPPL_APPLIANCES);
+            applianceFileFromEnvVar = System.getProperty(ClusterTopology.ARCHAPPL_APPLIANCES);
         }
         if (applianceFileFromEnvVar != null) {
             logger.info("appliances.xml file specified in the environment as " + applianceFileFromEnvVar);
@@ -102,7 +102,7 @@ public class AppliancesList {
             }
             return new FileInputStream(appliancesXMLFile);
         } else {
-            logger.info("Environment variable " + ConfigService.ARCHAPPL_APPLIANCES
+            logger.info("Environment variable " + ClusterTopology.ARCHAPPL_APPLIANCES
                     + " not specified. Using appliances.xml as found in classpath");
             InputStream appliancesXMLInputStream =
                     servletContext.getResourceAsStream("/WEB-INF/classes/appliances.xml");

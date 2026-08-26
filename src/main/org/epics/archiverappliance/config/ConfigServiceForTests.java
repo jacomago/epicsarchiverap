@@ -12,6 +12,7 @@ import org.epics.archiverappliance.config.persistence.InMemoryPersistence;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
+import org.epics.archiverappliance.retrieval.RetrievalState;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -231,11 +232,11 @@ public class ConfigServiceForTests extends DefaultConfigService {
             return t;
         });
 
-        this.engineContext = new EngineContext(this);
-        this.engineContext.setDisconnectCheckTimeoutInSecondsForTestingPurposesOnly(defaultSecondsDisconnect);
-        this.etlPVLookup = new PBThreeTierETLPVLookup(this);
-        this.retrievalState = new SampleRetrievalState(this);
-        this.mgmtRuntime = new MgmtRuntimeState(this);
+        EngineContext.create(this, this, this, this, this, this)
+                .setDisconnectCheckTimeoutInSecondsForTestingPurposesOnly(defaultSecondsDisconnect);
+        PBThreeTierETLPVLookup.create(this, this, this);
+        RetrievalState.create(this, () -> new SampleRetrievalState(this));
+        MgmtRuntimeState.create(this, this, this, this, this, this, this);
 
         startupState = STARTUP_SEQUENCE.STARTUP_COMPLETE;
         this.addShutdownHook(() -> startupExecutor.shutdown());
@@ -274,9 +275,10 @@ public class ConfigServiceForTests extends DefaultConfigService {
     public void initialize(ServletContext sce) throws ConfigException {
         super.initialize(sce);
 
-        this.retrievalState = new SampleRetrievalState(this);
-        if (this.engineContext != null) {
-            this.engineContext.setDisconnectCheckTimeoutInSecondsForTestingPurposesOnly(defaultSecondsDisconnect);
+        RetrievalState.create(this, () -> new SampleRetrievalState(this));
+        EngineContext engineContext = EngineContext.of(this);
+        if (engineContext != null) {
+            engineContext.setDisconnectCheckTimeoutInSecondsForTestingPurposesOnly(defaultSecondsDisconnect);
         }
     }
 
@@ -320,8 +322,9 @@ public class ConfigServiceForTests extends DefaultConfigService {
         }
         if (applianceInfo.getIdentity().equals(myApplianceInfo.getIdentity())) {
             logger.info("Adding pv " + pvName + " to this appliance's pvs and to ETL");
-            if (this.getETLLookup() != null) {
-                this.getETLLookup().addETLJobsForUnitTests(pvName, this.getTypeInfoForPV(pvName));
+            PBThreeTierETLPVLookup etlPVLookup = PBThreeTierETLPVLookup.of(this);
+            if (etlPVLookup != null) {
+                etlPVLookup.addETLJobsForUnitTests(pvName, this.getTypeInfoForPV(pvName));
             }
         }
     }

@@ -8,8 +8,9 @@
 package org.epics.archiverappliance.etl.bpl.reports;
 
 import org.epics.archiverappliance.common.reports.MetricsDetails;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.etl.common.ETLMetrics;
+import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 
 import java.util.LinkedList;
 import java.util.Map;
@@ -21,9 +22,20 @@ import java.util.Map;
  */
 public class ApplianceMetricsDetails implements MetricsDetails {
 
+    private final ApplianceLifecycle configService;
+
+    public ApplianceMetricsDetails(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     @Override
-    public LinkedList<Map<String, String>> metricsDetails(ConfigService configService) {
-        ETLMetrics etlMetrics = configService.getETLLookup().getApplianceMetrics();
+    public ApplianceLifecycle configService() {
+        return configService;
+    }
+
+    @Override
+    public LinkedList<Map<String, String>> metricsDetails(ApplianceLifecycle configService) {
+        ETLMetrics etlMetrics = PBThreeTierETLPVLookup.of(configService).getApplianceMetrics();
         return etlMetrics.details(configService);
     }
 }

@@ -3,7 +3,7 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.InstallationProperties;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
 
@@ -24,11 +24,17 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class NamedFlagsSet implements BPLAction {
+
+    private final InstallationProperties configService;
+
+    public NamedFlagsSet(InstallationProperties configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(NamedFlagsSet.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String name = req.getParameter("name");
         if (name == null || name.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);

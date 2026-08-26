@@ -3,7 +3,7 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.AliasRegistry;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONArray;
 
@@ -22,6 +22,13 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class GetAllAliasesAction implements BPLAction {
+
+    private final AliasRegistry configService;
+
+    public GetAllAliasesAction(AliasRegistry configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(GetAllAliasesAction.class.getName());
 
     private static class AliasAndSrc {
@@ -43,8 +50,7 @@ public class GetAllAliasesAction implements BPLAction {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {

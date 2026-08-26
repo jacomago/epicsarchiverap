@@ -3,6 +3,7 @@ package org.epics.archiverappliance.mgmt.policy;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.PolicyService;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
 import org.python.core.PyDictionary;
@@ -45,14 +46,14 @@ public class ExecutePolicy implements AutoCloseable {
     private final PythonInterpreter interp;
     private LinkedList<String> fieldsArchivedAsPartOfStream = new LinkedList<String>();
 
-    public ExecutePolicy(ConfigService configService) throws IOException {
+    public ExecutePolicy(PolicyService policyService) throws IOException {
 
         interp = new PythonInterpreter();
         // Pin the interpreter to this class's loader; Jython's global state must not hold on to a
         // webapp classloader that may have been destroyed.
         interp.getSystemState().setClassLoader(ExecutePolicy.class.getClassLoader());
         // Load the policies.py into the interpreter.
-        try (InputStream is = configService.getPolicyText()) {
+        try (InputStream is = policyService.getPolicyText()) {
             interp.execfile(is);
             fetchFieldsArchivedAsPartOfStream();
         }

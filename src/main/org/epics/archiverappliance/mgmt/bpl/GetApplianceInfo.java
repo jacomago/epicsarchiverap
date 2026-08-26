@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.utils.ui.JSONEncoder;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
@@ -28,12 +28,18 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class GetApplianceInfo implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public GetApplianceInfo(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(GetApplianceInfo.class.getName());
 
     @SuppressWarnings("unchecked")
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String id = req.getParameter("id");
         ApplianceInfo applianceInfo = null;
         if (id == null || id.equals("")) {

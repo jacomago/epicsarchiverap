@@ -16,8 +16,8 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.remotable.ArrayListEventStream;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNameToKeyMapping;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -88,7 +88,7 @@ public class PbAppendCrashRecoveryTest {
                 }
 
                 @Override
-                public void initialize(ConfigService cs) {}
+                public void initialize(StoragePluginConfigView cs) {}
 
                 @Override
                 public PVNameToKeyMapping overrideTerminator(char c) {

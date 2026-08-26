@@ -3,9 +3,12 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigService.EAABulkOperation;
-import org.epics.archiverappliance.config.ConfigService.WAR_FILE;
+import org.epics.archiverappliance.config.AliasRegistry;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ClusterCallbackView;
+import org.epics.archiverappliance.config.ClusterExecutor;
+import org.epics.archiverappliance.config.ClusterExecutor.EAABulkOperation;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
 
@@ -26,22 +29,24 @@ public class BulkPauseResumeUtils {
     /**
      * Get a list of PVNames based on if this is a POST or GET.
      * @param req HttpServletRequest
-     * @param configService  ConfigService
+     * @param pvDirectory PVDirectory
+     * @param aliasRegistry AliasRegistry
      * @return LinkedList String PV names
      * @throws IOException  &emsp;
      */
-    public static LinkedList<String> getPVNames(HttpServletRequest req, ConfigService configService)
-            throws IOException {
+    public static LinkedList<String> getPVNames(
+            HttpServletRequest req, PVDirectory pvDirectory, AliasRegistry aliasRegistry) throws IOException {
         LinkedList<String> pvNames = null;
         if (req.getMethod().equals("POST")) {
             pvNames = PVsMatchingParameter.getPVNamesFromPostBody(req);
         } else {
-            pvNames = PVsMatchingParameter.getMatchingPVs(req, configService, false, -1);
+            pvNames = PVsMatchingParameter.getMatchingPVs(req, pvDirectory, aliasRegistry, false, -1);
         }
         return pvNames;
     }
 
-    public static class PauseResumeBulkOperation implements EAABulkOperation<Map<String, Map<String, String>>> {
+    public static class PauseResumeBulkOperation
+            implements EAABulkOperation<ClusterCallbackView, Map<String, Map<String, String>>> {
         private final Map<String, List<String>> pvNamesByAppliance;
         private final boolean askingToPausePV;
 
@@ -51,9 +56,9 @@ public class BulkPauseResumeUtils {
         }
 
         @Override
-        public Map<String, Map<String, String>> call(ConfigService configService) {
+        public Map<String, Map<String, String>> call(ClusterCallbackView configService) {
             HashMap<String, Map<String, String>> bulkStatus = new HashMap<String, Map<String, String>>();
-            if (!configService.getWarFile().equals(WAR_FILE.MGMT)) {
+            if (!configService.getWarFile().equals(ApplianceLifecycle.WAR_FILE.MGMT)) {
                 // According to Hz documentation, the executor service does not run on Hz clients
                 logger.error("We should't really be here {}", configService.getWarFile());
                 return bulkStatus;
@@ -93,7 +98,12 @@ public class BulkPauseResumeUtils {
     }
 
     public static List<HashMap<String, String>> pauseResumePVs(
-            List<String> pvNames, ConfigService configService, boolean askingToPausePV) throws IOException {
+            List<String> pvNames,
+            AliasRegistry aliasRegistry,
+            PVDirectory pvDirectory,
+            ClusterExecutor clusterExecutor,
+            boolean askingToPausePV)
+            throws IOException {
         List<HashMap<String, String>> retVal = new LinkedList<HashMap<String, String>>();
         HashMap<String, HashMap<String, String>> retValMap = new HashMap<String, HashMap<String, String>>();
         LinkedList<String> realPVNames = new LinkedList<String>();
@@ -101,7 +111,7 @@ public class BulkPauseResumeUtils {
         for (String pvName : pvNames) {
             // logger.info("Processing pause/resume request for PV {}", pvName);
             String normalizedPVName = PVNames.normalizeChannelName(pvName);
-            String realName = configService.getRealNameForAlias(normalizedPVName);
+            String realName = aliasRegistry.getRealNameForAlias(normalizedPVName);
             if (realName != null) {
                 // logger.info("PVName {} is an alias for {}", pvName, realName);
                 incoming2real.put(pvName, realName);
@@ -119,10 +129,10 @@ public class BulkPauseResumeUtils {
             retVal.add(pvPauseResumeStatus);
             retValMap.put(pvName, pvPauseResumeStatus);
         }
-        Map<String, List<String>> pvsByAppliance = configService.breakDownPVsByAppliance(realPVNames);
+        Map<String, List<String>> pvsByAppliance = pvDirectory.breakDownPVsByAppliance(realPVNames);
         PauseResumeBulkOperation bulkOperation = new PauseResumeBulkOperation(pvsByAppliance, askingToPausePV);
         Map<String, Map<String, Map<String, String>>> statusesByAppliance =
-                configService.executeClusterWide(bulkOperation);
+                clusterExecutor.executeClusterWide(bulkOperation);
         for (Map<String, Map<String, String>> statusByAppliance : statusesByAppliance.values()) {
             for (String pvName : statusByAppliance.keySet()) {
                 Map<String, String> statuses = statusByAppliance.get(pvName);

@@ -25,7 +25,7 @@ public class SampleRetrievalState extends RetrievalState {
     ConfigServiceForTests configService;
 
     public SampleRetrievalState(ConfigServiceForTests parentConfigService) {
-        super(parentConfigService);
+        super(parentConfigService, parentConfigService, parentConfigService, parentConfigService);
         this.configService = parentConfigService;
     }
 

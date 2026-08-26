@@ -8,8 +8,8 @@
 package org.epics.archiverappliance.engine.epics;
 
 import org.epics.archiverappliance.common.reports.Details;
-import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigService.WAR_FILE;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ApplianceLifecycle.WAR_FILE;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 
 import java.util.LinkedList;
@@ -23,15 +23,15 @@ import java.util.Map;
 public class CommandThreadDetails implements Details {
 
     @Override
-    public LinkedList<Map<String, String>> details(ConfigService configService) {
+    public LinkedList<Map<String, String>> details(ApplianceLifecycle configService) {
         LinkedList<Map<String, String>> details = new LinkedList<Map<String, String>>();
-        EngineContext context = configService.getEngineContext();
+        EngineContext context = EngineContext.of(configService);
         details.addAll(context.getCommandThreadDetails());
         return details;
     }
 
     @Override
     public WAR_FILE source() {
-        return ConfigService.WAR_FILE.ENGINE;
+        return ApplianceLifecycle.WAR_FILE.ENGINE;
     }
 }

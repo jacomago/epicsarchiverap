@@ -8,8 +8,9 @@
 package org.epics.archiverappliance.etl.bpl.reports;
 
 import org.epics.archiverappliance.common.reports.Metrics;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.etl.common.ETLMetrics;
+import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,10 +22,21 @@ import java.util.Map;
  */
 public class ApplianceMetrics implements Metrics {
 
+    private final ApplianceLifecycle configService;
+
+    public ApplianceMetrics(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     @Override
-    public Map<String, String> metrics(ConfigService configService) {
+    public ApplianceLifecycle configService() {
+        return configService;
+    }
+
+    @Override
+    public Map<String, String> metrics(ApplianceLifecycle configService) {
         HashMap<String, String> metrics = new HashMap<String, String>();
-        ETLMetrics metricsForLifetime = configService.getETLLookup().getApplianceMetrics();
+        ETLMetrics metricsForLifetime = PBThreeTierETLPVLookup.of(configService).getApplianceMetrics();
         if (metricsForLifetime == null) {
             metrics.put("Startup", "In Progress");
         } else {

@@ -9,8 +9,8 @@ package org.epics.archiverappliance.common;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigService.WAR_FILE;
 import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -18,8 +18,10 @@ import org.json.simple.JSONObject;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -39,6 +41,28 @@ public class BasicDispatcher {
             ConfigService configService,
             Map<String, Class<? extends BPLAction>> actions)
             throws IOException {
+        dispatch(req, resp, configService, actions, () -> true);
+    }
+
+    /**
+     * Dispatch a BPL request, holding off the business actions until this webapp is ready to serve them.
+     * The readiness check applies only to the business actions; /ping, /postStartup and /startupState always
+     * run. The mgmt webapp gates on its children having started up, and the children reach mgmt through
+     * /postStartup, so gating those would deadlock startup.
+     * @param req &emsp;
+     * @param resp &emsp;
+     * @param configService &emsp;
+     * @param actions The business actions registered by this webapp, keyed on request path.
+     * @param webappReady False to reject business actions with a 500 until this webapp is ready.
+     * @throws IOException &emsp;
+     */
+    public static void dispatch(
+            HttpServletRequest req,
+            HttpServletResponse resp,
+            ConfigService configService,
+            Map<String, Class<? extends BPLAction>> actions,
+            BooleanSupplier webappReady)
+            throws IOException {
         String requestPath = req.getPathInfo();
         if (requestPath == null || requestPath.equals("")) {
             logger.warn("Request path is empty.");
@@ -50,7 +74,7 @@ public class BasicDispatcher {
             case "/ping" -> ping(resp, "pong");
             case "/postStartup" -> postStartup(resp, configService);
             case "/startupState" -> startupState(resp, configService);
-            default -> handleBPLAction(req, resp, configService, actions, requestPath);
+            default -> handleBPLAction(req, resp, configService, actions, requestPath, webappReady);
         }
     }
 
@@ -59,7 +83,8 @@ public class BasicDispatcher {
             HttpServletResponse resp,
             ConfigService configService,
             Map<String, Class<? extends BPLAction>> actions,
-            String requestPath)
+            String requestPath,
+            BooleanSupplier webappReady)
             throws IOException {
         if (!configService.isStartupComplete()) {
             logger.warn("We do not let the other actions complete until the config service startup is complete...");
@@ -67,8 +92,7 @@ public class BasicDispatcher {
             return;
         }
 
-        if (configService.getWarFile() == WAR_FILE.MGMT
-                && !configService.getMgmtRuntimeState().haveChildComponentsStartedUp()) {
+        if (!webappReady.getAsBoolean()) {
             String header = req.getHeader(GetUrlContent.ARCHAPPL_COMPONENT);
             if (header == null || !header.equals("true")) {
                 logger.error("We do not let the actions complete until all the components have started up");
@@ -85,31 +109,73 @@ public class BasicDispatcher {
             return;
         }
 
-        BPLAction action;
         try {
-            action = actionClass.getConstructor().newInstance();
-            action.execute(req, resp, configService);
+            construct(actionClass, configService).execute(req, resp);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             throw new IOException(e);
         }
     }
 
-    private static void startupState(HttpServletResponse resp, ConfigService configService) throws IOException {
+    /**
+     * Build an action, supplying each constructor parameter from the configuration.
+     * <p>An action declares the concerns it needs as constructor parameters; this resolves each one.
+     * While a single object still implements every concern, resolution is an instance check against it.
+     * Once the concerns have separate implementations this becomes a lookup in the component registry,
+     * and at that point the method body is the only thing that changes.
+     */
+    static BPLAction construct(Class<? extends BPLAction> actionClass, ConfigService configService)
+            throws ReflectiveOperationException {
+        Constructor<?> ctor = actionClass.getDeclaredConstructors()[0];
+        Class<?>[] wanted = ctor.getParameterTypes();
+        Object[] args = new Object[wanted.length];
+        for (int i = 0; i < wanted.length; i++) {
+            if (!wanted[i].isInstance(configService)) {
+                throw new IllegalStateException(actionClass.getName() + " asks for " + wanted[i].getName()
+                        + ", which the configuration does not provide");
+            }
+            args[i] = configService;
+        }
+        ctor.setAccessible(true);
+        return (BPLAction) ctor.newInstance(args);
+    }
+
+    /**
+     * Check at startup that every registered action can actually be built, so a wiring mistake fails
+     * on deployment rather than on the first request to that endpoint.
+     * @param actions the actions registered by this webapp
+     * @param configService the configuration they will be built from
+     */
+    public static void validateActions(Map<String, Class<? extends BPLAction>> actions, ConfigService configService) {
+        for (Map.Entry<String, Class<? extends BPLAction>> e : actions.entrySet()) {
+            Constructor<?> ctor = e.getValue().getDeclaredConstructors()[0];
+            for (Class<?> wanted : ctor.getParameterTypes()) {
+                if (!wanted.isInstance(configService)) {
+                    throw new IllegalStateException("BPL action " + e.getValue().getName() + " registered at "
+                            + e.getKey() + " asks for " + wanted.getName()
+                            + ", which the configuration does not provide");
+                }
+            }
+        }
+    }
+
+    private static void startupState(HttpServletResponse resp, ApplianceLifecycle applianceLifecycle)
+            throws IOException {
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
             HashMap<String, String> ret = new HashMap<String, String>();
-            ret.put("status", configService.getStartupState().toString());
+            ret.put("status", applianceLifecycle.getStartupState().toString());
             out.println(JSONObject.toJSONString(ret));
         }
     }
 
-    private static void postStartup(HttpServletResponse resp, ConfigService configService) throws IOException {
-        if (configService.isStartupComplete()) {
+    private static void postStartup(HttpServletResponse resp, ApplianceLifecycle applianceLifecycle)
+            throws IOException {
+        if (applianceLifecycle.isStartupComplete()) {
             logger.warn("poststartup being called after startup complete");
         } else {
             try {
-                configService.postStartup();
+                applianceLifecycle.postStartup();
             } catch (ConfigException ex) {
                 logger.fatal("Exception running postStartup", ex);
                 throw new IOException(ex);

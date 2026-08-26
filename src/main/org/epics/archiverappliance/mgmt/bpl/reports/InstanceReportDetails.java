@@ -5,7 +5,8 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.reports.Details;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONArray;
@@ -21,39 +22,45 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public class InstanceReportDetails implements BPLAction {
+
+    private final ClusterTopology clusterTopology;
+
+    public InstanceReportDetails(ClusterTopology clusterTopology) {
+        this.clusterTopology = clusterTopology;
+    }
+
     private static final Logger logger = LogManager.getLogger(InstanceReportDetails.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String applianceIdentity = req.getParameter("appliance");
         logger.info("Getting the detailed instance metrics for the appliance " + applianceIdentity);
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
-            out.println(JSONValue.toJSONString(metricsDetails(configService, applianceIdentity)));
+            out.println(JSONValue.toJSONString(metricsDetails(clusterTopology, applianceIdentity)));
         }
     }
 
-    public LinkedList<Map<String, String>> metricsDetails(ConfigService configService, String applianceIdentity) {
-        ApplianceInfo info = configService.getAppliance(applianceIdentity);
+    public LinkedList<Map<String, String>> metricsDetails(ClusterTopology clusterTopology, String applianceIdentity) {
+        ApplianceInfo info = clusterTopology.getAppliance(applianceIdentity);
 
         String applianceDetailsURLSnippet = "/getInstanceMetricsForAppliance?appliance="
                 + URLEncoder.encode(applianceIdentity, StandardCharsets.UTF_8);
         LinkedList<Map<String, String>> result = new LinkedList<Map<String, String>>();
         result.add(Details.metricDetail("mgmt", "Appliance Identity", applianceIdentity));
-        getInstanceDetails(info.getEngineURL(), applianceDetailsURLSnippet, ConfigService.WAR_FILE.ENGINE, result);
+        getInstanceDetails(info.getEngineURL(), applianceDetailsURLSnippet, ApplianceLifecycle.WAR_FILE.ENGINE, result);
 
-        getInstanceDetails(info.getEtlURL(), applianceDetailsURLSnippet, ConfigService.WAR_FILE.ENGINE, result);
+        getInstanceDetails(info.getEtlURL(), applianceDetailsURLSnippet, ApplianceLifecycle.WAR_FILE.ENGINE, result);
 
         getInstanceDetails(
-                info.getRetrievalURL(), applianceDetailsURLSnippet, ConfigService.WAR_FILE.RETRIEVAL, result);
+                info.getRetrievalURL(), applianceDetailsURLSnippet, ApplianceLifecycle.WAR_FILE.RETRIEVAL, result);
         return result;
     }
 
     private static void getInstanceDetails(
             String info,
             String applianceDetailsURLSnippet,
-            ConfigService.WAR_FILE warFile,
+            ApplianceLifecycle.WAR_FILE warFile,
             LinkedList<Map<String, String>> result) {
         JSONArray engineStatusVars = GetUrlContent.getURLContentAsJSONArray(info + applianceDetailsURLSnippet);
         if (engineStatusVars == null) {

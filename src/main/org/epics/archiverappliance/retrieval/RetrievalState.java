@@ -7,9 +7,12 @@ import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ChannelArchiverConfig;
 import org.epics.archiverappliance.config.ChannelArchiverDataServerPVInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
 
@@ -17,20 +20,89 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.function.Supplier;
 import jakarta.servlet.http.HttpServletRequest;
 
 public class RetrievalState {
     private static final Logger logger = LogManager.getLogger(RetrievalState.class.getName());
-    private final ConfigService configService;
+
+    /**
+     * The retrieval state belonging to each config service. Entries are removed by a shutdown hook;
+     * the retrieval state holds its config service, so the weak keys alone would not reclaim them.
+     * Keyed on identity, DefaultConfigService overriding neither equals nor hashCode. There is an entry
+     * per config service rather than a singleton because tests hold several config services at once.
+     */
+    private static final Map<ApplianceLifecycle, RetrievalState> INSTANCES =
+            Collections.synchronizedMap(new WeakHashMap<>());
+
+    /**
+     * Build the retrieval webapp's runtime state and publish it against this config service.
+     * @param applianceLifecycle &emsp;
+     * @param channelArchiverConfig &emsp;
+     * @param clusterTopology &emsp;
+     * @param storageConfig &emsp;
+     * @return RetrievalState &emsp;
+     */
+    public static RetrievalState create(
+            ApplianceLifecycle applianceLifecycle,
+            ChannelArchiverConfig channelArchiverConfig,
+            ClusterTopology clusterTopology,
+            StoragePluginConfigView storageConfig) {
+        return create(
+                applianceLifecycle,
+                () -> new RetrievalState(applianceLifecycle, channelArchiverConfig, clusterTopology, storageConfig));
+    }
+
+    /**
+     * Publish a retrieval state against this config service, building it with the given factory.
+     * A retrieval state already published for this config service wins and the factory is not called,
+     * so a test config service that has installed its SampleRetrievalState keeps it.
+     * @param applianceLifecycle &emsp;
+     * @param factory Builds the retrieval state, called only if none is published yet.
+     * @return RetrievalState &emsp;
+     */
+    public static RetrievalState create(ApplianceLifecycle applianceLifecycle, Supplier<RetrievalState> factory) {
+        synchronized (INSTANCES) {
+            RetrievalState existing = INSTANCES.get(applianceLifecycle);
+            if (existing != null) {
+                logger.debug("Retrieval state already published for this config service");
+                return existing;
+            }
+            RetrievalState created = factory.get();
+            INSTANCES.put(applianceLifecycle, created);
+            applianceLifecycle.addShutdownHook(() -> INSTANCES.remove(applianceLifecycle));
+            return created;
+        }
+    }
+
+    /**
+     * @param applianceLifecycle &emsp;
+     * @return This appliance's retrieval state, or null if this webapp is not the retrieval webapp.
+     */
+    public static RetrievalState of(ApplianceLifecycle applianceLifecycle) {
+        return INSTANCES.get(applianceLifecycle);
+    }
+
+    private final ChannelArchiverConfig channelArchiverConfig;
+    private final ClusterTopology clusterTopology;
+    private final StoragePluginConfigView storageConfig;
     private int engineWriteThreadInSeconds = 60;
 
-    public RetrievalState(ConfigService configService) {
-        this.configService = configService;
-        this.engineWriteThreadInSeconds = Integer.parseInt(configService
+    protected RetrievalState(
+            ApplianceLifecycle applianceLifecycle,
+            ChannelArchiverConfig channelArchiverConfig,
+            ClusterTopology clusterTopology,
+            StoragePluginConfigView storageConfig) {
+        this.channelArchiverConfig = channelArchiverConfig;
+        this.clusterTopology = clusterTopology;
+        this.storageConfig = storageConfig;
+        this.engineWriteThreadInSeconds = Integer.parseInt(storageConfig
                 .getInstallationProperties()
                 .getProperty("org.epics.archiverappliance.config.PVTypeInfo.secondsToBuffer", "60"));
         this.retrievalMetricsMap = new HashMap<>();
@@ -56,7 +128,8 @@ public class RetrievalState {
             HttpServletRequest req)
             throws IOException {
         if (typeInfo == null) {
-            List<ChannelArchiverDataServerPVInfo> caServers = this.configService.getChannelArchiverDataServers(pvName);
+            List<ChannelArchiverDataServerPVInfo> caServers =
+                    this.channelArchiverConfig.getChannelArchiverDataServers(pvName);
             if (caServers != null) {
                 ArrayList<DataSourceforPV> dataSourcesForPV = new ArrayList<DataSourceforPV>();
                 for (ChannelArchiverDataServerPVInfo caServer : caServers) {
@@ -85,10 +158,10 @@ public class RetrievalState {
                 if (typeInfo.getSamplingMethod() == SamplingMethod.DONT_ARCHIVE) {
                     logger.debug("Skipping going to the engine for something we are not sampling for pv " + pvName);
                 } else {
-                    ApplianceInfo applianceInfo = configService.getAppliance(typeInfo.getApplianceIdentity());
+                    ApplianceInfo applianceInfo = clusterTopology.getAppliance(typeInfo.getApplianceIdentity());
                     String engineRawURL = URLEncoder.encode(applianceInfo.getEngineURL() + "/getData.raw", "UTF-8");
                     StoragePlugin engineStoragePlugin = StoragePluginURLParser.parseStoragePlugin(
-                            "pbraw://localhost?rawURL=" + engineRawURL + "&name=engine", configService);
+                            "pbraw://localhost?rawURL=" + engineRawURL + "&name=engine", storageConfig);
                     dataSourcesForPV.add(new DataSourceforPV(pvName, engineStoragePlugin, 0, null, null));
                 }
             } else {
@@ -100,7 +173,7 @@ public class RetrievalState {
             // Add the various storage plugins
             int lifetimeid = 1;
             for (String store : typeInfo.getDataStores()) {
-                StoragePlugin storagePlugin = StoragePluginURLParser.parseStoragePlugin(store, configService);
+                StoragePlugin storagePlugin = StoragePluginURLParser.parseStoragePlugin(store, storageConfig);
                 dataSourcesForPV.add(new DataSourceforPV(pvName, storagePlugin, lifetimeid++, null, null));
                 Event firstKnownEvent = storagePlugin.getFirstKnownEvent(context, pvName);
                 if (firstKnownEvent != null
@@ -119,7 +192,7 @@ public class RetrievalState {
             if (includeExternalServers(req)) {
                 if (creationTime == null || start.isBefore(creationTime)) {
                     List<ChannelArchiverDataServerPVInfo> caServers =
-                            this.configService.getChannelArchiverDataServers(pvName);
+                            this.channelArchiverConfig.getChannelArchiverDataServers(pvName);
                     if (caServers != null) {
                         for (ChannelArchiverDataServerPVInfo caServer : caServers) {
                             int count = determineCount(req);

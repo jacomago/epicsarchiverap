@@ -13,8 +13,11 @@ import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.reports.Details;
 import org.epics.archiverappliance.config.ApplianceAggregateInfo;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.epics.archiverappliance.mgmt.archivepv.CapacityPlanningData;
 import org.epics.archiverappliance.mgmt.archivepv.CapacityPlanningData.CPStaticData;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
@@ -38,17 +41,28 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class ApplianceMetricsDetails implements BPLAction {
+
+    private final ApplianceLifecycle applianceLifecycle;
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvDirectory;
+
+    public ApplianceMetricsDetails(
+            ApplianceLifecycle applianceLifecycle, ClusterTopology clusterTopology, PVDirectory pvDirectory) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.clusterTopology = clusterTopology;
+        this.pvDirectory = pvDirectory;
+    }
+
     private static final Logger logger = LogManager.getLogger(ApplianceMetricsDetails.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String applianceIdentity = req.getParameter("appliance");
         logger.info("Getting the detailed metrics for the appliance " + applianceIdentity);
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         String applianceDetailsURLSnippet = "/getApplianceMetricsForAppliance?appliance="
                 + URLEncoder.encode(applianceIdentity, StandardCharsets.UTF_8);
-        ApplianceInfo info = configService.getAppliance(applianceIdentity);
+        ApplianceInfo info = clusterTopology.getAppliance(applianceIdentity);
         try (PrintWriter out = resp.getWriter()) {
             DecimalFormat twoSignificantDigits = new DecimalFormat("###,###,###,###,###,###.##");
             DecimalFormat noSignificantDigits = new DecimalFormat("###,###,###,###,###,###");
@@ -88,16 +102,17 @@ public class ApplianceMetricsDetails implements BPLAction {
             addDetailedStatus(
                     result,
                     "PVs in archive workflow",
-                    Integer.toString(configService.getMgmtRuntimeState().getPVsPendingInWorkflow()));
+                    Integer.toString(MgmtRuntimeState.of(applianceLifecycle).getPVsPendingInWorkflow()));
 
-            CPStaticData cpStaticData = CapacityPlanningData.getCachedMetricsForAppliances(configService);
+            CPStaticData cpStaticData = CapacityPlanningData.getCachedMetricsForAppliances(clusterTopology);
             ApplianceAggregateInfo applianceAggregateDifferenceFromLastFetch = null;
             if (cpStaticData != null) {
                 CapacityPlanningData capacityPlanningMetrics =
-                        cpStaticData.cpApplianceMetrics.get(configService.getMyApplianceInfo());
+                        cpStaticData.cpApplianceMetrics.get(clusterTopology.getMyApplianceInfo());
 
                 applianceAggregateDifferenceFromLastFetch =
-                        capacityPlanningMetrics.getApplianceAggregateDifferenceFromLastFetch(configService);
+                        capacityPlanningMetrics.getApplianceAggregateDifferenceFromLastFetch(
+                                clusterTopology, pvDirectory);
 
                 addDetailedStatus(result, "Capacity planning last update", cpStaticData.getStaticDataLastUpdated());
                 addDetailedStatus(
@@ -111,18 +126,18 @@ public class ApplianceMetricsDetails implements BPLAction {
                     result,
                     "Aggregated appliance storage rate (in GB/year)",
                     twoSignificantDigits.format(
-                            (configService.getAggregatedApplianceInfo(info).getTotalStorageRate() * 60 * 60 * 24 * 365)
+                            (pvDirectory.getAggregatedApplianceInfo(info).getTotalStorageRate() * 60 * 60 * 24 * 365)
                                     / (1024 * 1024 * 1024)));
             addDetailedStatus(
                     result,
                     "Aggregated appliance event rate (in events/sec)",
                     twoSignificantDigits.format(
-                            configService.getAggregatedApplianceInfo(info).getTotalEventRate()));
+                            pvDirectory.getAggregatedApplianceInfo(info).getTotalEventRate()));
             addDetailedStatus(
                     result,
                     "Aggregated appliance PV count",
                     noSignificantDigits.format(
-                            configService.getAggregatedApplianceInfo(info).getTotalPVCount()));
+                            pvDirectory.getAggregatedApplianceInfo(info).getTotalPVCount()));
             if (applianceAggregateDifferenceFromLastFetch != null) {
                 addDetailedStatus(
                         result,

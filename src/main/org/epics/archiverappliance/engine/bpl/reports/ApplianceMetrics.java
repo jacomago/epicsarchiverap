@@ -8,8 +8,9 @@
 package org.epics.archiverappliance.engine.bpl.reports;
 
 import org.epics.archiverappliance.common.reports.Metrics;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.engine.epics.EngineMetrics;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 
 import java.util.Map;
 
@@ -20,9 +21,20 @@ import java.util.Map;
  */
 public class ApplianceMetrics implements Metrics {
 
+    private final ApplianceLifecycle configService;
+
+    public ApplianceMetrics(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     @Override
-    public Map<String, String> metrics(ConfigService configService) {
-        return EngineMetrics.computeEngineMetrics(configService.getEngineContext(), configService)
+    public ApplianceLifecycle configService() {
+        return configService;
+    }
+
+    @Override
+    public Map<String, String> metrics(ApplianceLifecycle configService) {
+        return EngineMetrics.computeEngineMetrics(EngineContext.of(configService))
                 .toJSONString();
     }
 }

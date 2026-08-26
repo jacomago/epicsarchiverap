@@ -3,7 +3,8 @@ package org.epics.archiverappliance.retrieval.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.FailoverConfig;
 import org.json.simple.JSONValue;
 
 import java.io.IOException;
@@ -24,17 +25,25 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class ResetFailoverCachesForThisAppliance implements BPLAction {
+
+    private final ClusterTopology clusterTopology;
+    private final FailoverConfig failoverConfig;
+
+    public ResetFailoverCachesForThisAppliance(ClusterTopology clusterTopology, FailoverConfig failoverConfig) {
+        this.clusterTopology = clusterTopology;
+        this.failoverConfig = failoverConfig;
+    }
+
     private static Logger logger = LogManager.getLogger(ResetFailoverCachesForThisAppliance.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Reseting the failover caches for this appliance");
         try (PrintWriter out = resp.getWriter()) {
-            configService.resetFailoverCaches();
+            failoverConfig.resetFailoverCaches();
             LinkedList<HashMap<String, String>> ret = new LinkedList<HashMap<String, String>>();
             HashMap<String, String> status = new HashMap<String, String>();
-            status.put("appliance", configService.getMyApplianceInfo().getIdentity());
+            status.put("appliance", clusterTopology.getMyApplianceInfo().getIdentity());
             status.put("status", "ok");
             ret.add(status);
             out.println(JSONValue.toJSONString(ret));

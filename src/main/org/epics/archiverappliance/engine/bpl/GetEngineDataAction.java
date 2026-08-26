@@ -14,7 +14,7 @@ import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.remotable.ArrayListEventStream;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.utils.ui.StreamPBIntoOutput;
@@ -32,11 +32,17 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class GetEngineDataAction implements BPLAction {
+
+    private final ApplianceLifecycle configService;
+
+    public GetEngineDataAction(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(GetEngineDataAction.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -55,7 +61,7 @@ public class GetEngineDataAction implements BPLAction {
             end = TimeUtils.convertFromISO8601String(endTimeStr);
         }
 
-        EngineContext engineContext = configService.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configService);
         if (engineContext.getChannelList().containsKey(pvName)) {
             ArchiveChannel archiveChannel = engineContext.getChannelList().get(pvName);
             ArrayListEventStream st = archiveChannel.getPVData();

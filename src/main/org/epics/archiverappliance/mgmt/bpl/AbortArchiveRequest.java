@@ -10,8 +10,9 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.config.AliasRegistry;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
@@ -36,11 +37,19 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class AbortArchiveRequest implements BPLAction {
+
+    private final AliasRegistry aliasRegistry;
+    private final ClusterTopology clusterTopology;
+
+    public AbortArchiveRequest(AliasRegistry aliasRegistry, ClusterTopology clusterTopology) {
+        this.aliasRegistry = aliasRegistry;
+        this.clusterTopology = clusterTopology;
+    }
+
     private static final Logger logger = LogManager.getLogger(AbortArchiveRequest.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -48,12 +57,12 @@ public class AbortArchiveRequest implements BPLAction {
         }
 
         // String pvNameFromRequest = pvName;
-        String realName = configService.getRealNameForAlias(pvName);
+        String realName = aliasRegistry.getRealNameForAlias(pvName);
         if (realName != null) pvName = realName;
 
         logger.info("Aborting archiving requests for the PV " + pvName);
         LinkedList<String> abortPVURLs = new LinkedList<String>();
-        for (ApplianceInfo info : configService.getAppliancesInCluster()) {
+        for (ApplianceInfo info : clusterTopology.getAppliancesInCluster()) {
             abortPVURLs.add(
                     info.getMgmtURL() + "/abortArchivingPVForThisAppliance?pv=" + URLEncoder.encode(pvName, "UTF-8"));
         }

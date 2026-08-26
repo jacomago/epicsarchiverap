@@ -3,9 +3,12 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.config.AliasRegistry;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -27,11 +30,27 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class RemoveAliasAction implements BPLAction {
+
+    private final AliasRegistry aliasRegistry;
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvdirectory;
+    private final PVTypeInfoStore pvtypeInfoStore;
+
+    public RemoveAliasAction(
+            AliasRegistry aliasRegistry,
+            ClusterTopology clusterTopology,
+            PVDirectory pvdirectory,
+            PVTypeInfoStore pvtypeInfoStore) {
+        this.aliasRegistry = aliasRegistry;
+        this.clusterTopology = clusterTopology;
+        this.pvdirectory = pvdirectory;
+        this.pvtypeInfoStore = pvtypeInfoStore;
+    }
+
     private static Logger logger = LogManager.getLogger(RemoveAliasAction.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -46,7 +65,7 @@ public class RemoveAliasAction implements BPLAction {
 
         logger.info("Removing alias " + aliasName + " for pv " + pvName);
 
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pvName);
         if (typeInfo == null) {
             logger.error(
                     "We do not yet support removing aliases for PVs which have not completed their workflow " + pvName);
@@ -54,9 +73,9 @@ public class RemoveAliasAction implements BPLAction {
             return;
         }
 
-        ApplianceInfo infoForPV = configService.getApplianceForPV(pvName);
-        if (infoForPV.equals(configService.getMyApplianceInfo())) {
-            configService.removeAlias(aliasName, pvName);
+        ApplianceInfo infoForPV = pvdirectory.getApplianceForPV(pvName);
+        if (infoForPV.equals(clusterTopology.getMyApplianceInfo())) {
+            aliasRegistry.removeAlias(aliasName, pvName);
             HashMap<String, Object> infoValues = new HashMap<String, Object>();
             infoValues.put("status", "ok");
             infoValues.put("desc", "Removed an alias " + aliasName + " for PV " + pvName);

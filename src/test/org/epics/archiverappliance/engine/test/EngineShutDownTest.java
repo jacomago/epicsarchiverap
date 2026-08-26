@@ -14,6 +14,7 @@ import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.engine.ArchiveEngine;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -64,6 +65,8 @@ public class EngineShutDownTest {
                         SamplingMethod.SCAN,
                         writer,
                         testConfigService,
+                        testConfigService,
+                        testConfigService,
                         ArchDBRTypes.DBR_SCALAR_DOUBLE,
                         null,
                         false,
@@ -72,11 +75,8 @@ public class EngineShutDownTest {
             }
             Awaitility.await()
                     .atMost(30, TimeUnit.SECONDS)
-                    .until(() -> testConfigService
-                                    .getEngineContext()
-                                    .getChannelList()
-                                    .size()
-                            >= 100);
+                    .until(() ->
+                            EngineContext.of(testConfigService).getChannelList().size() >= 100);
 
             testConfigService.shutdownNow();
             Awaitility.await().atMost(10, TimeUnit.SECONDS).until(() -> !testConfigService

@@ -11,9 +11,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigService.CachedPVCounts;
-import org.epics.archiverappliance.config.ConfigService.EAABulkOperation;
+import org.epics.archiverappliance.config.ClusterExecutor;
+import org.epics.archiverappliance.config.ClusterExecutor.EAABulkOperation;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
+import org.epics.archiverappliance.config.PVDirectory.CachedPVCounts;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
@@ -34,18 +36,26 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class ApplianceMetrics implements BPLAction {
+
+    private final ClusterExecutor clusterExecutor;
+    private final ClusterTopology clusterTopology;
+
+    public ApplianceMetrics(ClusterExecutor clusterExecutor, ClusterTopology clusterTopology) {
+        this.clusterExecutor = clusterExecutor;
+        this.clusterTopology = clusterTopology;
+    }
+
     private static final Logger logger = LogManager.getLogger(ApplianceMetrics.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Generating appliance metrics report");
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
             LinkedList<Map<String, String>> result = new LinkedList<Map<String, String>>();
-            Map<String, Long> pvCounts = ApplianceMetrics.getAppliancePVCounts(configService);
-            for (ApplianceInfo info : configService.getAppliancesInCluster()) {
-                HashMap<String, String> applianceInfo = getBasicMetrics(configService, result, info, pvCounts);
+            Map<String, Long> pvCounts = ApplianceMetrics.getAppliancePVCounts(clusterExecutor);
+            for (ApplianceInfo info : clusterTopology.getAppliancesInCluster()) {
+                HashMap<String, String> applianceInfo = getBasicMetrics(result, info, pvCounts);
 
                 logger.debug("Asking for appliance metrics from engine using " + info.getEngineURL()
                         + "/getApplianceMetrics");
@@ -66,14 +76,14 @@ public class ApplianceMetrics implements BPLAction {
     /*
      * Return a map of appliance identity -> PV counts.
      */
-    static Map<String, Long> getAppliancePVCounts(ConfigService configService) {
-        class PVCounts implements EAABulkOperation<CachedPVCounts> {
+    static Map<String, Long> getAppliancePVCounts(ClusterExecutor clusterExecutor) {
+        class PVCounts implements EAABulkOperation<PVDirectory, CachedPVCounts> {
             @Override
-            public CachedPVCounts call(ConfigService configService) {
+            public CachedPVCounts call(PVDirectory configService) {
                 return configService.getCachedPVCountsForThisAppliance();
             }
         }
-        Map<String, CachedPVCounts> pvCountsByAppliance = configService.executeClusterWide(new PVCounts());
+        Map<String, CachedPVCounts> pvCountsByAppliance = clusterExecutor.executeClusterWide(new PVCounts());
         Map<String, Long> pvCounts = new HashMap<String, Long>();
         for (Map.Entry<String, CachedPVCounts> entry : pvCountsByAppliance.entrySet()) {
             String applianceIdentity = entry.getKey();
@@ -85,10 +95,7 @@ public class ApplianceMetrics implements BPLAction {
     }
 
     static HashMap<String, String> getBasicMetrics(
-            ConfigService configService,
-            LinkedList<Map<String, String>> result,
-            ApplianceInfo info,
-            Map<String, Long> pvCounts) {
+            LinkedList<Map<String, String>> result, ApplianceInfo info, Map<String, Long> pvCounts) {
         HashMap<String, String> applianceInfo = new HashMap<String, String>();
         result.add(applianceInfo);
         applianceInfo.put("instance", info.getIdentity());

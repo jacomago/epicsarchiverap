@@ -7,12 +7,12 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval.bpl.reports;
 
+import static org.epics.archiverappliance.retrieval.RetrievalMetrics.calculateSummedMetrics;
+
 import org.epics.archiverappliance.common.reports.Metrics;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 
 import java.util.Map;
-
-import static org.epics.archiverappliance.retrieval.RetrievalMetrics.calculateSummedMetrics;
 
 /**
  * Summary metrics for retrieval for an alliance.
@@ -21,8 +21,19 @@ import static org.epics.archiverappliance.retrieval.RetrievalMetrics.calculateSu
  */
 public class ApplianceMetrics implements Metrics {
 
+    private final ApplianceLifecycle configService;
+
+    public ApplianceMetrics(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     @Override
-    public Map<String, String> metrics(ConfigService configService) {
+    public ApplianceLifecycle configService() {
+        return configService;
+    }
+
+    @Override
+    public Map<String, String> metrics(ApplianceLifecycle configService) {
         return calculateSummedMetrics(configService).getMetrics();
     }
 }

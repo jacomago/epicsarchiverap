@@ -3,7 +3,9 @@ package org.epics.archiverappliance.engine.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.PolicyService;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.engine.ArchiveEngine;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -22,17 +24,28 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class PausePVsOnShutdown implements BPLAction {
+
+    private final StoragePluginConfigView storageConfig;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final PolicyService policyService;
+
+    public PausePVsOnShutdown(
+            StoragePluginConfigView storageConfig, ApplianceLifecycle applianceLifecycle, PolicyService policyService) {
+        this.storageConfig = storageConfig;
+        this.applianceLifecycle = applianceLifecycle;
+        this.policyService = policyService;
+    }
+
     private static Logger configlogger = LogManager.getLogger("config." + PausePVsOnShutdown.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         configlogger.info("Pausing PVs on potential shutdown");
-        EngineContext engineRuntime = configService.getEngineContext();
+        EngineContext engineRuntime = EngineContext.of(applianceLifecycle);
         int pvCount = 0;
         for (String pvName : engineRuntime.getChannelList().keySet()) {
             try {
-                ArchiveEngine.pauseArchivingPV(pvName, configService);
+                ArchiveEngine.pauseArchivingPV(pvName, storageConfig, applianceLifecycle, policyService);
                 pvCount++;
             } catch (Exception ex) {
                 configlogger.error("Exception pausing PV " + pvName, ex);

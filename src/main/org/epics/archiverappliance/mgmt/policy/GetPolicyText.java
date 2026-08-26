@@ -1,7 +1,7 @@
 package org.epics.archiverappliance.mgmt.policy;
 
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.PolicyService;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,9 +16,14 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class GetPolicyText implements BPLAction {
 
+    private final PolicyService configService;
+
+    public GetPolicyText(PolicyService configService) {
+        this.configService = configService;
+    }
+
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try (InputStream is = configService.getPolicyText()) {
             resp.setContentType("text/plain");
             try (OutputStream os = resp.getOutputStream()) {

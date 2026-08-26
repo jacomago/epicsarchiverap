@@ -14,7 +14,8 @@ import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.retrieval.channelarchiver.ChannelArchiverReadOnlyPlugin;
 import org.epics.archiverappliance.retrieval.client.RawDataRetrievalAsEventStream;
@@ -39,6 +40,15 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class CompareWithChannelArchiver implements BPLAction {
+
+    private final ClusterTopology clusterTopology;
+    private final StoragePluginConfigView storageConfig;
+
+    public CompareWithChannelArchiver(ClusterTopology clusterTopology, StoragePluginConfigView storageConfig) {
+        this.clusterTopology = clusterTopology;
+        this.storageConfig = storageConfig;
+    }
+
     private static Logger logger = LogManager.getLogger(CompareWithChannelArchiver.class.getName());
 
     private static void addEventToEventList(
@@ -53,8 +63,7 @@ public class CompareWithChannelArchiver implements BPLAction {
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pv = req.getParameter("pv");
         String channelArchiverServerURL = req.getParameter("serverURL");
         String channelArchiverKey = req.getParameter("archiveKey");
@@ -95,13 +104,13 @@ public class CompareWithChannelArchiver implements BPLAction {
         LinkedList<HashMap<String, String>> retVals = new LinkedList<HashMap<String, String>>();
 
         RawDataRetrievalAsEventStream archClient = new RawDataRetrievalAsEventStream(
-                configService.getMyApplianceInfo().getRetrievalURL() + "/data/getData.raw");
+                clusterTopology.getMyApplianceInfo().getRetrievalURL() + "/data/getData.raw");
         ChannelArchiverReadOnlyPlugin caClient = new ChannelArchiverReadOnlyPlugin();
         caClient.initialize(
                 "rtree://localhost"
                         + "?serverURL=" + URLEncoder.encode(channelArchiverServerURL, "UTF-8")
                         + "&archiveKey=" + channelArchiverKey,
-                configService);
+                storageConfig);
 
         try (BasicContext context = new BasicContext()) {
             try (EventStream archEventStream = archClient.getDataForPVS(new String[] {pv}, start, end, null)) {

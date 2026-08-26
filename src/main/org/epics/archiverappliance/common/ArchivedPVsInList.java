@@ -1,10 +1,9 @@
 package org.epics.archiverappliance.common;
 
-import com.hazelcast.projection.Projection;
-import com.hazelcast.query.Predicates;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoLookupView;
+import org.epics.archiverappliance.config.PVTypeInfoStore.PVTypeInfoProjection;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -15,23 +14,22 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /*
- * Use a Hz query to determine the PV's that are being archived in this cluster.
+ * Use a cluster wide typeinfo query to determine the PV's that are being archived in this cluster.
  */
 public class ArchivedPVsInList {
 
     private static record OnlyFields(String pvName, String[] archiveFields) implements Serializable {}
     ;
 
-    private static class FieldsProjection implements Projection<Map.Entry<String, PVTypeInfo>, OnlyFields> {
+    private static class FieldsProjection implements PVTypeInfoProjection<OnlyFields> {
         @Override
-        public OnlyFields transform(Map.Entry<String, PVTypeInfo> entry) {
-            String pvName = entry.getKey();
-            PVTypeInfo value = entry.getValue();
-            return new OnlyFields(pvName, value.getArchiveFields());
+        public OnlyFields transform(String pvName, PVTypeInfo typeInfo) {
+            return new OnlyFields(pvName, typeInfo.getArchiveFields());
         }
     }
 
-    public static List<String> getArchivedPVs(List<String> pvNames, ConfigService configService) throws IOException {
+    public static List<String> getArchivedPVs(List<String> pvNames, PVTypeInfoLookupView configService)
+            throws IOException {
         record PVNameParts(String pvName, String plainPVName, boolean isField, String fieldName) {}
         ;
         LinkedList<PVNameParts> pvnps = new LinkedList<>();
@@ -48,25 +46,13 @@ public class ArchivedPVsInList {
 
         Map<String, String[]> pvFieldsForPVNames = configService
                 .queryPVTypeInfos(
-                        Predicates.in(
-                                "__key",
-                                pvnps.stream()
-                                        .map((x) -> x.pvName)
-                                        .collect(Collectors.toList())
-                                        .toArray(new String[0])),
-                        new FieldsProjection())
+                        pvnps.stream().map((x) -> x.pvName).collect(Collectors.toList()), new FieldsProjection())
                 .stream()
                 .collect(Collectors.toMap(OnlyFields::pvName, OnlyFields::archiveFields));
 
         Map<String, String[]> pvFieldsForPlainPVNames = configService
                 .queryPVTypeInfos(
-                        Predicates.in(
-                                "__key",
-                                pvnps.stream()
-                                        .map((x) -> x.plainPVName)
-                                        .collect(Collectors.toList())
-                                        .toArray(new String[0])),
-                        new FieldsProjection())
+                        pvnps.stream().map((x) -> x.plainPVName).collect(Collectors.toList()), new FieldsProjection())
                 .stream()
                 .collect(Collectors.toMap(OnlyFields::pvName, OnlyFields::archiveFields));
 

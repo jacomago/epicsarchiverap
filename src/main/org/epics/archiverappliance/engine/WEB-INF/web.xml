@@ -14,6 +14,6 @@
         <url-pattern>/bpl/*</url-pattern>
     </servlet-mapping>
 	<listener>
-		<listener-class>org.epics.archiverappliance.config.ArchServletContextListener</listener-class>
+		<listener-class>org.epics.archiverappliance.engine.EngineServletContextListener</listener-class>
 	</listener> 
 </web-app>

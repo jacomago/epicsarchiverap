@@ -9,11 +9,13 @@ package org.epics.archiverappliance.engine.bpl.reports;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.epics.archiverappliance.engine.ArchiveEngine;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.EngineContext.CommandThreadChannel;
 import org.epics.archiverappliance.engine.pv.PVMetrics;
 
@@ -29,14 +31,23 @@ import java.util.Map;
  *
  */
 public class PVDetails implements org.epics.archiverappliance.common.reports.PVDetails {
+
+    private final ApplianceLifecycle applianceLifecycle;
+    private final PVTypeInfoStore pvTypeInfoStore;
+
+    public PVDetails(ApplianceLifecycle applianceLifecycle, PVTypeInfoStore pvTypeInfoStore) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.pvTypeInfoStore = pvTypeInfoStore;
+    }
+
     private static final Logger logger = LogManager.getLogger(PVDetails.class);
 
     @Override
-    public LinkedList<Map<String, String>> pvDetails(ConfigService configService, String pvName) throws Exception {
+    public LinkedList<Map<String, String>> pvDetails(String pvName) throws Exception {
 
         try {
             logger.info("Getting the detailed status for PV " + pvName);
-            PVTypeInfo typeInfoForPV = configService.getTypeInfoForPV(pvName);
+            PVTypeInfo typeInfoForPV = pvTypeInfoStore.getTypeInfoForPV(pvName);
             if (typeInfoForPV == null) {
                 logger.error("Unable to find typeinfo for PV " + pvName);
                 throw new IOException("Unable to find typeinfo for PV " + pvName);
@@ -45,7 +56,7 @@ public class PVDetails implements org.epics.archiverappliance.common.reports.PVD
             if (typeInfoForPV.isPaused()) {
                 LinkedList<Map<String, String>> statuses = new LinkedList<Map<String, String>>();
                 List<CommandThreadChannel> immortalChannelsForPV =
-                        configService.getEngineContext().getAllChannelsForPV(pvName);
+                        EngineContext.of(applianceLifecycle).getAllChannelsForPV(pvName);
                 if (immortalChannelsForPV.isEmpty()) {
                     addDetailedStatus(statuses, "Open channels", "0");
                 } else {
@@ -60,13 +71,13 @@ public class PVDetails implements org.epics.archiverappliance.common.reports.PVD
             }
 
             ArchDBRTypes dbrType = typeInfoForPV.getDBRType();
-            PVMetrics metrics = ArchiveEngine.getMetricsforPV(pvName, configService);
+            PVMetrics metrics = ArchiveEngine.getMetricsforPV(pvName, applianceLifecycle);
             if (metrics != null) {
                 LinkedList<Map<String, String>> statuses = metrics.getDetailedStatus();
-                ArchiveEngine.getLowLevelStateInfo(pvName, configService, statuses);
+                ArchiveEngine.getLowLevelStateInfo(pvName, applianceLifecycle, statuses);
 
                 List<CommandThreadChannel> immortalChannelsForPV =
-                        configService.getEngineContext().getAllChannelsForPV(pvName);
+                        EngineContext.of(applianceLifecycle).getAllChannelsForPV(pvName);
                 if (immortalChannelsForPV.isEmpty()) {
                     addDetailedStatus(statuses, "Open channels", "0");
                 } else {
@@ -80,8 +91,9 @@ public class PVDetails implements org.epics.archiverappliance.common.reports.PVD
                 }
 
                 if (dbrType.isV3Type()) {
-                    ArchiveChannel channel =
-                            configService.getEngineContext().getChannelList().get(pvName);
+                    ArchiveChannel channel = EngineContext.of(applianceLifecycle)
+                            .getChannelList()
+                            .get(pvName);
                     if (channel != null) {
                         int metaFieldCount = channel.getMetaChannelCount();
                         int connectedMetaFieldCount = channel.getConnectedMetaChannelCount();

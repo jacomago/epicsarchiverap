@@ -15,6 +15,7 @@ import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.engine.ArchiveEngine;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -79,6 +80,8 @@ public class ControlledPVTest {
                         SamplingMethod.SCAN,
                         writer,
                         testConfigService,
+                        testConfigService,
+                        testConfigService,
                         ArchDBRTypes.DBR_SCALAR_DOUBLE,
                         null,
                         pvnameenable,
@@ -90,7 +93,7 @@ public class ControlledPVTest {
 
             Thread.sleep(5000);
             ConcurrentHashMap<String, ArchiveChannel> channelList =
-                    testConfigService.getEngineContext().getChannelList();
+                    EngineContext.of(testConfigService).getChannelList();
             int enablePVs = 0;
             for (String pvName : channelList.keySet()) {
                 ArchiveChannel tempChannel = channelList.get(pvName);

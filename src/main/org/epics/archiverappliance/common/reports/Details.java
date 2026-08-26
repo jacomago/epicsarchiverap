@@ -1,6 +1,6 @@
 package org.epics.archiverappliance.common.reports;
 
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -16,11 +16,11 @@ public interface Details {
         return obj;
     }
 
-    ConfigService.WAR_FILE source();
+    ApplianceLifecycle.WAR_FILE source();
 
     default Map<String, String> metricDetail(String name, String value) {
         return metricDetail(source().toString(), name, value);
     }
 
-    LinkedList<Map<String, String>> details(ConfigService configService);
+    LinkedList<Map<String, String>> details(ApplianceLifecycle configService);
 }

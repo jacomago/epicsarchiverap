@@ -10,7 +10,7 @@ package org.epics.archiverappliance.engine.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -28,18 +28,24 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class GetLatestMetaDataAction implements BPLAction {
+
+    private final ApplianceLifecycle configService;
+
+    public GetLatestMetaDataAction(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(GetLatestMetaDataAction.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-        EngineContext engineContext = configService.getEngineContext();
+        EngineContext engineContext = EngineContext.of(configService);
         if (engineContext.getChannelList().containsKey(pvName)) {
             ArchiveChannel archiveChannel = engineContext.getChannelList().get(pvName);
             HashMap<String, String> retVal = archiveChannel.getLatestMetadata();

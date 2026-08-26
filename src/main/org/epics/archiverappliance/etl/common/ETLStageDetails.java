@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.reports.Details;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 
 import java.text.DecimalFormat;
 import java.util.LinkedList;
@@ -21,17 +21,17 @@ public class ETLStageDetails implements Details {
     }
 
     @Override
-    public ConfigService.WAR_FILE source() {
-        return ConfigService.WAR_FILE.ETL;
+    public ApplianceLifecycle.WAR_FILE source() {
+        return ApplianceLifecycle.WAR_FILE.ETL;
     }
 
     @Override
-    public LinkedList<Map<String, String>> details(ConfigService configService) {
+    public LinkedList<Map<String, String>> details(ApplianceLifecycle configService) {
 
         DecimalFormat twoSignificantDigits = new DecimalFormat("###,###,###,###,###,###.##");
         LinkedList<Map<String, String>> statuses = new LinkedList<Map<String, String>>();
         statuses.add(metricDetail("Name (from ETL)", pvName));
-        ETLStages etlStages = configService.getETLLookup().getETLStages(pvName);
+        ETLStages etlStages = PBThreeTierETLPVLookup.of(configService).getETLStages(pvName);
         if (etlStages == null) {
             logger.info("Cannot find ETLStages for pv {}", pvName);
             return statuses;

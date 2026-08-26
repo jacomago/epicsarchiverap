@@ -18,12 +18,16 @@
  */
 package org.epics.archiverappliance.engine.V4;
 
+import static org.epics.archiverappliance.engine.V4.PVAccessUtil.getReceivedEvents;
+import static org.epics.archiverappliance.engine.V4.PVAccessUtil.startArchivingPV;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.data.DBRTimeEvent;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.test.MemBufWriter;
 import org.epics.pva.data.PVADouble;
 import org.epics.pva.data.PVAInt;
@@ -42,9 +46,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import static org.epics.archiverappliance.engine.V4.PVAccessUtil.getReceivedEvents;
-import static org.epics.archiverappliance.engine.V4.PVAccessUtil.startArchivingPV;
 
 /**
  * Test to check the metadata stored with the pv as it changes
@@ -262,7 +263,7 @@ public class ChangedFieldsTest {
 
         Thread.sleep(samplingPeriodMilliSeconds);
 
-        double secondsToBuffer = configService.getEngineContext().getWritePeriod();
+        double secondsToBuffer = EngineContext.of(configService).getWritePeriod();
         // Need to wait for the writer to write all the received data.
         Thread.sleep((long) secondsToBuffer * 1000);
         Map<Instant, HashMap<String, String>> actualValues =

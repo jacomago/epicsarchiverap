@@ -5,10 +5,14 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.BasicContext;
+import org.epics.archiverappliance.config.AliasRegistry;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.etl.conversion.ThruNumberAndStringConversion;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
@@ -36,11 +40,30 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class ChangeTypeForPV implements BPLAction {
+
+    private final AliasRegistry aliasRegistry;
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvdirectory;
+    private final PVTypeInfoStore pvtypeInfoStore;
+    private final StoragePluginConfigView storagePluginConfigView;
+
+    public ChangeTypeForPV(
+            AliasRegistry aliasRegistry,
+            ClusterTopology clusterTopology,
+            PVDirectory pvdirectory,
+            PVTypeInfoStore pvtypeInfoStore,
+            StoragePluginConfigView storagePluginConfigView) {
+        this.aliasRegistry = aliasRegistry;
+        this.clusterTopology = clusterTopology;
+        this.pvdirectory = pvdirectory;
+        this.pvtypeInfoStore = pvtypeInfoStore;
+        this.storagePluginConfigView = storagePluginConfigView;
+    }
+
     private static Logger logger = LogManager.getLogger(ChangeTypeForPV.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -59,17 +82,17 @@ public class ChangeTypeForPV implements BPLAction {
         }
 
         // String pvNameFromRequest = pvName;
-        String realName = configService.getRealNameForAlias(pvName);
+        String realName = aliasRegistry.getRealNameForAlias(pvName);
         if (realName != null) pvName = realName;
 
-        ApplianceInfo info = configService.getApplianceForPV(pvName);
+        ApplianceInfo info = pvdirectory.getApplianceForPV(pvName);
         if (info == null) {
             logger.debug("Unable to find appliance for PV " + pvName);
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-        if (!info.getIdentity().equals(configService.getMyApplianceInfo().getIdentity())) {
+        if (!info.getIdentity().equals(clusterTopology.getMyApplianceInfo().getIdentity())) {
             // We should proxy this call to the actual appliance hosting the PV.
             String redirectURL = info.getMgmtURL() + "/changeTypeForPV?pv=" + URLEncoder.encode(pvName, "UTF-8")
                     + "&newtype=" + URLEncoder.encode(newTypeStr, "UTF-8");
@@ -82,7 +105,7 @@ public class ChangeTypeForPV implements BPLAction {
             return;
         }
 
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pvName);
         if (typeInfo == null) {
             logger.debug("Unable to find typeinfo for PV...");
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -103,7 +126,7 @@ public class ChangeTypeForPV implements BPLAction {
         }
 
         for (String store : typeInfo.getDataStores()) {
-            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, configService);
+            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, storagePluginConfigView);
             try (BasicContext context = new BasicContext()) {
                 logger.info("Converting data in plugin " + plugin.getName() + " for PV " + pvName + " from "
                         + typeInfo.getDBRType().toString() + " to " + newDBRType.toString());
@@ -115,7 +138,7 @@ public class ChangeTypeForPV implements BPLAction {
 
         // Update the type info in the database.
         typeInfo.setDBRType(newDBRType);
-        configService.updateTypeInfoForPV(pvName, typeInfo);
+        pvtypeInfoStore.updateTypeInfoForPV(pvName, typeInfo);
         infoValues.put("status", "ok");
         try (PrintWriter out = resp.getWriter()) {
             out.println(JSONValue.toJSONString(infoValues));

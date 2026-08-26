@@ -4,8 +4,9 @@ import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.config.AliasRegistry;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -35,19 +36,24 @@ public class PVsMatchingParameter {
     private static Logger logger = LogManager.getLogger(PVsMatchingParameter.class.getName());
 
     public static LinkedList<String> getMatchingPVs(
-            HttpServletRequest req, ConfigService configService, int defaultLimit) {
-        return getMatchingPVs(req, configService, false, defaultLimit);
+            HttpServletRequest req, PVDirectory pvDirectory, AliasRegistry aliasRegistry, int defaultLimit) {
+        return getMatchingPVs(req, pvDirectory, aliasRegistry, false, defaultLimit);
     }
     /**
      * Given a BPL request, get all the matching PVs
      * @param req HttpServletRequest
-     * @param configService  ConfigService
+     * @param pvDirectory PVDirectory
+     * @param aliasRegistry AliasRegistry
      * @param includePVSThatDontExist Some BPL requires us to include PVs that don't exist so that they can give explicit status
      * @param defaultLimit The default value for the limit if the limit is not specified in the request.
      * @return LinkedList Matching PVs
      */
     public static LinkedList<String> getMatchingPVs(
-            HttpServletRequest req, ConfigService configService, boolean includePVSThatDontExist, int defaultLimit) {
+            HttpServletRequest req,
+            PVDirectory pvDirectory,
+            AliasRegistry aliasRegistry,
+            boolean includePVSThatDontExist,
+            int defaultLimit) {
         // The assumption taken previously was that each query parameter will have a single value only.
         // If this assumption is to be changed then the below simplification would have to be removed.
         Map<String, String> requestParameters = getRequestParameters(req);
@@ -61,7 +67,7 @@ public class PVsMatchingParameter {
         if (requestParameters.get("regex") != null) {
             regex = requestParameters.get("regex");
         }
-        return getMatchingPVs(pvs, regex, limit, configService, includePVSThatDontExist);
+        return getMatchingPVs(pvs, regex, limit, pvDirectory, aliasRegistry, includePVSThatDontExist);
     }
 
     public static Map<String, String> getRequestParameters(HttpServletRequest req) {
@@ -74,39 +80,46 @@ public class PVsMatchingParameter {
      * @param pvs List of pvs and regexes
      * @param regex Single regex search
      * @param limit Limit of query on pvs
-     * @param configService ConfigService
+     * @param pvDirectory PVDirectory
+     * @param aliasRegistry AliasRegistry
      * @param includePVSThatDontExist Some BPL requires us to include PVs that don't exist so that they can give explicit status
      * @return LinkedList Matching PVs
      */
     public static LinkedList<String> getMatchingPVs(
-            List<String> pvs, String regex, int limit, ConfigService configService, boolean includePVSThatDontExist) {
+            List<String> pvs,
+            String regex,
+            int limit,
+            PVDirectory pvDirectory,
+            AliasRegistry aliasRegistry,
+            boolean includePVSThatDontExist) {
         LinkedList<String> pvNames = new LinkedList<String>();
 
         if (!pvs.isEmpty()) {
             LinkedList<String> pvNames1 =
-                    getConfigServicePVs(pvs, limit, configService, includePVSThatDontExist, pvNames);
+                    getNamedPVs(pvs, limit, pvDirectory, aliasRegistry, includePVSThatDontExist, pvNames);
             if (pvNames1 != null) return pvNames1;
 
         } else {
             LinkedList<String> pvNames1;
             if (regex != null) {
-                pvNames1 = getRegexMatches(regex, limit, configService, pvNames);
+                pvNames1 = getRegexMatches(regex, limit, pvDirectory, aliasRegistry, pvNames);
             } else {
-                pvNames1 = getAllPVs(limit, configService, pvNames);
+                pvNames1 = getAllPVs(limit, pvDirectory, aliasRegistry, pvNames);
             }
             if (pvNames1 != null) return pvNames1;
         }
         return pvNames;
     }
 
-    private static LinkedList<String> getAllPVs(int limit, ConfigService configService, LinkedList<String> pvNames) {
-        for (String pvName : configService.getAllPVs()) {
+    private static LinkedList<String> getAllPVs(
+            int limit, PVDirectory pvDirectory, AliasRegistry aliasRegistry, LinkedList<String> pvNames) {
+        for (String pvName : pvDirectory.getAllPVs()) {
             pvNames.add(pvName);
             if (limit != -1 && pvNames.size() >= limit) {
                 return pvNames;
             }
         }
-        for (String pvName : configService.getAllAliases()) {
+        for (String pvName : aliasRegistry.getAllAliases()) {
             pvNames.add(pvName);
             if (limit != -1 && pvNames.size() >= limit) {
                 return pvNames;
@@ -116,9 +129,9 @@ public class PVsMatchingParameter {
     }
 
     private static LinkedList<String> getRegexMatches(
-            String regex, int limit, ConfigService configService, LinkedList<String> pvNames) {
+            String regex, int limit, PVDirectory pvDirectory, AliasRegistry aliasRegistry, LinkedList<String> pvNames) {
         Pattern pattern = Pattern.compile(regex);
-        for (String pvName : configService.getAllPVs()) {
+        for (String pvName : pvDirectory.getAllPVs()) {
             if (pattern.matcher(pvName).matches()) {
                 pvNames.add(pvName);
                 if (limit != -1 && pvNames.size() >= limit) {
@@ -126,7 +139,7 @@ public class PVsMatchingParameter {
                 }
             }
         }
-        for (String pvName : configService.getAllAliases()) {
+        for (String pvName : aliasRegistry.getAllAliases()) {
             if (pattern.matcher(pvName).matches()) {
                 pvNames.add(pvName);
                 if (limit != -1 && pvNames.size() >= limit) {
@@ -137,16 +150,17 @@ public class PVsMatchingParameter {
         return null;
     }
 
-    private static LinkedList<String> getConfigServicePVs(
+    private static LinkedList<String> getNamedPVs(
             List<String> pvs,
             int limit,
-            ConfigService configService,
+            PVDirectory pvDirectory,
+            AliasRegistry aliasRegistry,
             boolean includePVSThatDontExist,
             LinkedList<String> pvNames) {
         for (String pv : pvs) {
             if (StringUtils.containsAny(pv, "*?")) {
                 WildcardFileFilter matcher = new WildcardFileFilter(pv);
-                for (String pvName : configService.getAllPVs()) {
+                for (String pvName : pvDirectory.getAllPVs()) {
                     if (matcher.accept((new File(pvName)))) {
                         pvNames.add(pvName);
                         if (limit != -1 && pvNames.size() >= limit) {
@@ -154,7 +168,7 @@ public class PVsMatchingParameter {
                         }
                     }
                 }
-                for (String pvName : configService.getAllAliases()) {
+                for (String pvName : aliasRegistry.getAllAliases()) {
                     if (matcher.accept((new File(pvName)))) {
                         pvNames.add(pvName);
                         if (limit != -1 && pvNames.size() >= limit) {
@@ -163,7 +177,7 @@ public class PVsMatchingParameter {
                     }
                 }
             } else {
-                ApplianceInfo info = configService.getApplianceForPV(pv);
+                ApplianceInfo info = pvDirectory.getApplianceForPV(pv);
                 if (info != null) {
                     pvNames.add(pv);
                     if (limit != -1 && pvNames.size() >= limit) {

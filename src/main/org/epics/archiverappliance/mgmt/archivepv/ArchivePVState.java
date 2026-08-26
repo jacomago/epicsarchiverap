@@ -4,13 +4,21 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ArchiveRequestWorkflow;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.config.MetaInfo;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoLookupView;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
+import org.epics.archiverappliance.config.PolicyService;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.UserSpecifiedSamplingParams;
 import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
 import org.epics.archiverappliance.config.pubsub.PubSubEvent;
+import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.epics.archiverappliance.mgmt.bpl.ArchivePVAction;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
@@ -49,7 +57,13 @@ public class ArchivePVState {
     private ArchivePVStateMachine currentState = ArchivePVStateMachine.START;
     private String pvName;
     private String abortReason = "";
-    private ConfigService configService;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final ArchiveRequestWorkflow archiveRequests;
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvDirectory;
+    private final PVTypeInfoLookupView pvTypeInfoLookup;
+    private final PolicyService policyService;
+    private final StoragePluginConfigView storageConfig;
     private List<String> fieldsArchivedAsPartOfStream;
     private String applianceIdentityAfterCapacityPlanning;
     private Instant startOfWorkflow = TimeUtils.now();
@@ -57,12 +71,26 @@ public class ArchivePVState {
     private String myIdentity;
     private MetaInfo metaInfo = null;
 
-    public ArchivePVState(String pvName, ConfigService configService) {
+    public ArchivePVState(
+            String pvName,
+            ApplianceLifecycle applianceLifecycle,
+            ArchiveRequestWorkflow archiveRequests,
+            ClusterTopology clusterTopology,
+            PVDirectory pvDirectory,
+            PVTypeInfoLookupView pvTypeInfoLookup,
+            PolicyService policyService,
+            StoragePluginConfigView storageConfig) {
         this.pvName = pvName;
-        this.configService = configService;
-        this.myIdentity = this.configService.getMyApplianceInfo().getIdentity();
+        this.applianceLifecycle = applianceLifecycle;
+        this.archiveRequests = archiveRequests;
+        this.clusterTopology = clusterTopology;
+        this.pvDirectory = pvDirectory;
+        this.pvTypeInfoLookup = pvTypeInfoLookup;
+        this.policyService = policyService;
+        this.storageConfig = storageConfig;
+        this.myIdentity = this.clusterTopology.getMyApplianceInfo().getIdentity();
         try {
-            this.fieldsArchivedAsPartOfStream = configService.getFieldsArchivedAsPartOfStream();
+            this.fieldsArchivedAsPartOfStream = policyService.getFieldsArchivedAsPartOfStream();
         } catch (IOException ex) {
             logger.error("Cannot determine fields that are to be archived as part of stream", ex);
             this.fieldsArchivedAsPartOfStream = null;
@@ -75,8 +103,8 @@ public class ArchivePVState {
             switch (currentState) {
                 case START: {
                     PubSubEvent pubSubEvent = new PubSubEvent(
-                            "ComputeMetaInfo", myIdentity + "_" + ConfigService.WAR_FILE.ENGINE, pvName);
-                    UserSpecifiedSamplingParams userSpec = configService.getUserSpecifiedSamplingParams(pvName);
+                            "ComputeMetaInfo", myIdentity + "_" + ApplianceLifecycle.WAR_FILE.ENGINE, pvName);
+                    UserSpecifiedSamplingParams userSpec = archiveRequests.getUserSpecifiedSamplingParams(pvName);
                     if (userSpec == null) {
                         logger.error("Unable to find user sepcification of archival parameters for pv " + pvName);
                         currentState = ArchivePVStateMachine.ABORTED;
@@ -86,7 +114,7 @@ public class ArchivePVState {
                     JSONEncoder<UserSpecifiedSamplingParams> encoder =
                             JSONEncoder.getEncoder(UserSpecifiedSamplingParams.class);
                     pubSubEvent.setEventData(encoder.encode(userSpec).toJSONString());
-                    configService.getEventBus().post(pubSubEvent);
+                    applianceLifecycle.getEventBus().post(pubSubEvent);
                     currentState = ArchivePVStateMachine.METAINFO_REQUESTED;
                     return;
                 }
@@ -112,7 +140,7 @@ public class ArchivePVState {
                         return;
                     }
 
-                    UserSpecifiedSamplingParams userSpec = configService.getUserSpecifiedSamplingParams(pvName);
+                    UserSpecifiedSamplingParams userSpec = archiveRequests.getUserSpecifiedSamplingParams(pvName);
                     if (userSpec == null) {
                         logger.error("Unable to find user sepcification of archival parameters for pv " + pvName);
                         currentState = ArchivePVStateMachine.ABORTED;
@@ -120,7 +148,7 @@ public class ArchivePVState {
                     }
 
                     logger.debug("About to compute policy for " + pvName);
-                    PolicyConfig thePolicy = configService.computePolicyForPV(pvName, metaInfo, userSpec);
+                    PolicyConfig thePolicy = policyService.computePolicyForPV(pvName, metaInfo, userSpec);
                     if (thePolicy.getSamplingMethod() == SamplingMethod.DONT_ARCHIVE) {
                         logger.error(
                                 "According to the policy, we must not archive pv as the sampling method is DONT_ARCHIVE for PV "
@@ -212,30 +240,30 @@ public class ArchivePVState {
 
                     if (userSpec.isSkipCapacityPlanning()) {
                         logger.info("Skipping capacity planning for pv " + pvName + ". Assigning to myself.");
-                        applianceInfoForPV = configService.getMyApplianceInfo();
+                        applianceInfoForPV = clusterTopology.getMyApplianceInfo();
                     } else if (thePolicy.getAppliance() != null) {
                         // Hopefully the poicy is configured correctly and we get a valid appliance
-                        applianceInfoForPV = configService.getAppliance(thePolicy.getAppliance());
+                        applianceInfoForPV = clusterTopology.getAppliance(thePolicy.getAppliance());
                         assert (applianceInfoForPV != null);
                         logger.info("Assigning pv " + pvName + " to appliance " + thePolicy.getAppliance()
                                 + " based on policy " + thePolicy.getPolicyName());
                     } else {
                         if (isField) {
                             String pvNameAlone = PVNames.channelNamePVName(pvName);
-                            ApplianceInfo pvNameAloneAssignedToAppliance = configService.getApplianceForPV(pvNameAlone);
+                            ApplianceInfo pvNameAloneAssignedToAppliance = pvDirectory.getApplianceForPV(pvNameAlone);
                             if (pvNameAloneAssignedToAppliance != null) {
                                 logger.info("Assinging field " + pvName + " to the same appliance as the pv itself "
                                         + pvNameAloneAssignedToAppliance.getIdentity());
                                 applianceInfoForPV = pvNameAloneAssignedToAppliance;
                             } else {
                                 logger.info("Assinging field " + pvName + " to a new appliance");
-                                applianceInfoForPV =
-                                        CapacityPlanningBPL.pickApplianceForPV(pvName, configService, typeInfo);
+                                applianceInfoForPV = CapacityPlanningBPL.pickApplianceForPV(
+                                        pvName, clusterTopology, pvDirectory, storageConfig, typeInfo);
                             }
                         } else {
                             logger.debug("Not a field " + pvName + " picking a new appliance.");
-                            applianceInfoForPV =
-                                    CapacityPlanningBPL.pickApplianceForPV(pvName, configService, typeInfo);
+                            applianceInfoForPV = CapacityPlanningBPL.pickApplianceForPV(
+                                    pvName, clusterTopology, pvDirectory, storageConfig, typeInfo);
                         }
                     }
 
@@ -246,8 +274,8 @@ public class ArchivePVState {
 
                     try {
                         typeInfo.setApplianceIdentity(applianceIdentityAfterCapacityPlanning);
-                        configService.updateTypeInfoForPV(pvName, typeInfo);
-                        configService.registerPVToAppliance(pvName, applianceInfoForPV);
+                        pvTypeInfoLookup.updateTypeInfoForPV(pvName, typeInfo);
+                        pvDirectory.registerPVToAppliance(pvName, applianceInfoForPV);
                         currentState = ArchivePVStateMachine.POLICY_COMPUTED;
                     } catch (AlreadyRegisteredException ex) {
                         logger.error("PV " + pvName + " is already registered. Aborting this request");
@@ -256,7 +284,7 @@ public class ArchivePVState {
                     return;
                 }
                 case POLICY_COMPUTED: {
-                    PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+                    PVTypeInfo typeInfo = pvTypeInfoLookup.getTypeInfoForPV(pvName);
                     if (typeInfo == null) {
                         // The PV can be paused/deleted while the archive request is still in flight.
                         abortReason = "Typeinfo for " + pvName + " deleted mid-workflow (POLICY_COMPUTED)";
@@ -269,7 +297,7 @@ public class ArchivePVState {
                     return;
                 }
                 case TYPEINFO_STABLE: {
-                    PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+                    PVTypeInfo typeInfo = pvTypeInfoLookup.getTypeInfoForPV(pvName);
                     if (typeInfo == null) {
                         abortReason = "Typeinfo for " + pvName + " deleted mid-workflow (TYPEINFO_STABLE)";
                         currentState = ArchivePVStateMachine.ABORTED;
@@ -279,13 +307,16 @@ public class ArchivePVState {
                         // The PV was paused while the archive request was still in flight; starting
                         // to archive now would silently undo the pause.
                         logger.info("PV " + pvName + " was paused mid-workflow; completing without archiving");
-                        configService.archiveRequestWorkflowCompleted(pvName);
-                        configService.getMgmtRuntimeState().finishedPVWorkflow(pvName);
+                        archiveRequests.archiveRequestWorkflowCompleted(pvName);
+                        MgmtRuntimeState.of(applianceLifecycle).finishedPVWorkflow(pvName);
                         currentState = ArchivePVStateMachine.FINISHED;
                         return;
                     }
                     ArchivePVState.startArchivingPV(
-                            pvName, configService, configService.getAppliance(typeInfo.getApplianceIdentity()));
+                            pvName,
+                            applianceLifecycle,
+                            pvTypeInfoLookup,
+                            clusterTopology.getAppliance(typeInfo.getApplianceIdentity()));
                     registerAliasesIfAny(typeInfo);
                     currentState = ArchivePVStateMachine.ARCHIVE_REQUEST_SUBMITTED;
                     return;
@@ -299,14 +330,14 @@ public class ArchivePVState {
                     logger.debug(
                             "We are in the Archiving state. So, cancelling the periodic ping of the workflow object for pv "
                                     + pvName);
-                    configService.archiveRequestWorkflowCompleted(pvName);
-                    configService.getMgmtRuntimeState().finishedPVWorkflow(pvName);
+                    archiveRequests.archiveRequestWorkflowCompleted(pvName);
+                    MgmtRuntimeState.of(applianceLifecycle).finishedPVWorkflow(pvName);
                     currentState = ArchivePVStateMachine.FINISHED;
                     return;
                 }
                 case ABORTED: {
-                    configService.archiveRequestWorkflowCompleted(pvName);
-                    configService.getMgmtRuntimeState().finishedPVWorkflow(pvName);
+                    archiveRequests.archiveRequestWorkflowCompleted(pvName);
+                    MgmtRuntimeState.of(applianceLifecycle).finishedPVWorkflow(pvName);
                     logger.error("Aborting archive request for pv " + pvName + " Reason: " + abortReason);
                     currentState = ArchivePVStateMachine.FINISHED;
                     return;
@@ -333,16 +364,21 @@ public class ArchivePVState {
     }
 
     /**
-     * Start archiving the PV as specified in the PVTypeInfo in configService.
+     * Start archiving the PV as specified in its PVTypeInfo.
      * This method expects to be called after the PVTypeInfo for this PV has been completely determined and has settled in the cache.
      * @param pvName The name of PV
-     * @param configService ConfigService
+     * @param applianceLifecycle ApplianceLifecycle
+     * @param pvTypeInfoStore PVTypeInfoStore
      * @param applianceInfoForPV  ApplianceInfo
      * @throws IOException  &emsp;
      */
-    public static void startArchivingPV(String pvName, ConfigService configService, ApplianceInfo applianceInfoForPV)
+    public static void startArchivingPV(
+            String pvName,
+            ApplianceLifecycle applianceLifecycle,
+            PVTypeInfoStore pvTypeInfoStore,
+            ApplianceInfo applianceInfoForPV)
             throws IOException {
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = pvTypeInfoStore.getTypeInfoForPV(pvName);
         if (typeInfo == null) {
             logger.error(
                     "Unable to find pvTypeInfo for PV" + pvName
@@ -352,8 +388,10 @@ public class ArchivePVState {
 
         logger.debug("Setting up archiving of pv " + pvName);
         PubSubEvent pubSubEvent = new PubSubEvent(
-                "StartArchivingPV", applianceInfoForPV.getIdentity() + "_" + ConfigService.WAR_FILE.ENGINE, pvName);
-        configService.getEventBus().post(pubSubEvent);
+                "StartArchivingPV",
+                applianceInfoForPV.getIdentity() + "_" + ApplianceLifecycle.WAR_FILE.ENGINE,
+                pvName);
+        applianceLifecycle.getEventBus().post(pubSubEvent);
     }
 
     public Instant getStartOfWorkflow() {
@@ -387,12 +425,12 @@ public class ArchivePVState {
         // If we are already archiving this PV, use addAlias to add an alias to the appliance hosting the pvTypeInfo
         String addAliasURL = null;
         try {
-            UserSpecifiedSamplingParams userSpec = configService.getUserSpecifiedSamplingParams(typeInfo.getPvName());
+            UserSpecifiedSamplingParams userSpec = archiveRequests.getUserSpecifiedSamplingParams(typeInfo.getPvName());
             logger.debug("Adding aliases for " + typeInfo.getPvName());
             if (userSpec != null && userSpec.getAliases() != null && userSpec.getAliases().length > 0) {
                 logger.debug("Adding " + userSpec.getAliases().length + " aliases for " + typeInfo.getPvName());
                 for (String aliasName : userSpec.getAliases()) {
-                    addAliasURL = configService
+                    addAliasURL = clusterTopology
                                     .getAppliance(typeInfo.getApplianceIdentity())
                                     .getMgmtURL() + "/addAlias?pv="
                             + URLEncoder.encode(typeInfo.getPvName(), "UTF-8")
@@ -414,8 +452,8 @@ public class ArchivePVState {
      */
     private void convertAliasToRealWorkflow(UserSpecifiedSamplingParams userSpec, String realName) {
         try {
-            ApplianceInfo applianceForPV = configService.getApplianceForPV(realName);
-            if (applianceForPV != null || configService.doesPVHaveArchiveRequestInWorkflow(realName)) {
+            ApplianceInfo applianceForPV = pvDirectory.getApplianceForPV(realName);
+            if (applianceForPV != null || archiveRequests.doesPVHaveArchiveRequestInWorkflow(realName)) {
                 logger.debug("We are already archiving or about to archive the real PV " + realName
                         + " which is the alias for " + pvName + ". Aborting this request");
                 if (applianceForPV != null) {
@@ -431,14 +469,14 @@ public class ArchivePVState {
                     } catch (Throwable t) {
                         logger.error("Exception adding alias using URL " + addAliasURL, t);
                     }
-                } else if (configService.doesPVHaveArchiveRequestInWorkflow(realName)) {
+                } else if (archiveRequests.doesPVHaveArchiveRequestInWorkflow(realName)) {
                     // Change the UserSpecifiedSamplingParams to include this alias.
                     // We really can't tell which appliance is processing the workflow.
-                    // AddAlias uses getMgmtRuntimeState to see if the PV is in the workflow and then updates the user
-                    // specified params.
+                    // AddAlias uses the mgmt runtime state to see if the PV is in the workflow and then updates
+                    // the user specified params.
                     // So we call all the appliances.
                     LinkedList<String> addAliasURLs = new LinkedList<String>();
-                    for (ApplianceInfo info : configService.getAppliancesInCluster()) {
+                    for (ApplianceInfo info : clusterTopology.getAppliancesInCluster()) {
                         addAliasURLs.add(info.getMgmtURL() + "/addAlias?pv=" + URLEncoder.encode(realName, "UTF-8")
                                 + "&aliasname=" + URLEncoder.encode(pvName, "UTF-8"));
                     }
@@ -457,7 +495,7 @@ public class ArchivePVState {
             } else {
                 logger.debug("We are not archiving the real PV " + realName + " which is the alias for " + pvName
                         + ". Aborting this request and asking to archive " + realName);
-                configService.addAlias(pvName, realName);
+                pvTypeInfoLookup.addAlias(pvName, realName);
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
                 PrintWriter out = new PrintWriter(bos);
                 ArchivePVAction.archivePV(
@@ -470,8 +508,12 @@ public class ArchivePVState {
                         userSpec.getPolicyName(),
                         pvName,
                         true,
-                        configService,
-                        ArchivePVAction.getFieldsAsPartOfStream(configService));
+                        pvTypeInfoLookup,
+                        archiveRequests,
+                        applianceLifecycle,
+                        storageConfig,
+                        pvTypeInfoLookup,
+                        ArchivePVAction.getFieldsAsPartOfStream(policyService));
                 out.close();
             }
         } catch (Exception ex) {
@@ -489,8 +531,8 @@ public class ArchivePVState {
         logger.debug(
                 "Converting " + pvWithFieldName
                         + " into a separate request separate from the main PV as it is not to be archived as part of the stream.");
-        if (PVNames.determineAppropriatePVTypeInfo(pvWithFieldName, configService) == null
-                && !configService.doesPVHaveArchiveRequestInWorkflow(pvWithFieldName)) {
+        if (PVNames.determineAppropriatePVTypeInfo(pvWithFieldName, pvTypeInfoLookup) == null
+                && !archiveRequests.doesPVHaveArchiveRequestInWorkflow(pvWithFieldName)) {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             PrintWriter out = new PrintWriter(bos);
             ArchivePVAction.archivePV(
@@ -503,8 +545,12 @@ public class ArchivePVState {
                     userSpec.getPolicyName(),
                     pvName,
                     true,
-                    configService,
-                    ArchivePVAction.getFieldsAsPartOfStream(configService));
+                    pvTypeInfoLookup,
+                    archiveRequests,
+                    applianceLifecycle,
+                    storageConfig,
+                    pvTypeInfoLookup,
+                    ArchivePVAction.getFieldsAsPartOfStream(policyService));
             out.close();
         } else {
             logger.debug("Already have " + pvWithFieldName + " in typeinfo or in pending requests");

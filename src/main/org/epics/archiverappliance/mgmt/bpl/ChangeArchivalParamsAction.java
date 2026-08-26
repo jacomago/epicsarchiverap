@@ -4,9 +4,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
+import org.epics.archiverappliance.config.AliasRegistry;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.json.simple.JSONObject;
@@ -33,11 +35,22 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class ChangeArchivalParamsAction implements BPLAction {
+
+    private final AliasRegistry aliasRegistry;
+    private final PVDirectory pvdirectory;
+    private final PVTypeInfoStore pvtypeInfoStore;
+
+    public ChangeArchivalParamsAction(
+            AliasRegistry aliasRegistry, PVDirectory pvdirectory, PVTypeInfoStore pvtypeInfoStore) {
+        this.aliasRegistry = aliasRegistry;
+        this.pvdirectory = pvdirectory;
+        this.pvtypeInfoStore = pvtypeInfoStore;
+    }
+
     private static Logger logger = LogManager.getLogger(ChangeArchivalParamsAction.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -55,10 +68,10 @@ public class ChangeArchivalParamsAction implements BPLAction {
         HashMap<String, Object> infoValues = new HashMap<String, Object>();
 
         // String pvNameFromRequest = pvName;
-        String realName = configService.getRealNameForAlias(pvName);
+        String realName = aliasRegistry.getRealNameForAlias(pvName);
         if (realName != null) pvName = realName;
 
-        ApplianceInfo info = configService.getApplianceForPV(pvName);
+        ApplianceInfo info = pvdirectory.getApplianceForPV(pvName);
         if (info == null) {
             infoValues.put(
                     "validation",
@@ -69,7 +82,7 @@ public class ChangeArchivalParamsAction implements BPLAction {
                 out.println(JSONValue.toJSONString(infoValues));
             }
         } else {
-            PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+            PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pvName);
             assert (typeInfo != null);
 
             SamplingMethod samplingMethod = typeInfo.getSamplingMethod();
@@ -81,7 +94,7 @@ public class ChangeArchivalParamsAction implements BPLAction {
             typeInfo.setSamplingPeriod(samplingPeriod);
             typeInfo.setSamplingMethod(samplingMethod);
             typeInfo.setModificationTime(TimeUtils.now());
-            configService.updateTypeInfoForPV(pvName, typeInfo);
+            pvtypeInfoStore.updateTypeInfoForPV(pvName, typeInfo);
 
             logger.info("Changing the archival parameters for PV " + pvName + ". Changing sampling period to "
                     + samplingperiodStr + " and sampling method " + samplingMethod.toString());

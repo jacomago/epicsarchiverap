@@ -3,7 +3,8 @@ package org.epics.archiverappliance.etl.bpl.reports;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.AppliancePVsView;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.etl.bpl.reports.StorageWithLifetime.StorageConsumedByPV;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
@@ -18,19 +19,27 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public class PVsByStorageConsumed implements BPLAction {
+
+    private final AppliancePVsView appliancePVsView;
+    private final ClusterTopology clusterTopology;
+
+    public PVsByStorageConsumed(AppliancePVsView appliancePVsView, ClusterTopology clusterTopology) {
+        this.appliancePVsView = appliancePVsView;
+        this.clusterTopology = clusterTopology;
+    }
+
     private static Logger logger = LogManager.getLogger(PVsByStorageConsumed.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limitStr = req.getParameter("limit");
         logger.info(
                 "Storage consumed report for " + (limitStr == null ? "default limit(100) " : ("limit " + limitStr)));
         if (limitStr == null || limitStr.equals("")) limitStr = "100";
         int limit = Integer.parseInt(limitStr);
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
-        String applianceIdentity = configService.getMyApplianceInfo().getIdentity();
-        List<StorageConsumedByPV> pvsByStorageConsumed = StorageWithLifetime.getPVSByStorageConsumed(configService);
+        String applianceIdentity = clusterTopology.getMyApplianceInfo().getIdentity();
+        List<StorageConsumedByPV> pvsByStorageConsumed = StorageWithLifetime.getPVSByStorageConsumed(appliancePVsView);
         if (pvsByStorageConsumed.size() > limit) {
             pvsByStorageConsumed = pvsByStorageConsumed.subList(0, limit);
         }

@@ -26,8 +26,8 @@ import org.epics.archiverappliance.common.mergededup.TimeSpanLimitEventStream;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ChunkKeyKeyMapping;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNameToKeyMapping;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.etl.ConversionFunction;
 import org.epics.archiverappliance.etl.ETLBulkStream;
 import org.epics.archiverappliance.etl.ETLContext;
@@ -161,7 +161,7 @@ public class PlainStoragePlugin
     PartitionGranularity partitionGranularity = PartitionGranularity.PARTITION_YEAR;
     private String rootFolder = "/tmp";
     private String name;
-    private ConfigService configService;
+    private StoragePluginConfigView configService;
     private PVNameToKeyMapping pv2key;
     private String desc = "Plain plugin";
     /**
@@ -555,7 +555,7 @@ public class PlainStoragePlugin
     }
 
     @Override
-    public void initialize(String configURL, ConfigService configService) throws IOException {
+    public void initialize(String configURL, StoragePluginConfigView configService) throws IOException {
         this.configService = configService;
         this.pv2key = new ChunkKeyKeyMapping(configService);
         assert (pv2key != null);

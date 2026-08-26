@@ -4,7 +4,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.etl.ETLExecutor;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
@@ -16,11 +17,19 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public class ChangeStore implements BPLAction {
+
+    private final StoragePluginConfigView storageConfig;
+    private final ApplianceLifecycle applianceLifecycle;
+
+    public ChangeStore(StoragePluginConfigView storageConfig, ApplianceLifecycle applianceLifecycle) {
+        this.storageConfig = storageConfig;
+        this.applianceLifecycle = applianceLifecycle;
+    }
+
     private static final Logger logger = LogManager.getLogger(ChangeStore.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         String storageName = req.getParameter("storage");
         String newPlugin = req.getParameter("newbackend");
@@ -30,7 +39,8 @@ public class ChangeStore implements BPLAction {
         }
 
         try {
-            ETLExecutor.moveDataFromOneStorageToAnother(configService, pvName, storageName, newPlugin);
+            ETLExecutor.moveDataFromOneStorageToAnother(
+                    storageConfig, applianceLifecycle, pvName, storageName, newPlugin);
             resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
             HashMap<String, Object> infoValues = new HashMap<String, Object>();
             try (PrintWriter out = resp.getWriter()) {

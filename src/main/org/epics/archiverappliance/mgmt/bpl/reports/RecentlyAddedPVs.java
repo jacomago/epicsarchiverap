@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONArray;
@@ -27,11 +27,17 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class RecentlyAddedPVs implements BPLAction {
+
+    private final ClusterTopology configService;
+
+    public RecentlyAddedPVs(ClusterTopology configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(RecentlyAddedPVs.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Recently added PVs report for " + (limit == null ? "default limit " : ("limit " + limit)));
         LinkedList<String> recentlyAddedURLs = new LinkedList<String>();

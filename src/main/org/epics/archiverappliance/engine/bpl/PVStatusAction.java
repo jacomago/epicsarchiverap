@@ -10,8 +10,9 @@ package org.epics.archiverappliance.engine.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.epics.archiverappliance.engine.ArchiveEngine;
 import org.epics.archiverappliance.engine.epics.EngineChannelStatus;
 import org.epics.archiverappliance.engine.pv.PVMetrics;
@@ -29,11 +30,19 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class PVStatusAction implements BPLAction {
+
+    private final ApplianceLifecycle applianceLifecycle;
+    private final PVTypeInfoStore pvtypeInfoStore;
+
+    public PVStatusAction(ApplianceLifecycle applianceLifecycle, PVTypeInfoStore pvtypeInfoStore) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.pvtypeInfoStore = pvtypeInfoStore;
+    }
+
     private static Logger logger = LogManager.getLogger(PVStatusAction.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvNamesStr = req.getParameter("pv");
         if (pvNamesStr == null || pvNamesStr.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -45,12 +54,12 @@ public class PVStatusAction implements BPLAction {
 
         for (String pvName : pvNames) {
             try {
-                PVTypeInfo typeInfoForPV = configService.getTypeInfoForPV(pvName);
+                PVTypeInfo typeInfoForPV = pvtypeInfoStore.getTypeInfoForPV(pvName);
                 if (typeInfoForPV == null) {
                     logger.error("Could not find pv type info for PV " + pvName);
                     continue;
                 }
-                PVMetrics metricsforPV = ArchiveEngine.getMetricsforPV(pvName, configService);
+                PVMetrics metricsforPV = ArchiveEngine.getMetricsforPV(pvName, applianceLifecycle);
                 if (metricsforPV != null) {
                     statuses.add(new EngineChannelStatus(metricsforPV));
                 } else {

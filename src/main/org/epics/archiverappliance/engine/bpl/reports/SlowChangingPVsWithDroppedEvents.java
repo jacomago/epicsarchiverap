@@ -3,8 +3,9 @@ package org.epics.archiverappliance.engine.bpl.reports;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.PVMetrics;
@@ -23,6 +24,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public class SlowChangingPVsWithDroppedEvents implements BPLAction {
+
+    private final ApplianceLifecycle applianceLifecycle;
+    private final PVTypeInfoStore pvTypeInfoStore;
+
+    public SlowChangingPVsWithDroppedEvents(ApplianceLifecycle applianceLifecycle, PVTypeInfoStore pvTypeInfoStore) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.pvTypeInfoStore = pvTypeInfoStore;
+    }
+
     private static Logger logger = LogManager.getLogger(SlowChangingPVsWithDroppedEvents.class.getName());
 
     private static class PVDroppedEvents {
@@ -38,13 +48,12 @@ public class SlowChangingPVsWithDroppedEvents implements BPLAction {
     }
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String limit = req.getParameter("limit");
         logger.info("Report for PVs that have dropped more events than actual events for "
                 + (limit == null ? "default limit " : ("limit " + limit)));
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
-        List<PVDroppedEvents> eventRates = getDroppedEvents(configService, limit);
+        List<PVDroppedEvents> eventRates = getDroppedEvents(applianceLifecycle, pvTypeInfoStore, limit);
         LinkedList<HashMap<String, String>> result = new LinkedList<HashMap<String, String>>();
         try (PrintWriter out = resp.getWriter()) {
             for (PVDroppedEvents eventRate : eventRates) {
@@ -58,13 +67,14 @@ public class SlowChangingPVsWithDroppedEvents implements BPLAction {
         }
     }
 
-    private static List<PVDroppedEvents> getDroppedEvents(ConfigService configService, String limit) {
+    private static List<PVDroppedEvents> getDroppedEvents(
+            ApplianceLifecycle applianceLifecycle, PVTypeInfoStore pvTypeInfoStore, String limit) {
         ArrayList<PVDroppedEvents> eventRates = new ArrayList<PVDroppedEvents>();
-        EngineContext engineContext = configService.getEngineContext();
+        EngineContext engineContext = EngineContext.of(applianceLifecycle);
         for (ArchiveChannel channel : engineContext.getChannelList().values()) {
             PVMetrics pvMetrics = channel.getPVMetrics();
             if (pvMetrics.getTimestampWrongEventCount() > pvMetrics.getEventCounts()) {
-                PVTypeInfo typeInfo = configService.getTypeInfoForPV(channel.getName());
+                PVTypeInfo typeInfo = pvTypeInfoStore.getTypeInfoForPV(channel.getName());
                 if (typeInfo != null && typeInfo.isPaused()) {
                     continue;
                 }

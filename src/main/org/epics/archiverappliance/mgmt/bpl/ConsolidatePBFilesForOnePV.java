@@ -6,9 +6,12 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
+import org.epics.archiverappliance.config.AliasRegistry;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -35,11 +38,27 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class ConsolidatePBFilesForOnePV implements BPLAction {
+
+    private final AliasRegistry aliasRegistry;
+    private final PVDirectory pvdirectory;
+    private final PVTypeInfoStore pvtypeInfoStore;
+    private final StoragePluginConfigView storagePluginConfigView;
+
+    public ConsolidatePBFilesForOnePV(
+            AliasRegistry aliasRegistry,
+            PVDirectory pvdirectory,
+            PVTypeInfoStore pvtypeInfoStore,
+            StoragePluginConfigView storagePluginConfigView) {
+        this.aliasRegistry = aliasRegistry;
+        this.pvdirectory = pvdirectory;
+        this.pvtypeInfoStore = pvtypeInfoStore;
+        this.storagePluginConfigView = storagePluginConfigView;
+    }
+
     private static final Logger logger = LogManager.getLogger(ConsolidatePBFilesForOnePV.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         String storageName = req.getParameter("storage");
 
@@ -53,17 +72,17 @@ public class ConsolidatePBFilesForOnePV implements BPLAction {
             date = TimeUtils.convertToISO8601String(TimeUtils.plusDays(TimeUtils.now(), 366));
         }
 
-        String realName = configService.getRealNameForAlias(pvName);
+        String realName = aliasRegistry.getRealNameForAlias(pvName);
         if (realName != null) pvName = realName;
 
-        ApplianceInfo info = configService.getApplianceForPV(pvName);
+        ApplianceInfo info = pvdirectory.getApplianceForPV(pvName);
         if (info == null) {
             logger.debug("Unable to find appliance for PV " + pvName);
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pvName);
         if (typeInfo == null) {
             logger.debug("Unable to find typeinfo for PV...");
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -75,7 +94,7 @@ public class ConsolidatePBFilesForOnePV implements BPLAction {
 
         boolean foundPlugin = false;
         for (String store : typeInfo.getDataStores()) {
-            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, configService);
+            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, storagePluginConfigView);
             if (plugin.getName().equals(storageName)) {
                 logger.debug("Found the storage plugin identifier by " + storageName);
                 foundPlugin = true;

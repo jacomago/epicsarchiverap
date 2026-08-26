@@ -18,8 +18,11 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.remotable.ArrayListEventStream;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.FailoverConfig;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessor;
 import org.epics.archiverappliance.retrieval.postprocessors.TimeSpanDependentProcessing;
@@ -42,10 +45,20 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 public class DataSourceResolution {
     private static final Logger logger = LogManager.getLogger(DataSourceResolution.class.getName());
-    private final ConfigService configService;
+    private final ApplianceLifecycle applianceLifecycle;
+    private final ClusterTopology clusterTopology;
+    private final FailoverConfig failoverConfig;
+    private final StoragePluginConfigView storageConfig;
 
-    public DataSourceResolution(ConfigService configService) {
-        this.configService = configService;
+    public DataSourceResolution(
+            ApplianceLifecycle applianceLifecycle,
+            ClusterTopology clusterTopology,
+            FailoverConfig failoverConfig,
+            StoragePluginConfigView storageConfig) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.clusterTopology = clusterTopology;
+        this.failoverConfig = failoverConfig;
+        this.storageConfig = storageConfig;
     }
 
     /**
@@ -85,7 +98,7 @@ public class DataSourceResolution {
             ApplianceInfo applianceForPV)
             throws IOException {
         LinkedList<UnitOfRetrieval> unitsofretrieval = new LinkedList<UnitOfRetrieval>();
-        if (!applianceForPV.equals(configService.getMyApplianceInfo())) {
+        if (!applianceForPV.equals(clusterTopology.getMyApplianceInfo())) {
             logger.debug("Data for pv " + pvName + " is on appliance " + applianceForPV.getIdentity()
                     + ". Remoting it thru this appliance.");
             try {
@@ -94,7 +107,7 @@ public class DataSourceResolution {
                 logger.debug("Raw URL on remote appliance for pv " + pvName + " is " + redirectURIStr);
                 String remoteRawURL = URLEncoder.encode(redirectURIStr, StandardCharsets.UTF_8);
                 StoragePlugin storagePlugin = StoragePluginURLParser.parseStoragePlugin(
-                        "pbraw://localhost?rawURL=" + remoteRawURL, configService);
+                        "pbraw://localhost?rawURL=" + remoteRawURL, storageConfig);
                 unitsofretrieval.add(new UnitOfRetrieval(
                         storagePlugin.getDescription(),
                         storagePlugin,
@@ -109,7 +122,7 @@ public class DataSourceResolution {
             }
         } else {
             List<DataSourceforPV> dataSources =
-                    configService.getRetrievalRuntimeState().getDataSources(context, pvName, typeInfo, start, end, req);
+                    RetrievalState.of(applianceLifecycle).getDataSources(context, pvName, typeInfo, start, end, req);
 
             List<TimeSpan> yearlySpans = TimeUtils.breakIntoYearlyTimeSpans(start, end);
             List<TimeSpanDependentProcessor> spannedProcessors = null;
@@ -126,7 +139,7 @@ public class DataSourceResolution {
                     // Check to see if there is a named flag that turns off this data source.
                     String namedFlagForSkippingDataSource =
                             "SKIP_" + dataSource.getStoragePlugin().getName() + "_FOR_RETRIEVAL";
-                    if (configService.getNamedFlag(namedFlagForSkippingDataSource)) {
+                    if (storageConfig.getNamedFlag(namedFlagForSkippingDataSource)) {
                         logger.warn("Skipping " + dataSource.getStoragePlugin().getName() + " as the named flag "
                                 + namedFlagForSkippingDataSource + " is set");
                         continue;
@@ -191,7 +204,7 @@ public class DataSourceResolution {
             }
 
             if (RetrievalState.includeExternalServers(req)) {
-                String failoverServer = configService.getFailoverApplianceURL(pvName);
+                String failoverServer = failoverConfig.getFailoverApplianceURL(pvName);
                 if (failoverServer != null) {
                     logger.debug("Including the failover server " + failoverServer + " during data retrieval for PV "
                             + pvName);
@@ -199,7 +212,7 @@ public class DataSourceResolution {
                             + URLEncoder.encode(
                                     failoverServer.split("\\?")[0] + "/data/getData.raw", StandardCharsets.UTF_8);
                     StoragePlugin failoverPlugin =
-                            StoragePluginURLParser.parseStoragePlugin(pluginDefString, configService);
+                            StoragePluginURLParser.parseStoragePlugin(pluginDefString, storageConfig);
                     List<Callable<EventStream>> failoverStrms =
                             failoverPlugin.getDataForPV(context, pvName, start, end, postProcessor);
                     if (failoverStrms != null && !failoverStrms.isEmpty()) {

@@ -24,6 +24,7 @@ import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.data.ScalarValue;
 import org.epics.archiverappliance.etl.ETLExecutor;
+import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.retrieval.postprocessors.DefaultRawPostProcessor;
 import org.epics.archiverappliance.utils.ui.JSONDecoder;
 import org.json.simple.JSONObject;
@@ -124,7 +125,7 @@ class FailoverETLServerDownTest {
                 + "&other=" + URLEncoder.encode(otherURL, StandardCharsets.UTF_8);
         configService.updateTypeInfoForPV(pvName, destPVTypeInfo);
         configService.registerPVToAppliance(pvName, configService.getMyApplianceInfo());
-        configService.getETLLookup().manualControlForUnitTests();
+        PBThreeTierETLPVLookup.of(configService).manualControlForUnitTests();
     }
 
     private long testMergedRetrieval(String pluginURL, Instant startTime, Instant endTime) throws Exception {
@@ -159,7 +160,7 @@ class FailoverETLServerDownTest {
 
     @Test
     public void testETL() throws Exception {
-        configService.getETLLookup().manualControlForUnitTests();
+        PBThreeTierETLPVLookup.of(configService).manualControlForUnitTests();
         // Register the PV with both appliances and generate data.
         Instant lastMonth = TimeUtils.minusDays(TimeUtils.now(), 2 * 31);
 

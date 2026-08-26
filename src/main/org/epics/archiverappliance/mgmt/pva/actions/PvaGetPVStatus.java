@@ -9,8 +9,11 @@ package org.epics.archiverappliance.mgmt.pva.actions;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ArchiveRequestWorkflow;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoLookupView;
 import org.epics.archiverappliance.mgmt.bpl.GetPVStatusAction;
 import org.epics.archiverappliance.mgmt.bpl.PVsMatchingParameter;
 import org.epics.pva.data.PVAStringArray;
@@ -66,6 +69,22 @@ public class PvaGetPVStatus implements PvaAction {
 
     public static final String NAME = "PVStatus";
 
+    private final PVTypeInfoLookupView pvTypeInfoLookup;
+    private final ArchiveRequestWorkflow archiveRequests;
+    private final PVDirectory pvDirectory;
+    private final ClusterTopology clusterTopology;
+
+    public PvaGetPVStatus(
+            PVTypeInfoLookupView pvTypeInfoLookup,
+            ArchiveRequestWorkflow archiveRequests,
+            PVDirectory pvDirectory,
+            ClusterTopology clusterTopology) {
+        this.pvTypeInfoLookup = pvTypeInfoLookup;
+        this.archiveRequests = archiveRequests;
+        this.pvDirectory = pvDirectory;
+        this.clusterTopology = clusterTopology;
+    }
+
     /**
      * There is a 1-many mapping between the name the user asks for and the internals.
      * When sending the data back, we need to take the "real" information and create an entry for each user request.
@@ -91,7 +110,7 @@ public class PvaGetPVStatus implements PvaAction {
 
     @SuppressWarnings("unchecked")
     @Override
-    public PVAStructure request(PVAStructure args, ConfigService configService) throws PvaActionException {
+    public PVAStructure request(PVAStructure args) throws PvaActionException {
         Map<String, String> requestParameters = new HashMap<>();
         PVATable table = PVATable.fromStructure(args);
         List<String> pvs = List.of();
@@ -100,7 +119,8 @@ public class PvaGetPVStatus implements PvaAction {
         } else {
             throw new IllegalArgumentException("Only supports request args of type NTURI or NTTable ");
         }
-        LinkedList<String> pvNames = PVsMatchingParameter.getMatchingPVs(pvs, null, -1, configService, true);
+        LinkedList<String> pvNames =
+                PVsMatchingParameter.getMatchingPVs(pvs, null, -1, pvDirectory, pvTypeInfoLookup, true);
 
         HashMap<String, Map<String, String>> pvStatuses = new HashMap<String, Map<String, String>>();
         HashMap<String, LinkedList<String>> pvNamesToAskEngineForStatus = new HashMap<String, LinkedList<String>>();
@@ -108,7 +128,9 @@ public class PvaGetPVStatus implements PvaAction {
         HashMap<String, LinkedList<String>> realName2NameFromRequest = new HashMap<String, LinkedList<String>>();
 
         GetPVStatusAction.getPVStatuses(
-                configService,
+                pvTypeInfoLookup,
+                archiveRequests,
+                clusterTopology,
                 pvNames,
                 pvStatuses,
                 pvNamesToAskEngineForStatus,

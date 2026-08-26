@@ -27,6 +27,7 @@ import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
 import org.epics.archiverappliance.data.ScalarValue;
+import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.retrieval.workers.CurrentThreadWorkerEventStream;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
 import org.epics.archiverappliance.utils.ui.URIUtils;
@@ -193,8 +194,8 @@ class ConsolidateETLJobsForOnePVTest {
         // consolidate
         // The ConfigServiceForTests automatically adds a ETL Job for each PV. For consolidate, we need to have "paused"
         // the PV; we fake this by deleting the jobs.
-        configService.getETLLookup().deleteETLJobs(pvName);
-        ETLExecutor.runPvETLsBeforeOneStorage(configService, etlTime, pvName, consolidateStorage);
+        PBThreeTierETLPVLookup.of(configService).deleteETLJobs(pvName);
+        ETLExecutor.runPvETLsBeforeOneStorage(configService, configService, etlTime, pvName, consolidateStorage);
         // make sure there are no pb files in short term storage , medium term storage and all files in long term
         // storage
     }
@@ -220,7 +221,7 @@ class ConsolidateETLJobsForOnePVTest {
         typeInfo.setDataStores(dataStores);
         configService.updateTypeInfoForPV(pvName, typeInfo);
         configService.registerPVToAppliance(pvName, configService.getMyApplianceInfo());
-        configService.getETLLookup().manualControlForUnitTests();
+        PBThreeTierETLPVLookup.of(configService).manualControlForUnitTests();
     }
 
     private int generateData(String pvName, long dayCount) throws IOException {

@@ -11,10 +11,14 @@ import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.mergededup.MergeDedupEventStream;
 import org.epics.archiverappliance.common.remotable.RemotableEventStreamDesc;
+import org.epics.archiverappliance.config.AliasRegistry;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoLookupView;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.etl.ConversionFunction;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
@@ -49,11 +53,30 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class MergeInDataFromExternalStore implements BPLAction {
+
+    private final AliasRegistry aliasRegistry;
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvdirectory;
+    private final PVTypeInfoLookupView pvtypeInfoLookupView;
+    private final StoragePluginConfigView storagePluginConfigView;
+
+    public MergeInDataFromExternalStore(
+            AliasRegistry aliasRegistry,
+            ClusterTopology clusterTopology,
+            PVDirectory pvdirectory,
+            PVTypeInfoLookupView pvtypeInfoLookupView,
+            StoragePluginConfigView storagePluginConfigView) {
+        this.aliasRegistry = aliasRegistry;
+        this.clusterTopology = clusterTopology;
+        this.pvdirectory = pvdirectory;
+        this.pvtypeInfoLookupView = pvtypeInfoLookupView;
+        this.storagePluginConfigView = storagePluginConfigView;
+    }
+
     private static Logger logger = LogManager.getLogger(MergeInDataFromExternalStore.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -73,17 +96,17 @@ public class MergeInDataFromExternalStore implements BPLAction {
         }
 
         // String pvNameFromRequest = pvName;
-        String realName = configService.getRealNameForAlias(pvName);
+        String realName = aliasRegistry.getRealNameForAlias(pvName);
         if (realName != null) pvName = realName;
 
-        ApplianceInfo info = configService.getApplianceForPV(pvName);
+        ApplianceInfo info = pvdirectory.getApplianceForPV(pvName);
         if (info == null) {
             logger.debug("Unable to find appliance for PV " + pvName);
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-        if (!info.getIdentity().equals(configService.getMyApplianceInfo().getIdentity())) {
+        if (!info.getIdentity().equals(clusterTopology.getMyApplianceInfo().getIdentity())) {
             // We should proxy this call to the actual appliance hosting the PV.
             String redirectURL = info.getMgmtURL() + "/mergeInData?pv="
                     + URLEncoder.encode(pvName, "UTF-8")
@@ -100,7 +123,7 @@ public class MergeInDataFromExternalStore implements BPLAction {
 
         logger.info("Merging in data for PV " + pvName + " fetching data from " + other);
 
-        PVTypeInfo typeInfo = PVNames.determineAppropriatePVTypeInfo(pvName, configService);
+        PVTypeInfo typeInfo = PVNames.determineAppropriatePVTypeInfo(pvName, pvtypeInfoLookupView);
         if (typeInfo == null) {
             logger.debug("Unable to find typeinfo for PV...");
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -178,7 +201,7 @@ public class MergeInDataFromExternalStore implements BPLAction {
         }
 
         for (String store : typeInfo.getDataStores()) {
-            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, configService);
+            StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, storagePluginConfigView);
             if (!plugin.getName().equals(storagePluginName)) {
                 logger.info("Skippng merging in storage " + plugin.getName() + " as it is not " + storagePluginName);
                 continue;

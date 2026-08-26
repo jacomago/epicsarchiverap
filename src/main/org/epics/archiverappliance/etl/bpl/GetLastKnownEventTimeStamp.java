@@ -3,7 +3,8 @@ package org.epics.archiverappliance.etl.bpl;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -15,16 +16,21 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public class GetLastKnownEventTimeStamp implements BPLAction {
 
+    private final ApplianceLifecycle configService;
+
+    public GetLastKnownEventTimeStamp(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-        Event event = configService.getETLLookup().getLatestEventFromDataStores(pvName);
+        Event event = PBThreeTierETLPVLookup.of(configService).getLatestEventFromDataStores(pvName);
         if (event != null) {
             resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
             HashMap<String, String> result = new HashMap<String, String>();

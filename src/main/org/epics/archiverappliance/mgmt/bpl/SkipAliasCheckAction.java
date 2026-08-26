@@ -3,9 +3,13 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ArchiveRequestWorkflow;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.epics.archiverappliance.config.UserSpecifiedSamplingParams;
+import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.json.simple.JSONValue;
 
 import java.io.IOException;
@@ -25,11 +29,27 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class SkipAliasCheckAction implements BPLAction {
+
+    private final ApplianceLifecycle applianceLifecycle;
+    private final ArchiveRequestWorkflow archiveRequests;
+    private final ClusterTopology clusterTopology;
+    private final PVTypeInfoStore pvTypeInfoStore;
+
+    public SkipAliasCheckAction(
+            ApplianceLifecycle applianceLifecycle,
+            ArchiveRequestWorkflow archiveRequests,
+            ClusterTopology clusterTopology,
+            PVTypeInfoStore pvTypeInfoStore) {
+        this.applianceLifecycle = applianceLifecycle;
+        this.archiveRequests = archiveRequests;
+        this.clusterTopology = clusterTopology;
+        this.pvTypeInfoStore = pvTypeInfoStore;
+    }
+
     private static Logger logger = LogManager.getLogger(SkipAliasCheckAction.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -37,7 +57,7 @@ public class SkipAliasCheckAction implements BPLAction {
         }
 
         // If we have a typeinfo for this PV already, this comes too late.
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = pvTypeInfoStore.getTypeInfoForPV(pvName);
         if (typeInfo != null) {
             logger.error("When skipping the alias check for " + pvName + ", the PV already has a typeinfo.");
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -45,8 +65,8 @@ public class SkipAliasCheckAction implements BPLAction {
         }
 
         // Check if we have the archivePV request
-        if (configService.getMgmtRuntimeState().isPVInWorkflow(pvName)) {
-            UserSpecifiedSamplingParams params = configService.getUserSpecifiedSamplingParams(pvName);
+        if (MgmtRuntimeState.of(applianceLifecycle).isPVInWorkflow(pvName)) {
+            UserSpecifiedSamplingParams params = archiveRequests.getUserSpecifiedSamplingParams(pvName);
             if (params == null) {
                 logger.error("When skipping the alias check for " + pvName
                         + ", the archive PV workflow finished before changing the alias check.");
@@ -54,7 +74,7 @@ public class SkipAliasCheckAction implements BPLAction {
                 return;
             } else {
                 params.setSkipAliasCheck(true);
-                configService.updateArchiveRequest(pvName, params);
+                archiveRequests.updateArchiveRequest(pvName, params);
                 logger.debug("Done setting the alias check for pv " + pvName);
             }
         } else {
@@ -65,7 +85,7 @@ public class SkipAliasCheckAction implements BPLAction {
                 pathAndQuery.append("/skipAliasCheck?pv=");
                 pathAndQuery.append(URLEncoder.encode(pvName, "UTF-8"));
                 pathAndQuery.append("&doNotProxy=true");
-                ProxyUtils.routeURLToOtherAppliances(configService, pathAndQuery.toString());
+                ProxyUtils.routeURLToOtherAppliances(clusterTopology, pathAndQuery.toString());
             } else {
                 logger.debug("We have a do not proxy. so not proxying.");
             }

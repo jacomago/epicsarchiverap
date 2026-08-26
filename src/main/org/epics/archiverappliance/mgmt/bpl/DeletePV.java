@@ -5,8 +5,9 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoLookupView;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
@@ -33,13 +34,21 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class DeletePV implements BPLAction {
+
+    private final PVTypeInfoLookupView pvTypeInfoLookup;
+    private final PVDirectory pvDirectory;
+
+    public DeletePV(PVTypeInfoLookupView pvTypeInfoLookup, PVDirectory pvDirectory) {
+        this.pvTypeInfoLookup = pvTypeInfoLookup;
+        this.pvDirectory = pvDirectory;
+    }
+
     private static Logger logger = LogManager.getLogger(DeletePV.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (req.getMethod().equals("POST")) {
-            deleteMultiplePVs(req, resp, configService);
+            deleteMultiplePVs(req, resp);
             return;
         }
 
@@ -50,10 +59,10 @@ public class DeletePV implements BPLAction {
         }
 
         if (pvName.contains(",") || pvName.contains("*") || pvName.contains("?")) {
-            deleteMultiplePVs(req, resp, configService);
+            deleteMultiplePVs(req, resp);
         } else {
             // We only have one PV in the request
-            String strValues = deleteSinglePV(req, resp, configService, null);
+            String strValues = deleteSinglePV(req, resp, null);
             HashMap<String, Object> infoValues = new HashMap<String, Object>();
             infoValues.put("validation", strValues);
             if (strValues.isEmpty()) infoValues.put("status", "ok");
@@ -63,8 +72,7 @@ public class DeletePV implements BPLAction {
         }
     }
 
-    private String deleteSinglePV(
-            HttpServletRequest req, HttpServletResponse resp, ConfigService configService, String pvName)
+    private String deleteSinglePV(HttpServletRequest req, HttpServletResponse resp, String pvName)
             throws IOException, UnsupportedEncodingException {
         String infoValues = "";
         if (pvName == null) pvName = req.getParameter("pv");
@@ -81,13 +89,13 @@ public class DeletePV implements BPLAction {
         }
 
         // String pvNameFromRequest = pvName;
-        String realName = configService.getRealNameForAlias(pvName);
+        String realName = pvTypeInfoLookup.getRealNameForAlias(pvName);
         if (realName != null) {
             logger.info("The name " + pvName + " is an alias for " + realName + ". Deleting this instead.");
             pvName = realName;
         }
 
-        ApplianceInfo info = configService.getApplianceForPV(pvName);
+        ApplianceInfo info = pvDirectory.getApplianceForPV(pvName);
         if (info == null) {
             logger.debug("Unable to find appliance for PV " + pvName);
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -95,7 +103,7 @@ public class DeletePV implements BPLAction {
             return infoValues;
         }
 
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = pvTypeInfoLookup.getTypeInfoForPV(pvName);
         if (typeInfo == null) {
             logger.debug("Unable to find typeinfo for PV...");
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -144,7 +152,7 @@ public class DeletePV implements BPLAction {
         pvStatus.put(
                 "Start removing PV from cluster",
                 TimeUtils.convertToHumanReadableString(System.currentTimeMillis() / 1000));
-        configService.removePVFromCluster(pvName);
+        pvTypeInfoLookup.removePVFromCluster(pvName);
         pvStatus.put(
                 "Done removing PV from cluster",
                 TimeUtils.convertToHumanReadableString(System.currentTimeMillis() / 1000));
@@ -153,12 +161,12 @@ public class DeletePV implements BPLAction {
         pvStatus.put(
                 "Start removing aliases from cluster",
                 TimeUtils.convertToHumanReadableString(System.currentTimeMillis() / 1000));
-        List<String> aliases = configService.getAllAliases();
+        List<String> aliases = pvTypeInfoLookup.getAllAliases();
         for (String alias : aliases) {
-            String realNameForAlias = configService.getRealNameForAlias(alias);
+            String realNameForAlias = pvTypeInfoLookup.getRealNameForAlias(alias);
             if (pvName.equals(realNameForAlias)) {
                 logger.debug("Removing alias " + alias + " for pv " + pvName);
-                configService.removeAlias(alias, realNameForAlias);
+                pvTypeInfoLookup.removeAlias(alias, realNameForAlias);
             }
         }
         pvStatus.put(
@@ -168,12 +176,12 @@ public class DeletePV implements BPLAction {
         return infoValues;
     }
 
-    private void deleteMultiplePVs(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    private void deleteMultiplePVs(HttpServletRequest req, HttpServletResponse resp)
             throws IOException, UnsupportedEncodingException {
         String strValues = "";
-        LinkedList<String> pvNames = BulkPauseResumeUtils.getPVNames(req, configService);
+        LinkedList<String> pvNames = BulkPauseResumeUtils.getPVNames(req, pvDirectory, pvTypeInfoLookup);
         for (String pvName : pvNames) {
-            strValues += deleteSinglePV(req, resp, configService, pvName) + "\n";
+            strValues += deleteSinglePV(req, resp, pvName) + "\n";
         }
 
         HashMap<String, Object> infoValues = new HashMap<String, Object>();

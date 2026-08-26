@@ -3,7 +3,8 @@ package org.epics.archiverappliance.retrieval.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ChannelArchiverConfig;
+import org.epics.archiverappliance.config.ClusterTopology;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONArray;
@@ -33,11 +34,19 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class GetMatchingPVs implements BPLAction {
+
+    private final ChannelArchiverConfig channelArchiverConfig;
+    private final ClusterTopology clusterTopology;
+
+    public GetMatchingPVs(ChannelArchiverConfig channelArchiverConfig, ClusterTopology clusterTopology) {
+        this.channelArchiverConfig = channelArchiverConfig;
+        this.clusterTopology = clusterTopology;
+    }
+
     private static Logger logger = LogManager.getLogger(GetMatchingPVs.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
 
@@ -66,8 +75,8 @@ public class GetMatchingPVs implements BPLAction {
         }
 
         try (PrintWriter out = resp.getWriter()) {
-            List<String> matchingNames =
-                    getMatchingPVsInCluster(configService, limit, nameToMatch, includeExternalServers(req));
+            List<String> matchingNames = getMatchingPVsInCluster(
+                    channelArchiverConfig, clusterTopology, limit, nameToMatch, includeExternalServers(req));
             if (limit > 0) {
                 Collections.sort(matchingNames);
                 if (limit > 0 && matchingNames.size() >= limit) {
@@ -78,7 +87,7 @@ public class GetMatchingPVs implements BPLAction {
         } catch (Exception ex) {
             logger.error(
                     "Exception getting all pvs on appliance "
-                            + configService.getMyApplianceInfo().getIdentity(),
+                            + clusterTopology.getMyApplianceInfo().getIdentity(),
                     ex);
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
@@ -86,7 +95,8 @@ public class GetMatchingPVs implements BPLAction {
 
     /**
      * Get a list of PV's being archived in this cluster
-     * @param configService ConfigService
+     * @param channelArchiverConfig ChannelArchiverConfig
+     * @param clusterTopology ClusterTopology
      * @param limit The numbers of PV's you want to limit the response to;
      * @param nameToMatch A regex specifying the PV name pattern; globs should be converted to regex's
      * @param includeExternalServers - Do you want to include external servers
@@ -95,10 +105,14 @@ public class GetMatchingPVs implements BPLAction {
      */
     @SuppressWarnings("unchecked")
     public static List<String> getMatchingPVsInCluster(
-            ConfigService configService, int limit, String nameToMatch, boolean includeExternalServers)
+            ChannelArchiverConfig channelArchiverConfig,
+            ClusterTopology clusterTopology,
+            int limit,
+            String nameToMatch,
+            boolean includeExternalServers)
             throws IOException {
         try {
-            LinkedList<String> mgmtURLs = getMgmtURLsInCluster(configService);
+            LinkedList<String> mgmtURLs = getMgmtURLsInCluster(clusterTopology);
 
             List<String> pvNamesURLs = new LinkedList<String>();
             for (String mgmtURL : mgmtURLs) {
@@ -110,7 +124,7 @@ public class GetMatchingPVs implements BPLAction {
             }
 
             if (includeExternalServers) {
-                Map<String, String> externalServers = configService.getExternalArchiverDataServers();
+                Map<String, String> externalServers = channelArchiverConfig.getExternalArchiverDataServers();
                 if (externalServers != null) {
                     for (String serverUrl : externalServers.keySet()) {
                         String index = externalServers.get(serverUrl);
@@ -133,11 +147,11 @@ public class GetMatchingPVs implements BPLAction {
         }
     }
 
-    private static LinkedList<String> getMgmtURLsInCluster(ConfigService configService) {
+    private static LinkedList<String> getMgmtURLsInCluster(ClusterTopology clusterTopology) {
         LinkedList<String> mgmtURLs = new LinkedList<String>();
         try {
             JSONArray appliancesInCluster = GetUrlContent.getURLContentAsJSONArray(
-                    configService.getMyApplianceInfo().getMgmtURL() + "/getAppliancesInCluster");
+                    clusterTopology.getMyApplianceInfo().getMgmtURL() + "/getAppliancesInCluster");
             for (Object object : appliancesInCluster) {
                 mgmtURLs.add((String) ((JSONObject) object).get("mgmtURL"));
             }

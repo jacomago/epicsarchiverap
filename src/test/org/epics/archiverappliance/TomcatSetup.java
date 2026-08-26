@@ -18,6 +18,9 @@ import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.Property;
 import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.ConfigPersistence;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.DefaultConfigService;
@@ -267,20 +270,20 @@ public class TomcatSetup implements AutoCloseable {
 
         System.setProperty("catalina.base", new File(testFolder, applianceName).getAbsolutePath());
         System.setProperty("LOG4J_CONFIGURATION_FILE", new File("src/resources/test/log4j2.xml").getAbsolutePath());
-        System.setProperty(ConfigService.ARCHAPPL_CONFIGSERVICE_IMPL, ConfigServiceForTests.class.getName());
+        System.setProperty(ApplianceLifecycle.ARCHAPPL_CONFIGSERVICE_IMPL, ConfigServiceForTests.class.getName());
         System.setProperty(
                 DefaultConfigService.SITE_FOR_UNIT_TESTS_NAME, DefaultConfigService.SITE_FOR_UNIT_TESTS_VALUE);
         System.setProperty(ConfigService.ARCHAPPL_MYIDENTITY, applianceName);
 
-        if (!fresh.containsKey(ConfigService.ARCHAPPL_APPLIANCES)) {
+        if (!fresh.containsKey(ClusterTopology.ARCHAPPL_APPLIANCES)) {
             System.setProperty(
-                    ConfigService.ARCHAPPL_APPLIANCES,
+                    ClusterTopology.ARCHAPPL_APPLIANCES,
                     appliancesXML.toAbsolutePath().toString());
         }
 
-        String persistenceLayer = fresh.getProperty(ConfigService.ARCHAPPL_PERSISTENCE_LAYER);
+        String persistenceLayer = fresh.getProperty(ConfigPersistence.ARCHAPPL_PERSISTENCE_LAYER);
         if (persistenceLayer == null || persistenceLayer.equals(InMemoryPersistence.class.getName())) {
-            System.setProperty(ConfigService.ARCHAPPL_PERSISTENCE_LAYER, InMemoryPersistence.class.getName());
+            System.setProperty(ConfigPersistence.ARCHAPPL_PERSISTENCE_LAYER, InMemoryPersistence.class.getName());
         } else {
             logger.info("Persistence layer for {}: {}", applianceName, persistenceLayer);
             String persistenceFile = fresh.getProperty(JDBM2Persistence.ARCHAPPL_JDBM2_FILENAME);

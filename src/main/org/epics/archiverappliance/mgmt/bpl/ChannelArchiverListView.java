@@ -10,7 +10,7 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ChannelArchiverConfig;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -28,11 +28,17 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class ChannelArchiverListView implements BPLAction {
+
+    private final ChannelArchiverConfig configService;
+
+    public ChannelArchiverListView(ChannelArchiverConfig configService) {
+        this.configService = configService;
+    }
+
     private static Logger logger = LogManager.getLogger(ChannelArchiverListView.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.info("Getting a list of Channel Access servers");
         LinkedList<HashMap<String, String>> infoValues = new LinkedList<HashMap<String, String>>();
         Map<String, String> serverlist = configService.getExternalArchiverDataServers();

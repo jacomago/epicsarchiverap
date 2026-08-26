@@ -15,6 +15,7 @@ import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.engine.ArchiveEngine;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -62,6 +63,8 @@ public class ChannelDestroyTest {
                     SamplingMethod.SCAN,
                     writer,
                     testConfigService,
+                    testConfigService,
+                    testConfigService,
                     ArchDBRTypes.DBR_SCALAR_DOUBLE,
                     null,
                     false,
@@ -71,7 +74,7 @@ public class ChannelDestroyTest {
             ArchiveEngine.destoryPv(pvName, testConfigService);
             ArchiveTestUtils.waitForChannelRemovedFromList(pvName, testConfigService);
             ArchiveChannel archiveChannel =
-                    testConfigService.getEngineContext().getChannelList().get(pvName);
+                    EngineContext.of(testConfigService).getChannelList().get(pvName);
             Assertions.assertNull(archiveChannel, "the channel for " + pvName + " should be destroyed but it is not");
 
         } catch (Exception e) {
@@ -94,6 +97,8 @@ public class ChannelDestroyTest {
                     SamplingMethod.MONITOR,
                     writer,
                     testConfigService,
+                    testConfigService,
+                    testConfigService,
                     ArchDBRTypes.DBR_SCALAR_DOUBLE,
                     null,
                     false,
@@ -103,7 +108,7 @@ public class ChannelDestroyTest {
             ArchiveEngine.destoryPv(pvName, testConfigService);
             ArchiveTestUtils.waitForChannelRemovedFromList(pvName, testConfigService);
             ArchiveChannel archiveChannel =
-                    testConfigService.getEngineContext().getChannelList().get(pvName);
+                    EngineContext.of(testConfigService).getChannelList().get(pvName);
             Assertions.assertNull(archiveChannel, "the channel for " + pvName + " should be destroyed but it is not");
         } catch (Exception e) {
             //

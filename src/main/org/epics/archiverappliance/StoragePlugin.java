@@ -8,7 +8,7 @@
 package org.epics.archiverappliance;
 
 import org.epics.archiverappliance.common.BasicContext;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.etl.ConversionFunction;
 
 import java.io.IOException;
@@ -46,11 +46,11 @@ public interface StoragePlugin extends Reader, Writer {
      * </ol>
      * The storage plugin is expected to use the parameters in the URL to initialize itself.
      * @param configURL The complete URL
-     * @param configService &emsp;
+     * @param configService The configuration surface storage plugins are allowed to reach.
      * @see org.epics.archiverappliance.config.StoragePluginURLParser
      * @throws IOException  &emsp;
      */
-    public void initialize(String configURL, ConfigService configService) throws IOException;
+    public void initialize(String configURL, StoragePluginConfigView configService) throws IOException;
 
     /**
      * Change the name of a PV. This happens occasionally in the EPICS world when people change the names of PVs but want to retain the data.

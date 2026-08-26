@@ -3,7 +3,8 @@ package org.epics.archiverappliance.etl.common;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.TimeUtils;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.config.InstallationProperties;
 import org.epics.archiverappliance.etl.ETLContext;
 import org.epics.archiverappliance.etl.ETLDest;
 import org.epics.archiverappliance.etl.ETLInfo;
@@ -27,7 +28,8 @@ public class ETLJob implements Runnable {
     private static final Logger logger = LogManager.getLogger(ETLJob.class.getName());
     private final ETLStage etlStage;
     private final Instant runAsIfAtTime;
-    private final ConfigService configService;
+    private final InstallationProperties installationProperties;
+    private final ApplianceLifecycle applianceLifecycle;
     private final boolean allData;
 
     /**
@@ -35,21 +37,28 @@ public class ETLJob implements Runnable {
      * @param etlStage    ETLStage
      * @param runAsIfAtTime Instant
      */
-    public ETLJob(ETLStage etlStage, Instant runAsIfAtTime, ConfigService configService) {
-        this.etlStage = etlStage;
-        this.runAsIfAtTime = runAsIfAtTime;
-        this.configService = configService;
-        this.allData = false;
+    public ETLJob(
+            ETLStage etlStage,
+            Instant runAsIfAtTime,
+            InstallationProperties installationProperties,
+            ApplianceLifecycle applianceLifecycle) {
+        this(etlStage, runAsIfAtTime, installationProperties, applianceLifecycle, false);
     }
     /**
      *
      * @param etlStage    ETLStage
      * @param runAsIfAtTime Instant
      */
-    public ETLJob(ETLStage etlStage, Instant runAsIfAtTime, ConfigService configService, boolean allData) {
+    public ETLJob(
+            ETLStage etlStage,
+            Instant runAsIfAtTime,
+            InstallationProperties installationProperties,
+            ApplianceLifecycle applianceLifecycle,
+            boolean allData) {
         this.etlStage = etlStage;
         this.runAsIfAtTime = runAsIfAtTime;
-        this.configService = configService;
+        this.installationProperties = installationProperties;
+        this.applianceLifecycle = applianceLifecycle;
         this.allData = allData;
     }
 
@@ -81,7 +90,7 @@ public class ETLJob implements Runnable {
 
         String namedFlagForSkippingDataSource =
                 "SKIP_" + this.etlStage.getETLDest().getName() + "_FOR_ETL";
-        boolean skipETLForThisDest = this.configService.getNamedFlag(namedFlagForSkippingDataSource);
+        boolean skipETLForThisDest = this.installationProperties.getNamedFlag(namedFlagForSkippingDataSource);
         if (skipETLForThisDest) {
             logger.debug(
                     "Skipping ETL for dest {} for PV {} as the flag {} is set to true",
@@ -91,7 +100,7 @@ public class ETLJob implements Runnable {
             return;
         }
 
-        if (this.configService.getETLLookup().getIsRunningInsideUnitTests() || this.allData) {
+        if (PBThreeTierETLPVLookup.of(this.applianceLifecycle).getIsRunningInsideUnitTests() || this.allData) {
             // Skip the check for times...
         } else {
             if (processingTime.isBefore(this.etlStage.getNextETLStart())) {

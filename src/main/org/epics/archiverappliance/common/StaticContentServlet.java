@@ -2,8 +2,8 @@ package org.epics.archiverappliance.common;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
 import org.epics.archiverappliance.config.ConfigService;
-import org.epics.archiverappliance.config.ConfigService.STARTUP_SEQUENCE;
 import org.epics.archiverappliance.mgmt.bpl.SyncStaticContentHeadersFooters;
 
 import java.io.BufferedInputStream;
@@ -66,7 +66,8 @@ public class StaticContentServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        this.configService = (ConfigService) config.getServletContext().getAttribute(ConfigService.CONFIG_SERVICE_NAME);
+        this.configService =
+                (ConfigService) config.getServletContext().getAttribute(ApplianceLifecycle.CONFIG_SERVICE_NAME);
         templateReplacementPaths.add("viewer/index.html");
         templateReplacementPaths.add("js/mgmt.js");
     }
@@ -115,7 +116,7 @@ public class StaticContentServlet extends HttpServlet {
             return;
         }
 
-        if (configService.getStartupState() != STARTUP_SEQUENCE.STARTUP_COMPLETE) {
+        if (configService.getStartupState() != ApplianceLifecycle.STARTUP_SEQUENCE.STARTUP_COMPLETE) {
             String msg = "Cannot process static content request for " + requestedFile
                     + " until the appliance has completely started up.";
             logger.error(msg);
@@ -476,7 +477,12 @@ public class StaticContentServlet extends HttpServlet {
                     templateReplacementsForViewer.put(
                             "archivePVWorkflowBatchSize",
                             "var archivePVWorkflowBatchSize = "
-                                    + configService.getMgmtRuntimeState().getArchivePVWorkflowBatchSize() + ";\n");
+                                    + configService
+                                            .getInstallationProperties()
+                                            .getProperty(
+                                                    "org.epics.archiverappliance.mgmt.MgmtRuntimeState.archivePVWorkflowBatchSize",
+                                                    "1000")
+                                    + ";\n");
                     templateReplacementsForViewer.put(
                             "minimumSamplingPeriod",
                             "var minimumSamplingPeriod = "

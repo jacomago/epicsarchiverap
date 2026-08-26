@@ -15,6 +15,7 @@ import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.engine.ArchiveEngine;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
+import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.PVMetrics;
 import org.epics.archiverappliance.mgmt.policy.PolicyConfig.SamplingMethod;
 import org.junit.jupiter.api.AfterEach;
@@ -70,6 +71,8 @@ public class ChangeArchivalParametersTest {
                     SamplingMethod.SCAN,
                     writer,
                     testConfigService,
+                    testConfigService,
+                    testConfigService,
                     ArchDBRTypes.DBR_SCALAR_DOUBLE,
                     null,
                     false,
@@ -82,7 +85,15 @@ public class ChangeArchivalParametersTest {
                                     .isConnected());
 
             ArchiveEngine.changeArchivalParameters(
-                    pvName, 8, SamplingMethod.SCAN, testConfigService, writer, false, false);
+                    pvName,
+                    8,
+                    SamplingMethod.SCAN,
+                    testConfigService,
+                    testConfigService,
+                    testConfigService,
+                    writer,
+                    false,
+                    false);
 
             Awaitility.await().atMost(30, TimeUnit.SECONDS).until(() -> {
                 PVMetrics m = ArchiveEngine.getMetricsforPV(pvName, testConfigService);
@@ -90,7 +101,7 @@ public class ChangeArchivalParametersTest {
             });
 
             // ArchiveChannel
-            // archiveChannel=testConfigService.getEngineContext().getChannelList().get(pvName);
+            // archiveChannel=EngineContext.of(testConfigService).getChannelList().get(pvName);
             PVMetrics tempPVMetrics = ArchiveEngine.getMetricsforPV(pvName, testConfigService);
             double period = tempPVMetrics.getSamplingPeriod();
             boolean isMonitor = tempPVMetrics.isMonitor();
@@ -103,7 +114,7 @@ public class ChangeArchivalParametersTest {
             logger.error("Exception", e);
         }
         ArchiveChannel archiveChannel =
-                testConfigService.getEngineContext().getChannelList().get(pvName);
+                EngineContext.of(testConfigService).getChannelList().get(pvName);
         int valueNumber = archiveChannel.getSampleBuffer().getCurrentSamples().size();
         try {
             valueNumber =
@@ -132,6 +143,8 @@ public class ChangeArchivalParametersTest {
                     SamplingMethod.SCAN,
                     writer,
                     testConfigService,
+                    testConfigService,
+                    testConfigService,
                     ArchDBRTypes.DBR_SCALAR_DOUBLE,
                     null,
                     false,
@@ -144,7 +157,15 @@ public class ChangeArchivalParametersTest {
                                     .isConnected());
 
             ArchiveEngine.changeArchivalParameters(
-                    pvName, 0.1F, SamplingMethod.MONITOR, testConfigService, writer, false, false);
+                    pvName,
+                    0.1F,
+                    SamplingMethod.MONITOR,
+                    testConfigService,
+                    testConfigService,
+                    testConfigService,
+                    writer,
+                    false,
+                    false);
 
             Awaitility.await().atMost(15, TimeUnit.SECONDS).until(() -> {
                 PVMetrics m = ArchiveEngine.getMetricsforPV(pvName, testConfigService);
@@ -156,7 +177,7 @@ public class ChangeArchivalParametersTest {
             Assertions.assertTrue(
                     isMonitor, "the " + pvName + " should be archived in monitor mode but it is scan mode");
             ArchiveChannel archiveChannel =
-                    testConfigService.getEngineContext().getChannelList().get(pvName);
+                    EngineContext.of(testConfigService).getChannelList().get(pvName);
             int valueNumber =
                     archiveChannel.getSampleBuffer().getCurrentSamples().size();
             valueNumber =
@@ -186,6 +207,8 @@ public class ChangeArchivalParametersTest {
                     SamplingMethod.MONITOR,
                     writer,
                     testConfigService,
+                    testConfigService,
+                    testConfigService,
                     ArchDBRTypes.DBR_SCALAR_DOUBLE,
                     null,
                     false,
@@ -198,7 +221,15 @@ public class ChangeArchivalParametersTest {
                                     .isConnected());
 
             ArchiveEngine.changeArchivalParameters(
-                    pvName, 2, SamplingMethod.SCAN, testConfigService, writer, false, false);
+                    pvName,
+                    2,
+                    SamplingMethod.SCAN,
+                    testConfigService,
+                    testConfigService,
+                    testConfigService,
+                    writer,
+                    false,
+                    false);
 
             Awaitility.await().atMost(15, TimeUnit.SECONDS).until(() -> {
                 PVMetrics m = ArchiveEngine.getMetricsforPV(pvName, testConfigService);
@@ -210,7 +241,7 @@ public class ChangeArchivalParametersTest {
             Assertions.assertTrue(
                     !isMonitor, "the " + pvName + " should be archived in scan mode but it is monitor mode");
             ArchiveChannel archiveChannel =
-                    testConfigService.getEngineContext().getChannelList().get(pvName);
+                    EngineContext.of(testConfigService).getChannelList().get(pvName);
             int valueNumber =
                     archiveChannel.getSampleBuffer().getCurrentSamples().size();
             valueNumber =
@@ -239,6 +270,8 @@ public class ChangeArchivalParametersTest {
                     SamplingMethod.MONITOR,
                     writer,
                     testConfigService,
+                    testConfigService,
+                    testConfigService,
                     ArchDBRTypes.DBR_SCALAR_DOUBLE,
                     null,
                     false,
@@ -249,13 +282,29 @@ public class ChangeArchivalParametersTest {
                             && ArchiveEngine.getMetricsforPV(pvName, testConfigService)
                                     .isConnected());
             ArchiveEngine.changeArchivalParameters(
-                    pvName, 0.1F, SamplingMethod.MONITOR, testConfigService, writer, false, false);
+                    pvName,
+                    0.1F,
+                    SamplingMethod.MONITOR,
+                    testConfigService,
+                    testConfigService,
+                    testConfigService,
+                    writer,
+                    false,
+                    false);
             Awaitility.await().atMost(15, TimeUnit.SECONDS).until(() -> {
                 PVMetrics m = ArchiveEngine.getMetricsforPV(pvName, testConfigService);
                 return m != null && m.isMonitor();
             });
             ArchiveEngine.changeArchivalParameters(
-                    pvName, 2, SamplingMethod.MONITOR, testConfigService, writer, false, false);
+                    pvName,
+                    2,
+                    SamplingMethod.MONITOR,
+                    testConfigService,
+                    testConfigService,
+                    testConfigService,
+                    writer,
+                    false,
+                    false);
             Awaitility.await().atMost(15, TimeUnit.SECONDS).until(() -> {
                 PVMetrics m = ArchiveEngine.getMetricsforPV(pvName, testConfigService);
                 return m != null && m.isMonitor() && Math.abs(m.getSamplingPeriod() - 2.0) < 0.001;
@@ -265,7 +314,7 @@ public class ChangeArchivalParametersTest {
             Assertions.assertTrue(
                     isMonitor, "the " + pvName + " should be archived in monitor mode but it is scan mode");
             ArchiveChannel archiveChannel =
-                    testConfigService.getEngineContext().getChannelList().get(pvName);
+                    EngineContext.of(testConfigService).getChannelList().get(pvName);
             int valueNumber =
                     archiveChannel.getSampleBuffer().getCurrentSamples().size();
             valueNumber =

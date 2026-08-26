@@ -9,7 +9,7 @@ import org.epics.archiverappliance.config.exception.ConfigException;
  *
  */
 public interface PVNameToKeyMapping {
-    public void initialize(ConfigService configService) throws ConfigException;
+    public void initialize(StoragePluginConfigView configService) throws ConfigException;
 
     public abstract String convertPVNameToKey(String pvName);
     /**

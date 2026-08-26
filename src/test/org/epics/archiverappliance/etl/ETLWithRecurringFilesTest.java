@@ -24,6 +24,7 @@ import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.exception.ConfigException;
 import org.epics.archiverappliance.data.ScalarValue;
+import org.epics.archiverappliance.etl.common.PBThreeTierETLPVLookup;
 import org.epics.archiverappliance.retrieval.workers.CurrentThreadWorkerEventStream;
 import org.epics.archiverappliance.utils.nio.ArchPaths;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
@@ -123,7 +124,7 @@ public class ETLWithRecurringFilesTest {
             typeInfo.setDataStores(dataStores);
             configService.updateTypeInfoForPV(pvName, typeInfo);
             configService.registerPVToAppliance(pvName, configService.getMyApplianceInfo());
-            configService.getETLLookup().manualControlForUnitTests();
+            PBThreeTierETLPVLookup.of(configService).manualControlForUnitTests();
         }
 
         // Generate ratio times the granularity
@@ -186,7 +187,7 @@ public class ETLWithRecurringFilesTest {
             typeInfo2.setDataStores(dataStores2);
             newConfigService.updateTypeInfoForPV(pvName, typeInfo2);
             newConfigService.registerPVToAppliance(pvName, newConfigService.getMyApplianceInfo());
-            newConfigService.getETLLookup().manualControlForUnitTests();
+            PBThreeTierETLPVLookup.of(newConfigService).manualControlForUnitTests();
 
             logger.debug(
                     "Running ETL again against a new plugin; the debug logs should see a lot of skipping events messages from here on.");

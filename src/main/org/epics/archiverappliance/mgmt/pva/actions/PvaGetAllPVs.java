@@ -2,7 +2,8 @@ package org.epics.archiverappliance.mgmt.pva.actions;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.AliasRegistry;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.mgmt.bpl.GetAllPVs;
 import org.epics.archiverappliance.mgmt.bpl.PVsMatchingParameter;
 import org.epics.pva.data.PVAStringArray;
@@ -61,13 +62,21 @@ public class PvaGetAllPVs implements PvaAction {
 
     public static final String NAME = "getAllPVs";
 
+    private final PVDirectory pvDirectory;
+    private final AliasRegistry aliasRegistry;
+
+    public PvaGetAllPVs(PVDirectory pvDirectory, AliasRegistry aliasRegistry) {
+        this.pvDirectory = pvDirectory;
+        this.aliasRegistry = aliasRegistry;
+    }
+
     @Override
     public String getName() {
         return NAME;
     }
 
     @Override
-    public PVAStructure request(PVAStructure args, ConfigService configService) throws PvaActionException {
+    public PVAStructure request(PVAStructure args) throws PvaActionException {
         logger.debug("Getting all pvs for cluster");
         Map<String, String> searchParameters = new HashMap<String, String>();
         int defaultLimit = 500;
@@ -79,8 +88,8 @@ public class PvaGetAllPVs implements PvaAction {
             if (queryName.containsKey("limit")) {
                 defaultLimit = Integer.parseInt(queryName.get("limit"));
             }
-            LinkedList<String> pvNames =
-                    PVsMatchingParameter.getMatchingPVs(List.of(), null, defaultLimit, configService, false);
+            LinkedList<String> pvNames = PVsMatchingParameter.getMatchingPVs(
+                    List.of(), null, defaultLimit, pvDirectory, aliasRegistry, false);
             ntScalarArray = PVAScalar.stringArrayScalarBuilder(pvNames.toArray(new String[0]))
                     .name("result")
                     .build();

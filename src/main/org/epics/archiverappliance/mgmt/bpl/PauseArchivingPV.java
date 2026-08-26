@@ -3,7 +3,9 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.AliasRegistry;
+import org.epics.archiverappliance.config.ClusterExecutor;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -25,14 +27,24 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class PauseArchivingPV implements BPLAction {
+
+    private final AliasRegistry aliasRegistry;
+    private final PVDirectory pvDirectory;
+    private final ClusterExecutor clusterExecutor;
+
+    public PauseArchivingPV(AliasRegistry aliasRegistry, PVDirectory pvDirectory, ClusterExecutor clusterExecutor) {
+        this.aliasRegistry = aliasRegistry;
+        this.pvDirectory = pvDirectory;
+        this.clusterExecutor = clusterExecutor;
+    }
+
     private static Logger logger = LogManager.getLogger(PauseArchivingPV.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         if (req.getMethod().equals("POST")) {
-            pauseMultiplePVs(req, resp, configService);
+            pauseMultiplePVs(req, resp);
             return;
         }
 
@@ -43,27 +55,27 @@ public class PauseArchivingPV implements BPLAction {
         }
 
         if (pvName.contains(",") || pvName.contains("*") || pvName.contains("?")) {
-            pauseMultiplePVs(req, resp, configService);
+            pauseMultiplePVs(req, resp);
         } else {
             // We only have one PV in the request
             List<String> pvNames = new LinkedList<String>();
             pvNames.add(pvName);
-            pauseMultiplePVs(pvNames, resp, configService);
+            pauseMultiplePVs(pvNames, resp);
         }
     }
 
-    private void pauseMultiplePVs(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
+    private void pauseMultiplePVs(HttpServletRequest req, HttpServletResponse resp)
             throws IOException, UnsupportedEncodingException {
         // String pvNameFromRequest = pvName;
-        LinkedList<String> pvNames = BulkPauseResumeUtils.getPVNames(req, configService);
-        pauseMultiplePVs(pvNames, resp, configService);
+        LinkedList<String> pvNames = BulkPauseResumeUtils.getPVNames(req, pvDirectory, aliasRegistry);
+        pauseMultiplePVs(pvNames, resp);
     }
 
-    private void pauseMultiplePVs(List<String> pvNames, HttpServletResponse resp, ConfigService configService)
+    private void pauseMultiplePVs(List<String> pvNames, HttpServletResponse resp)
             throws IOException, UnsupportedEncodingException {
         boolean askingToPausePV = true;
-        List<HashMap<String, String>> response =
-                BulkPauseResumeUtils.pauseResumePVs(pvNames, configService, askingToPausePV);
+        List<HashMap<String, String>> response = BulkPauseResumeUtils.pauseResumePVs(
+                pvNames, aliasRegistry, pvDirectory, clusterExecutor, askingToPausePV);
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
 
         if (pvNames.size() == 1) {

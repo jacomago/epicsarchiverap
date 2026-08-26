@@ -4,8 +4,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
@@ -29,11 +31,22 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class ModifyMetaFieldsAction implements BPLAction {
+
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvdirectory;
+    private final PVTypeInfoStore pvtypeInfoStore;
+
+    public ModifyMetaFieldsAction(
+            ClusterTopology clusterTopology, PVDirectory pvdirectory, PVTypeInfoStore pvtypeInfoStore) {
+        this.clusterTopology = clusterTopology;
+        this.pvdirectory = pvdirectory;
+        this.pvtypeInfoStore = pvtypeInfoStore;
+    }
+
     private static Logger logger = LogManager.getLogger(ModifyMetaFieldsAction.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -46,7 +59,7 @@ public class ModifyMetaFieldsAction implements BPLAction {
             return;
         }
 
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(pvName);
         if (typeInfo == null) {
             logger.error("Cannot find typeinfo for pv " + pvName);
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -60,8 +73,8 @@ public class ModifyMetaFieldsAction implements BPLAction {
             return;
         }
 
-        ApplianceInfo infoForPV = configService.getApplianceForPV(pvName);
-        if (!infoForPV.equals(configService.getMyApplianceInfo())) {
+        ApplianceInfo infoForPV = pvdirectory.getApplianceForPV(pvName);
+        if (!infoForPV.equals(clusterTopology.getMyApplianceInfo())) {
             // Route to the appliance that hosts the PVTypeInfo
             StringWriter buf = new StringWriter();
             buf.append(infoForPV.getMgmtURL());
@@ -116,7 +129,7 @@ public class ModifyMetaFieldsAction implements BPLAction {
         }
 
         typeInfo.setArchiveFields(archiveFields.toArray(new String[0]));
-        configService.updateTypeInfoForPV(pvName, typeInfo);
+        pvtypeInfoStore.updateTypeInfoForPV(pvName, typeInfo);
         logger.info("Final set of archive fields " + typeInfo.obtainArchiveFieldsAsString());
 
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);

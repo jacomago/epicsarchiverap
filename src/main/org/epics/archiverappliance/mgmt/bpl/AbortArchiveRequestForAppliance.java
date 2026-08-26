@@ -10,7 +10,8 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ApplianceLifecycle;
+import org.epics.archiverappliance.mgmt.MgmtRuntimeState;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
@@ -26,11 +27,17 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class AbortArchiveRequestForAppliance implements BPLAction {
+
+    private final ApplianceLifecycle configService;
+
+    public AbortArchiveRequestForAppliance(ApplianceLifecycle configService) {
+        this.configService = configService;
+    }
+
     private static final Logger logger = LogManager.getLogger(AbortArchiveRequestForAppliance.class);
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String pvName = req.getParameter("pv");
         if (pvName == null || pvName.equals("")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -41,7 +48,7 @@ public class AbortArchiveRequestForAppliance implements BPLAction {
         HashMap<String, Object> infoValues = new HashMap<String, Object>();
         resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
         try (PrintWriter out = resp.getWriter()) {
-            boolean abortedPVWorkflow = configService.getMgmtRuntimeState().abortPVWorkflow(pvName);
+            boolean abortedPVWorkflow = MgmtRuntimeState.of(configService).abortPVWorkflow(pvName);
             infoValues.put("status", abortedPVWorkflow ? "ok" : "no");
             infoValues.put("desc", "Aborted request for archiving PV " + pvName);
             out.println(JSONValue.toJSONString(infoValues));

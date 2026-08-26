@@ -6,9 +6,13 @@ import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.TimeUtils;
+import org.epics.archiverappliance.config.AliasRegistry;
 import org.epics.archiverappliance.config.ApplianceInfo;
-import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.ClusterTopology;
+import org.epics.archiverappliance.config.PVDirectory;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.config.PVTypeInfoStore;
+import org.epics.archiverappliance.config.StoragePluginConfigView;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -39,12 +43,31 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  */
 public class RenamePVAction implements BPLAction {
+
+    private final AliasRegistry aliasRegistry;
+    private final ClusterTopology clusterTopology;
+    private final PVDirectory pvdirectory;
+    private final PVTypeInfoStore pvtypeInfoStore;
+    private final StoragePluginConfigView storagePluginConfigView;
+
+    public RenamePVAction(
+            AliasRegistry aliasRegistry,
+            ClusterTopology clusterTopology,
+            PVDirectory pvdirectory,
+            PVTypeInfoStore pvtypeInfoStore,
+            StoragePluginConfigView storagePluginConfigView) {
+        this.aliasRegistry = aliasRegistry;
+        this.clusterTopology = clusterTopology;
+        this.pvdirectory = pvdirectory;
+        this.pvtypeInfoStore = pvtypeInfoStore;
+        this.storagePluginConfigView = storagePluginConfigView;
+    }
+
     private static Logger logger = LogManager.getLogger(RenamePVAction.class.getName());
 
     @Override
-    public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)
-            throws IOException {
-        if (!configService.hasClusterFinishedInitialization()) {
+    public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        if (!clusterTopology.hasClusterFinishedInitialization()) {
             // If you have defined spare appliances in the appliances.xml that will never come up; you should remove
             // them
             // This seems to be one of the few ways we can prevent split brain clusters from messing up the pv <->
@@ -66,17 +89,17 @@ public class RenamePVAction implements BPLAction {
         }
 
         // String pvNameFromRequest = pvName;
-        String realName = configService.getRealNameForAlias(currentPVName);
+        String realName = aliasRegistry.getRealNameForAlias(currentPVName);
         if (realName != null) currentPVName = realName;
 
-        ApplianceInfo info = configService.getApplianceForPV(currentPVName);
+        ApplianceInfo info = pvdirectory.getApplianceForPV(currentPVName);
         if (info == null) {
             logger.debug("Unable to find appliance for PV " + currentPVName);
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-        PVTypeInfo typeInfo = configService.getTypeInfoForPV(currentPVName);
+        PVTypeInfo typeInfo = pvtypeInfoStore.getTypeInfoForPV(currentPVName);
         if (typeInfo == null) {
             logger.debug("Unable to find typeinfo for PV...");
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -96,7 +119,7 @@ public class RenamePVAction implements BPLAction {
             return;
         }
 
-        if (!info.getIdentity().equals(configService.getMyApplianceInfo().getIdentity())) {
+        if (!info.getIdentity().equals(clusterTopology.getMyApplianceInfo().getIdentity())) {
             String redirectURL = info.getMgmtURL() + "/renamePV?pv=" + URLEncoder.encode(currentPVName, "UTF-8")
                     + "&newname=" + URLEncoder.encode(newPVName, "UTF-8");
             logger.info("Redirecting rename request for PV to " + info.getIdentity() + " using URL " + redirectURL);
@@ -107,7 +130,7 @@ public class RenamePVAction implements BPLAction {
             return;
         }
 
-        if (configService.getApplianceForPV(newPVName) != null) {
+        if (pvdirectory.getApplianceForPV(newPVName) != null) {
             String msg = "While renaming PV  " + currentPVName + " to " + newPVName + ", the new name  already exists ";
             logger.error(msg);
             infoValues.put("validation", msg);
@@ -117,7 +140,7 @@ public class RenamePVAction implements BPLAction {
             return;
         }
 
-        if (configService.getTypeInfoForPV(newPVName) != null) {
+        if (pvtypeInfoStore.getTypeInfoForPV(newPVName) != null) {
             String msg = "While renaming PV  " + currentPVName + " to " + newPVName
                     + ", the typeinfo for the new name  already exists ";
             logger.error(msg);
@@ -133,12 +156,12 @@ public class RenamePVAction implements BPLAction {
             newPVTypeInfo.setCreationTime(typeInfo.getCreationTime());
             newPVTypeInfo.setModificationTime(TimeUtils.now());
             newPVTypeInfo.setApplianceIdentity(info.getIdentity());
-            configService.updateTypeInfoForPV(newPVName, newPVTypeInfo);
-            configService.registerPVToAppliance(newPVName, info);
+            pvtypeInfoStore.updateTypeInfoForPV(newPVName, newPVTypeInfo);
+            pvdirectory.registerPVToAppliance(newPVName, info);
             logger.debug("Done registering typeinfo when renaming PV  " + currentPVName + " to " + newPVName);
 
             for (String store : newPVTypeInfo.getDataStores()) {
-                StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, configService);
+                StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, storagePluginConfigView);
                 try (BasicContext context = new BasicContext()) {
                     plugin.renamePV(context, currentPVName, newPVName);
                     logger.debug("Done renaming data when renaming PV  " + currentPVName + " to " + newPVName
