@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+  Tomcat per-webapp context for the Archiver Appliance Docker image.
+  Loaded for each web application. The delegating Loader makes the web app
+  classloader delegate to the parent (Tomcat common lib) first, so the archappl
+  classes shared via /usr/local/tomcat/lib resolve consistently for Hazelcast.
+-->
+<Context>
+    <WatchedResource>WEB-INF/web.xml</WatchedResource>
+    <Loader delegate="true"/>
+    <Resource name="jdbc/archappl"
+              auth="Container"
+              type="javax.sql.DataSource"
+              factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
+              testWhileIdle="true"
+              testOnBorrow="true"
+              testOnReturn="false"
+              validationQuery="SELECT 1"
+              validationInterval="30000"
+              timeBetweenEvictionRunsMillis="30000"
+              maxActive="10"
+              minIdle="2"
+              maxWait="10000"
+              initialSize="2"
+              removeAbandonedTimeout="60"
+              removeAbandoned="true"
+              logAbandoned="true"
+              minEvictableIdleTimeMillis="30000"
+              jmxEnabled="true"
+              driverClassName="org.mariadb.jdbc.Driver"
+              url="jdbc:mariadb://localhost:3306/archappl"
+              username="archappl"
+              password="archappl"
+    />
+</Context>

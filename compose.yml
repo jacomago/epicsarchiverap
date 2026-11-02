@@ -2,8 +2,7 @@ version: '3.7'
 services:
   mariadb:
     image: docker.io/library/mariadb
-    networks:
-      - archapplnet
+    network_mode: host
     environment:
       MYSQL_ROOT_PASSWORD: archappl
       MYSQL_DATABASE: archappl
@@ -13,18 +12,14 @@ services:
       - archappldata2:/var/lib/mysql
       - mariainit2:/docker-entrypoint-initdb.d
   epicsarchiver:
-    networks:
-      - archapplnet
+    network_mode: host
     environment:
       ARCHAPPL_APPLIANCES: /usr/local/tomcat/archappl_conf/singleappliances.xml
-    ports:
-      - 8080:8080
-      - 5075:5075
-      - 5076:5076
     image: docker.io/library/docker-archappl
     volumes:
         - archapplconfig2:/usr/local/tomcat/archappl_conf
         - archapplstorage2:/usr/local/tomcat/storage/
+        - ${PWD}/docker/archappl/copy_conf/context-host.xml:/usr/local/tomcat/conf/context.xml
 networks:
   archapplnet:
     enable_ipv6: true
@@ -47,10 +42,4 @@ volumes:
     driver_opts:
       type: none
       device: ./docker/archappl/conf
-      o: bind
-  tomcatconf:
-    driver: local
-    driver_opts:
-      type: none
-      device: ./docker/archappl/copy_conf
       o: bind
