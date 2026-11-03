@@ -603,6 +603,28 @@ tasks.register("standaloneRun") {
 	dependsOn("farmRun")
 }
 
+configure<org.akhikhl.gretty.ProductsExtension> {
+	product("appliance", delegateClosureOf<org.akhikhl.gretty.ProductExtension> {
+		servletContainer = "tomcat11"
+		httpPort = 8080
+		applianceComponents.forEach { component ->
+			webapp(mapOf("contextPath" to "/$component"),
+				layout.buildDirectory.file("libs/$component.war").get().asFile)
+		}
+		additionalFiles = (listOf(file("LICENSE")) + fileTree("LICENCES").files)
+			.associate { it.relativeTo(projectDir).path to it.relativeTo(projectDir).path }
+	})
+}
+// Gretty creates product tasks after project evaluation.
+tasks.matching { it.name == "buildProductappliance" }.configureEach {
+	dependsOn(applianceComponents.map { "${it}War" })
+}
+tasks.register("standaloneDist") {
+	group = "distribution"
+	description = "Package four WARs, embedded Tomcat and standalone launch scripts."
+	dependsOn("archiveProductappliance")
+}
+
 tasks.register<Tar>("buildRelease") {
 	group = "Wars"
 	description = "Builds a full release and zips up in a tar file."
