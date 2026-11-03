@@ -1,8 +1,6 @@
-version: '3.7'
 services:
   mariadb:
     image: docker.io/library/mariadb
-    network_mode: host
     environment:
       MYSQL_ROOT_PASSWORD: archappl
       MYSQL_DATABASE: archappl
@@ -12,20 +10,26 @@ services:
       - archappldata2:/var/lib/mysql
       - mariainit2:/docker-entrypoint-initdb.d
   epicsarchiver:
-    network_mode: host
+    # The Mac-side Java PVA proxy resolves the hostname sent in CA authentication.
+    hostname: localhost
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mariadb
     environment:
       ARCHAPPL_APPLIANCES: /usr/local/tomcat/archappl_conf/singleappliances.xml
+      # Reach IOCs on the Mac host through Podman's host gateway.
+      EPICS_CA_ADDR_LIST: "host.containers.internal"
+      EPICS_CA_AUTO_ADDR_LIST: "NO"
+      # Mac-side proxy handles PVA discovery replies across Podman's UDP NAT.
+      # Start it with: bash docker/archappl/run-pva-proxy.sh
+      EPICS_PVA_ADDR_LIST: "host.containers.internal:5078"
+      EPICS_PVA_AUTO_ADDR_LIST: "NO"
     image: docker.io/library/docker-archappl
     volumes:
         - archapplconfig2:/usr/local/tomcat/archappl_conf
         - archapplstorage2:/usr/local/tomcat/storage/
-        - ${PWD}/docker/archappl/copy_conf/context-host.xml:/usr/local/tomcat/conf/context.xml
-networks:
-  archapplnet:
-    enable_ipv6: true
-    ipam:
-      config:
-       - subnet: 2001:0DB8::/112
+        - ${PWD}/docker/archappl/copy_conf/context.xml:/usr/local/tomcat/conf/context.xml
 
 volumes:
   archappldata2:
