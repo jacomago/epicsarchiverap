@@ -18,6 +18,8 @@ plugins {
 extra["tomcat11Version"] = libs.versions.tomcat.get()
 configure<org.akhikhl.gretty.GrettyExtension> {
 	servletContainer = "tomcat11"
+	// appRun uses main resources rather than the assembled WAR's logging config.
+	jvmArgs = listOf("-Dlog4j.configurationFile=${file("src/sitespecific/default/classpathfiles/log4j2.xml").absolutePath}")
 }
 
 // =================================================================
@@ -597,6 +599,7 @@ configure<org.akhikhl.gretty.FarmsExtension> {
 	farm("", delegateClosureOf<org.akhikhl.gretty.FarmExtension> {
 		servletContainer = "tomcat11"
 		httpPort = 8080
+		jvmArgs = listOf("-Dlog4j.configurationFile=${file("src/sitespecific/default/classpathfiles/log4j2.xml").absolutePath}")
 		applianceComponents.forEach { component ->
 			webapp(mapOf("contextPath" to "/$component"),
 				layout.buildDirectory.file("libs/$component.war").get().asFile)
