@@ -581,6 +581,28 @@ tasks.register<War>("retrievalWar") { // Corrected typo from retreivalWar
 	webXml = srcDir.asFile.resolve("org/epics/archiverappliance/retrieval/WEB-INF/web.xml")
 }
 
+// Use WAR file references, not the root project: its default WAR does not
+// represent any of the four appliance components.
+val applianceComponents = listOf("mgmt", "engine", "etl", "retrieval")
+configure<org.akhikhl.gretty.FarmsExtension> {
+	farm("", delegateClosureOf<org.akhikhl.gretty.FarmExtension> {
+		servletContainer = "tomcat11"
+		httpPort = 8080
+		applianceComponents.forEach { component ->
+			webapp(mapOf("contextPath" to "/$component"),
+				layout.buildDirectory.file("libs/$component.war").get().asFile)
+		}
+	})
+}
+tasks.withType<org.akhikhl.gretty.FarmStartTask>().configureEach {
+	dependsOn(applianceComponents.map { "${it}War" })
+}
+tasks.register("standaloneRun") {
+	group = "application"
+	description = "Run all four production WARs using embedded Tomcat."
+	dependsOn("farmRun")
+}
+
 tasks.register<Tar>("buildRelease") {
 	group = "Wars"
 	description = "Builds a full release and zips up in a tar file."
