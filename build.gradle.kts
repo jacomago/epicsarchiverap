@@ -581,6 +581,15 @@ tasks.register<War>("retrievalWar") { // Corrected typo from retreivalWar
 	webXml = srcDir.asFile.resolve("org/epics/archiverappliance/retrieval/WEB-INF/web.xml")
 }
 
+val validateStandaloneSite = tasks.register("validateStandaloneSite") {
+	doLast {
+		require(archapplsite != "tests") {
+			"Standalone builds require a production site: set ARCHAPPL_SITEID=default or your site path."
+		}
+	}
+}
+tasks.withType<War>().configureEach { mustRunAfter(validateStandaloneSite) }
+
 // Use WAR file references, not the root project: its default WAR does not
 // represent any of the four appliance components.
 val applianceComponents = listOf("mgmt", "engine", "etl", "retrieval")
@@ -595,7 +604,7 @@ configure<org.akhikhl.gretty.FarmsExtension> {
 	})
 }
 tasks.withType<org.akhikhl.gretty.FarmStartTask>().configureEach {
-	dependsOn(applianceComponents.map { "${it}War" })
+	dependsOn(validateStandaloneSite, applianceComponents.map { "${it}War" })
 }
 tasks.register("standaloneRun") {
 	group = "application"
@@ -612,12 +621,14 @@ configure<org.akhikhl.gretty.ProductsExtension> {
 				layout.buildDirectory.file("libs/$component.war").get().asFile)
 		}
 		additionalFiles = (listOf(file("LICENSE")) + fileTree("LICENCES").files)
-			.associate { it.relativeTo(projectDir).path to it.relativeTo(projectDir).path }
+			.associate { it.relativeTo(projectDir).path to it.relativeTo(projectDir).path } +
+			mapOf("src/standalone/appliance.sh" to "appliance.sh")
 	})
 }
 // Gretty creates product tasks after project evaluation.
 tasks.matching { it.name == "buildProductappliance" }.configureEach {
-	dependsOn(applianceComponents.map { "${it}War" })
+	dependsOn(validateStandaloneSite, applianceComponents.map { "${it}War" })
+	inputs.file("src/standalone/appliance.sh")
 }
 tasks.register("standaloneDist") {
 	group = "distribution"
