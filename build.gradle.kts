@@ -819,6 +819,21 @@ tasks.register<JavaExec>("testRun") {
 	args("-c2")
 }
 
+tasks.register<JavaExec>("fullRun") {
+	group = "Test"
+	description = "Runs the application same as for integration tests."
+	dependsOn("integrationTestSetup")
+
+	environment("ARCHAPPL_SHORT_TERM_FOLDER", "${layout.buildDirectory.get()}/storage/sts")
+	environment("ARCHAPPL_MEDIUM_TERM_FOLDER", "${layout.buildDirectory.get()}/storage/mts")
+	environment("ARCHAPPL_LONG_TERM_FOLDER", "${layout.buildDirectory.get()}/storage/lts")
+	environment("ARCHAPPL_XLTS_TERM_FOLDER", "${layout.buildDirectory.get()}/storage/xlts")
+
+	mainClass.set("org.epics.archiverappliance.TestRun")
+	classpath = sourceSets.test.get().runtimeClasspath
+	args("-f")
+}
+
 // =================================================================
 // Code Quality and Formatting
 // =================================================================

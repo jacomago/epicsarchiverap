@@ -11,7 +11,8 @@ public class TestRun {
 
         var options = new Options()
                 .addOption("t", "testname", true, "Test name")
-                .addOption("c", "clusters", true, "Number of clusters");
+                .addOption("c", "clusters", true, "Number of clusters")
+                .addOption("f", "full", false, "Not testing");
 
         var parser = new DefaultParser();
 
@@ -23,12 +24,17 @@ public class TestRun {
 
             int clusters = Integer.parseInt(cmdLine.getOptionValue("c", "1"));
             var testName = cmdLine.getOptionValue("t", "./bin");
+            var full = Boolean.parseBoolean(cmdLine.getOptionValue("f", "false"));
             var tomcat = new TomcatSetup();
             try {
-                if (clusters > 1) {
-                    tomcat.setUpClusterWithWebApps(testName, clusters);
+                if (full) {
+                    tomcat.setUpWebAppsFull(testName);
                 } else {
-                    tomcat.setUpWebApps(testName);
+                    if (clusters > 1) {
+                        tomcat.setUpClusterWithWebApps(testName, clusters);
+                    } else {
+                        tomcat.setUpWebApps(testName);
+                    }
                 }
             } catch (InterruptedException ex) {
                 tomcat.tearDown();

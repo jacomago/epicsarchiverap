@@ -97,6 +97,16 @@ public class TomcatSetup implements AutoCloseable {
     }
 
     /** Start a single-appliance setup for {@code testName}. */
+    public void setUpWebAppsFull(String testName) throws Exception {
+        prepare(testName);
+        AppliancesXMLGenerator.ApplianceXMLConfig config = new AppliancesXMLGenerator.ApplianceXMLConfig(testName, 1);
+        Path xml = config.writeAppliancesXML();
+        AppliancesXMLGenerator.AppliancePorts ports =
+                config.appliancePortsList().get(0);
+        start(ports.identity(), ports.retrievalPort(), BASE_STARTUP_PORT, xml, false);
+    }
+
+    /** Start a single-appliance setup for {@code testName}. */
     public void setUpWebApps(String testName) throws Exception {
         prepare(testName);
         AppliancesXMLGenerator.ApplianceXMLConfig config = new AppliancesXMLGenerator.ApplianceXMLConfig(testName, 1);
@@ -189,6 +199,11 @@ public class TomcatSetup implements AutoCloseable {
 
     private void start(String applianceName, int port, int startupPort, Path appliancesXML)
             throws IOException, LifecycleException {
+        start(applianceName, port, startupPort, appliancesXML, true);
+    }
+
+    private void start(String applianceName, int port, int startupPort, Path appliancesXML, boolean test)
+            throws IOException, LifecycleException {
 
         File workFolder = makeWorkFolder(applianceName);
 
@@ -204,7 +219,7 @@ public class TomcatSetup implements AutoCloseable {
         addWebapp(tomcat, "/etl", "./build/exploded/etl");
         addWebapp(tomcat, "/engine", "./build/exploded/engine");
 
-        configureProperties(applianceName, appliancesXML, workFolder);
+        configureProperties(applianceName, appliancesXML, workFolder, test);
 
         CountDownLatch latch = new CountDownLatch(1);
         LatchAppender appender = new LatchAppender("latch-" + applianceName, latch, STARTUP_COMPLETE_MSG);
@@ -254,23 +269,23 @@ public class TomcatSetup implements AutoCloseable {
         return workFolder;
     }
 
+    private void configureProperties(String applianceName, Path appliancesXML, File workFolder) {
+        configureProperties(applianceName, appliancesXML, workFolder, true);
+    }
+
     /**
      * Reset system properties to the saved snapshot, then layer instance-specific settings on top.
      *
      * <p>Uses a fresh flat copy of {@code savedProperties} so that {@code containsKey()} behaves
      * correctly (the defaults-chain form of {@link Properties} would fool it).
      */
-    private void configureProperties(String applianceName, Path appliancesXML, File workFolder) {
+    private void configureProperties(String applianceName, Path appliancesXML, File workFolder, boolean test) {
         Properties fresh = new Properties();
         fresh.putAll(savedProperties);
         System.setProperties(fresh);
 
         System.setProperty("catalina.base", new File(testFolder, applianceName).getAbsolutePath());
         System.setProperty("LOG4J_CONFIGURATION_FILE", new File("src/resources/test/log4j2.xml").getAbsolutePath());
-        System.setProperty(ConfigService.ARCHAPPL_CONFIGSERVICE_IMPL, ConfigServiceForTests.class.getName());
-        System.setProperty(
-                DefaultConfigService.SITE_FOR_UNIT_TESTS_NAME, DefaultConfigService.SITE_FOR_UNIT_TESTS_VALUE);
-        System.setProperty(ConfigService.ARCHAPPL_MYIDENTITY, applianceName);
 
         if (!fresh.containsKey(ConfigService.ARCHAPPL_APPLIANCES)) {
             System.setProperty(
@@ -278,44 +293,52 @@ public class TomcatSetup implements AutoCloseable {
                     appliancesXML.toAbsolutePath().toString());
         }
 
-        String persistenceLayer = fresh.getProperty(ConfigService.ARCHAPPL_PERSISTENCE_LAYER);
-        if (persistenceLayer == null || persistenceLayer.equals(InMemoryPersistence.class.getName())) {
-            System.setProperty(ConfigService.ARCHAPPL_PERSISTENCE_LAYER, InMemoryPersistence.class.getName());
-        } else {
-            logger.info("Persistence layer for {}: {}", applianceName, persistenceLayer);
-            String persistenceFile = fresh.getProperty(JDBM2Persistence.ARCHAPPL_JDBM2_FILENAME);
-            if (persistenceFile != null) {
-                System.setProperty(
-                        JDBM2Persistence.ARCHAPPL_JDBM2_FILENAME,
-                        persistenceFile.replace(".jdbm2", "_" + applianceName + ".jdbm2"));
-                logger.info(
-                        "Persistence file for {}: {}",
-                        applianceName,
-                        System.getProperty(JDBM2Persistence.ARCHAPPL_JDBM2_FILENAME));
+        if (test) {
+            System.setProperty(ConfigService.ARCHAPPL_CONFIGSERVICE_IMPL, ConfigServiceForTests.class.getName());
+
+            System.setProperty(
+                    DefaultConfigService.SITE_FOR_UNIT_TESTS_NAME, DefaultConfigService.SITE_FOR_UNIT_TESTS_VALUE);
+            System.setProperty(ConfigService.ARCHAPPL_MYIDENTITY, applianceName);
+
+
+            String persistenceLayer = fresh.getProperty(ConfigService.ARCHAPPL_PERSISTENCE_LAYER);
+            if (persistenceLayer == null || persistenceLayer.equals(InMemoryPersistence.class.getName())) {
+                System.setProperty(ConfigService.ARCHAPPL_PERSISTENCE_LAYER, InMemoryPersistence.class.getName());
+            } else {
+                logger.info("Persistence layer for {}: {}", applianceName, persistenceLayer);
+                String persistenceFile = fresh.getProperty(JDBM2Persistence.ARCHAPPL_JDBM2_FILENAME);
+                if (persistenceFile != null) {
+                    System.setProperty(
+                            JDBM2Persistence.ARCHAPPL_JDBM2_FILENAME,
+                            persistenceFile.replace(".jdbm2", "_" + applianceName + ".jdbm2"));
+                    logger.info(
+                            "Persistence file for {}: {}",
+                            applianceName,
+                            System.getProperty(JDBM2Persistence.ARCHAPPL_JDBM2_FILENAME));
+                }
+            }
+
+            // Tests seed data via the ARCHAPPL_*_FOLDER env vars and macro expansion prefers system
+            // properties over env, so a property may only be set here if a test set one explicitly.
+            for (String[] pair : new String[][] {
+                {"ARCHAPPL_SHORT_TERM_FOLDER", "sts"},
+                {"ARCHAPPL_MEDIUM_TERM_FOLDER", "mts"},
+                {"ARCHAPPL_LONG_TERM_FOLDER", "lts"}
+            }) {
+                String fromProperty = System.getProperty(pair[0]);
+                if (fromProperty != null && new File(fromProperty).isAbsolute()) {
+                    continue;
+                }
+                String fromEnv = System.getenv(pair[0]);
+                if (fromEnv != null && new File(fromEnv).isAbsolute()) {
+                    System.clearProperty(pair[0]);
+                    continue;
+                }
+                File dir = new File(workFolder, pair[1]);
+                dir.mkdirs();
+                System.setProperty(pair[0], dir.getAbsolutePath());
             }
         }
-
-        // Tests seed data via the ARCHAPPL_*_FOLDER env vars and macro expansion prefers system
-        // properties over env, so a property may only be set here if a test set one explicitly.
-        for (String[] pair : new String[][] {
-            {"ARCHAPPL_SHORT_TERM_FOLDER", "sts"},
-            {"ARCHAPPL_MEDIUM_TERM_FOLDER", "mts"},
-            {"ARCHAPPL_LONG_TERM_FOLDER", "lts"}
-        }) {
-            String fromProperty = System.getProperty(pair[0]);
-            if (fromProperty != null && new File(fromProperty).isAbsolute()) {
-                continue;
-            }
-            String fromEnv = System.getenv(pair[0]);
-            if (fromEnv != null && new File(fromEnv).isAbsolute()) {
-                System.clearProperty(pair[0]);
-                continue;
-            }
-            File dir = new File(workFolder, pair[1]);
-            dir.mkdirs();
-            System.setProperty(pair[0], dir.getAbsolutePath());
-        }
-
         // Re-apply any extra properties that must survive the reset above.
         extraProperties.forEach(System::setProperty);
     }
