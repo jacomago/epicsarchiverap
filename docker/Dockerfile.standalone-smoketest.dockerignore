@@ -1,0 +1,6 @@
+**
+!build/
+!build/standalone-smoketest/
+!build/standalone-smoketest/appliance.zip
+!docker/
+!docker/Dockerfile.standalone-smoketest

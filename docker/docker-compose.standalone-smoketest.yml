@@ -1,0 +1,33 @@
+name: archappl-standalone-smoketest
+services:
+  mariadb:
+    image: mariadb:11
+    environment:
+      MYSQL_ROOT_PASSWORD: archappl
+      MYSQL_DATABASE: archappl
+      MYSQL_USER: archappl
+      MYSQL_PASSWORD: archappl
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - ./archappl/conf/sql:/docker-entrypoint-initdb.d:ro
+  archappl:
+    image: archappl-standalone-smoketest:local
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile.standalone-smoketest
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    volumes:
+      - ./archappl/conf:/opt/archiver/config:ro
+    # No fixed host port: Testcontainers exposes the service dynamically.
+  example-ioc:
+    build:
+      context: .
+      dockerfile: Dockerfile.testioc
+    environment:
+      IOC_NAME: IOC

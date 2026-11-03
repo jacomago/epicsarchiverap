@@ -122,6 +122,14 @@ repositories {
 
 val viewer = configurations.create("viewer")
 
+// JNDI resources are created by the container classloader, not a WAR loader.
+dependencies {
+	// Gretty's runner itself uses SLF4J; WARs retain their Log4j configuration.
+	add("grettyNoSpringBoot", "org.slf4j:slf4j-simple:${libs.versions.slf4j.get()}")
+	add("grettyNoSpringBoot", "org.apache.tomcat:tomcat-jdbc:${libs.versions.tomcat.get()}")
+	add("grettyNoSpringBoot", libs.mariadb)
+}
+
 dependencies {
 	// Local JARs
 	implementation(files("lib/jamtio_071005.jar", "lib/redisnio_0.0.1.jar"))
@@ -616,20 +624,28 @@ tasks.register("standaloneRun") {
 }
 
 configure<org.akhikhl.gretty.ProductsExtension> {
-	product("appliance", delegateClosureOf<org.akhikhl.gretty.ProductExtension> {
-		servletContainer = "tomcat11"
-		httpPort = 8080
-		applianceComponents.forEach { component ->
-			webapp(mapOf("contextPath" to "/$component"),
-				layout.buildDirectory.file("libs/$component.war").get().asFile)
-		}
-		additionalFiles = (listOf(file("LICENSE")) + fileTree("LICENCES").files)
-			.associate { it.relativeTo(projectDir).path to it.relativeTo(projectDir).path } +
-			mapOf("src/standalone/appliance.sh" to "appliance.sh")
-	})
+	// The smoke variant differs only in its MariaDB JNDI context configuration.
+	listOf("appliance", "applianceSmoke").forEach { productName ->
+		product(productName, delegateClosureOf<org.akhikhl.gretty.ProductExtension> {
+			servletContainer = "tomcat11"
+			httpPort = 8080
+			enableNaming = true
+			applianceComponents.forEach { component ->
+				val options = mutableMapOf<String, Any>("contextPath" to "/$component")
+				val context = if (productName == "applianceSmoke")
+					"docker/archappl/copy_conf/context.xml"
+				else project.findProperty("standaloneContext") as String?
+				if (context != null) options["contextConfigFile"] = file(context)
+				webapp(options, layout.buildDirectory.file("libs/$component.war").get().asFile)
+			}
+			additionalFiles = (listOf(file("LICENSE")) + fileTree("LICENCES").files)
+				.associate { it.relativeTo(projectDir).path to it.relativeTo(projectDir).path } +
+				mapOf("src/standalone/appliance.sh" to "appliance.sh")
+		})
+	}
 }
 // Gretty creates product tasks after project evaluation.
-tasks.matching { it.name == "buildProductappliance" }.configureEach {
+tasks.matching { it.name in listOf("buildProductappliance", "buildProductapplianceSmoke") }.configureEach {
 	dependsOn(validateStandaloneSite, applianceComponents.map { "${it}War" })
 	inputs.file("src/standalone/appliance.sh")
 }
@@ -639,14 +655,17 @@ tasks.register("standaloneDist") {
 	dependsOn("archiveProductappliance")
 }
 
-tasks.register<Exec>("standaloneSmokeTest") {
-	group = "verification"
-	description = "Unpack and exercise the standalone product (requires Python 3 and Java 25)."
-	dependsOn("archiveProductappliance")
-	doFirst {
-		val archive = tasks.named<Zip>("archiveProductappliance").get().archiveFile.get().asFile
-		commandLine("python3", "src/standalone/smoke_test.py", archive.absolutePath)
+tasks.register<Sync>("stageStandaloneSmokeTest") {
+	dependsOn("archiveProductapplianceSmoke")
+	from(provider { tasks.named<Zip>("archiveProductapplianceSmoke").get().archiveFile.get().asFile }) {
+		rename { "appliance.zip" }
 	}
+	into(layout.buildDirectory.dir("standalone-smoketest"))
+}
+tasks.register<Exec>("buildStandaloneSmoketestImages") {
+	group = "verification"
+	dependsOn("stageStandaloneSmokeTest")
+	commandLine("docker", "compose", "-f", "docker/docker-compose.standalone-smoketest.yml", "build")
 }
 
 tasks.register<Tar>("buildRelease") {
@@ -844,6 +863,15 @@ tasks.register<Exec>("buildSmoketestImages") {
 	commandLine("docker", "compose", "-f", "docker/docker-compose.smoketest.yml", "build")
 }
 
+tasks.register<Test>("standaloneSmokeTest") {
+	group = "verification"
+	description = "Exercise the packaged Gretty distribution with MariaDB and an IOC. Requires Docker."
+	testLogging.showStandardStreams = true
+	maxParallelForks = 1
+	dependsOn("buildStandaloneSmoketestImages")
+	useJUnitPlatform { includeTags("standaloneDocker") }
+}
+
 tasks.register<Test>("dockerSmokeTest") {
 	group = "Test"
 	description = "Run the Docker smoke test, which builds and exercises the packaged image. Requires Docker."
@@ -853,6 +881,7 @@ tasks.register<Test>("dockerSmokeTest") {
 	dependsOn("buildSmoketestImages")
 	useJUnitPlatform {
 		includeTags("docker")
+		excludeTags("standaloneDocker")
 	}
 }
 

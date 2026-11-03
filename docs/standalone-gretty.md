@@ -18,7 +18,9 @@ The standalone tasks reject the implicit `tests` site. Build output is
 site-specific prerequisites, including Python documentation tooling.
 
 For development, `ARCHAPPL_SITEID=default ./gradlew standaloneRun` runs the same
-four WARs via Gretty's farm. Set production runtime environment variables first;
+four WARs via Gretty's farm. `appRun` instead runs the default project webapp and
+is not the four-component deployment. Development runners explicitly use the
+default site's console Log4j configuration. Set production runtime environment variables first;
 this is not the in-memory integration-test harness. The farm uses port 8080.
 
 ## Configure and run (Linux/macOS)
@@ -56,8 +58,10 @@ explicit backend and rejects `InMemoryPersistence`. It enables
 on startup or shutdown. Use absolute paths for all external configuration,
 policies, logs and persistence. Configure XLTS separately if your policies use it.
 
-Use `bash appliance.sh start` for background mode and `bash appliance.sh stop`
-for graceful shutdown (use absolute script paths from other working directories).
+Use `bash appliance.sh start` for noninteractive mode and `bash appliance.sh stop`
+from another terminal for graceful shutdown (use absolute script paths from other
+working directories). `start` keeps the starter attached; use a service manager or
+shell backgrounding if needed.
 Prefer `stop` followed by `start` over `restart` when verifying upgrades.
 Gretty also generates Windows launch scripts, but the validated production wrapper
 and smoke test currently target Linux/macOS.
@@ -75,6 +79,12 @@ per appliance as well. Generated Gretty scripts use `java` on `PATH`; select Jav
 25 there. Gretty runs its container in a child JVM, so JVM options must be set on
 that runner, not only on the starter process.
 
+For MariaDB or another JNDI backend, supply a Tomcat context XML when packaging:
+`-PstandaloneContext=/absolute/path/context.xml`. Naming is enabled in products;
+Tomcat JDBC pool and the MariaDB driver are shipped on the container's classpath.
+Use your normal datasource credentials/URL and select `MySQLPersistence` at runtime.
+The smoke product uses the repository's Docker context XML for its isolated database.
+
 This setup preserves independent WAR classloaders and uses the application's
 normal startup coordination; it does not rely on the test harness's shared
 Log4j readiness appender.
@@ -82,24 +92,23 @@ Log4j readiness appender.
 ## Smoke test
 
 ```sh
-python3 src/standalone/smoke_test.py build/output/appliance-<version>.zip
-```
-
-Alternatively, build and test in one command:
-
-```sh
 ARCHAPPL_SITEID=default ./gradlew standaloneSmokeTest
 ```
 
-The Python-standard-library test unpacks the real ZIP outside the repository,
-creates isolated JDBM2 configuration, checks missing configuration rejection,
-starts all four contexts, polls startup state, stops and restarts, and checks that
-persistence files survive. It retains its temporary workspace/logs for diagnosis.
-Run it on a machine with enough memory for four WAR classloaders and no other
-appliance using conflicting auxiliary services. No IOC is needed for this test;
-it does not establish archive/retrieve correctness or durable PV metadata recovery.
-Use the existing IOC-backed suites for those checks. Port-conflict failure behavior
-also requires further validation before production rollout.
+Requires Docker. The JUnit/Testcontainers test follows `DockerSmokeTest`: Compose
+starts MariaDB 11 (initialized with the existing smoke-test SQL schema), the example
+IOC, and the packaged Gretty distribution. The test checks all four startup states,
+archives `IOCtest_0`, waits for `Being archived`, and verifies its `PVTypeInfo` row
+in MariaDB. Service ports are exposed dynamically to avoid fixed host-port conflicts.
+Container logs are forwarded through SLF4J to the Gradle test output/report.
+
+The `applianceSmoke` product uses the same WARs and runtime as `appliance`, with the
+existing Docker MariaDB JNDI context added. Its ZIP is unpacked in a Java 25 image;
+no external Tomcat is installed. Images are built before Testcontainers starts
+Compose, matching the existing Docker smoke-test workflow. The test is opt-in and
+excluded from ordinary unit tests and the existing `dockerSmokeTest` task.
+Restart/PV recovery, retrieval correctness and port-conflict behavior remain separate
+validation work.
 
 ## Upgrades and limitations
 

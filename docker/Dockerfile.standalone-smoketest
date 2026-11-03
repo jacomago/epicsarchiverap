@@ -1,0 +1,16 @@
+# Test the actual ZIP; do not install external Tomcat or build application code here.
+FROM eclipse-temurin:25-jdk
+WORKDIR /opt/archiver
+COPY build/standalone-smoketest/appliance.zip /tmp/appliance.zip
+RUN jar xf /tmp/appliance.zip && rm /tmp/appliance.zip
+ENV ARCHAPPL_APPLIANCES=/opt/archiver/config/singleappliances.xml \
+    ARCHAPPL_PROPERTIES_FILENAME=/opt/archiver/config/archappl.properties \
+    ARCHAPPL_POLICIES=/opt/archiver/config/policies.py \
+    ARCHAPPL_MYIDENTITY=archappl0 \
+    ARCHAPPL_SHORT_TERM_FOLDER=/data/sts \
+    ARCHAPPL_MEDIUM_TERM_FOLDER=/data/mts \
+    ARCHAPPL_LONG_TERM_FOLDER=/data/lts \
+    ARCHAPPL_PERSISTENCE_LAYER=org.epics.archiverappliance.config.persistence.MySQLPersistence
+# Background Gretty avoids the foreground runner's stop-on-stdin-EOF behavior.
+# Keep PID 1 alive and propagate termination through Gretty's control protocol.
+CMD ["bash", "-c", "set -e; cd applianceSmoke; bash appliance.sh start & starter=$!; trap 'bash appliance.sh stop; wait $starter; exit' TERM INT; wait $starter"]
