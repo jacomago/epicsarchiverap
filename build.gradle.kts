@@ -11,6 +11,13 @@ plugins {
 	alias(libs.plugins.git.version)
 	alias(libs.plugins.spotless)
 	alias(libs.plugins.protobuf)
+	alias(libs.plugins.gretty)
+}
+
+// Match Gretty's embedded container to the Servlet API used by the WARs.
+extra["tomcat11Version"] = libs.versions.tomcat.get()
+configure<org.akhikhl.gretty.GrettyExtension> {
+	servletContainer = "tomcat11"
 }
 
 // =================================================================
@@ -298,7 +305,11 @@ tasks.register<Zip>("stageSvgViewer") {
 	destinationDirectory.set(stageDir.asFile.resolve("org/epics/archiverappliance/retrieval/staticcontent"))
 }
 
-ant.properties["classes"] = sourceSets.main.get().runtimeClasspath.asPath
+// Gretty adds provided dependencies after evaluation; do not resolve runtimeClasspath
+// during configuration, before that wiring is complete.
+tasks.named("sitespecificbuild") {
+	doFirst { ant.properties["classes"] = sourceSets.main.get().runtimeClasspath.asPath }
+}
 tasks.register("sitespecificantscript") {
 	group = "Staging"
 	description = "Do the site specific changes from the ant script."

@@ -5,6 +5,7 @@ junit-jupiter   = "5.9.3"
 junit-platform  = "1.9.3"
 tomcat          = "11.0.12"
 guava           = "33.5.0-jre"
+gretty-plugin   = "5.1.0"
 hazelcast       = "5.5.0"
 jedis           = "5.2.0"
 jca             = "2.4.12"
@@ -114,3 +115,4 @@ spotless     = { id = "com.diffplug.spotless", version.ref = "spotless-plugin" }
 git-version  = { id = "com.palantir.git-version", version.ref = "git-version-plugin" }
 analyze      = { id = "ca.cutterslade.analyze", version.ref = "analyze-plugin" }
 protobuf     = { id = "com.google.protobuf", version.ref = "protobuf-plugin" }
+gretty       = { id = "org.gretty", version.ref = "gretty-plugin" }
