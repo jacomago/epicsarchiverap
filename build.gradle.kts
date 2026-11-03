@@ -636,6 +636,16 @@ tasks.register("standaloneDist") {
 	dependsOn("archiveProductappliance")
 }
 
+tasks.register<Exec>("standaloneSmokeTest") {
+	group = "verification"
+	description = "Unpack and exercise the standalone product (requires Python 3 and Java 25)."
+	dependsOn("archiveProductappliance")
+	doFirst {
+		val archive = tasks.named<Zip>("archiveProductappliance").get().archiveFile.get().asFile
+		commandLine("python3", "src/standalone/smoke_test.py", archive.absolutePath)
+	}
+}
+
 tasks.register<Tar>("buildRelease") {
 	group = "Wars"
 	description = "Builds a full release and zips up in a tar file."

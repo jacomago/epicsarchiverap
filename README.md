@@ -14,6 +14,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to build, run, test and format th
 appliance, and [ARCHITECTURE.md](ARCHITECTURE.md) for an overview of how it is put
 together.
 
+## Standalone embedded Tomcat distribution
+
+For an opt-in ZIP containing all four WARs, embedded Tomcat, and launch scripts,
+see [Standalone distribution with Gretty](docs/standalone-gretty.md).
+
 ## Deploy
 
 For a quick deploy of a single appliance:
