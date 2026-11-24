@@ -118,7 +118,7 @@ dependencies {
 	implementation(files("lib/jamtio_071005.jar", "lib/redisnio_0.0.1.jar"))
 
 	// GitHub dependency via Ivy
-	viewer("archiver-appliance:svg_viewer:${libs.versions.svg.viewer.get()}@zip")
+	viewer("lilastic:svg_viewer:${libs.versions.svg.viewer.get()}@zip")
 
 	// Provided by Servlet Container (e.g., Tomcat)
 	implementation(libs.tomcat.servlet.api)
